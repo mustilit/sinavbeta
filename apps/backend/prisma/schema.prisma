@@ -783,22 +783,23 @@ model LiveSessionTier {
 }
 
 model LiveSession {
-  id                 String           @id @default(uuid())
-  educatorId         String
-  tierId             String?
-  maxParticipants    Int?
-  title              String
-  joinCode           String           @unique
-  status             String           @default("DRAFT")
-  currentQuestionIdx Int              @default(0)
-  showStats          Boolean          @default(false)
-  paidAt             DateTime?
-  startedAt          DateTime?
-  endedAt            DateTime?
-  roundNumber        Int              @default(1)
-  parentSessionId    String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  id                       String           @id @default(uuid())
+  educatorId               String
+  tierId                   String?
+  maxParticipants          Int?
+  currentParticipantCount  Int              @default(0) @map("current_participant_count")
+  title                    String
+  joinCode                 String           @unique
+  status                   String           @default("DRAFT")
+  currentQuestionIdx       Int              @default(0)
+  showStats                Boolean          @default(false)
+  paidAt                   DateTime?
+  startedAt                DateTime?
+  endedAt                  DateTime?
+  roundNumber              Int              @default(1)
+  parentSessionId          String?
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
 
   educator     User              @relation("EducatorLiveSessions", fields: [educatorId], references: [id])
   tier         LiveSessionTier?  @relation(fields: [tierId], references: [id])
