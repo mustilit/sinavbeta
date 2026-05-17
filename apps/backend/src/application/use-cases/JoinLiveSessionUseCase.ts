@@ -24,15 +24,35 @@ export class JoinLiveSessionUseCase {
         throw new ForbiddenException({ code: 'NOT_IN_ROUND1', message: '1. tura katılmış olmanız gerekiyor' });
     }
 
+    // Mevcut katılımcı kontrolü — zaten kayıtlı ise kapasite değişmez
     const existing = await prisma.liveParticipant.findUnique({
       where: { sessionId_userId: { sessionId: session.id, userId } },
     });
-    if (!existing && session.maxParticipants != null) {
-      const count = await prisma.liveParticipant.count({ where: { sessionId: session.id } });
-      if (count >= session.maxParticipants)
-        throw new BadRequestException({ code: 'SESSION_FULL', message: `Kapasite doldu (${session.maxParticipants})` });
+
+    if (!existing) {
+      if (session.maxParticipants != null) {
+        // Atomic kapasite kontrolü — count() + check race condition'ını önler.
+        // currentParticipantCount < maxParticipants ise atomik olarak artır; aksi hâlde 0 satır güncellenir.
+        const updated = await prisma.liveSession.updateMany({
+          where: {
+            id: session.id,
+            currentParticipantCount: { lt: session.maxParticipants },
+          },
+          data: { currentParticipantCount: { increment: 1 } },
+        });
+        if (updated.count === 0) {
+          throw new BadRequestException({ code: 'SESSION_FULL', message: `Kapasite doldu (${session.maxParticipants})` });
+        }
+      } else {
+        // Limitsiz oturum — sadece sayacı artır
+        await prisma.liveSession.update({
+          where: { id: session.id },
+          data: { currentParticipantCount: { increment: 1 } },
+        });
+      }
     }
 
+    // Katılımcı kaydı — upsert ile idempotent
     const participant = await prisma.liveParticipant.upsert({
       where: { sessionId_userId: { sessionId: session.id, userId } },
       create: { sessionId: session.id, userId },
