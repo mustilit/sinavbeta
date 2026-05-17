@@ -1,4 +1,6 @@
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../infrastructure/database/prisma';
+import { AppError } from '../errors/AppError';
 
 function generateJoinCode(): string {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -16,18 +18,13 @@ export class CreateRound2LiveSessionUseCase {
       include: { questions: { include: { options: true } } },
     });
 
-    if (!original) {
-      throw Object.assign(new Error('Oturum bulunamadi'), { status: 404 });
-    }
-    if (original.educatorId !== educatorId) {
-      throw Object.assign(new Error('Yetki yok'), { status: 403 });
-    }
-    if (original.status !== 'ENDED') {
-      throw Object.assign(new Error('Oturum bitmemis'), { status: 400 });
-    }
-    if (original.roundNumber !== 1) {
-      throw Object.assign(new Error('Sadece 1. turdan 2. tur olusturulabilir'), { status: 400 });
-    }
+    if (!original) throw new AppError('SESSION_NOT_FOUND', 'Oturum bulunamadı', 404);
+    if (original.educatorId !== educatorId)
+      throw new ForbiddenException({ code: 'FORBIDDEN', message: 'Yetki yok' });
+    if (original.status !== 'ENDED')
+      throw new BadRequestException({ code: 'SESSION_NOT_ENDED', message: 'Oturum henüz bitmedi' });
+    if (original.roundNumber !== 1)
+      throw new BadRequestException({ code: 'NOT_ROUND1', message: 'Sadece 1. turdan 2. tur oluşturulabilir' });
 
     // Only participants of round 1 are allowed in round 2
     // We store parentSessionId to track this

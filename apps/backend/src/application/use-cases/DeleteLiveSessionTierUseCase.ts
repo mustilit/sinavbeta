@@ -1,4 +1,6 @@
+import { BadRequestException } from '@nestjs/common';
 import { prisma } from '../../infrastructure/database/prisma';
+import { AppError } from '../errors/AppError';
 
 export class DeleteLiveSessionTierUseCase {
   async execute(id: string) {
@@ -6,14 +8,12 @@ export class DeleteLiveSessionTierUseCase {
       where: { id },
       include: { sessions: { take: 1 } },
     });
-    if (!tier) {
-      throw Object.assign(new Error('Tier bulunamadi'), { status: 404 });
-    }
+    if (!tier) throw new AppError('TIER_NOT_FOUND', 'Tier bulunamadı', 404);
     if (tier.sessions.length > 0) {
-      throw Object.assign(
-        new Error('Bu tiere ait oturumlar var, silinemez'),
-        { status: 400 },
-      );
+      throw new BadRequestException({
+        code: 'TIER_IN_USE',
+        message: 'Bu tiere ait oturumlar var, silinemez',
+      });
     }
     await prisma.liveSessionTier.delete({ where: { id } });
     return { success: true };

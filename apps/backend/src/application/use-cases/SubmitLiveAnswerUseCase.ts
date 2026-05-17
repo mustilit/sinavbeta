@@ -12,7 +12,7 @@ export class SubmitLiveAnswerUseCase {
     const question = await prisma.liveQuestion.findUnique({ where: { id: questionId } });
     if (!question || question.sessionId !== sessionId)
       throw new AppError('QUESTION_NOT_FOUND', 'Question not found in this session', 404);
-    if (question.order !== session.currentQuestionIdx)
+    if (question.order !== session.currentQuestionIdx + 1)
       throw new BadRequestException({ code: 'WRONG_QUESTION', message: 'This is not the current question' });
 
     const option = await prisma.liveOption.findUnique({ where: { id: optionId } });

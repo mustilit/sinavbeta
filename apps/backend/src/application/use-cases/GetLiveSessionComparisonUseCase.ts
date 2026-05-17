@@ -1,4 +1,6 @@
+import { ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../infrastructure/database/prisma';
+import { AppError } from '../errors/AppError';
 
 export class GetLiveSessionComparisonUseCase {
   async execute(sessionId: string, educatorId: string) {
@@ -21,12 +23,9 @@ export class GetLiveSessionComparisonUseCase {
       },
     });
 
-    if (!session) {
-      throw Object.assign(new Error('Oturum bulunamadi'), { status: 404 });
-    }
-    if (session.educatorId !== educatorId) {
-      throw Object.assign(new Error('Yetki yok'), { status: 403 });
-    }
+    if (!session) throw new AppError('SESSION_NOT_FOUND', 'Oturum bulunamadı', 404);
+    if (session.educatorId !== educatorId)
+      throw new ForbiddenException({ code: 'FORBIDDEN', message: 'Yetki yok' });
 
     // Build leaderboard
     const leaderboard = session.participants.map((p) => {

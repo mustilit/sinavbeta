@@ -1,4 +1,5 @@
 import { prisma } from '../../infrastructure/database/prisma';
+import { AppError } from '../errors/AppError';
 
 export class GetLiveSessionByCodeUseCase {
   async execute(code: string) {
@@ -16,7 +17,7 @@ export class GetLiveSessionByCodeUseCase {
       },
     });
     if (!session) {
-      throw Object.assign(new Error('Oturum bulunamadi'), { status: 404 });
+      throw new AppError('SESSION_NOT_FOUND', 'Oturum bulunamadı', 404);
     }
     return session;
   }
