@@ -1,3 +1,5 @@
+// Sentry must be initialized before any other imports
+import '../instrument';
 import 'reflect-metadata';
 import { webcrypto } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';

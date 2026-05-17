@@ -3,6 +3,7 @@
  * Prod'da stack trace gösterilmez; sadece güvenli mesaj.
  */
 import React from 'react';
+import * as Sentry from '@sentry/react';
 
 const isProd = import.meta.env?.PROD ?? false;
 
@@ -17,6 +18,9 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Sentry'ye gönder (DSN yoksa sessizce atlanır)
+    Sentry.captureException(error, { extra: errorInfo });
+
     if (!isProd) {
       console.error('[ErrorBoundary]', error, errorInfo);
     }

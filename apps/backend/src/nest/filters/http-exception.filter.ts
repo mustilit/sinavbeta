@@ -3,6 +3,7 @@ import { ThrottlerException } from '@nestjs/throttler';
 import { PrismaAuditLogRepository } from '../../infrastructure/repositories/PrismaAuditLogRepository';
 import { AppError } from '../../application/errors/AppError';
 import { Request, Response } from 'express';
+import { Sentry } from '../../instrument';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -77,6 +78,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
       path: req.url,
       timestamp: new Date().toISOString(),
     };
+
+    // 5xx hatalarını Sentry'ye ilet — 4xx beklenen client hataları, gürültü yapar
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      Sentry.captureException(exception, {
+        extra: { path: req.url, code },
+        tags: { status: String(status) },
+      });
+    }
 
     // If this was a throttling event, record an audit log for suspicious activity
     try {
