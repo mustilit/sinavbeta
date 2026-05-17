@@ -1,3 +1,4 @@
+import type { PrismaClient } from '@prisma/client';
 import { ExamWithQuestions } from '../../domain/interfaces/IExamRepository';
 import { IExamRepository } from '../../domain/interfaces/IExamRepository';
 import { AuditLogService } from './AuditLogService';
@@ -6,6 +7,7 @@ import { AuditLogService } from './AuditLogService';
  * TestPublishService
  * İş kuralları Controller'da değil Service katmanında uygulanır.
  * Kritik işlemler (Publish/Unpublish) AuditLog ile loglanır.
+ * Publish + audit log yazımı tek prisma.$transaction içinde — atomik.
  */
 export class TestPublishService {
   private static readonly MIN_QUESTIONS = 5;
@@ -13,12 +15,13 @@ export class TestPublishService {
 
   constructor(
     private readonly examRepository: IExamRepository,
-    private readonly auditLogService: AuditLogService
+    private readonly auditLogService: AuditLogService,
+    private readonly prisma: PrismaClient,
   ) {}
 
   /**
-   * Test yayınlama - tüm validasyonlar Service katmanında
-   * Kritik işlem: AuditLog ile loglanır
+   * Test yayınlama - tüm validasyonlar Service katmanında.
+   * examTest.update + auditLog.create aynı transaction içinde.
    */
   async publish(testId: string, actorId?: string | null): Promise<ExamWithQuestions> {
     const test = await this.examRepository.findById(testId);
@@ -35,25 +38,60 @@ export class TestPublishService {
     // 3. Süreli test ise duration null olamaz
     this.validateDurationForTimedTest(test);
 
-    const published = await this.examRepository.publish(testId);
-    if (!published) throw new Error('TEST_NOT_FOUND');
+    // Publish + audit atomik
+    const published = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.examTest.update({
+        where: { id: testId },
+        data: { status: 'PUBLISHED', publishedAt: new Date() },
+        include: {
+          questions: { include: { options: true }, orderBy: { order: 'asc' } },
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          action: 'TEST_PUBLISHED' as any,
+          entityType: TestPublishService.ENTITY_TYPE,
+          entityId: testId,
+          actorId: actorId ?? null,
+          metadata: {},
+        },
+      });
+      return updated;
+    });
 
-    await this.auditLogService.logPublish(TestPublishService.ENTITY_TYPE, testId, actorId);
-    return published;
+    if (!published) throw new Error('TEST_NOT_FOUND');
+    return this.toDomain(published);
   }
 
   /**
-   * Test yayından kaldırma - kritik işlem: AuditLog ile loglanır
+   * Test yayından kaldırma — unpublish + audit atomik.
    */
   async unpublish(testId: string, actorId?: string | null): Promise<ExamWithQuestions> {
     const test = await this.examRepository.findById(testId);
     if (!test) throw new Error('TEST_NOT_FOUND');
 
-    const unpublished = await this.examRepository.unpublish(testId);
-    if (!unpublished) throw new Error('TEST_NOT_FOUND');
+    const unpublished = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.examTest.update({
+        where: { id: testId },
+        data: { status: 'DRAFT', publishedAt: null },
+        include: {
+          questions: { include: { options: true }, orderBy: { order: 'asc' } },
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          action: 'TEST_UNPUBLISHED' as any,
+          entityType: TestPublishService.ENTITY_TYPE,
+          entityId: testId,
+          actorId: actorId ?? null,
+          metadata: {},
+        },
+      });
+      return updated;
+    });
 
-    await this.auditLogService.logUnpublish(TestPublishService.ENTITY_TYPE, testId, actorId);
-    return unpublished;
+    if (!unpublished) throw new Error('TEST_NOT_FOUND');
+    return this.toDomain(unpublished);
   }
 
   private validateMinQuestions(test: ExamWithQuestions): void {
@@ -82,5 +120,43 @@ export class TestPublishService {
         'DURATION_REQUIRED: Süreli test için duration (dakika) zorunludur ve 0\'dan büyük olmalıdır.'
       );
     }
+  }
+
+  /** Prisma row → domain object (PrismaExamRepository.toDomain ile aynı yapı) */
+  private toDomain(row: any): ExamWithQuestions {
+    return {
+      id: row.id,
+      title: row.title,
+      isTimed: row.isTimed,
+      duration: row.duration,
+      status: row.status ?? 'DRAFT',
+      educatorId: row.educatorId ?? null,
+      examTypeId: row.examTypeId ?? null,
+      topicId: row.topicId ?? null,
+      metadata: row.metadata ?? {},
+      publishedAt: row.publishedAt,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      questionCount: row.questions?.length ?? 0,
+      hasSolutions: row.hasSolutions ?? false,
+      priceCents: row.priceCents ?? null,
+      packageId: row.packageId ?? null,
+      questions: (row.questions ?? []).map((q: any) => ({
+        id: q.id,
+        testId: row.id,
+        content: q.content,
+        order: q.order,
+        mediaUrl: q.mediaUrl ?? null,
+        options: (q.options ?? []).map((o: any) => ({
+          id: o.id,
+          questionId: q.id,
+          content: o.content,
+          isCorrect: o.isCorrect,
+          mediaUrl: o.mediaUrl ?? null,
+        })),
+        solutionText: q.solutionText ?? null,
+        solutionMediaUrl: q.solutionMediaUrl ?? null,
+      })),
+    };
   }
 }
