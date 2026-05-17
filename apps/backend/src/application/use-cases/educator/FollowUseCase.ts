@@ -1,5 +1,5 @@
-import { IFollowRepository } from '../../domain/interfaces/IFollowRepository';
-import { IAuditLogRepository } from '../../domain/interfaces/IAuditLogRepository';
+import { IFollowRepository } from '../../../domain/interfaces/IFollowRepository';
+import { IAuditLogRepository } from '../../../domain/interfaces/IAuditLogRepository';
 
 /**
  * Kullanıcı takip işlemi — eğitici veya sınav türü takip edilebilir.

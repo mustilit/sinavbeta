@@ -1,5 +1,5 @@
-import { FollowUseCase } from '../../src/application/use-cases/FollowUseCase';
-import { UnfollowUseCase } from '../../src/application/use-cases/UnfollowUseCase';
+import { FollowUseCase } from '../../src/application/use-cases/educator/FollowUseCase';
+import { UnfollowUseCase } from '../../src/application/use-cases/educator/UnfollowUseCase';
 
 test('follow idempotent', async () => {
   const repo: any = {

@@ -3,7 +3,7 @@ import { ApiTags, ApiOkResponse } from '@nestjs/swagger';
 import { Public } from '../decorators/public.decorator';
 import { GetSiteSettingsUseCase } from '../../application/use-cases/GetSiteSettingsUseCase';
 import { ListExamTypesUseCase } from '../../application/use-cases/ListExamTypesUseCase';
-import { ListFeaturedEducatorsUseCase } from '../../application/use-cases/ListFeaturedEducatorsUseCase';
+import { ListFeaturedEducatorsUseCase } from '../../application/use-cases/educator/ListFeaturedEducatorsUseCase';
 import { GetPopularPackagesUseCase } from '../../application/use-cases/GetPopularPackagesUseCase';
 import { GetPaymentSettingsUseCase } from '../../application/use-cases/GetPaymentSettingsUseCase';
 import type { PrismaClient } from '@prisma/client';

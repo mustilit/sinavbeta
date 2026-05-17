@@ -1,5 +1,5 @@
-import { IFollowRepository } from '../../domain/interfaces/IFollowRepository';
-import { IAuditLogRepository } from '../../domain/interfaces/IAuditLogRepository';
+import { IFollowRepository } from '../../../domain/interfaces/IFollowRepository';
+import { IAuditLogRepository } from '../../../domain/interfaces/IAuditLogRepository';
 
 /** Eğitici veya sınav türü takibini kaldırır. FollowUseCase ile simetrik. */
 export class UnfollowUseCase {

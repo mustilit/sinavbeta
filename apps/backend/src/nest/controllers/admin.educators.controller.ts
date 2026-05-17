@@ -2,9 +2,9 @@ import { Controller, Post, Param, Req, HttpCode, Inject } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOkResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiConflictResponse, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
 import { ParseUUIDPipe } from '../pipes/parse-uuid.pipe';
-import { ApproveEducatorUseCase } from '../../application/use-cases/ApproveEducatorUseCase';
-import { SuspendEducatorUseCase } from '../../application/use-cases/SuspendEducatorUseCase';
-import { UnsuspendEducatorUseCase } from '../../application/use-cases/UnsuspendEducatorUseCase';
+import { ApproveEducatorUseCase } from '../../application/use-cases/educator/ApproveEducatorUseCase';
+import { SuspendEducatorUseCase } from '../../application/use-cases/educator/SuspendEducatorUseCase';
+import { UnsuspendEducatorUseCase } from '../../application/use-cases/educator/UnsuspendEducatorUseCase';
 
 /**
  * Admin eğitici durum yönetimi — eğiticiyi onaylama, askıya alma ve askıyı kaldırma.

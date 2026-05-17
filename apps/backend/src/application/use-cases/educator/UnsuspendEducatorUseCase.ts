@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { AppError } from '../errors/AppError';
-import { IUserRepository } from '../../domain/interfaces/IUserRepository';
-import { IAuditLogRepository } from '../../domain/interfaces/IAuditLogRepository';
-import { USER_REPO, AUDIT_LOG_REPO } from '../constants';
+import { AppError } from '../../errors/AppError';
+import { IUserRepository } from '../../../domain/interfaces/IUserRepository';
+import { IAuditLogRepository } from '../../../domain/interfaces/IAuditLogRepository';
+import { USER_REPO, AUDIT_LOG_REPO } from '../../constants';
 
 /**
  * Admin unsuspends an educator.

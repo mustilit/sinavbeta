@@ -1,5 +1,5 @@
-import { ReviewAggregationService } from '../services/ReviewAggregationService';
-import { PrismaUserPreferenceRepository } from '../../infrastructure/repositories/PrismaUserPreferenceRepository';
+import { ReviewAggregationService } from '../../services/ReviewAggregationService';
+import { PrismaUserPreferenceRepository } from '../../../infrastructure/repositories/PrismaUserPreferenceRepository';
 
 /**
  * Eğitici profil sayfasını oluşturur: eğitici bilgisi, yayınlanan testler ve agregat puanlar.

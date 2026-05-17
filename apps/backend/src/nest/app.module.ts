@@ -57,9 +57,9 @@ import { CreateTopicUseCase } from '../application/use-cases/CreateTopicUseCase'
 import { UpdateTopicUseCase } from '../application/use-cases/UpdateTopicUseCase';
 import { DeleteTopicUseCase } from '../application/use-cases/DeleteTopicUseCase';
 import { GetTopicTreeUseCase } from '../application/use-cases/GetTopicTreeUseCase';
-import { ApproveEducatorUseCase } from '../application/use-cases/ApproveEducatorUseCase';
-import { SuspendEducatorUseCase } from '../application/use-cases/SuspendEducatorUseCase';
-import { UnsuspendEducatorUseCase } from '../application/use-cases/UnsuspendEducatorUseCase';
+import { ApproveEducatorUseCase } from '../application/use-cases/educator/ApproveEducatorUseCase';
+import { SuspendEducatorUseCase } from '../application/use-cases/educator/SuspendEducatorUseCase';
+import { UnsuspendEducatorUseCase } from '../application/use-cases/educator/UnsuspendEducatorUseCase';
 import { PrismaUserRepository } from '../infrastructure/repositories/PrismaUserRepository';
 import { PrismaObjectionRepository } from '../infrastructure/repositories/PrismaObjectionRepository';
 import { PrismaAttemptRepository } from '../infrastructure/repositories/PrismaAttemptRepository';
@@ -90,7 +90,7 @@ import { GetAdminSettingsUseCase } from '../application/use-cases/GetAdminSettin
 import { UpdateAdminSettingsUseCase } from '../application/use-cases/UpdateAdminSettingsUseCase';
 import { GetSiteSettingsUseCase } from '../application/use-cases/GetSiteSettingsUseCase';
 import { UpdateSiteSettingsUseCase } from '../application/use-cases/UpdateSiteSettingsUseCase';
-import { ListFeaturedEducatorsUseCase } from '../application/use-cases/ListFeaturedEducatorsUseCase';
+import { ListFeaturedEducatorsUseCase } from '../application/use-cases/educator/ListFeaturedEducatorsUseCase';
 import { ListContractsUseCase } from '../application/use-cases/ListContractsUseCase';
 import { CreateContractUseCase } from '../application/use-cases/CreateContractUseCase';
 import { UpdateContractUseCase } from '../application/use-cases/UpdateContractUseCase';

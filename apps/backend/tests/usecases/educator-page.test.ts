@@ -1,4 +1,4 @@
-const { GetEducatorPageUseCase } = require('../../src/application/use-cases/GetEducatorPageUseCase');
+const { GetEducatorPageUseCase } = require('../../src/application/use-cases/educator/GetEducatorPageUseCase');
 const prismaMod = require('../../src/infrastructure/database/prisma');
 const ReviewAgg = require('../../src/application/services/ReviewAggregationService');
 

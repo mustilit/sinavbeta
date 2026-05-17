@@ -1,7 +1,7 @@
-import { AppError } from '../errors/AppError';
-import type { IUserRepository } from '../../domain/interfaces/IUserRepository';
-import type { IAuditLogRepository } from '../../domain/interfaces/IAuditLogRepository';
-import type { UserPublic } from '../../domain/entities/User';
+import { AppError } from '../../errors/AppError';
+import type { IUserRepository } from '../../../domain/interfaces/IUserRepository';
+import type { IAuditLogRepository } from '../../../domain/interfaces/IAuditLogRepository';
+import type { UserPublic } from '../../../domain/entities/User';
 
 /** FR-E-02: Eğitici profil bilgilerini düzenleme. Whitelist: metadata (bio, avatarUrl, displayName vb.) */
 export class UpdateEducatorProfileUseCase {
