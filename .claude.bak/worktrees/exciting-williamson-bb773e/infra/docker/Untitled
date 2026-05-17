@@ -1,7 +1,0 @@
-C:\Users\mtulu\dal\infra\docker>docker compose ps
-NAME                IMAGE             COMMAND                  SERVICE    CREATED         STATUS                   PORTS
-docker-backend-1    docker-backend    "docker-entrypoint.s…"   backend    3 minutes ago   Up 3 minutes             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
-docker-frontend-1   docker-frontend   "docker-entrypoint.s…"   frontend   3 minutes ago   Up 3 minutes             0.0.0.0:5173->5173/tcp, [::]:5173->5173/tcp
-docker-postgres-1   postgres:15       "docker-entrypoint.s…"   postgres   13 hours ago    Up 5 minutes (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
-
-C:\Users\mtulu\dal\infra\docker>
