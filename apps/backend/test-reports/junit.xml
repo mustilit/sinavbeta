@@ -1,253 +1,93 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="80" failures="2" errors="0" time="19.723">
-  <testsuite name="undefined" errors="0" failures="2" skipped="0" timestamp="2026-05-17T18:18:55" time="4.134" tests="2">
-    <testcase classname=" educator not found throws" name=" educator not found throws" time="0.214">
-      <failure>Error: expect(received).rejects.toThrow(expected)
-
-Expected substring: &quot;EDUCATOR_NOT_FOUND&quot;
-Received message:   &quot;this.usersRepo.findById is not a function&quot;
-
-      18 |     const limit = Math.min(50, Math.max(1, opts?.limit ?? 20));
-      19 |
-    &gt; 20 |     const educator = await this.usersRepo.findById(educatorId);
-         |                                           ^
-      21 |     if (!educator || educator.role !== &apos;EDUCATOR&apos;) throw new Error(&apos;EDUCATOR_NOT_FOUND&apos;);
-      22 |
-      23 |     const prefs = await this.prefsRepo.findByUserId(educatorId);
-
-      at GetEducatorPageUseCase.execute (src/application/use-cases/educator/GetEducatorPageUseCase.ts:20:43)
-      at Object.&lt;anonymous&gt; (tests/usecases/educator-page.test.ts:15:19)
-    at Object.toThrow (C:\Users\mtulu\dal\apps\backend\node_modules\expect\build\index.js:218:22)
-    at Object.&lt;anonymous&gt; (C:\Users\mtulu\dal\apps\backend\tests\usecases\educator-page.test.ts:15:47)
-    at Promise.then.completed (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\utils.js:231:10)
-    at _callCircusTest (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\run.js:316:40)
-    at processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at _runTest (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\run.js:252:3)
-    at _runTestsForDescribeBlock (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\run.js:126:9)
-    at run (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\run.js:71:3)
-    at runAndTransformResultsToJestFormat (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
-    at jestAdapter (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
-    at runTestInternal (C:\Users\mtulu\dal\apps\backend\node_modules\jest-runner\build\runTest.js:367:16)
-    at runTest (C:\Users\mtulu\dal\apps\backend\node_modules\jest-runner\build\runTest.js:444:34)
-    at Object.worker (C:\Users\mtulu\dal\apps\backend\node_modules\jest-runner\build\testWorker.js:106:12)</failure>
+<testsuites name="jest tests" tests="39" failures="0" errors="0" time="9.144">
+  <testsuite name="sendWindow" errors="0" failures="0" skipped="0" timestamp="2026-05-19T19:18:34" time="5.016" tests="11">
+    <testcase classname="sendWindow disabled config → inWindow=true, delay=0" name="sendWindow disabled config → inWindow=true, delay=0" time="0.033">
     </testcase>
-    <testcase classname=" returns published tests and pagination meta with enrichment preferring TestStats" name=" returns published tests and pagination meta with enrichment preferring TestStats" time="0.005">
-      <failure>TypeError: this.usersRepo.findById is not a function
-    at GetEducatorPageUseCase.execute (C:\Users\mtulu\dal\apps\backend\src\application\use-cases\educator\GetEducatorPageUseCase.ts:20:43)
-    at Object.&lt;anonymous&gt; (C:\Users\mtulu\dal\apps\backend\tests\usecases\educator-page.test.ts:33:24)
-    at Promise.then.completed (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\utils.js:231:10)
-    at _callCircusTest (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\run.js:316:40)
-    at processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at _runTest (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\run.js:252:3)
-    at _runTestsForDescribeBlock (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\run.js:126:9)
-    at run (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\run.js:71:3)
-    at runAndTransformResultsToJestFormat (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
-    at jestAdapter (C:\Users\mtulu\dal\apps\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
-    at runTestInternal (C:\Users\mtulu\dal\apps\backend\node_modules\jest-runner\build\runTest.js:367:16)
-    at runTest (C:\Users\mtulu\dal\apps\backend\node_modules\jest-runner\build\runTest.js:444:34)
-    at Object.worker (C:\Users\mtulu\dal\apps\backend\node_modules\jest-runner\build\testWorker.js:106:12)</failure>
+    <testcase classname="sendWindow UTC pencere içi (10:00 UTC, 9-21) → inWindow" name="sendWindow UTC pencere içi (10:00 UTC, 9-21) → inWindow" time="0.103">
+    </testcase>
+    <testcase classname="sendWindow UTC pencere dışı sabah erken (06:00 UTC, 9-21) → bugün 09:00 UTC" name="sendWindow UTC pencere dışı sabah erken (06:00 UTC, 9-21) → bugün 09:00 UTC" time="0.007">
+    </testcase>
+    <testcase classname="sendWindow UTC pencere dışı gece (23:00 UTC, 9-21) → yarın 09:00 UTC" name="sendWindow UTC pencere dışı gece (23:00 UTC, 9-21) → yarın 09:00 UTC" time="0.002">
+    </testcase>
+    <testcase classname="sendWindow Tam endHour saatinde → pencere dışı (end exclusive)" name="sendWindow Tam endHour saatinde → pencere dışı (end exclusive)" time="0.005">
+    </testcase>
+    <testcase classname="sendWindow Tam startHour saatinde → pencere içi (start inclusive)" name="sendWindow Tam startHour saatinde → pencere içi (start inclusive)" time="0.002">
+    </testcase>
+    <testcase classname="sendWindow Europe/Istanbul pencere — yaz UTC+3, 09:00 yerel = 06:00 UTC" name="sendWindow Europe/Istanbul pencere — yaz UTC+3, 09:00 yerel = 06:00 UTC" time="0.003">
+    </testcase>
+    <testcase classname="sendWindow Europe/Istanbul — 03:00 UTC = 06:00 Istanbul → dışı, bugün 09:00 Istanbul (06:00 UTC)" name="sendWindow Europe/Istanbul — 03:00 UTC = 06:00 Istanbul → dışı, bugün 09:00 Istanbul (06:00 UTC)" time="0.003">
+    </testcase>
+    <testcase classname="sendWindow Geçersiz pencere (start &gt; end) → invalid" name="sendWindow Geçersiz pencere (start &gt; end) → invalid" time="0">
+    </testcase>
+    <testcase classname="sendWindow Geçersiz pencere (start == end) → invalid" name="sendWindow Geçersiz pencere (start == end) → invalid" time="0.006">
+    </testcase>
+    <testcase classname="sendWindow Hatalı TZ → UTC fallback ile çalışır, hata fırlatmaz" name="sendWindow Hatalı TZ → UTC fallback ile çalışır, hata fırlatmaz" time="0.003">
     </testcase>
   </testsuite>
-  <testsuite name="ListMarketplaceTestsUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:18:55" time="5.239" tests="1">
-    <testcase classname="ListMarketplaceTestsUseCase filters by examTypeId and pagination" name="ListMarketplaceTestsUseCase filters by examTypeId and pagination" time="0.592">
+  <testsuite name="BrevoApiProvider" errors="0" failures="0" skipped="0" timestamp="2026-05-19T19:18:34" time="4.944" tests="7">
+    <testcase classname="BrevoApiProvider 200 + messageId → success" name="BrevoApiProvider 200 + messageId → success" time="0.039">
+    </testcase>
+    <testcase classname="BrevoApiProvider 429 → rate_limited retryable" name="BrevoApiProvider 429 → rate_limited retryable" time="0.005">
+    </testcase>
+    <testcase classname="BrevoApiProvider 401 → auth_failure non-retryable" name="BrevoApiProvider 401 → auth_failure non-retryable" time="0.004">
+    </testcase>
+    <testcase classname="BrevoApiProvider 502 → 5xx retryable" name="BrevoApiProvider 502 → 5xx retryable" time="0.003">
+    </testcase>
+    <testcase classname="BrevoApiProvider 400 invalid recipient → non-retryable" name="BrevoApiProvider 400 invalid recipient → non-retryable" time="0.002">
+    </testcase>
+    <testcase classname="BrevoApiProvider Network failure → connection_failed retryable" name="BrevoApiProvider Network failure → connection_failed retryable" time="0.006">
+    </testcase>
+    <testcase classname="BrevoApiProvider apiKey eksikse constructor fırlatır" name="BrevoApiProvider apiKey eksikse constructor fırlatır" time="0.053">
     </testcase>
   </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:18:55" time="5.11" tests="2">
-    <testcase classname=" minRating filters correctly" name=" minRating filters correctly" time="0.546">
+  <testsuite name="EmailDispatcher.shouldSend" errors="0" failures="0" skipped="0" timestamp="2026-05-19T19:18:34" time="5.307" tests="8">
+    <testcase classname="EmailDispatcher.shouldSend global kapalı → BLOCKED_BY_ADMIN" name="EmailDispatcher.shouldSend global kapalı → BLOCKED_BY_ADMIN" time="0.025">
     </testcase>
-    <testcase classname=" GetRecommended returns items with required fields" name=" GetRecommended returns items with required fields" time="0.013">
+    <testcase classname="EmailDispatcher.shouldSend CANDIDATE NOTIFY off → BLOCKED_BY_ADMIN" name="EmailDispatcher.shouldSend CANDIDATE NOTIFY off → BLOCKED_BY_ADMIN" time="0.008">
     </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:00" time="3.475" tests="2">
-    <testcase classname=" returns limited when participants &lt;5" name=" returns limited when participants &lt;5" time="0.005">
+    <testcase classname="EmailDispatcher.shouldSend CANDIDATE CRITICAL preference yoksayılır" name="EmailDispatcher.shouldSend CANDIDATE CRITICAL preference yoksayılır" time="0.005">
     </testcase>
-    <testcase classname=" computes histogram and percentiles" name=" computes histogram and percentiles" time="0.305">
+    <testcase classname="EmailDispatcher.shouldSend SUPPRESSED → SUPPRESSED" name="EmailDispatcher.shouldSend SUPPRESSED → SUPPRESSED" time="0.002">
     </testcase>
-  </testsuite>
-  <testsuite name="Publish/Unpublish UseCases" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:00" time="4.281" tests="2">
-    <testcase classname="Publish/Unpublish UseCases publishes when rules satisfied and logs audit" name="Publish/Unpublish UseCases publishes when rules satisfied and logs audit" time="0.123">
+    <testcase classname="EmailDispatcher.shouldSend Süresi geçmiş suppression → bypass" name="EmailDispatcher.shouldSend Süresi geçmiş suppression → bypass" time="0.002">
     </testcase>
-    <testcase classname="Publish/Unpublish UseCases unpublishes and logs audit" name="Publish/Unpublish UseCases unpublishes and logs audit" time="0.003">
+    <testcase classname="EmailDispatcher.shouldSend NOTIFY + preference false → BLOCKED_BY_PREFS" name="EmailDispatcher.shouldSend NOTIFY + preference false → BLOCKED_BY_PREFS" time="0.001">
     </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:04" time="1.278" tests="5">
-    <testcase classname=" create refund fails if objections &lt;10" name=" create refund fails if objections &lt;10" time="0.046">
+    <testcase classname="EmailDispatcher.shouldSend Günlük cap aşımı → BLOCKED_BY_PREFS" name="EmailDispatcher.shouldSend Günlük cap aşımı → BLOCKED_BY_PREFS" time="0.004">
     </testcase>
-    <testcase classname=" create refund succeeds if objections &gt;=10" name=" create refund succeeds if objections &gt;=10" time="0.006">
-    </testcase>
-    <testcase classname=" duplicate refund -&gt; conflict" name=" duplicate refund -&gt; conflict" time="0.004">
-    </testcase>
-    <testcase classname=" admin approve -&gt; status updated" name=" admin approve -&gt; status updated" time="0.005">
-    </testcase>
-    <testcase classname=" admin reject -&gt; status updated" name=" admin reject -&gt; status updated" time="0.002">
+    <testcase classname="EmailDispatcher.shouldSend Tüm kontroller geçti → ALLOWED" name="EmailDispatcher.shouldSend Tüm kontroller geçti → ALLOWED" time="0.002">
     </testcase>
   </testsuite>
-  <testsuite name="PurchaseUseCase — paket satın alma (ana akış)" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:18:59" time="6.556" tests="24">
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma purchase kaydında packageId doğru set edilir" name="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma purchase kaydında packageId doğru set edilir" time="0.622">
+  <testsuite name="preferenceMap" errors="0" failures="0" skipped="0" timestamp="2026-05-19T19:18:39" time="0.605" tests="6">
+    <testcase classname="preferenceMap default keys match" name="preferenceMap default keys match" time="0.033">
     </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma purchase.testId paket içindeki ilk ExamTest ID si (NOT NULL workaround)" name="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma purchase.testId paket içindeki ilk ExamTest ID si (NOT NULL workaround)" time="0.227">
+    <testcase classname="preferenceMap CRITICAL şablonlar preference filtresi atlar (null map)" name="preferenceMap CRITICAL şablonlar preference filtresi atlar (null map)" time="0.001">
     </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma paket fiyatı purchase.amountCents e yansır" name="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma paket fiyatı purchase.amountCents e yansır" time="0.162">
+    <testcase classname="preferenceMap NOTIFY/BULK şablonlar uygun preference key e bağlanır" name="preferenceMap NOTIFY/BULK şablonlar uygun preference key e bağlanır" time="0.003">
     </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma paymentProvider (iyzico / google_pay / amazon_pay) kaydedilir" name="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma paymentProvider (iyzico / google_pay / amazon_pay) kaydedilir" time="0.384">
+    <testcase classname="preferenceMap readEmailPreferences null/undefined → default" name="preferenceMap readEmailPreferences null/undefined → default" time="0.004">
     </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma attempt + auditLog da oluşturulur" name="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma attempt + auditLog da oluşturulur" time="0.082">
+    <testcase classname="preferenceMap readEmailPreferences partial override" name="preferenceMap readEmailPreferences partial override" time="0.003">
     </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma currency TRY varsayılan olarak kaydedilir" name="PurchaseUseCase — paket satın alma (ana akış) başarılı paket satın alma currency TRY varsayılan olarak kaydedilir" time="0.098">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) fiyat hesaplama ExamTest priceCents null olsa bile paketin fiyatını kullanır" name="PurchaseUseCase — paket satın alma (ana akış) fiyat hesaplama ExamTest priceCents null olsa bile paketin fiyatını kullanır" time="0.079">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) fiyat hesaplama geçerli kampanya fiyatı paket fiyatının önüne geçer" name="PurchaseUseCase — paket satın alma (ana akış) fiyat hesaplama geçerli kampanya fiyatı paket fiyatının önüne geçer" time="0.211">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) fiyat hesaplama süresi geçmiş kampanya kullanılmaz" name="PurchaseUseCase — paket satın alma (ana akış) fiyat hesaplama süresi geçmiş kampanya kullanılmaz" time="0.17">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) indirim kodu %50 indirim uygulanır, purchase.discountCodeId set edilir" name="PurchaseUseCase — paket satın alma (ana akış) indirim kodu %50 indirim uygulanır, purchase.discountCodeId set edilir" time="0.149">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) indirim kodu %50 üzeri indirim reddedilir (güvenlik kuralı)" name="PurchaseUseCase — paket satın alma (ana akış) indirim kodu %50 üzeri indirim reddedilir (güvenlik kuralı)" time="0.007">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) indirim kodu süresi dolmuş indirim kodu reddedilir" name="PurchaseUseCase — paket satın alma (ana akış) indirim kodu süresi dolmuş indirim kodu reddedilir" time="0.004">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) indirim kodu maxUses dolunca reddedilir" name="PurchaseUseCase — paket satın alma (ana akış) indirim kodu maxUses dolunca reddedilir" time="0.004">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) indirim kodu race condition: updateMany 0 kayıt → DISCOUNT_MAXED_OUT" name="PurchaseUseCase — paket satın alma (ana akış) indirim kodu race condition: updateMany 0 kayıt → DISCOUNT_MAXED_OUT" time="0.004">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları FR-Y-05: purchasesEnabled=false → PURCHASES_DISABLED" name="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları FR-Y-05: purchasesEnabled=false → PURCHASES_DISABLED" time="0.002">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları packageId veya candidateId boşsa INVALID_INPUT" name="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları packageId veya candidateId boşsa INVALID_INPUT" time="0.003">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları paket yayınlanmamışsa TEST_NOT_PUBLISHED" name="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları paket yayınlanmamışsa TEST_NOT_PUBLISHED" time="0.003">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları paket içi boşsa PACKAGE_EMPTY" name="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları paket içi boşsa PACKAGE_EMPTY" time="0.004">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları paket bulunamazsa TEST_NOT_FOUND" name="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları paket bulunamazsa TEST_NOT_FOUND" time="0.002">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları aday SUSPENDED durumdaysa CANDIDATE_NOT_ACTIVE" name="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları aday SUSPENDED durumdaysa CANDIDATE_NOT_ACTIVE" time="0.003">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları aynı paketi ikinci kez alırsa ALREADY_PURCHASED (P2002 → 409)" name="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları aynı paketi ikinci kez alırsa ALREADY_PURCHASED (P2002 → 409)" time="0.004">
-    </testcase>
-    <testcase classname="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları paket içindeki ExamTest DRAFT olsa bile yayınlı paketten satın alınabilir" name="PurchaseUseCase — paket satın alma (ana akış) hata senaryoları paket içindeki ExamTest DRAFT olsa bile yayınlı paketten satın alınabilir" time="0.194">
-    </testcase>
-    <testcase classname="PurchaseUseCase — standalone ExamTest satın alma (legacy) PUBLISHED ExamTest satın alınabilir, packageId set edilmez" name="PurchaseUseCase — standalone ExamTest satın alma (legacy) PUBLISHED ExamTest satın alınabilir, packageId set edilmez" time="0.14">
-    </testcase>
-    <testcase classname="PurchaseUseCase — standalone ExamTest satın alma (legacy) DRAFT ExamTest standalone satın alınamaz" name="PurchaseUseCase — standalone ExamTest satın alma (legacy) DRAFT ExamTest standalone satın alınamaz" time="0.003">
+    <testcase classname="preferenceMap readEmailPreferences yanlış tip alanları yoksayar" name="preferenceMap readEmailPreferences yanlış tip alanları yoksayar" time="0.003">
     </testcase>
   </testsuite>
-  <testsuite name="stats worker handler" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:04" time="2.511" tests="2">
-    <testcase classname="stats worker handler calls processor with prisma and testId" name="stats worker handler calls processor with prisma and testId" time="0.014">
+  <testsuite name="email/encryption" errors="0" failures="0" skipped="0" timestamp="2026-05-19T19:18:39" time="0.771" tests="4">
+    <testcase classname="email/encryption round-trip encryptSecret/decryptSecret" name="email/encryption round-trip encryptSecret/decryptSecret" time="0.149">
     </testcase>
-    <testcase classname="stats worker handler throws when missing testId" name="stats worker handler throws when missing testId" time="0.047">
+    <testcase classname="email/encryption encryptJson/decryptJson preserves structure" name="email/encryption encryptJson/decryptJson preserves structure" time="0.01">
     </testcase>
-  </testsuite>
-  <testsuite name="GetAttemptStateUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:06" time="1.513" tests="3">
-    <testcase classname="GetAttemptStateUseCase throws when not owner" name="GetAttemptStateUseCase throws when not owner" time="0.077">
+    <testcase classname="email/encryption decrypt fails with wrong key" name="email/encryption decrypt fails with wrong key" time="0.045">
     </testcase>
-    <testcase classname="GetAttemptStateUseCase maps answered and blank counts correctly" name="GetAttemptStateUseCase maps answered and blank counts correctly" time="0.006">
-    </testcase>
-    <testcase classname="GetAttemptStateUseCase computes remainingSeconds for timed test" name="GetAttemptStateUseCase computes remainingSeconds for timed test" time="0.034">
+    <testcase classname="email/encryption maskSecret hides middle" name="email/encryption maskSecret hides middle" time="0.004">
     </testcase>
   </testsuite>
-  <testsuite name="GetQuestionSolutionUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:06" time="1.713" tests="5">
-    <testcase classname="GetQuestionSolutionUseCase throws when not owner" name="GetQuestionSolutionUseCase throws when not owner" time="0.058">
+  <testsuite name="unsubscribeToken" errors="0" failures="0" skipped="0" timestamp="2026-05-19T19:18:40" time="0.689" tests="3">
+    <testcase classname="unsubscribeToken üretilen token kendi imzasıyla doğrulanır" name="unsubscribeToken üretilen token kendi imzasıyla doğrulanır" time="0.077">
     </testcase>
-    <testcase classname="GetQuestionSolutionUseCase throws when attempt not submitted" name="GetQuestionSolutionUseCase throws when attempt not submitted" time="0.001">
+    <testcase classname="unsubscribeToken imza bozulursa doğrulama fail" name="unsubscribeToken imza bozulursa doğrulama fail" time="0.006">
     </testcase>
-    <testcase classname="GetQuestionSolutionUseCase throws when solutions disabled" name="GetQuestionSolutionUseCase throws when solutions disabled" time="0.033">
-    </testcase>
-    <testcase classname="GetQuestionSolutionUseCase returns solution when ok" name="GetQuestionSolutionUseCase returns solution when ok" time="0.032">
-    </testcase>
-    <testcase classname="GetQuestionSolutionUseCase allows TIMEOUT attempts to read solutions" name="GetQuestionSolutionUseCase allows TIMEOUT attempts to read solutions" time="0.001">
-    </testcase>
-  </testsuite>
-  <testsuite name="SubmitAttemptUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:06" time="2" tests="3">
-    <testcase classname="SubmitAttemptUseCase finalizes attempt using stored answers" name="SubmitAttemptUseCase finalizes attempt using stored answers" time="0.009">
-    </testcase>
-    <testcase classname="SubmitAttemptUseCase is idempotent when already submitted" name="SubmitAttemptUseCase is idempotent when already submitted" time="0.004">
-    </testcase>
-    <testcase classname="SubmitAttemptUseCase propagates error when auditLog.create fails inside transaction" name="SubmitAttemptUseCase propagates error when auditLog.create fails inside transaction" time="0.107">
-    </testcase>
-  </testsuite>
-  <testsuite name="SubmitAnswerUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:07" time="1.885" tests="4">
-    <testcase classname="SubmitAnswerUseCase creates attempt answer when not existing" name="SubmitAnswerUseCase creates attempt answer when not existing" time="0.01">
-    </testcase>
-    <testcase classname="SubmitAnswerUseCase updates attempt answer when exists" name="SubmitAnswerUseCase updates attempt answer when exists" time="0.029">
-    </testcase>
-    <testcase classname="SubmitAnswerUseCase rejects when option does not belong to question" name="SubmitAnswerUseCase rejects when option does not belong to question" time="0.072">
-    </testcase>
-    <testcase classname="SubmitAnswerUseCase deletes existing answer when optionId missing" name="SubmitAnswerUseCase deletes existing answer when optionId missing" time="0.006">
-    </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:08" time="1.901" tests="3">
-    <testcase classname=" cannot create review without purchase" name=" cannot create review without purchase" time="0.032">
-    </testcase>
-    <testcase classname=" cannot create review without submitted attempt" name=" cannot create review without submitted attempt" time="0.003">
-    </testcase>
-    <testcase classname=" upsert review works" name=" upsert review works" time="0.008">
-    </testcase>
-  </testsuite>
-  <testsuite name="GetAttemptResultUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:08" time="1.314" tests="3">
-    <testcase classname="GetAttemptResultUseCase throws when not owner" name="GetAttemptResultUseCase throws when not owner" time="0.028">
-    </testcase>
-    <testcase classname="GetAttemptResultUseCase throws when attempt not finalized" name="GetAttemptResultUseCase throws when attempt not finalized" time="0.007">
-    </testcase>
-    <testcase classname="GetAttemptResultUseCase computes summary and question analysis" name="GetAttemptResultUseCase computes summary and question analysis" time="0.007">
-    </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:10" time="0.308" tests="2">
-    <testcase classname=" follow idempotent" name=" follow idempotent" time="0.005">
-    </testcase>
-    <testcase classname=" unfollow idempotent" name=" unfollow idempotent" time="0.004">
-    </testcase>
-  </testsuite>
-  <testsuite name="ApproveRefundUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:10" time="0.3" tests="5">
-    <testcase classname="ApproveRefundUseCase calls refundRepo.approve and processor.process on success" name="ApproveRefundUseCase calls refundRepo.approve and processor.process on success" time="0.005">
-    </testcase>
-    <testcase classname="ApproveRefundUseCase throws UNAUTHORIZED when actorId is missing" name="ApproveRefundUseCase throws UNAUTHORIZED when actorId is missing" time="0.022">
-    </testcase>
-    <testcase classname="ApproveRefundUseCase throws REFUND_NOT_FOUND when refund does not exist" name="ApproveRefundUseCase throws REFUND_NOT_FOUND when refund does not exist" time="0.002">
-    </testcase>
-    <testcase classname="ApproveRefundUseCase throws REFUND_NOT_ACTIONABLE for PENDING status" name="ApproveRefundUseCase throws REFUND_NOT_ACTIONABLE for PENDING status" time="0.002">
-    </testcase>
-    <testcase classname="ApproveRefundUseCase propagates error when approve() throws (simulates tx rollback — purchase.status unchanged)" name="ApproveRefundUseCase propagates error when approve() throws (simulates tx rollback — purchase.status unchanged)" time="0.003">
-    </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:10" time="0.28" tests="1">
-    <testcase classname=" worker health endpoint placeholder" name=" worker health endpoint placeholder" time="0.003">
-    </testcase>
-  </testsuite>
-  <testsuite name="TimeoutAttemptUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:09" time="0.868" tests="2">
-    <testcase classname="TimeoutAttemptUseCase throws if not owner" name="TimeoutAttemptUseCase throws if not owner" time="0.023">
-    </testcase>
-    <testcase classname="TimeoutAttemptUseCase is idempotent when already timed out" name="TimeoutAttemptUseCase is idempotent when already timed out" time="0.013">
-    </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:10" time="0.273" tests="1">
-    <testcase classname=" weekly digest enqueues emails" name=" weekly digest enqueues emails" time="0.007">
-    </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:10" time="0.304" tests="1">
-    <testcase classname=" publish invalidates follower caches" name=" publish invalidates follower caches" time="0.007">
-    </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:10" time="0.302" tests="6">
-    <testcase classname=" no follows -&gt; fallback only" name=" no follows -&gt; fallback only" time="0.004">
-    </testcase>
-    <testcase classname=" educator follow -&gt; followed boosted" name=" educator follow -&gt; followed boosted" time="0.004">
-    </testcase>
-    <testcase classname=" examType follow -&gt; followed examType boosted" name=" examType follow -&gt; followed examType boosted" time="0.004">
-    </testcase>
-    <testcase classname=" dedupe when both follow types include same test" name=" dedupe when both follow types include same test" time="0.005">
-    </testcase>
-    <testcase classname=" fallback only when no follows" name=" fallback only when no follows" time="0.001">
-    </testcase>
-    <testcase classname=" limit respected and dedupe" name=" limit respected and dedupe" time="0.003">
-    </testcase>
-  </testsuite>
-  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2026-05-17T18:19:10" time="0.249" tests="1">
-    <testcase classname=" update notification preferences creates or updates" name=" update notification preferences creates or updates" time="0.002">
+    <testcase classname="unsubscribeToken formatsız input reddedilir" name="unsubscribeToken formatsız input reddedilir" time="0.003">
     </testcase>
   </testsuite>
 </testsuites>

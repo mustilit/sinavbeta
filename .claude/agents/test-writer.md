@@ -91,6 +91,14 @@ describe('CreateDiscountCodeUseCase', () => {
 - Zaman → `vi.useFakeTimers()` veya `jest.useFakeTimers()`.
 - `CheckDuplicateQuestionUseCase` gibi Prisma bağımlı Use Case'ler → prisma mock.
 
+### Mock Disiplini — yaygın hatalar (18 May 2026 test koşumu)
+
+1. **Constructor default'u olarak `new PrismaXRepository()`:** Fake repo geçmek yetmez — default değer module import'u tetikler, gerçek Prisma yüklenir. `jest.mock('../../src/infrastructure/database/prisma', () => ({ prisma: { ... } }))` ile prisma modülünü tamamen değiştir.
+2. **Use case içinde dinamik `require('prisma')`:** `PublishTestUseCase` (adminSettings kill-switch), `ListMarketplaceTestsUseCase` (testStats lookup). Üst seviye prisma mock şart.
+3. **Worker/cron modülü test'leri:** Top-level `import { prisma }` yapan modüller (`stats.worker.ts` vb.) load edildiğinde engine binary yoksa `prisma.$on('error')` handler exit'i kirletir. Test dosyasının başında `jest.mock('../../src/infrastructure/database/prisma', () => ({ prisma: {} }))`.
+4. **QueueService / RedisCache:** `REDIS_DISABLED=1` env + jest.mock factory ile 20sn BullMQ timeout'unu önle.
+5. **Cross-platform Prisma binary:** Schema'da `binaryTargets = ["native", "debian-openssl-3.0.x"]` ekle veya test'lerde tamamen mock'la — Windows'tan Linux'a mount'lanan `node_modules` engine bulamaz.
+
 ## Komutlar
 
 ```bash

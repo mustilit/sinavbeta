@@ -5,6 +5,8 @@ import Sidebar from "@/components/layout/Sidebar";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AUTH_PAGES } from "@/lib/routeRoles";
+import { ConsentBanner } from "@/components/ConsentBanner";
+import { TierUpgradePrompt } from "@/components/TierUpgradePrompt";
 
 export default function Layout({ children, currentPageName }) {
   const { user } = useAuth();
@@ -19,32 +21,45 @@ export default function Layout({ children, currentPageName }) {
   // Login/Register: sadece içerik, sidebar yok
   if (isAuthPage) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-950">
-        {children}
-      </div>
+      <>
+        <div className="min-h-screen bg-white dark:bg-gray-950">
+          {children}
+        </div>
+        <ConsentBanner />
+        <TierUpgradePrompt />
+      </>
     );
   }
 
   // Tam ekran (TakeTest vb.): sidebar yok, padding var
   if (isFullScreen) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
-        <div className="p-4 lg:p-8">{children}</div>
-      </div>
+      <>
+        <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+          <div className="p-4 lg:p-8">{children}</div>
+        </div>
+        <ConsentBanner />
+        <TierUpgradePrompt />
+      </>
     );
   }
 
   // Giriş yok: sidebar yok (public sayfalar)
   if (!user) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-950">
-        {children}
-      </div>
+      <>
+        <div className="min-h-screen bg-white dark:bg-gray-950">
+          {children}
+        </div>
+        <ConsentBanner />
+        <TierUpgradePrompt />
+      </>
     );
   }
 
   // Giriş yapmış: sidebar + içerik
   return (
+    <>
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 flex">
       <Button
         variant="ghost"
@@ -77,5 +92,8 @@ export default function Layout({ children, currentPageName }) {
         <div className="p-6 lg:p-8">{children}</div>
       </main>
     </div>
+    <ConsentBanner />
+    <TierUpgradePrompt />
+    </>
   );
 }

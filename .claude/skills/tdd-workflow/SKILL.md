@@ -141,3 +141,85 @@ Flaky test'i "yeniden çalıştır" ile geçiştirmek → testlerin güvenini ç
 - Util: %100
 
 Kapsam metrik değil, rehber. %100 kapsam anlamsız test'lerle elde edilebilir — kaliteye bak.
+
+## Sık Karşılaşılan Tuzaklar (18 May 2026 — test koşumu raporundan)
+
+### 1. Use case constructor'ında default Prisma repository
+
+Eğer use case constructor opsiyonel parametre olarak Prisma repository alıp default olarak yeni instance üretiyorsa, test edilen senaryoda fake repo geçilse bile **module import** sırasında gerçek Prisma yüklenir. Bu durumda jest.mock ile prisma modülünü mock'la veya parametreyi her zaman explicit ver.
+
+```ts
+// ❌ KÖTÜ — test gerçek Prisma'yı yükler (engine binary yoksa patlar)
+constructor(
+  private repo: any,
+  private prefsRepo = new PrismaUserPreferenceRepository(), // default → real prisma
+) {}
+
+// ✅ İYİ — test mock geçer, ama yine de prisma modülünü mock et:
+jest.mock('../../src/infrastructure/database/prisma', () => ({
+  prisma: { userPreference: { findUnique: jest.fn(async () => null) } },
+}));
+```
+
+### 2. Dinamik `require('prisma')` çağrıları
+
+Use case içinde `const { prisma } = require(...)` yapan kod, jest.mock'sız test'lerde gerçek Prisma'ya bağlanmaya çalışır. Bu satırlar:
+
+- `PublishTestUseCase` — `adminSettings.findFirst` kill-switch
+- `ListMarketplaceTestsUseCase` — `testStats.findMany` cache lookup
+
+Bu tip use case'leri test ederken dosyanın en üstünde mock şart:
+
+```ts
+jest.mock('../../src/infrastructure/database/prisma', () => ({
+  prisma: {
+    adminSettings: { findFirst: jest.fn(async () => ({ testPublishingEnabled: true })) },
+    testStats: { findMany: jest.fn(async () => []) },
+  },
+}));
+```
+
+### 3. Redis / Queue bağımlılıkları
+
+`REDIS_DISABLED=1` env ile testlerin BullMQ/Redis bağlantısı denemesi engellenebilir. Ek olarak `QueueService` ve `RedisCache` modüllerini jest.mock'la — test ortamında 20sn timeout'a düşmeye karşı garanti.
+
+```ts
+jest.mock('../../src/infrastructure/queue/queue.service', () => ({
+  QueueService: jest.fn().mockImplementation(() => ({
+    enqueueJob: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+jest.mock('../../src/infrastructure/cache/RedisCache', () => ({
+  RedisCache: jest.fn().mockImplementation(() => ({
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+    delByPrefix: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+```
+
+### 4. Worker modülleri (cron, queue) prisma import eder
+
+`stats.worker.ts` gibi modüller top-level'da `import { prisma } from '../database/prisma'` yapar. Test bu modülü import ettiğinde gerçek PrismaClient başlatılır. `prisma.ts` ise `$on('error')` handler register eder; engine binary yokken bu handler tetiklenir ve process exit code 1 olur. Çözüm: bu tür modüller için test başında prisma mock.
+
+```ts
+// tests/cron/stats-worker.test.ts
+jest.mock('../../src/infrastructure/database/prisma', () => ({ prisma: {} }));
+const { makeStatsJobHandler } = require('../../src/infrastructure/queue/stats.worker');
+```
+
+### 5. Prisma binary cross-platform
+
+Windows'ta `prisma generate` çalıştırılmışsa engine `query_engine-windows.dll.node` olur. Aynı `node_modules` Linux container'a mount edilirse engine bulunmaz. Çözümler:
+- `prisma/schema.prisma`'ya `binaryTargets = ["native", "debian-openssl-3.0.x"]` ekle
+- CI'da `prisma generate` build adımının öncesinde çalıştır
+- Test environment'ında prisma'yı tamamen mock'la (yukarıdaki örnekler)
+
+### 6. Çekirdek kural
+
+Bir use case test'i CI'da yeşil ama lokalde sürekli timeout/hang yaşıyorsa, %90 ihtimal eksik mock vardır. `--detectOpenHandles` aç ve neyin asılı kaldığını öğren:
+
+```bash
+jest --runInBand --detectOpenHandles tests/usecases/<test>.test.ts
+```

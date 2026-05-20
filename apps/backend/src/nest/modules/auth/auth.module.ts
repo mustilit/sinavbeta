@@ -16,6 +16,8 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { CONTRACT_REPO, CONTRACT_ACCEPTANCE_REPO, USER_REPO } from '../../../application/constants';
 import { CaptchaService } from '../../services/captcha.service';
 import { LoginBruteforceGuard } from '../../guards/login-bruteforce.guard';
+import { AuditLogger } from '../../../infrastructure/audit/AuditLogger';
+import { SendEmailUseCase } from '../../../application/use-cases/email/SendEmailUseCase';
 
 @Module({
   controllers: [AuthController],
@@ -30,20 +32,29 @@ import { LoginBruteforceGuard } from '../../guards/login-bruteforce.guard';
         new RegisterUseCase(userRepo, passwordService),
       inject: [PrismaUserRepository, PasswordService],
     },
+    AuditLogger,
     {
       provide: LoginUseCase,
-      useFactory: (userRepo: PrismaUserRepository, passwordService: PasswordService, jwtService: JwtService) =>
-        new LoginUseCase(userRepo, passwordService, jwtService),
-      inject: [PrismaUserRepository, PasswordService, JwtService],
+      useFactory: (
+        userRepo: PrismaUserRepository,
+        passwordService: PasswordService,
+        jwtService: JwtService,
+        audit: AuditLogger,
+      ) => new LoginUseCase(userRepo, passwordService, jwtService, audit),
+      inject: [PrismaUserRepository, PasswordService, JwtService, AuditLogger],
     },
     CaptchaService,
     LoginBruteforceGuard,
     MockEmailProvider,
+    { provide: SendEmailUseCase, useFactory: () => new SendEmailUseCase() },
     {
       provide: ForgotPasswordUseCase,
-      useFactory: (userRepo: PrismaUserRepository, emailProvider: MockEmailProvider) =>
-        new ForgotPasswordUseCase(userRepo, emailProvider),
-      inject: [PrismaUserRepository, MockEmailProvider],
+      useFactory: (
+        userRepo: PrismaUserRepository,
+        emailProvider: MockEmailProvider,
+        sendEmail: SendEmailUseCase,
+      ) => new ForgotPasswordUseCase(userRepo, emailProvider, sendEmail),
+      inject: [PrismaUserRepository, MockEmailProvider, SendEmailUseCase],
     },
     {
       provide: ResetPasswordUseCase,
@@ -76,4 +87,3 @@ import { LoginBruteforceGuard } from '../../guards/login-bruteforce.guard';
   ],
 })
 export class AuthModule {}
-

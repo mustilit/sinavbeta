@@ -1,32 +1,54 @@
 import { Injectable } from '@nestjs/common';
 import type { AdminSettings } from '../../../domain/types';
+import { AuditLogger, AuditContext } from '../../../infrastructure/audit/AuditLogger';
+import { logger } from '../../../infrastructure/logger/logger';
 
-/** FR-Y-06: Komisyon + KDV ayarı */
+type AdminSettingsPrisma = {
+  adminSettings: {
+    upsert: (args: any) => Promise<any>;
+    findUnique?: (args: any) => Promise<any>;
+  };
+  $executeRaw?: (query: TemplateStringsArray, ...values: any[]) => Promise<any>;
+  $queryRaw?: (query: TemplateStringsArray, ...values: any[]) => Promise<any>;
+};
+
+export interface UpdateAdminSettingsInput {
+  commissionPercent?: number;
+  vatPercent?: number;
+  purchasesEnabled?: boolean;
+  packageCreationEnabled?: boolean;
+  testPublishingEnabled?: boolean;
+  testAttemptsEnabled?: boolean;
+  adPurchasesEnabled?: boolean;
+  twoFactorSystemEnabled?: boolean;
+  minPackagePriceCents?: number;
+  minQuestionsPerTest?: number;
+  maxQuestionsPerTest?: number;
+  maxTestsPerPackage?: number;
+  maxLiveQuestions?: number;
+}
+
+/**
+ * FR-Y-06: Komisyon + KDV + feature flag ayarlari.
+ *
+ * Audit: Her degisiklik (before/after diff) ADMIN_SETTINGS_UPDATED audit log'a
+ * yazilir. `audit` constructor'da verilmezse fallback olarak structured logger'a
+ * yazilir (geriye donuk uyumluluk icin opsiyonel birakildi).
+ */
 @Injectable()
 export class UpdateAdminSettingsUseCase {
+  constructor(private readonly audit?: AuditLogger) {}
+
   async execute(
-    prisma: {
-      adminSettings: { upsert: (args: any) => Promise<any> };
-      $executeRaw?: (query: TemplateStringsArray, ...values: any[]) => Promise<any>;
-      $queryRaw?: (query: TemplateStringsArray, ...values: any[]) => Promise<any>;
-    },
-    input: {
-      commissionPercent?: number;
-      vatPercent?: number;
-      purchasesEnabled?: boolean;
-      packageCreationEnabled?: boolean;
-      testPublishingEnabled?: boolean;
-      testAttemptsEnabled?: boolean;
-      adPurchasesEnabled?: boolean;
-      minPackagePriceCents?: number;
-      minQuestionsPerTest?: number;
-      maxQuestionsPerTest?: number;
-      maxTestsPerPackage?: number;
-      maxLiveQuestions?: number;
-    },
+    prisma: AdminSettingsPrisma,
+    input: UpdateAdminSettingsInput,
+    ctx?: AuditContext,
   ): Promise<AdminSettings> {
-    // minPackagePriceCents Prisma client'ın eski sürümünde tanımsız olabilir;
-    // güvenli yol: önce normal upsert, sonra raw SQL ile güncelle.
+    // 1) Audit "before" snapshot — degisiklik oncesi durumu yakala
+    const before = await this.snapshot(prisma);
+
+    // minPackagePriceCents Prisma client'in eski surumunde tanimsiz olabilir;
+    // guvenli yol: once normal upsert, sonra raw SQL ile guncelle.
     const row = await prisma.adminSettings.upsert({
       where: { id: 1 },
       create: {
@@ -38,6 +60,7 @@ export class UpdateAdminSettingsUseCase {
         testPublishingEnabled: input.testPublishingEnabled ?? true,
         testAttemptsEnabled: input.testAttemptsEnabled ?? true,
         adPurchasesEnabled: input.adPurchasesEnabled ?? true,
+        twoFactorSystemEnabled: input.twoFactorSystemEnabled ?? false,
       },
       update: {
         ...(input.commissionPercent !== undefined && { commissionPercent: input.commissionPercent }),
@@ -47,10 +70,11 @@ export class UpdateAdminSettingsUseCase {
         ...(input.testPublishingEnabled !== undefined && { testPublishingEnabled: input.testPublishingEnabled }),
         ...(input.testAttemptsEnabled !== undefined && { testAttemptsEnabled: input.testAttemptsEnabled }),
         ...(input.adPurchasesEnabled !== undefined && { adPurchasesEnabled: input.adPurchasesEnabled }),
+        ...(input.twoFactorSystemEnabled !== undefined && { twoFactorSystemEnabled: input.twoFactorSystemEnabled }),
       },
     });
 
-    // minPackagePriceCents ve yeni limit alanları için raw SQL — Prisma client versiyonundan bağımsız
+    // minPackagePriceCents ve yeni limit alanlari icin raw SQL — Prisma client versiyonundan bagimsiz
     if (prisma.$executeRaw) {
       if (input.minPackagePriceCents !== undefined) {
         await prisma.$executeRaw`
@@ -81,7 +105,7 @@ export class UpdateAdminSettingsUseCase {
       }
     }
 
-    // Güncel değerleri raw okuyarak döndür
+    // Guncel degerleri raw okuyarak dondur
     let minPackagePriceCents = 100;
     let minQuestionsPerTest = 1;
     let maxQuestionsPerTest = 100;
@@ -107,7 +131,7 @@ export class UpdateAdminSettingsUseCase {
       maxLiveQuestions = (row as any).maxLiveQuestions ?? 50;
     }
 
-    return {
+    const after: AdminSettings = {
       commissionPercent: row.commissionPercent,
       vatPercent: row.vatPercent,
       purchasesEnabled: row.purchasesEnabled,
@@ -115,11 +139,117 @@ export class UpdateAdminSettingsUseCase {
       testPublishingEnabled: row.testPublishingEnabled ?? true,
       testAttemptsEnabled: row.testAttemptsEnabled ?? true,
       adPurchasesEnabled: (row as any).adPurchasesEnabled ?? true,
+      twoFactorSystemEnabled: (row as any).twoFactorSystemEnabled ?? false,
       minPackagePriceCents,
       minQuestionsPerTest,
       maxQuestionsPerTest,
       maxTestsPerPackage,
       maxLiveQuestions,
     };
+
+    // 2) Audit: degisen alanlari diff'le ve ADMIN_SETTINGS_UPDATED yaz
+    const changed = diffSettings(before, after);
+    this.writeAuditLog(ctx, before, after, changed, input);
+
+    return after;
   }
+
+  /** Mevcut admin_settings satirini oku. Yoksa null doner — ilk insert. */
+  private async snapshot(prisma: AdminSettingsPrisma): Promise<AdminSettings | null> {
+    if (!prisma.adminSettings.findUnique) return null;
+    try {
+      const row = await prisma.adminSettings.findUnique({ where: { id: 1 } });
+      if (!row) return null;
+      let mpp = 100;
+      let minQ = 1;
+      let maxQ = 100;
+      let maxTpp = 10;
+      let maxLq = 50;
+      if (prisma.$queryRaw) {
+        const r = await prisma.$queryRaw`
+          SELECT "minPackagePriceCents", "minQuestionsPerTest", "maxQuestionsPerTest",
+                 "maxTestsPerPackage", "maxLiveQuestions"
+          FROM admin_settings WHERE id = 1
+        ` as any[];
+        mpp = r[0]?.minPackagePriceCents ?? 100;
+        minQ = r[0]?.minQuestionsPerTest ?? 1;
+        maxQ = r[0]?.maxQuestionsPerTest ?? 100;
+        maxTpp = r[0]?.maxTestsPerPackage ?? 10;
+        maxLq = r[0]?.maxLiveQuestions ?? 50;
+      }
+      return {
+        commissionPercent: row.commissionPercent ?? 20,
+        vatPercent: row.vatPercent ?? 18,
+        purchasesEnabled: row.purchasesEnabled ?? true,
+        packageCreationEnabled: row.packageCreationEnabled ?? true,
+        testPublishingEnabled: row.testPublishingEnabled ?? true,
+        testAttemptsEnabled: row.testAttemptsEnabled ?? true,
+        adPurchasesEnabled: (row as any).adPurchasesEnabled ?? true,
+        twoFactorSystemEnabled: (row as any).twoFactorSystemEnabled ?? false,
+        minPackagePriceCents: mpp,
+        minQuestionsPerTest: minQ,
+        maxQuestionsPerTest: maxQ,
+        maxTestsPerPackage: maxTpp,
+        maxLiveQuestions: maxLq,
+      };
+    } catch (err) {
+      // Snapshot fail — audit eksik kalsin ama akis patlamasin
+      logger.warn('admin-settings: before snapshot failed', {
+        err: (err as Error).message,
+      });
+      return null;
+    }
+  }
+
+  private writeAuditLog(
+    ctx: AuditContext | undefined,
+    before: AdminSettings | null,
+    after: AdminSettings,
+    changed: Record<string, { before: unknown; after: unknown }>,
+    rawInput: UpdateAdminSettingsInput,
+  ): void {
+    // Hicbir alan gercekten degismediyse de log yaz — audit gorunurlugu icin
+    // kullanicinin PATCH attigi bilinmeli (deneme/regresyon tespiti).
+    logger.info('admin.settings.updated', {
+      requestId: (ctx as any)?.requestId,
+      actorId: ctx?.userId,
+      changedFields: Object.keys(changed),
+      requestedFields: Object.keys(rawInput),
+    });
+
+    if (this.audit) {
+      this.audit.logAsync(ctx ?? {}, {
+        action: 'ADMIN_SETTINGS_UPDATED',
+        entityType: 'AdminSettings',
+        entityId: '1',
+        before: before ?? undefined,
+        after,
+        metadata: {
+          changedFields: Object.keys(changed),
+          diff: changed,
+        },
+      });
+    }
+  }
+}
+
+/** Duz objeleri shallow karsilastirir, degisen alanlari donderir. */
+function diffSettings(
+  before: AdminSettings | null,
+  after: AdminSettings,
+): Record<string, { before: unknown; after: unknown }> {
+  const diff: Record<string, { before: unknown; after: unknown }> = {};
+  if (!before) {
+    // Ilk insert — tum alanlar "yeni"
+    for (const k of Object.keys(after) as Array<keyof AdminSettings>) {
+      diff[k as string] = { before: undefined, after: after[k] };
+    }
+    return diff;
+  }
+  for (const k of Object.keys(after) as Array<keyof AdminSettings>) {
+    if (before[k] !== after[k]) {
+      diff[k as string] = { before: before[k], after: after[k] };
+    }
+  }
+  return diff;
 }

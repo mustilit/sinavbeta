@@ -3,6 +3,9 @@ import { IUserRepository } from '../../../domain/interfaces/IUserRepository';
 import { IAttemptRepository } from '../../../domain/interfaces/IAttemptRepository';
 import { AppError } from '../../errors/AppError';
 import { ensureEducatorActive } from '../../policies/ensureEducatorActive';
+import { prisma } from '../../../infrastructure/database/prisma';
+import { logger } from '../../../infrastructure/logger/logger';
+import { ModerateQuestionContentUseCase } from '../moderation/ModerateQuestionContentUseCase';
 
 /**
  * Soru ve şık güncelleme.
@@ -14,6 +17,7 @@ export class UpdateQuestionUseCase {
     private readonly examRepository: IExamRepository,
     private readonly userRepository: IUserRepository,
     private readonly attemptRepository: IAttemptRepository,
+    private readonly moderateQuestionContent?: ModerateQuestionContentUseCase,
   ) {}
 
   async execute(
@@ -37,6 +41,41 @@ export class UpdateQuestionUseCase {
       throw new AppError('FORBIDDEN_NOT_OWNER', 'Only the educator who owns the test can update it', 403);
     }
 
-    return this.examRepository.updateQuestion(questionId, updates);
+    const updated = await this.examRepository.updateQuestion(questionId, updates);
+
+    // Post-write hook: best-effort moderasyon — içerik değiştiyse yeniden modere et
+    if (updates.content && this.moderateQuestionContent) {
+      const moderateUC = this.moderateQuestionContent;
+      setImmediate(async () => {
+        try {
+          const q = await prisma.examQuestion.findUnique({
+            where: { id: questionId },
+            select: { testId: true, content: true, mediaUrl: true },
+          });
+          if (!q) return;
+
+          const dbTest = await prisma.examTest.findUnique({
+            where: { id: q.testId },
+            select: { educatorId: true, tenantId: true },
+          });
+          if (!dbTest?.educatorId || !dbTest?.tenantId) return;
+
+          await moderateUC.execute({
+            questionId,
+            educatorId: dbTest.educatorId,
+            tenantId: dbTest.tenantId,
+            text: updates.content ?? q.content,
+            imageUrl: updates.mediaUrl ?? q.mediaUrl ?? null,
+          });
+        } catch (err: any) {
+          logger.warn('[UpdateQuestion] Moderasyon hook başarısız (best-effort)', {
+            error: err?.message,
+            questionId,
+          });
+        }
+      });
+    }
+
+    return updated;
   }
 }

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 import api from "@/lib/api/apiClient";
+import { entities } from "@/api/dalClient";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,8 @@ import {
   Clock,
   Sparkles,
   Megaphone,
+  Play,
+  Eye,
 } from "lucide-react";
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -282,6 +285,40 @@ export default function Home() {
     staleTime: 3 * 60 * 1000,
   });
 
+  // Aday için satın alınmış paketler — "Devam Et" bandını besler
+  const { data: ownedPackages = [] } = useQuery({
+    queryKey: ["home-owned-packages", user?.id],
+    queryFn: async () => {
+      const purchases = await entities.Purchase.filter({});
+      const grouped = new Map();
+      for (const p of Array.isArray(purchases) ? purchases : []) {
+        if (p.payment_status && !["PAID", "COMPLETED", "ACTIVE"].includes(String(p.payment_status).toUpperCase())) continue;
+        const id = p.package_id ?? p.test_package_id;
+        if (!id) continue;
+        const submitted = !!(p.attempt?.submittedAt || p.attempt?.status === "SUBMITTED");
+        const prev = grouped.get(id);
+        if (!prev) {
+          grouped.set(id, {
+            id,
+            title: p.package?.title ?? p.test_package_title ?? "Test paketi",
+            educatorUsername: p.package?.educatorUsername ?? p.test?.educator?.username ?? null,
+            total: 1,
+            done: submitted ? 1 : 0,
+          });
+        } else {
+          prev.total += 1;
+          if (submitted) prev.done += 1;
+        }
+      }
+      return Array.from(grouped.values())
+        .map((p) => ({ ...p, isCompleted: p.total > 0 && p.done >= p.total }))
+        // Devam edilecekler (tamamlanmamış) önce, tamamlananlar sonra
+        .sort((a, b) => Number(a.isCompleted) - Number(b.isCompleted));
+    },
+    enabled: isCandidate && !!user,
+    staleTime: 60 * 1000,
+  });
+
   const { data: educators = [], isLoading: eduLoading } = useQuery({
     queryKey: ["home-featured-educators", examTypeIdsParam],
     queryFn: async () => {
@@ -417,6 +454,52 @@ export default function Home() {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 py-16">
+
+        {/* ── 0. Devam Et (aday, satın aldığı paketler) ──────────────────── */}
+        {isCandidate && ownedPackages.length > 0 && (
+          <section>
+            <SectionHeader
+              title="Devam Et"
+              isPersonalized={false}
+              linkTo={createPageUrl("MyTests")}
+            />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ownedPackages.slice(0, 6).map((pkg) => (
+                <Link
+                  key={pkg.id}
+                  to={createPageUrl("TestDetail") + `?id=${pkg.id}`}
+                  className="group flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-100 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-300"
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{
+                      backgroundColor: pkg.isCompleted ? "rgba(16,185,129,0.10)" : "rgba(0,0,205,0.08)",
+                    }}
+                    aria-label={pkg.isCompleted ? "Tamamlandı" : "Devam et"}
+                  >
+                    {pkg.isCompleted ? (
+                      <Eye className="w-5 h-5 text-emerald-600" />
+                    ) : (
+                      <Play className="w-5 h-5" style={{ color: "#0000CD" }} />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-900 truncate group-hover:text-indigo-700 transition-colors">
+                      {pkg.title}
+                    </p>
+                    {pkg.educatorUsername && (
+                      <p className="text-sm text-slate-500 truncate flex items-center gap-1.5 mt-1">
+                        <User className="w-3.5 h-3.5 flex-shrink-0" />
+                        {pkg.educatorUsername}
+                      </p>
+                    )}
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors flex-shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ── 1. Sınav Türleri band ──────────────────────────────────────── */}
         {examTypes.length > 0 && (

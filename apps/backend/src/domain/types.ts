@@ -94,6 +94,8 @@ export type AdminSettings = {
   testAttemptsEnabled: boolean;
   /** Eğitici reklam satın alma kill-switch'i */
   adPurchasesEnabled: boolean;
+  /** 2FA sistem geneli aç/kapat. false iken hiçbir kullanıcı 2FA aktif edemez. */
+  twoFactorSystemEnabled: boolean;
   /** Minimum paket fiyatı (kuruş). Eğitici bu değerin altında fiyat giremez. */
   minPackagePriceCents: number;
   /** Test başına minimum soru sayısı. Yayımlamada kontrol edilir. */

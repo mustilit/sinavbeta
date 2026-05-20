@@ -1,0 +1,55 @@
+{
+  "actions": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "submit": "Gönder",
+    "next": "İleri",
+    "back": "Geri",
+    "close": "Kapat",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "sort": "Sırala",
+    "loading": "Yükleniyor…",
+    "retry": "Tekrar Dene"
+  },
+  "navigation": {
+    "home": "Ana Sayfa",
+    "explore": "Keşfet",
+    "myTests": "Testlerim",
+    "myResults": "Sonuçlarım",
+    "myPackages": "Paketlerim",
+    "notifications": "Bildirimler",
+    "settings": "Ayarlar",
+    "profile": "Profil",
+    "logout": "Çıkış Yap",
+    "login": "Giriş Yap",
+    "register": "Kayıt Ol"
+  },
+  "common": {
+    "yes": "Evet",
+    "no": "Hayır",
+    "or": "veya",
+    "and": "ve",
+    "all": "Tümü",
+    "none": "Hiçbiri",
+    "today": "Bugün",
+    "yesterday": "Dün",
+    "tomorrow": "Yarın"
+  },
+  "errors": {
+    "generic": "Bir hata oluştu. Lütfen tekrar deneyin.",
+    "network": "Bağlantı sorunu. İnternetinizi kontrol edin.",
+    "unauthorized": "Bu işlem için yetkiniz yok.",
+    "notFound": "Aradığınız sayfa bulunamadı.",
+    "validation": "Lütfen formdaki hataları düzeltin.",
+    "tooMany": "Çok fazla istek. Lütfen bekleyin.",
+    "serverError": "Sunucu hatası. Çözüm için çalışıyoruz."
+  },
+  "empty": {
+    "noResults": "Sonuç bulunamadı.",
+    "noData": "Henüz veri yok.",
+    "noNotifications": "Yeni bildirim yok."
+  }
+}

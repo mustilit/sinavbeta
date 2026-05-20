@@ -55,6 +55,12 @@ services:
       CLIENT_URL: "http://localhost:5173"
       THROTTLE_DISABLED: "1"
       CRON_DISABLED: ${CRON_DISABLED:-"1"}
+      EMAIL_SECRETS_KEY: ${EMAIL_SECRETS_KEY}
+      EMAIL_REDIS_QUEUE_PREFIX: ${EMAIL_REDIS_QUEUE_PREFIX:-email}
+      EMAIL_TEMPLATE_DIR: ${EMAIL_TEMPLATE_DIR:-src/infrastructure/email/templates}
+      EMAIL_DEFAULT_FROM: ${EMAIL_DEFAULT_FROM:-noreply@sinavsalonu.com}
+      EMAIL_DEFAULT_FROM_NAME: ${EMAIL_DEFAULT_FROM_NAME:-Sınav Salonu}
+      FRONTEND_URL: ${CLIENT_URL:-http://localhost:5173}
     ports:
       - "3000:3000"
     restart: on-failure
@@ -101,6 +107,39 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-""}
     restart: unless-stopped
+
+  email-traffic-worker:
+    image: dal-backend:dev
+    command: npm run start:email-traffic-worker
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *redis-env
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/dal?schema=public"
+      JWT_SECRET: ${JWT_SECRET}
+      EMAIL_SECRETS_KEY: ${EMAIL_SECRETS_KEY}
+      EMAIL_REDIS_QUEUE_PREFIX: ${EMAIL_REDIS_QUEUE_PREFIX:-email}
+      EMAIL_TEMPLATE_DIR: ${EMAIL_TEMPLATE_DIR:-src/infrastructure/email/templates}
+      EMAIL_DEFAULT_FROM: ${EMAIL_DEFAULT_FROM:-noreply@sinavsalonu.com}
+      EMAIL_DEFAULT_FROM_NAME: ${EMAIL_DEFAULT_FROM_NAME:-Sınav Salonu}
+      EMAIL_TRAFFIC_WORKER_PORT: "3011"
+      FRONTEND_URL: ${CLIENT_URL:-http://localhost:5173}
+    ports:
+      - "3011:3011"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:3011/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   frontend:
     build:

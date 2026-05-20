@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6;"><tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;">
+<tr><td style="padding:24px 32px;background:#16a34a;color:#ffffff;"><h1 style="margin:0;font-size:20px;font-weight:600;">Sınav Salonu — Satın Alma Onayı</h1></td></tr>
+<tr><td style="padding:32px;color:#111827;font-size:14px;line-height:1.6;">
+<h2 style="margin:0 0 16px 0;font-size:18px;">Satın almanız onaylandı</h2>
+<p>Merhaba <strong>{{user.username}}</strong>,</p>
+<p><strong>{{package.title}}</strong> adlı paketi başarıyla satın aldınız.</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+  <tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">Paket</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;">{{package.title}}</td></tr>
+  <tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">Tutar</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;">{{amount}}</td></tr>
+  <tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">Ödeme tarihi</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;">{{paidAt}}</td></tr>
+  <tr><td style="padding:8px 0;color:#6b7280;">Sipariş no</td><td style="padding:8px 0;text-align:right;font-family:monospace;font-size:12px;">{{purchaseId}}</td></tr>
+</table>
+<p style="margin:24px 0;">
+  <a href="{{libraryUrl}}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Kütüphaneme git</a>
+</p>
+{{> footer}}
+</td></tr></table></td></tr></table></body></html>

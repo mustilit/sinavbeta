@@ -2,6 +2,13 @@ import { GetRecommendedTestsUseCase } from '../../src/application/use-cases/pack
 import { ListMarketplaceTestsUseCase } from '../../src/application/use-cases/test/ListMarketplaceTestsUseCase';
 
 // RedisCache mock — testlerde gerçek Redis bağlantısı olmaz
+// Prisma mock — testStats lookup icin gercek client gerekmez
+jest.mock('../../src/infrastructure/database/prisma', () => ({
+  prisma: {
+    testStats: { findMany: jest.fn(async () => []) },
+  },
+}));
+
 jest.mock('../../src/infrastructure/cache/RedisCache', () => ({
   RedisCache: jest.fn().mockImplementation(() => ({
     get: jest.fn().mockResolvedValue(null),

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { topics as topicsApi } from "@/api/dalClient";
 import { entities } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, ChevronRight, ChevronDown, BookOpen } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { Plus, Edit2, Trash2, ChevronRight, ChevronDown, BookOpen, Search, X, CheckSquare, Square, Filter, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -133,7 +136,7 @@ function TopicDialog({ open, onOpenChange, topic, parentTopic, examTypes, onSave
 }
 
 // ── Ağaç düğümü (özyinelemeli) ───────────────────────────────────────────────
-function TopicNode({ topic, depth = 0, examTypes, onEdit, onDelete, onAddChild }) {
+function TopicNode({ topic, depth = 0, examTypes, onEdit, onDelete, onAddChild, onToggleActive, togglingId }) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = topic.children?.length > 0;
 
@@ -178,6 +181,27 @@ function TopicNode({ topic, depth = 0, examTypes, onEdit, onDelete, onAddChild }
             </Badge>
           ))}
         </div>
+
+        {/* Durum badge'i */}
+        <Badge
+          variant="outline"
+          className={`text-xs py-0 px-2 ${
+            topic.active
+              ? "border-emerald-200 text-emerald-700 bg-emerald-50"
+              : "border-slate-200 text-slate-500 bg-slate-100"
+          }`}
+        >
+          {topic.active ? "Aktif" : "Pasif"}
+        </Badge>
+
+        {/* Aktif/Pasif switch — her zaman görünür */}
+        <Switch
+          checked={!!topic.active}
+          disabled={togglingId === topic.id}
+          onCheckedChange={(checked) => onToggleActive(topic, checked)}
+          aria-label={topic.active ? "Pasife çek" : "Aktife al"}
+          title={topic.active ? "Pasife çek" : "Aktife al"}
+        />
 
         {/* Eylemler — hover'da görünür */}
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -224,6 +248,8 @@ function TopicNode({ topic, depth = 0, examTypes, onEdit, onDelete, onAddChild }
               onEdit={onEdit}
               onDelete={onDelete}
               onAddChild={onAddChild}
+              onToggleActive={onToggleActive}
+              togglingId={togglingId}
             />
           ))}
         </div>
@@ -240,7 +266,18 @@ export default function ManageTopics() {
   // dialog: { mode: 'create'|'edit'|'addChild', topic?, parentTopic? }
   const [dialog, setDialog] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [filterExamType, setFilterExamType] = useState("all");
+  const [selectedExamTypeIds, setSelectedExamTypeIds] = useState([]); // [] = Tümü
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
+  const [examTypeFilterOpen, setExamTypeFilterOpen] = useState(false);
+  const [examTypeFilterSearch, setExamTypeFilterSearch] = useState("");
+
+  const toggleExamTypeFilter = (id) => {
+    setSelectedExamTypeIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+  const clearExamTypeFilter = () => setSelectedExamTypeIds([]);
 
   const isAdmin = (user?.role || "").toString().toUpperCase() === "ADMIN";
 
@@ -286,6 +323,17 @@ export default function ManageTopics() {
     onError: (e) => toast.error(e?.response?.data?.message || e?.message || "Silinemedi"),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, active }) => topicsApi.update(id, { active }),
+    onSuccess: (_, { active }) => {
+      toast.success(active ? "Konu aktife alındı" : "Konu pasife çekildi");
+      queryClient.invalidateQueries({ queryKey: ["topicsTree"] });
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || e?.message || "Durum değiştirilemedi"),
+  });
+  const handleToggleActive = (topic, nextActive) =>
+    toggleActiveMutation.mutate({ id: topic.id, active: nextActive });
+
   if (!isAdmin) {
     return (
       <div className="text-center py-20">
@@ -305,14 +353,30 @@ export default function ManageTopics() {
     }
   };
 
-  // Sınav türüne göre ağaç filtreleme (üst konuyu da dahil et)
+  // Sınav türü + metin filtresi — eşleşen düğüm veya altındaki herhangi
+  // bir alt-düğüm eşleşirse o üst konuyu da göster.
+  const filterSet = new Set(selectedExamTypeIds);
+  const search = debouncedSearch.trim().toLocaleLowerCase("tr");
+
+  const matchesNode = (node) => {
+    const examOk =
+      filterSet.size === 0 ||
+      node.examTypes?.some((et) => filterSet.has(et.id));
+    const textOk =
+      !search || node.name?.toLocaleLowerCase("tr").includes(search);
+    return examOk && textOk;
+  };
+
   const filterNode = (node) => {
-    if (filterExamType === "all") return true;
-    if (node.examTypes?.some((et) => et.id === filterExamType)) return true;
+    if (matchesNode(node)) return true;
     if (node.children?.some((c) => filterNode(c))) return true;
     return false;
   };
-  const filteredTree = tree.filter(filterNode);
+  const filteredTree = useMemo(
+    () => tree.filter(filterNode),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tree, selectedExamTypeIds, debouncedSearch],
+  );
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
@@ -334,34 +398,144 @@ export default function ManageTopics() {
         </Button>
       </div>
 
-      {/* Sınav türü filtresi */}
-      <div className="mb-6 flex flex-wrap gap-2 items-center">
-        <span className="text-sm text-slate-500 mr-1">Filtre:</span>
-        <button
-          type="button"
-          onClick={() => setFilterExamType("all")}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-            filterExamType === "all"
-              ? "bg-indigo-600 text-white border-indigo-600"
-              : "bg-white text-slate-600 border-slate-300 hover:border-indigo-400"
-          }`}
-        >
-          Tümü
-        </button>
-        {examTypes.map((et) => (
-          <button
-            key={et.id}
-            type="button"
-            onClick={() => setFilterExamType(et.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filterExamType === et.id
-                ? "bg-indigo-600 text-white border-indigo-600"
-                : "bg-white text-slate-600 border-slate-300 hover:border-indigo-400"
-            }`}
-          >
-            {et.name}
-          </button>
-        ))}
+      {/* Filtreler */}
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        {/* Metin araması */}
+        <div className="relative flex-1 min-w-[240px] max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <Input
+            type="search"
+            placeholder="Konu adı ara (tüm hiyerarşide)…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9"
+            aria-label="Konu adı ara"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+              aria-label="Aramayı temizle"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Sınav türü çoklu seçim — Popover */}
+        <Popover open={examTypeFilterOpen} onOpenChange={setExamTypeFilterOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2"
+              aria-haspopup="listbox"
+              aria-expanded={examTypeFilterOpen}
+            >
+              <Filter className="w-4 h-4 text-slate-500" aria-hidden="true" />
+              Sınav türü
+              {selectedExamTypeIds.length > 0 && (
+                <Badge
+                  variant="outline"
+                  className="ml-1 px-1.5 py-0 text-xs border-indigo-200 text-indigo-700 bg-indigo-50"
+                >
+                  {selectedExamTypeIds.length}
+                </Badge>
+              )}
+              <ChevronDown className="w-4 h-4 text-slate-400" aria-hidden="true" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-72 p-0">
+            <div className="p-3 border-b border-slate-100">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <Input
+                  type="search"
+                  placeholder="Sınav türü ara…"
+                  value={examTypeFilterSearch}
+                  onChange={(e) => setExamTypeFilterSearch(e.target.value)}
+                  className="h-8 pl-8 pr-2 text-sm"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <ul role="listbox" aria-label="Sınav türleri" className="max-h-64 overflow-y-auto py-1">
+              {examTypes
+                .filter((et) =>
+                  !examTypeFilterSearch.trim() ||
+                  et.name?.toLocaleLowerCase("tr").includes(examTypeFilterSearch.trim().toLocaleLowerCase("tr")),
+                )
+                .map((et) => {
+                  const checked = selectedExamTypeIds.includes(et.id);
+                  return (
+                    <li key={et.id} role="option" aria-selected={checked}>
+                      <button
+                        type="button"
+                        onClick={() => toggleExamTypeFilter(et.id)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+                      >
+                        <span
+                          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                            checked
+                              ? "bg-indigo-600 border-indigo-600 text-white"
+                              : "bg-white border-slate-300"
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {checked && <Check className="w-3 h-3" />}
+                        </span>
+                        <span className="flex-1 text-left">{et.name}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              {examTypes.filter((et) =>
+                !examTypeFilterSearch.trim() ||
+                et.name?.toLocaleLowerCase("tr").includes(examTypeFilterSearch.trim().toLocaleLowerCase("tr")),
+              ).length === 0 && (
+                <li className="px-3 py-4 text-center text-xs text-slate-400">Eşleşen sınav türü yok</li>
+              )}
+            </ul>
+            {selectedExamTypeIds.length > 0 && (
+              <div className="p-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-500 px-1">{selectedExamTypeIds.length} seçili</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-slate-600 hover:text-rose-600"
+                  onClick={clearExamTypeFilter}
+                >
+                  Temizle
+                </Button>
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
+
+        {/* Seçili filtrelerin küçük chip listesi (×'lı) */}
+        {selectedExamTypeIds.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {selectedExamTypeIds.map((id) => {
+              const et = examTypes.find((e) => e.id === id);
+              if (!et) return null;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggleExamTypeFilter(id)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200"
+                  aria-label={`${et.name} filtresini kaldır`}
+                >
+                  {et.name}
+                  <X className="w-3 h-3" aria-hidden="true" />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Konu ağacı */}
@@ -376,9 +550,9 @@ export default function ManageTopics() {
           <div className="text-center py-14">
             <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500 font-medium">
-              {filterExamType === "all"
+              {selectedExamTypeIds.length === 0 && !debouncedSearch.trim()
                 ? "Henüz konu eklenmedi"
-                : "Bu sınav türüne ait konu bulunamadı"}
+                : "Filtreye uyan konu bulunamadı"}
             </p>
             <Button
               variant="outline"
@@ -400,6 +574,8 @@ export default function ManageTopics() {
                 onEdit={(t) => setDialog({ mode: "edit", topic: t })}
                 onDelete={(t) => setDeleteTarget(t)}
                 onAddChild={(t) => setDialog({ mode: "addChild", parentTopic: t })}
+                onToggleActive={handleToggleActive}
+                togglingId={toggleActiveMutation.isPending ? toggleActiveMutation.variables?.id : null}
               />
             ))}
           </div>

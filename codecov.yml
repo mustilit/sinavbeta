@@ -1,0 +1,116 @@
+# Codecov configuration — Sınav Salonu
+# https://docs.codecov.com/docs/codecovyml-reference
+#
+# Strateji (KALITE-DEGERLENDIRME §11):
+#   - Bugünkü baseline'a göre düşmemek (project status "auto" + threshold %1).
+#   - Yeni yazılan kodun (patch) coverage'ı %80 olmalı.
+#   - Backend ve frontend ayrı flag → ayrı raporlar.
+
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: "60...90"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%   # main'e göre %1'den fazla düşme kabul edilmez
+        informational: false
+      backend:
+        paths:
+          - apps/backend/
+        target: 35%   # mevcut jest threshold ile aynı; kademeli artar
+        threshold: 1%
+        informational: false
+      frontend:
+        paths:
+          - apps/frontend/
+        target: 30%
+        threshold: 1%
+        informational: false
+      use-cases:
+        paths:
+          - apps/backend/src/application/use-cases/
+        target: 60%   # ilk hedef; rapor 85% diyor, kademeli
+        threshold: 0%
+        informational: true   # baseline oturana kadar warn-only
+      guards:
+        paths:
+          - apps/backend/src/nest/guards/
+        target: 80%
+        threshold: 0%
+        informational: true
+
+    patch:
+      default:
+        target: 80%   # yeni / değişen kodun %80'i kapsanmalı
+        threshold: 0%
+        informational: false
+
+comment:
+  layout: "header, diff, flags, components, tree"
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+
+flags:
+  backend:
+    paths:
+      - apps/backend/
+    carryforward: true
+  frontend:
+    paths:
+      - apps/frontend/
+    carryforward: true
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        threshold: 1%
+  individual_components:
+    - component_id: backend_use_cases
+      name: "Backend Use Cases"
+      paths:
+        - apps/backend/src/application/use-cases/**
+    - component_id: backend_domain
+      name: "Backend Domain"
+      paths:
+        - apps/backend/src/domain/**
+    - component_id: backend_guards
+      name: "Backend Guards & Security"
+      paths:
+        - apps/backend/src/nest/guards/**
+        - apps/backend/src/nest/security/**
+    - component_id: frontend_pages
+      name: "Frontend Pages"
+      paths:
+        - apps/frontend/src/pages/**
+    - component_id: frontend_api
+      name: "Frontend API Client"
+      paths:
+        - apps/frontend/src/api/**
+
+ignore:
+  - "**/*.dto.ts"
+  - "**/*.module.ts"
+  - "**/*.d.ts"
+  - "apps/backend/src/main.ts"
+  - "apps/backend/src/index.ts"
+  - "apps/backend/src/instrument.ts"
+  - "apps/backend/prisma/**"
+  - "apps/backend/scripts/**"
+  - "apps/frontend/src/main.jsx"
+  - "apps/frontend/src/components/ui/**"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/coverage/**"
+  - "sinavsalonu-extracted/**"

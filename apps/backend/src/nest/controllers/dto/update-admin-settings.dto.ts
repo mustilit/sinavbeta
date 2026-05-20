@@ -42,6 +42,11 @@ export class UpdateAdminSettingsDto {
   @IsBoolean()
   adPurchasesEnabled?: boolean;
 
+  @ApiPropertyOptional({ description: '2FA sistem geneli aç/kapat — kapalıyken hiçbir kullanıcı 2FA aktif edemez' })
+  @IsOptional()
+  @IsBoolean()
+  twoFactorSystemEnabled?: boolean;
+
   @ApiPropertyOptional({ example: 100, description: 'Minimum paket fiyatı (kuruş, ör. 100 = 1 ₺)' })
   @IsOptional()
   @IsInt()

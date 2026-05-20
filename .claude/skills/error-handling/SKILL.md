@@ -313,12 +313,45 @@ Mutation/Query hataları onError'a düşer; render-time hataları ErrorBoundary'
 - 5xx exceptions (stack trace)
 - Beklenmeyen branch ("bu olmamalıydı" durumları)
 - Kritik iş akışı adımları (purchase başlangıç/bitiş)
+- **Auth fail path'leri** (`AUTH_LOGIN_FAIL` — kullanıcı bulunamadı, şifre yanlış, askıya alınmış)
+- **Admin değişiklikleri** (`ADMIN_SETTINGS_UPDATED`, before/after diff)
+- **Para işlemleri** (`PURCHASE`, `REFUND_*`, `PAYOUT_PROCESSED`)
 
 **Log'a YAZMA:**
 - Şifre, JWT, kart bilgisi
 - Tüm request body'si (PII içerebilir)
-- 4xx (kullanıcı hatası, gürültü)
+- 4xx (kullanıcı hatası, gürültü) — **ama auth fail'lar istisna**, audit log'a yazılmalı
 - Beklenen domain hataları
+
+## Audit Log (insert/update/error path'leri)
+
+Hata path'lerinde de audit log yazılmalı — sadece exception fırlatmak yetmez.
+Auth/admin/para domain'inde her use case için:
+
+```ts
+import { AuditLogger, AuditContext } from '../../../infrastructure/audit/AuditLogger';
+
+@Injectable()
+export class LoginUseCase {
+  constructor(..., private readonly audit?: AuditLogger) {}
+
+  async execute(dto, ctx?: AuditContext) {
+    const user = await this.userRepo.findByEmail(dto.email);
+    if (!user) {
+      this.audit?.logAsync(ctx ?? {}, {
+        action: 'AUTH_LOGIN_FAIL',
+        entityType: 'User',
+        entityId: 'unknown',
+        metadata: { reason: 'user_not_found', email: dto.email },
+      });
+      throw new Error('INVALID_CREDENTIALS');
+    }
+    // ...
+  }
+}
+```
+
+Detay ve checklist: `observability` skill'i, "Audit log zorunluluğu" başlığı.
 
 ## Sentry Entegrasyonu
 
@@ -343,6 +376,12 @@ PII (email, isim) Sentry'ye gitmesin — `beforeSend` hook'unda strip et.
 - [ ] Async fonksiyonda await unutulmadı mı?
 - [ ] Optional relation/property erişiminde `?.` veya null guard var mı?
 - [ ] Test: hata case'leri için unit test var mı?
+- [ ] **Korumalı endpoint (`@Roles(...)` ile)** `actorId`'i request'ten alıp use case'e
+      geçiyor mu? (Geçmezse use case'in ownership guard'ı atlanır — gizli 200 → güvenlik
+      açığı. Audit log da `actorId: null` yazar.) Yazım: `const actorId = (req as any).user?.id;`
+- [ ] **Insert/update yapan service / provider** (`*-publish.service.ts`, `*.cron.ts` gibi
+      use case dışı katmanlar) audit log yazıyor mu? Detay: `observability` skill'i,
+      "Servis/Provider Audit Template" başlığı.
 
 ## Hızlı Tanı
 

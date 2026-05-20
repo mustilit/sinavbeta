@@ -32,6 +32,7 @@ import { useAutoSave } from "@/lib/useAutoSave";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { TestPreviewModal } from "@/components/TestPreviewModal";
+import { ModerationStatusBadge } from "@/components/test/ModerationStatusBadge";
 
 // ─── Sabitler ───────────────────────────────────────────────────────────────
 const STEPS = [
@@ -471,12 +472,21 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
             {question.content && (
               <span className="text-xs text-slate-400 truncate max-w-xs">{question.content}</span>
             )}
+            {question.moderationStatus && (
+              <ModerationStatusBadge status={question.moderationStatus} />
+            )}
           </div>
         </AccordionTrigger>
         <AccordionContent className="pt-2 pb-1">
+          {/* Moderasyon REJECTED banner */}
+          {question.moderationStatus === 'REJECTED' && (
+            <div className="mb-3 px-3 py-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700">
+              Bu soru içerik politikasına aykırı bulundu.
+            </div>
+          )}
           {/* Ozet bilgi */}
           {question.mediaUrl && (
-            <p className="text-xs text-slate-500 mb-2">📷 Görsel eklenmiş</p>
+            <p className="text-xs text-slate-500 mb-2">Görsel eklenmiş</p>
           )}
           <p className="text-xs text-slate-500 mb-3">
             {question.options.filter(o => o.content.trim()).length}/5 secenek dolu
@@ -896,7 +906,12 @@ export default function CreateTest() {
       navigate(buildPageUrl("MyTestPackages"), { replace: true });
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || err?.message || "Kaydetme başarısız");
+      const code = err?.response?.data?.code || err?.response?.data?.error;
+      if (code === 'MODERATION_PENDING') {
+        toast.error("Bu testin bazı soruları moderasyon onayı bekliyor. Onaylanmadan yayımlayamazsınız.");
+      } else {
+        toast.error(err?.response?.data?.message || err?.message || "Kaydetme başarısız");
+      }
     },
   });
 

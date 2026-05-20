@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6;"><tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;">
+<tr><td style="padding:24px 32px;background:#06b6d4;color:#ffffff;"><h1 style="margin:0;font-size:20px;font-weight:600;">Canlı Sınav Daveti</h1></td></tr>
+<tr><td style="padding:32px;color:#111827;font-size:14px;line-height:1.6;">
+<p>Merhaba <strong>{{user.username}}</strong>,</p>
+<p><strong>{{educator.username}}</strong> sizi canlı bir sınava davet etti: <strong>{{session.title}}</strong></p>
+<p>Katılım kodu: <code style="font-size:18px;background:#f3f4f6;padding:6px 12px;border-radius:6px;display:inline-block;">{{session.joinCode}}</code></p>
+{{#if startsAt}}<p>Başlangıç: <strong>{{startsAt}}</strong></p>{{/if}}
+<p style="margin:24px 0;">
+  <a href="{{joinUrl}}" style="display:inline-block;padding:12px 24px;background:#06b6d4;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Sınava katıl</a>
+</p>
+{{> footer}}
+</td></tr></table></td></tr></table></body></html>

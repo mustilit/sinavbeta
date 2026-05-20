@@ -1,0 +1,51 @@
+name: Mutation Testing (Stryker)
+
+# Haftalık pazartesi sabah çalışır + manuel tetik.
+# CI yi bloklamaz (`continue-on-error: true`) — sonuç artifact olarak yüklenir,
+# Stryker HTML raporu PR review'da incelenebilir.
+#
+# Threshold'lar `apps/backend/stryker.conf.json` içinde — kademeli sıkıştırma planı:
+#   high: 70 (hedef), low: 50 (warning), break: 35 (CI fail eşiği)
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Pazartesi 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  mutation:
+    name: Backend Mutation Test
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/backend/package-lock.json
+      - name: Install backend deps
+        working-directory: apps/backend
+        run: npm ci
+      - name: Restore Stryker incremental cache
+        uses: actions/cache@v4
+        with:
+          path: apps/backend/reports/stryker-incremental.json
+          key: stryker-incremental-${{ github.ref }}-${{ hashFiles('apps/backend/package-lock.json') }}
+          restore-keys: |
+            stryker-incremental-${{ github.ref }}-
+            stryker-incremental-
+      - name: Prisma generate (gerekli — bazı use case'ler import eder)
+        working-directory: apps/backend
+        run: npx prisma generate
+      - name: Run Stryker
+        working-directory: apps/backend
+        run: npm run test:mutation:ci
+      - name: Upload Stryker HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-report-${{ github.sha }}
+          path: apps/backend/reports/mutation
+          retention-days: 30

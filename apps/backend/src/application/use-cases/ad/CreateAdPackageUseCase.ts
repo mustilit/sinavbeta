@@ -1,5 +1,6 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { BadRequestException } from '@nestjs/common';
+import { Currency } from '@prisma/client';
 
 /**
  * FR-Y-09: Admin tarafından yeni bir reklam paketi oluşturur.
@@ -36,7 +37,7 @@ export class CreateAdPackageUseCase {
         durationDays: input.durationDays,
         impressions: input.impressions,
         priceCents: input.priceCents,
-        currency: input.currency ?? 'TRY',
+        currency: (input.currency ?? 'TRY') as Currency,
         active: input.active ?? true,
       },
     });

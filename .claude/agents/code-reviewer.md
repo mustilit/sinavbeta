@@ -62,6 +62,20 @@ Sınav Salonu projesi için kod inceleme uzmanısın. İşin hata bulmak, düzel
 - CSP ile çakışan yeni inline script / style var mı?
 - Yedekleme endpoint'i ADMIN rolüyle korumalı mı?
 
+**Audit log (insert/update/error)**
+- Auth/admin/para/içerik domain'inde yeni/değişen use case'in `AuditLogger` kullanıyor mu? (eksikse KRİTİK)
+- Use case constructor'da `audit?: AuditLogger` parametresi var mı, controller `auditContextFromRequest(req)` ile `ctx` geçiyor mu?
+- `app.module.ts` factory'sine `AuditLogger` inject edildi mi?
+- Update operasyonunda `before` snapshot alınıp metadata'ya `before/after` yazılmış mı?
+- Hem başarı hem başarısızlık path'i log'lanıyor mu? (`AUTH_LOGIN_FAIL`, `REFUND_REJECTED` gibi negatif eylemler de zorunlu)
+- `await this.audit.log(...)` mı yoksa `logAsync` mi? `await` use case'i bloke eder, fire-and-forget tercih edilmeli.
+- PII (password, JWT, kart numarası, recovery code) metadata'ya sızıyor mu?
+- Yeni AuditAction enum değeri eklendiyse migration var mı?
+- **Korumalı endpoint (`@Roles(...)`)** controller `actorId`'i (`req.user?.id`) use case'e geçiyor mu? Geçmezse ownership guard sessizce atlanır + audit log `actorId: null` yazar — KRİTİK.
+- **Servis/Provider katmanı** (`*-publish.service.ts`, `*Cron.ts`, `BackupSchedulerService` gibi use case dışı sınıflar) `prisma.<model>.update/create` yapıyorsa audit log var mı? Tercihen update + auditLog.create **aynı `$transaction`** içinde mi?
+- Sarmalayıcı service (örn. `TestsService.publish`) wrapper'a gelen `actorId`'i alt katmana (provider/use case) iletiyor mu? `actorId` yutulursa audit log'da kayıp olur.
+- AuditAction enum'da uygun değer yoksa, en azından `logger.info('<entity>.<action>', { entityId, actorId, changedFields })` ile structured log yazıldı mı? (Migration sonrası audit'e taşınır.)
+
 **Accessibility (frontend)**
 - Yeni interaktif element semantic HTML mi (`<button>` vs `<div onClick>`)?
 - Form input'larında `<label htmlFor>` veya `aria-label` var mı?

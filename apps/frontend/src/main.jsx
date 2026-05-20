@@ -17,6 +17,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import './lib/i18n';              // side-effect: i18next init
+import { initAnalytics } from './lib/analytics';
+
+initAnalytics();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />

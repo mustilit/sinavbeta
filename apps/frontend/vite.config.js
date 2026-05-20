@@ -28,6 +28,32 @@ export default defineConfig({
     // Sadece proje testlerini topla (node_modules testleri çalışmamalı)
     include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     exclude: ['node_modules/**', 'dist/**', 'e2e/**'],
+    // Coverage disiplini — KALITE-DEGERLENDIRME §11
+    //   npm run test:coverage ile çalıştır; CI artifact olarak lcov.info upload edilir.
+    //   Threshold'lar şimdilik düşük tutuldu; yeni testler eklendikçe +%5/sprint.
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'json-summary', 'html'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{js,jsx}'],
+      exclude: [
+        'src/**/*.{test,spec}.{js,jsx}',
+        'src/test/**',
+        'src/main.jsx',
+        'src/**/*.config.{js,cjs}',
+        'src/components/ui/**', // shadcn primitives — upstream test'leri yeterli
+        'src/pages.config.js',
+      ],
+      thresholds: {
+        statements: 30,
+        branches: 25,
+        functions: 30,
+        lines: 30,
+        // TODO: src/api/dalClient.js için %90 threshold ekle (önce baseline test yaz)
+        // TODO: src/pages/** için %50 threshold (kademeli)
+        // TODO: src/lib/** için %70 threshold
+      },
+    },
   },
   resolve: {
     alias: [

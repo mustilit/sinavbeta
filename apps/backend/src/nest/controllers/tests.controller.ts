@@ -62,8 +62,11 @@ export class TestsController {
 
   @Put('tests/:id/unpublish')
   @Roles('EDUCATOR', 'ADMIN')
-  async unpublish(@Param('id') id: string) {
-    return await this.unpublishUC.execute(id);
+  async unpublish(@Param('id') id: string, @Req() req: any) {
+    // actorId zorunlu: ownership guard + audit log için (UNPUBLISH actorId=null
+    // olarak yazılırsa "kim yaptı" sorusu cevapsız kalır → logging gap).
+    const actorId = (req as any).user?.id;
+    return await this.unpublishUC.execute(id, actorId);
   }
 
   @Post('tests/:id/questions')

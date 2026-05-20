@@ -45,8 +45,9 @@ apps/backend/prisma/
    (örn. `discount/CreateDiscountCodeUseCase.ts`, `live/StartLiveSessionUseCase.ts`)
 4. **DTO** yaz: `nest/controllers/dto/<endpoint>.dto.ts` — `class-validator` dekoratörleri **zorunlu**. Her query/body param için en az bir validator.
 5. **Controller method** ekle — yalnızca UseCase'i çağır, iş mantığı yok.
-6. `app.module.ts`'e controller ve UseCase'i ekle (providers + controllers).
-7. Unit test: UseCase için Prisma mock.
+6. **Audit log kontrolü:** Use case auth/admin/para/içerik domain'inde insert/update/error mi üretiyor? → `AuditLogger` enjekte et + `AuditContext` parametresi al + controller'da `auditContextFromRequest(req)` ile geç. Detay: `observability` skill'i.
+7. `app.module.ts`'e controller ve UseCase'i ekle (providers + controllers). Audit gerekiyorsa `useFactory` ile `AuditLogger` inject et.
+8. Unit test: UseCase için Prisma mock. Audit yazıldığını ayrı bir test ile doğrula (mock AuditLogger.logAsync çağrısı sayısı + payload).
 
 ## DTO + Validation Disiplini
 
@@ -213,6 +214,85 @@ try {
 }
 ```
 
+## Audit Logging — Insert/Update/Error Disiplini
+
+**Kural:** Auth/admin/para/içerik domain'inde her insert/update/error path'inde `AuditLog` yazılmalı. `infrastructure/audit/AuditLogger` helper ve `AuditAction` enum hazır.
+
+**Use case template — opsiyonel audit (backward-compatible):**
+
+```ts
+import { AuditLogger, AuditContext } from '../../../infrastructure/audit/AuditLogger';
+
+@Injectable()
+export class UpdateXUseCase {
+  constructor(private readonly audit?: AuditLogger) {} // ① opsiyonel
+
+  async execute(prisma: ..., input: ..., ctx?: AuditContext) {
+    const before = await prisma.x.findUnique({ where: { id: input.id } }); // ② snapshot
+    const after = await prisma.x.update({ where: { id: input.id }, data: input });
+    this.audit?.logAsync(ctx ?? {}, {
+      action: 'X_UPDATED',
+      entityType: 'X',
+      entityId: input.id,
+      before, after,
+    });                                                                     // ③ fire-and-forget
+    return after;
+  }
+}
+```
+
+**Controller template:**
+
+```ts
+import { auditContextFromRequest } from '../../infrastructure/audit/AuditLogger';
+
+@Patch(':id')
+async update(@Param('id') id: string, @Body() dto: Dto, @Req() req: any) {
+  const ctx = auditContextFromRequest(req);
+  return this.uc.execute(this.prisma, { id, ...dto }, ctx);
+}
+```
+
+**app.module.ts'te factory inject:**
+
+```ts
+{
+  provide: UpdateXUseCase,
+  useFactory: (audit: AuditLogger) => new UpdateXUseCase(audit),
+  inject: [AuditLogger],
+},
+```
+
+**Audit action enum'da yoksa:** `prisma/schema.prisma`'da `enum AuditAction { ... NEW_ACTION ... }` ekle + migration.
+
+**Failure path'leri de logla:** Login fail, refund reject, permission denied gibi durumlar `AUTH_LOGIN_FAIL`, `REFUND_REJECTED`, vb. AuditAction ile yazılır. "Olmadı" olayı kadar "oldu" olayı önemli.
+
+**Controller actorId kaçağı (sık görülen logging gap):**
+
+`@Roles('EDUCATOR' | 'ADMIN')` korumalı endpoint'te `actorId`'i unuttuğunda iki şey kırılır:
+ownership guard sessizce atlanır (use case `if (actorId)` kontrolüyle korunduğu için) ve
+audit log `actorId: null` yazar. Her korumalı write-endpoint'in iskeleti:
+
+```ts
+@Put('tests/:id/unpublish')
+@Roles('EDUCATOR', 'ADMIN')
+async unpublish(@Param('id') id: string, @Req() req: any) {
+  const actorId = (req as any).user?.id;          // ← zorunlu
+  return this.unpublishUC.execute(id, actorId);   // ← use case'e ilet
+}
+```
+
+Body içinde `actorId` field'ı tanımlama; mutlaka JWT'den (`req.user.id`) al.
+
+**Servis/Provider katmanında insert/update (use case dışı):**
+
+`nest/modules/<x>/<x>-publish.service.ts`, `BackupSchedulerService` gibi NestJS servisleri
+de `prisma.<model>.update/create` yaparsa audit log zorunludur. Tercihen update + audit aynı
+`$transaction` içinde — audit yazımı atomik olur. Template ve checklist için
+`observability` skill'i, "Servis/Provider Audit Template" başlığı.
+
+**Detaylı checklist:** `observability` skill'i, "Audit log zorunluluğu" + "Checklist (servis/provider veya cron katmanı)" başlıkları.
+
 ## Import Derinliği
 
 Domain alt klasöründen (`use-cases/<domain>/`) erişim:
@@ -230,4 +310,4 @@ Her değişiklik için:
 3. Gereken env değişkeni varsa belirt.
 4. `cd apps/backend && npm test` koştur, sonucu raporla.
 
-Skill'ler: `nestjs-module`, `prisma-schema`, `pagination`, `full-text-search`, `api-contract`, `exam-domain`.
+Skill'ler: `nestjs-module`, `prisma-schema`, `pagination`, `full-text-search`, `api-contract`, `exam-domain`, `observability` (audit log + structured logging).

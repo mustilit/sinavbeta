@@ -22,6 +22,12 @@ import {
   Megaphone,
   RefreshCw,
   Zap,
+  Mail,
+  PowerOff,
+  Server,
+  FileText,
+  ShieldX,
+  Shield,
 } from "lucide-react";
 
 export default function Sidebar({ user, currentPage }) {
@@ -54,6 +60,7 @@ export default function Sidebar({ user, currentPage }) {
     { name: "İade Talepleri", page: "EducatorRefunds", icon: RefreshCw },
     { name: "Hata Bildirimleri", page: "QuestionReports", icon: Settings },
     { name: "Profil Ayarları", page: "EducatorSettings", icon: User },
+    { name: "İçerik Durumum", page: "MyModerationStatus", icon: Shield },
   ] : [
     { name: "Profil Ayarları", page: "EducatorSettings", icon: User },
   ];
@@ -73,6 +80,10 @@ export default function Sidebar({ user, currentPage }) {
     { name: "Reklam Raporu", page: "AdminAdReport", icon: Megaphone },
     { name: "Sistem Kontrolleri", page: "AdminSystemControls", icon: ShieldAlert },
     { name: "Canlı Test Paketleri", page: "ManageLiveTiers", icon: Zap },
+    // ── Mail Yönetimi (6 alt modül tek sayfada sekmeli) ───────────────
+    { name: "Mail Yönetimi", page: "EmailManagement", icon: Mail },
+    // ── İçerik Moderasyonu (4 alt modül tek sayfada sekmeli) ──────────
+    { name: "Riskli İçerik", page: "RiskyContent", icon: ShieldAlert },
   ];
 
   // Worker: yalnızca kendisine atanan admin sayfaları

@@ -1,3 +1,6 @@
+// Prisma mock — stats.worker module loads real prisma which fails without engine binary
+jest.mock('../../src/infrastructure/database/prisma', () => ({ prisma: {} }));
+
 const { makeStatsJobHandler } = require('../../src/infrastructure/queue/stats.worker');
 
 describe('stats worker handler', () => {

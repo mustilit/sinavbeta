@@ -1,0 +1,55 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "submit": "Submit",
+    "next": "Next",
+    "back": "Back",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "loading": "Loading…",
+    "retry": "Retry"
+  },
+  "navigation": {
+    "home": "Home",
+    "explore": "Explore",
+    "myTests": "My Tests",
+    "myResults": "My Results",
+    "myPackages": "My Packages",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Sign up"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and",
+    "all": "All",
+    "none": "None",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Connection issue. Check your internet.",
+    "unauthorized": "You don't have permission for this action.",
+    "notFound": "Page not found.",
+    "validation": "Please fix the form errors.",
+    "tooMany": "Too many requests. Please wait.",
+    "serverError": "Server error. We're working on it."
+  },
+  "empty": {
+    "noResults": "No results found.",
+    "noData": "No data yet.",
+    "noNotifications": "No new notifications."
+  }
+}

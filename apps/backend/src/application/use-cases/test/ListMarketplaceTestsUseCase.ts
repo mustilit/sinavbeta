@@ -1,11 +1,14 @@
 import { IExamRepository } from '../../../domain/interfaces/IExamRepository';
 import { ReviewAggregationService } from '../../services/ReviewAggregationService';
 import { AppError } from '../../errors/AppError';
+import type { FxRateService, FxCurrency } from '../../../domain/interfaces/FxRateService';
 
 /** UUID doğrulama regex'i — gelen filtre parametreleri bu kuralla kontrol edilir. */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** İzin verilen sıralama değerleri. */
 const SORT_VALUES = ['newest', 'priceAsc', 'priceDesc'] as const;
+/** Desteklenen para birimleri. */
+const SUPPORTED_CURRENCIES: readonly FxCurrency[] = ['TRY', 'USD', 'EUR', 'GBP'];
 
 /** Marketplace test listesi için filtre parametreleri. */
 export type ListMarketplaceFilters = {
@@ -17,6 +20,8 @@ export type ListMarketplaceFilters = {
   sort?: (typeof SORT_VALUES)[number];
   page?: number;
   limit?: number;
+  /** Opsiyonel: istemcinin görmek istediği para birimi; verilirse her item'a `converted` alanı eklenir. */
+  displayCurrency?: FxCurrency;
 };
 
 /**
@@ -27,7 +32,14 @@ export type ListMarketplaceFilters = {
 export class ListMarketplaceTestsUseCase {
   /** Puan ortalamalarını hesaplamak için kullanılan servis. */
   private agg = new ReviewAggregationService();
-  constructor(private readonly examRepository: IExamRepository) {}
+  /**
+   * @param examRepository - Test sorgu repository'si
+   * @param fx - Opsiyonel FX servisi. Verilirse `displayCurrency` ile fiyat dönüşümü yapılır.
+   */
+  constructor(
+    private readonly examRepository: IExamRepository,
+    private readonly fx?: FxRateService,
+  ) {}
 
   /**
    * Yayınlı testleri filtreler, sıralar, sayfalayarak döner.
@@ -46,6 +58,9 @@ export class ListMarketplaceTestsUseCase {
     }
     if (filters?.sort && !SORT_VALUES.includes(filters.sort as any)) {
       throw new AppError('INVALID_SORT', 'sort must be one of: newest, priceAsc, priceDesc', 400);
+    }
+    if (filters?.displayCurrency && !SUPPORTED_CURRENCIES.includes(filters.displayCurrency)) {
+      throw new AppError('INVALID_CURRENCY', 'displayCurrency must be one of: TRY, USD, EUR, GBP', 400);
     }
 
     // Sayfa boyutunu 1-50 arasında sınırla; varsayılan 20
@@ -102,6 +117,27 @@ export class ListMarketplaceTestsUseCase {
       ratingAvg: t.ratingAvg ?? null,
       ratingCount: t.ratingCount ?? 0,
     }));
+
+    // Opsiyonel FX dönüşümü: displayCurrency verilmiş ve fx servisi DI'lı ise
+    // her item'a `converted` alanı eklenir. Mevcut UI sözleşmesi bozulmaz.
+    if (filters?.displayCurrency && this.fx) {
+      const targetCur = filters.displayCurrency;
+      const withConverted = await Promise.all(
+        summaries.map(async (s: any) => {
+          const sourceCur = (s.currency ?? 'TRY') as FxCurrency;
+          if (s.priceCents == null || sourceCur === targetCur) return s;
+          try {
+            const amountCents = await this.fx!.convert(s.priceCents, sourceCur, targetCur);
+            const rate = await this.fx!.getRate(sourceCur, targetCur);
+            return { ...s, converted: { amountCents, currency: targetCur, rate } };
+          } catch {
+            // FX hatasında orijinal item olduğu gibi döner (graceful degrade)
+            return s;
+          }
+        }),
+      );
+      return { items: withConverted, meta: { total: res.total, page, limit } };
+    }
 
     return { items: summaries, meta: { total: res.total, page, limit } };
   }

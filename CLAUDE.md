@@ -199,3 +199,4 @@ cd apps/frontend && npm audit --audit-level=high
 @.claude/skills/pagination/SKILL.md             <!-- cursor pagination pattern -->
 @.claude/skills/full-text-search/SKILL.md       <!-- tsvector + GIN -->
 @.claude/skills/accessibility/SKILL.md          <!-- axe-core + WCAG kuralları -->
+@.claude/skills/email-traffic/SKILL.md          <!-- 3 kuyruk + provider fallback + kill switch + SuppressedEmail -->

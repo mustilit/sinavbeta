@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6;"><tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;">
+<tr><td style="padding:24px 32px;background:#dc2626;color:#ffffff;"><h1 style="margin:0;font-size:20px;font-weight:600;">Güvenlik Uyarısı</h1></td></tr>
+<tr><td style="padding:32px;color:#111827;font-size:14px;line-height:1.6;">
+<p>Merhaba <strong>{{user.username}}</strong>,</p>
+<p>Hesabınızda olağan dışı bir aktivite tespit edildi: <strong>{{event}}</strong></p>
+<p>Zaman: {{at}}</p>
+{{#if ip}}<p>IP: <code>{{ip}}</code></p>{{/if}}
+<p>Bu işlemi siz yaptıysanız bu maili görmezden gelebilirsiniz. Aksi halde lütfen şifrenizi hemen değiştirin.</p>
+{{> footer}}
+</td></tr></table></td></tr></table></body></html>

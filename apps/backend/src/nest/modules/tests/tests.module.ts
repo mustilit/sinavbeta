@@ -21,9 +21,11 @@ import { PrismaAttemptRepository } from '../../../infrastructure/repositories/Pr
 import { PrismaExamTypeRepository } from '../../../infrastructure/repositories/PrismaExamTypeRepository';
 import { PrismaTopicRepository } from '../../../infrastructure/repositories/PrismaTopicRepository';
 import { EXAM_TYPE_REPO, TOPIC_REPO, USER_REPO } from '../../../application/constants';
+import { ContentSafetyModule } from '../content-safety/content-safety.module';
+import { ModerateQuestionContentUseCase } from '../../../application/use-cases/moderation/ModerateQuestionContentUseCase';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ContentSafetyModule],
   controllers: [TestsController],
   providers: [
     TestsService,
@@ -44,8 +46,9 @@ import { EXAM_TYPE_REPO, TOPIC_REPO, USER_REPO } from '../../../application/cons
     },
     {
       provide: CreateQuestionUseCase,
-      useFactory: (examRepo: PrismaExamRepository) => new CreateQuestionUseCase(examRepo),
-      inject: [PrismaExamRepository],
+      useFactory: (examRepo: PrismaExamRepository, moderateUC: ModerateQuestionContentUseCase) =>
+        new CreateQuestionUseCase(examRepo, moderateUC),
+      inject: [PrismaExamRepository, ModerateQuestionContentUseCase],
     },
     {
       provide: ListMarketplaceTestsUseCase,
@@ -79,9 +82,9 @@ import { EXAM_TYPE_REPO, TOPIC_REPO, USER_REPO } from '../../../application/cons
     },
     {
       provide: UpdateQuestionUseCase,
-      useFactory: (examRepo: PrismaExamRepository, userRepo: PrismaUserRepository, attemptRepo: PrismaAttemptRepository) =>
-        new UpdateQuestionUseCase(examRepo, userRepo, attemptRepo),
-      inject: [PrismaExamRepository, USER_REPO, PrismaAttemptRepository],
+      useFactory: (examRepo: PrismaExamRepository, userRepo: PrismaUserRepository, attemptRepo: PrismaAttemptRepository, moderateUC: ModerateQuestionContentUseCase) =>
+        new UpdateQuestionUseCase(examRepo, userRepo, attemptRepo, moderateUC),
+      inject: [PrismaExamRepository, USER_REPO, PrismaAttemptRepository, ModerateQuestionContentUseCase],
     },
     {
       provide: UpdateOptionUseCase,

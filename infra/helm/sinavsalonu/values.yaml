@@ -1,0 +1,204 @@
+# Default values for sinavsalonu chart.
+# Üretimde `helm install -f values.prod.yaml` ile override edilir.
+
+global:
+  environment: production
+  imageRegistry: ghcr.io
+  imagePullSecrets: []
+
+# ── Backend (NestJS) ─────────────────────────────────────────────────────
+backend:
+  replicaCount: 3
+  image:
+    repository: REPLACE_ME/sinavsalonu-backend
+    tag: ""  # boş → Chart.appVersion kullanılır
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  env:
+    NODE_ENV: production
+    PORT: "3000"
+    TRUST_PROXY: "1"
+    CSP_ENABLED: "true"
+    CSP_REPORT_ONLY: "false"  # prod'da enforce
+    SWAGGER_ENABLED: "0"
+    THROTTLE_TTL_SECONDS: "60"
+    LOGIN_IP_LIMIT: "20"
+    LOGIN_EMAIL_LIMIT: "10"
+    CRON_DISABLED: "0"
+  # Secret olarak yüklenecek env'ler — values.prod.yaml'da set edilir, bu dosyada YOK.
+  secretEnv: {}
+    # DATABASE_URL: ""
+    # REDIS_URL: ""
+    # JWT_SECRET: ""
+    # SENTRY_DSN: ""
+    # STRIPE_WEBHOOK_SECRET: ""
+    # APP_ENCRYPTION_KEY: ""
+
+# ── Worker (BullMQ — email + DLQ + stats) ────────────────────────────────
+worker:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: REPLACE_ME/sinavsalonu-backend
+    tag: ""
+    pullPolicy: IfNotPresent
+  command: ["node", "dist/infrastructure/queue/email.worker.js"]
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    NODE_ENV: production
+    WORKER_PORT: "3010"
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 3010
+    initialDelaySeconds: 30
+    periodSeconds: 30
+
+# ── Frontend (Nginx + statik SPA) ────────────────────────────────────────
+frontend:
+  replicaCount: 2
+  image:
+    repository: REPLACE_ME/sinavsalonu-frontend
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# ── HPA (autoscaling) ────────────────────────────────────────────────────
+hpa:
+  backend:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 75
+  frontend:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+# ── Ingress ──────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: api.sinavsalonu.example
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend
+    - host: www.sinavsalonu.example
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+  tls:
+    - secretName: api-tls
+      hosts:
+        - api.sinavsalonu.example
+    - secretName: www-tls
+      hosts:
+        - www.sinavsalonu.example
+
+# ── Migration Job (her release'de çalışır) ───────────────────────────────
+migrations:
+  enabled: true
+  image:
+    repository: REPLACE_ME/sinavsalonu-backend
+    tag: ""
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  command: ["npx", "prisma", "migrate", "deploy"]
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ── External services (host'ları override et — chart bunları yönetmez) ──
+postgres:
+  external: true
+  # host: postgres-primary.db.svc.cluster.local
+  # port: 5432
+  # database: sinavsalonu
+  # ssl: require
+redis:
+  external: true
+  # host: redis.cache.svc.cluster.local
+  # port: 6379
+  # sentinel: false
+
+# ── Pod security ────────────────────────────────────────────────────────
+podSecurityContext:
+  fsGroup: 1001
+  runAsNonRoot: true
+  runAsUser: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: false  # uploads + tmp için true yapamadık (S3'e geçince true)
+
+# ── Observability ────────────────────────────────────────────────────────
+monitoring:
+  serviceMonitor:
+    enabled: false  # Prometheus operator varsa true
+    interval: 30s
+    path: /metrics  # /metrics endpoint eklenirse
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

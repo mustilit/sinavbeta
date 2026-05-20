@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6;"><tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;">
+<tr><td style="padding:24px 32px;background:#4f46e5;color:#ffffff;"><h1 style="margin:0;font-size:20px;font-weight:600;">Sınav Salonu</h1></td></tr>
+<tr><td style="padding:32px;color:#111827;font-size:14px;line-height:1.6;">
+<h2 style="margin:0 0 16px 0;font-size:18px;">E-posta adresinizi doğrulayın</h2>
+<p>Merhaba <strong>{{user.username}}</strong>,</p>
+<p>Sınav Salonu'na hoş geldiniz. Hesabınızı aktifleştirmek için aşağıdaki butona tıklayın:</p>
+<p style="margin:24px 0;">
+  <a href="{{verifyUrl}}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">E-postayı doğrula</a>
+</p>
+<p style="font-size:13px;color:#6b7280;">Bu işlemi siz başlatmadıysanız bu e-postayı görmezden gelebilirsiniz.</p>
+{{> footer}}
+</td></tr></table></td></tr></table></body></html>

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Kritik güvenlik zafiyeti
+    url: https://github.com/REPLACE_ME/security/advisories/new
+    about: Public issue açma — Security Advisories üzerinden private bildirim aç.
+  - name: Genel destek / soru
+    url: https://github.com/REPLACE_ME/discussions
+    about: Soru sor veya tartış (varsa Discussions açık).

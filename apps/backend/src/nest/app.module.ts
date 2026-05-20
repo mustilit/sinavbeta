@@ -165,6 +165,58 @@ import { GetLiveSessionByCodeUseCase } from '../application/use-cases/live/GetLi
 import { CreateRound2LiveSessionUseCase } from '../application/use-cases/live/CreateRound2LiveSessionUseCase';
 import { GetLiveSessionComparisonUseCase } from '../application/use-cases/live/GetLiveSessionComparisonUseCase';
 
+// ── Wire-up: Subscription / Billing / 2FA / Audit / Idempotency ──────────────
+// Aşağıdaki provider'lar 6 aşamalı kalite-aksiyonu çalışmasının son aşaması
+// (Aşama 6 — wire-up) olarak eklendi. Tüm dosyalar mevcut Use Case + Repository
+// + Controller yapısını izliyor; AppModule'a takılınca kullanılabilir hale geliyor.
+import { WebhookController } from './controllers/webhook.controller';
+import { BillingController } from './controllers/v1/billing.controller';
+import { TwoFactorController } from './controllers/v1/two-factor.controller';
+import { IdempotencyInterceptor } from './interceptors/idempotency.interceptor';
+import { TierGuard } from './guards/tier.guard';
+import { RedisCache } from '../infrastructure/cache/RedisCache';
+import { AuditLogger } from '../infrastructure/audit/AuditLogger';
+import { StripeBillingService } from '../infrastructure/services/StripeBillingService';
+import { TwoFactorService } from '../infrastructure/security/TwoFactorService';
+import { PasswordService } from '../infrastructure/services/PasswordService';
+import { JwtService as AppJwtService } from '../infrastructure/services/JwtService';
+import { PrismaSubscriptionRepository } from '../infrastructure/repositories/PrismaSubscriptionRepository';
+import { SUBSCRIPTION_REPOSITORY } from '../domain/interfaces/SubscriptionRepository';
+import { StartCheckoutUseCase } from '../application/use-cases/billing/StartCheckoutUseCase';
+import { CreatePortalLinkUseCase } from '../application/use-cases/billing/CreatePortalLinkUseCase';
+import { GetMySubscriptionUseCase } from '../application/use-cases/billing/GetMySubscriptionUseCase';
+import { HandleStripeWebhookUseCase } from '../application/use-cases/billing/HandleStripeWebhookUseCase';
+import { HandleIyzicoWebhookUseCase } from '../application/use-cases/billing/HandleIyzicoWebhookUseCase';
+import { SetupTwoFactorUseCase } from '../application/use-cases/auth/SetupTwoFactorUseCase';
+import { VerifyTwoFactorLoginUseCase } from '../application/use-cases/auth/VerifyTwoFactorLoginUseCase';
+import { DisableTwoFactorUseCase } from '../application/use-cases/auth/DisableTwoFactorUseCase';
+// ── İçerik Moderasyonu ───────────────────────────────────────────────────
+import { ContentSafetyModule } from './modules/content-safety/content-safety.module';
+import { AdminModerationController } from './controllers/admin.moderation.controller';
+import { MeModerationController } from './controllers/me.moderation.controller';
+// ── Email Trafiği Modülü ────────────────────────────────────────────────
+import { AdminEmailController } from './controllers/admin.email.controller';
+import { MeEmailPreferencesController } from './controllers/me.email-preferences.controller';
+import { EmailWebhookController } from './controllers/email-webhook.controller';
+import { EmailSeedService } from './bootstrap/email-seed.service';
+import { SendEmailUseCase } from '../application/use-cases/email/SendEmailUseCase';
+import { HandleEmailWebhookUseCase } from '../application/use-cases/email/HandleEmailWebhookUseCase';
+import { ListEmailLogsUseCase } from '../application/use-cases/email/ListEmailLogsUseCase';
+import { GetEmailLogDetailUseCase } from '../application/use-cases/email/GetEmailLogDetailUseCase';
+import { RetryFailedEmailUseCase } from '../application/use-cases/email/RetryFailedEmailUseCase';
+import { ManageProviderConfigUseCase } from '../application/use-cases/email/ManageProviderConfigUseCase';
+import { TestProviderConfigUseCase } from '../application/use-cases/email/TestProviderConfigUseCase';
+import { ToggleEmailKillSwitchUseCase } from '../application/use-cases/email/ToggleEmailKillSwitchUseCase';
+import { ManageSuppressedEmailUseCase } from '../application/use-cases/email/ManageSuppressedEmailUseCase';
+import { ManageEmailTemplateUseCase } from '../application/use-cases/email/ManageEmailTemplateUseCase';
+import { UpdateUserEmailPreferencesUseCase } from '../application/use-cases/email/UpdateUserEmailPreferencesUseCase';
+import { UnsubscribeViaTokenUseCase } from '../application/use-cases/email/UnsubscribeViaTokenUseCase';
+import { GetEmailTrafficMetricsUseCase } from '../application/use-cases/email/GetEmailTrafficMetricsUseCase';
+import { AnonymizeOldEmailLogsUseCase } from '../application/use-cases/email/AnonymizeOldEmailLogsUseCase';
+import { CheckBounceRateAlertUseCase } from '../application/use-cases/email/CheckBounceRateAlertUseCase';
+import { ResetProviderDailyCountUseCase } from '../application/use-cases/email/ResetProviderDailyCountUseCase';
+import { ExpireSuppressionsUseCase } from '../application/use-cases/email/ExpireSuppressionsUseCase';
+
 const THROTTLE_TTL_SECONDS = Number(process.env.THROTTLE_TTL_SECONDS ?? '60') || 60;
 
 const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
@@ -227,10 +279,43 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     // Refunds
     (require('./modules/refunds/refunds.module').RefundsModule),
     ContractsModule,
+    ContentSafetyModule,
   ],
-  controllers: [RootController, HealthController, NotificationsController, AdminDlqController, TestsPerformanceController, HomeController, SiteController, ReviewsController, EducatorsController, FollowsController, CspReportController, AdminExamTypesController, AdminTopicsController, AdminEducatorsController, AdminUsersController, ObjectionsController, EducatorObjectionsController, AdminObjectionsController, AdminRefundsController, AdminSettingsController, AdminSiteSettingsController, AdminContractsController, AdminAuditController, AdminAdPackagesController, AdPackagesController, MeRefundsController, MePurchasesController, MePreferencesController, MetricsController, AdminCandidatesController, AdminEducatorReportController, AdminCommissionController, AdminAdReportController, MePerformanceController, MeHeartbeatController, AdminWorkersController, PackagesController, UploadController, AttemptsController, EducatorRefundsController, AdminStatsController, LiveSessionsController],
+  controllers: [RootController, HealthController, NotificationsController, AdminDlqController, TestsPerformanceController, HomeController, SiteController, ReviewsController, EducatorsController, FollowsController, CspReportController, AdminExamTypesController, AdminTopicsController, AdminEducatorsController, AdminUsersController, ObjectionsController, EducatorObjectionsController, AdminObjectionsController, AdminRefundsController, AdminSettingsController, AdminSiteSettingsController, AdminContractsController, AdminAuditController, AdminAdPackagesController, AdPackagesController, MeRefundsController, MePurchasesController, MePreferencesController, MetricsController, AdminCandidatesController, AdminEducatorReportController, AdminCommissionController, AdminAdReportController, MePerformanceController, MeHeartbeatController, AdminWorkersController, PackagesController, UploadController, AttemptsController, EducatorRefundsController, AdminStatsController, LiveSessionsController,
+    // Aşama 6 — wire-up: yeni controller'lar
+    WebhookController,
+    BillingController,
+    TwoFactorController,
+    // İçerik Moderasyonu
+    AdminModerationController,
+    MeModerationController,
+    // Email Trafiği Modülü
+    AdminEmailController,
+    MeEmailPreferencesController,
+    EmailWebhookController,
+  ],
   providers: [
     SeedService,
+    EmailSeedService,
+    // Email Trafiği use case'leri — useFactory ile (singleton prisma kullanır;
+    // PrismaClient inject edilemediği için class shortcut çalışmıyor).
+    { provide: SendEmailUseCase, useFactory: () => new SendEmailUseCase() },
+    { provide: HandleEmailWebhookUseCase, useFactory: () => new HandleEmailWebhookUseCase() },
+    { provide: ListEmailLogsUseCase, useFactory: () => new ListEmailLogsUseCase() },
+    { provide: GetEmailLogDetailUseCase, useFactory: () => new GetEmailLogDetailUseCase() },
+    { provide: RetryFailedEmailUseCase, useFactory: () => new RetryFailedEmailUseCase() },
+    { provide: ManageProviderConfigUseCase, useFactory: () => new ManageProviderConfigUseCase() },
+    { provide: TestProviderConfigUseCase, useFactory: () => new TestProviderConfigUseCase() },
+    { provide: ToggleEmailKillSwitchUseCase, useFactory: () => new ToggleEmailKillSwitchUseCase() },
+    { provide: ManageSuppressedEmailUseCase, useFactory: () => new ManageSuppressedEmailUseCase() },
+    { provide: ManageEmailTemplateUseCase, useFactory: () => new ManageEmailTemplateUseCase() },
+    { provide: UpdateUserEmailPreferencesUseCase, useFactory: () => new UpdateUserEmailPreferencesUseCase() },
+    { provide: UnsubscribeViaTokenUseCase, useFactory: () => new UnsubscribeViaTokenUseCase() },
+    { provide: GetEmailTrafficMetricsUseCase, useFactory: () => new GetEmailTrafficMetricsUseCase() },
+    { provide: AnonymizeOldEmailLogsUseCase, useFactory: () => new AnonymizeOldEmailLogsUseCase() },
+    { provide: CheckBounceRateAlertUseCase, useFactory: () => new CheckBounceRateAlertUseCase() },
+    { provide: ResetProviderDailyCountUseCase, useFactory: () => new ResetProviderDailyCountUseCase() },
+    { provide: ExpireSuppressionsUseCase, useFactory: () => new ExpireSuppressionsUseCase() },
     ...(throttleDisabled ? [] : [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }]),
     { provide: EXAM_TYPE_REPO, useClass: PrismaExamTypeRepository },
     { provide: TOPIC_REPO, useClass: PrismaTopicRepository },
@@ -375,7 +460,11 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
       inject: [PrismaRefundRepository],
     },
     { provide: GetAdminSettingsUseCase, useFactory: () => new GetAdminSettingsUseCase() },
-    { provide: UpdateAdminSettingsUseCase, useFactory: () => new UpdateAdminSettingsUseCase() },
+    {
+      provide: UpdateAdminSettingsUseCase,
+      useFactory: (audit: AuditLogger) => new UpdateAdminSettingsUseCase(audit),
+      inject: [AuditLogger],
+    },
     GetSiteSettingsUseCase,
     UpdateSiteSettingsUseCase,
     ListFeaturedEducatorsUseCase,
@@ -534,7 +623,38 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
       useFactory: (repo: PrismaTestPackageRepository) => new UnpublishTestPackageUseCase(repo),
       inject: [PrismaTestPackageRepository],
     },
+    // ── Aşama 6 — wire-up provider'ları ──────────────────────────────────────
+    // Idempotency interceptor: para akışı endpoint'lerinde @UseInterceptors ile kullanılır.
+    // RedisCache singleton: yeni instance her seferinde değil, DI ile tek instance.
+    RedisCache,
+    IdempotencyInterceptor,
+    // Audit logger: AdminUseCase'leri ve auth akışı kullanır.
+    AuditLogger,
+    // Stripe Billing — STRIPE_SECRET_KEY yoksa devre dışı (isEnabled() = false).
+    StripeBillingService,
+    // 2FA service + password/JWT (auth-module'da zaten var ama burada da expose).
+    TwoFactorService,
+    PasswordService,
+    AppJwtService,
+    // Subscription repository — TierGuard ve billing use case'leri için.
+    PrismaSubscriptionRepository,
+    {
+      provide: SUBSCRIPTION_REPOSITORY,
+      useClass: PrismaSubscriptionRepository,
+    },
+    // Tier guard — sadece @RequireTier dekoratörü ile kullanılan endpoint'leri etkiler.
+    // Global guard değil (APP_GUARD ile bind edilmedi) — selective use only.
+    TierGuard,
+    // Billing use case'leri
+    StartCheckoutUseCase,
+    CreatePortalLinkUseCase,
+    GetMySubscriptionUseCase,
+    HandleStripeWebhookUseCase,
+    HandleIyzicoWebhookUseCase,
+    // 2FA use case'leri
+    SetupTwoFactorUseCase,
+    VerifyTwoFactorLoginUseCase,
+    DisableTwoFactorUseCase,
   ],
 })
 export class AppModule {}
-

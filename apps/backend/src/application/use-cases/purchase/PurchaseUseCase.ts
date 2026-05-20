@@ -3,6 +3,7 @@ import type { PrismaClient } from '@prisma/client';
 import { RedisCache } from '../../../infrastructure/cache/RedisCache';
 import { prismaRetry } from '../../../infrastructure/prisma/prisma-retry';
 import { getDefaultTenantId } from '../../../common/tenant';
+import type { FxRateService, FxCurrency } from '../../../domain/interfaces/FxRateService';
 
 /**
  * Adayın test satın alma işlemini yönetir.
@@ -15,7 +16,14 @@ import { getDefaultTenantId } from '../../../common/tenant';
 export class PurchaseUseCase {
   /** Öneri cache'ini temizlemek için kullanılan Redis bağlantısı. */
   private cache: RedisCache;
-  constructor(private readonly prisma: PrismaClient) {
+  /**
+   * @param prisma - Prisma client (primary)
+   * @param fx - Opsiyonel FX servisi. Verilirse `amountUsdCents` snapshot kaydedilir.
+   */
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly fx?: FxRateService,
+  ) {
     this.cache = new RedisCache();
   }
 
@@ -107,6 +115,18 @@ export class PurchaseUseCase {
 
     const tenantId = (test as any).tenantId ?? getDefaultTenantId();
 
+    // USD snapshot: çoklu para birimi raporlaması için (best-effort).
+    // FX servisi DI'lı değilse veya çağrı başarısızsa null kaydedilir.
+    const purchaseCurrency = ((test as any).currency ?? 'TRY') as FxCurrency;
+    let amountUsdCents: number | undefined;
+    if (this.fx) {
+      try {
+        amountUsdCents = await this.fx.convert(finalAmountCents, purchaseCurrency, 'USD');
+      } catch {
+        amountUsdCents = undefined;
+      }
+    }
+
     try {
       // Satın alma, deneme oluşturma ve audit kaydı tek transaction içinde yapılır
       const result = await prismaRetry(() =>
@@ -119,11 +139,12 @@ export class PurchaseUseCase {
             testId: examTestId,
             candidateId,
             amountCents: finalAmountCents,
-            currency: (test as any).currency ?? 'TRY',
+            currency: purchaseCurrency,
+            amountUsdCents: amountUsdCents ?? null,
             ...(discountApplied ? { discountCodeId: discountApplied.id } : {}),
             ...(packageId ? { packageId } : {}),
             ...(paymentProvider ? { paymentProvider } : {}),
-          },
+          } as any,
         });
 
         const attempt = await tx.testAttempt.create({

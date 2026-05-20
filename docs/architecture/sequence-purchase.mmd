@@ -1,0 +1,53 @@
+%% Satın alma akışı sequence diagram.
+%% Idempotency-Key + webhook signing güzergahı dahil.
+
+sequenceDiagram
+    actor Aday
+    participant FE as Frontend (SPA)
+    participant API as Backend (NestJS)
+    participant Redis
+    participant Pg as PostgreSQL
+    participant Iyzico as Iyzico / Stripe
+
+    Aday->>FE: "Satın al" butonu
+    FE->>FE: uuid() → Idempotency-Key üret
+    FE->>API: POST /v1/purchases<br/>Idempotency-Key: <uuid><br/>Body: { testId, ... }
+
+    Note over API: IdempotencyInterceptor
+    API->>Redis: GET idem:<tenant>:<user>:<key>
+    Redis-->>API: null (yok)
+    API->>Redis: SET NX EX 60s<br/>{ status: 'in_progress', hash }
+    Redis-->>API: OK
+
+    Note over API: PurchaseUseCase
+    API->>Pg: BEGIN TX
+    API->>Pg: SELECT package WHERE id, tenantId
+    API->>Pg: SELECT FOR UPDATE existing purchase
+    Pg-->>API: ok, no conflict
+    API->>Pg: INSERT purchase (PENDING)
+    API->>Iyzico: createCheckout({ amount, ref: purchaseId })<br/>(circuit breaker)
+    Iyzico-->>API: { checkoutId, redirectUrl }
+    API->>Pg: UPDATE purchase SET providerRef
+    API->>Pg: COMMIT
+    API->>Redis: SET idem:... { status: 'completed', responseBody, 24h }
+    API-->>FE: 201 { redirectUrl }
+
+    FE->>Aday: redirect → Iyzico checkout
+    Aday->>Iyzico: kart bilgileri + 3DS
+
+    Note right of Iyzico: kullanıcı ödeme tamamladı
+    Iyzico->>API: POST /webhooks/iyzico<br/>X-Iyz-Signature: <hash>
+    Note over API: verifyIyzicoSignature
+    API->>Pg: SELECT WebhookEvent WHERE providerEventId
+    Pg-->>API: null (ilk kez)
+    API->>Pg: INSERT WebhookEvent (unique)
+    API->>Iyzico: GET /payments/<id><br/>(authoritative re-fetch)
+    Iyzico-->>API: { status: 'success', amount }
+    API->>Pg: UPDATE purchase SET status=ACTIVE
+    API->>Pg: INSERT AuditLog action=PURCHASE
+    API-->>Iyzico: 200 { received: true }
+
+    Note over FE,API: Frontend polling veya WS ile state güncellenir
+    FE->>API: GET /v1/purchases/:id
+    API-->>FE: 200 { status: 'ACTIVE' }
+    FE->>Aday: ✅ Satın alma onaylandı

@@ -24,6 +24,7 @@ export const PAGE_ROLES = {
   Contact: [ROLES.PUBLIC],
   Privacy: [ROLES.PUBLIC],
   Partnership: [ROLES.PUBLIC],
+  Pricing: [ROLES.PUBLIC],
   Support: [ROLES.PUBLIC],
   Educators: [ROLES.PUBLIC],
   ExamTypes: [ROLES.PUBLIC],
@@ -76,6 +77,33 @@ export const PAGE_ROLES = {
   AdminObjections: [ROLES.ADMIN],
   // Canlı test kapasite paketleri yönetimi — yalnızca admin
   ManageLiveTiers: [ROLES.ADMIN],
+
+  // Email Trafiği yönetimi — yalnızca admin
+  EmailDashboard: [ROLES.ADMIN],
+  EmailKillSwitches: [ROLES.ADMIN],
+  EmailProviders: [ROLES.ADMIN],
+  EmailLogs: [ROLES.ADMIN],
+  EmailLogDetail: [ROLES.ADMIN],
+  EmailTemplates: [ROLES.ADMIN],
+  EmailSuppressions: [ROLES.ADMIN],
+  // Bildirim tercihleri — auth'lu her kullanıcı (CANDIDATE/EDUCATOR/ADMIN/WORKER)
+  EmailPreferences: [ROLES.CANDIDATE, ROLES.EDUCATOR, ROLES.ADMIN, ROLES.WORKER],
+  // Public unsubscribe sayfası
+  Unsubscribe: [ROLES.PUBLIC],
+  // Mail Yönetimi — 6 alt sayfayı sekmelerde toplayan tek sayfa
+  EmailManagement: [ROLES.ADMIN],
+
+  // İçerik Moderasyonu — yalnızca admin (WORKER alt yetkilendirmesi mümkün)
+  RiskyContent: [ROLES.ADMIN], // birleşik sekmeli sayfa (queue + educators + terms + settings)
+  ModerationQueue: [ROLES.ADMIN], // legacy direkt erişim
+  RiskyEducators: [ROLES.ADMIN],
+  BlockedTerms: [ROLES.ADMIN],
+  ModerationResultDetail: [ROLES.ADMIN],
+  EducatorViolationDetail: [ROLES.ADMIN],
+  ModerationSettings: [ROLES.ADMIN],
+
+  // Eğitici moderasyon durumu — eğitici ve admin
+  MyModerationStatus: [ROLES.EDUCATOR, ROLES.ADMIN],
 };
 
 /** Rolü büyük harfe normalize et (backend bazen küçük harf dönebilir) */

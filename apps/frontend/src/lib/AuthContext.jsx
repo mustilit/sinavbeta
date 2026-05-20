@@ -146,6 +146,11 @@ export const AuthProvider = ({ children }) => {
       throw new Error('Giriş yanıtında kullanıcı veya token eksik.');
     }
     setAuth(u, token);
+    // Login response preferences içermez; profil resmi vb. için /me ile zenginleştir.
+    try {
+      const merged = await base44.auth.me();
+      if (merged) setAuth(merged, token);
+    } catch {}
     authLog('login ok', { id: u?.id, role: u?.role });
     return u;
   }, [setAuth]);

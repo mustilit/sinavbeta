@@ -1,0 +1,9 @@
+{
+  "liveSessionTiers": [
+    { "label": "Çekirdek Ekip", "minParticipants": 0, "maxParticipants": 25,   "priceCents":   25000, "isActive": true, "order": 0 },
+    { "label": "Temel",          "minParticipants": 0, "maxParticipants": 100,  "priceCents":   75000, "isActive": true, "order": 1 },
+    { "label": "Geniş Aile",     "minParticipants": 0, "maxParticipants": 250,  "priceCents":  200000, "isActive": true, "order": 2 },
+    { "label": "Kimler Var",     "minParticipants": 0, "maxParticipants": 1000, "priceCents":  750000, "isActive": true, "order": 3 },
+    { "label": "Herkes Gelsin",  "minParticipants": 0, "maxParticipants": 5000, "priceCents": 2000000, "isActive": true, "order": 4 }
+  ]
+}

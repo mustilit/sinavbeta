@@ -1,6 +1,19 @@
+// Mock prisma BEFORE other imports — real Prisma client'in load edilmesini engelle
+// (CI/test ortamında query engine binary'si yok; ayrıca burada gerçek DB de yok).
+jest.mock('../../src/infrastructure/database/prisma', () => ({
+  prisma: {
+    userPreference: {
+      findUnique: jest.fn(async () => null),
+    },
+  },
+}));
+
 const { GetEducatorPageUseCase } = require('../../src/application/use-cases/educator/GetEducatorPageUseCase');
-const prismaMod = require('../../src/infrastructure/database/prisma');
-const ReviewAgg = require('../../src/application/services/ReviewAggregationService');
+
+// prefsRepo mock — varsayılan null prefs
+const makePrefsRepo = (prefs = null) => ({
+  findByUserId: async () => prefs,
+});
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -11,7 +24,7 @@ test('educator not found throws', async () => {
   const examsRepo = { listPublishedByEducator: async () => ({ items: [], total: 0 }) };
   const statsRepo = { findManyByTestIds: async () => [] };
   const reviewAgg = { getAggregatesForTestIds: async () => ({}) };
-  const uc = new GetEducatorPageUseCase(usersRepo, examsRepo, statsRepo, reviewAgg);
+  const uc = new GetEducatorPageUseCase(usersRepo, examsRepo, statsRepo, reviewAgg, makePrefsRepo());
   await expect(uc.execute('no-such')).rejects.toThrow('EDUCATOR_NOT_FOUND');
 });
 
@@ -29,7 +42,7 @@ test('returns published tests and pagination meta with enrichment preferring Tes
   };
   const reviewAgg = { getAggregatesForTestIds: async () => ({ t1: { avg: 3.0, count: 1 }, t2: { avg: 2.0, count: 1 } }) };
 
-  const uc = new GetEducatorPageUseCase(usersRepo, examsRepo, statsRepo, reviewAgg);
+  const uc = new GetEducatorPageUseCase(usersRepo, examsRepo, statsRepo, reviewAgg, makePrefsRepo());
   const res = await uc.execute('ed1', { page: 1, limit: 10 });
   expect(res.educator.id).toBe('ed1');
   expect(res.tests.items.length).toBe(2);
@@ -39,4 +52,3 @@ test('returns published tests and pagination meta with enrichment preferring Tes
   expect(res.tests.meta.page).toBe(1);
   expect(res.tests.meta.limit).toBe(10);
 });
-

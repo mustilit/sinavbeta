@@ -1,0 +1,58 @@
+%% C4 — Container Diagram
+%% Sınav Salonu sisteminin iç container'ları (uygulama + veri tabanı + cache + queue).
+
+flowchart TB
+    %% Users
+    User(["👤 Kullanıcı<br/>(tarayıcı / mobile)"])
+    Webhook[("Iyzico / Stripe<br/>Webhook")]
+
+    %% Frontend
+    subgraph FE["Frontend (React + Vite)"]
+        Browser["SPA<br/>React 18 + Vite<br/>Tailwind + Radix UI"]
+    end
+
+    %% Backend
+    subgraph BE["Backend (NestJS)"]
+        API["REST API<br/>NestJS<br/>Clean Architecture<br/>149 use-case"]
+        Worker["Background Worker<br/>BullMQ<br/>email + DLQ + stats"]
+        Cron["Cron Service<br/>NestJS @Cron<br/>cleanup + backup"]
+    end
+
+    %% Data
+    subgraph Data["Veri katmanı"]
+        Pg[("PostgreSQL 14+<br/>Prisma ORM<br/>tsvector + GIN<br/>48 composite index")]
+        Redis[("Redis<br/>Cache + Throttler<br/>BullMQ + idempotency")]
+        S3[("Object Storage<br/>S3 / R2<br/>uploads, sertifikalar")]
+    end
+
+    %% Reverse proxy
+    Nginx["Nginx<br/>SPA + asset cache<br/>CSP + gzip"]
+
+    %% Edge
+    User -->|"HTTPS 443"| Nginx
+    Nginx -->|"/auth, /tests, ..."| API
+    Nginx -->|"static SPA + assets"| Browser
+    Browser -->|"REST API<br/>(Authorization: Bearer)"| API
+
+    Webhook -->|"POST<br/>/webhooks/stripe<br/>HMAC imzalı"| API
+
+    API -->|"Prisma"| Pg
+    API -->|"cache + lock"| Redis
+    API -->|"job enqueue"| Redis
+    Worker -->|"job consume"| Redis
+    Worker -->|"DB update"| Pg
+    Cron -->|"prisma queries<br/>pg_dump"| Pg
+
+    API -->|"file upload"| S3
+    Browser -.->|"pre-signed URL"| S3
+
+    classDef user fill:#08427b,color:white
+    classDef fe fill:#438dd5,color:white
+    classDef be fill:#1168bd,color:white
+    classDef data fill:#7f7f7f,color:white
+    classDef ext fill:#999,color:white
+    class User user
+    class Browser fe
+    class Nginx,API,Worker,Cron be
+    class Pg,Redis,S3 data
+    class Webhook ext

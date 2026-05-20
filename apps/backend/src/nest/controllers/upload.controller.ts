@@ -8,6 +8,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
+import type { Request } from 'express';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
@@ -28,12 +29,13 @@ export class UploadController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: UPLOAD_DIR,
-        filename: (_req, file, cb) => {
+        filename: (_req: Request, file: Express.Multer.File, cb: (err: Error | null, filename: string) => void) => {
           const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
           cb(null, `${unique}${extname(file.originalname)}`);
         },
       }),
-      fileFilter: (_req, file, cb) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fileFilter: (_req: Request, file: Express.Multer.File, cb: any) => {
         if (!file.mimetype.startsWith('image/')) {
           return cb(new BadRequestException('Sadece görsel dosyası yüklenebilir'), false);
         }

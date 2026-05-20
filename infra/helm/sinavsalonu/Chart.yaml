@@ -1,0 +1,16 @@
+apiVersion: v2
+name: sinavsalonu
+description: Sınav Salonu — marketplace test platformu (NestJS + React)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: Sınav Salonu maintainers
+keywords:
+  - exam
+  - marketplace
+  - nestjs
+  - prisma
+home: https://github.com/REPLACE_ME
+sources:
+  - https://github.com/REPLACE_ME

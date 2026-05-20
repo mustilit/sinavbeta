@@ -1,0 +1,53 @@
+{
+  "$schema": "https://unpkg.com/@stryker-mutator/core/schema/stryker-schema.json",
+  "_documentation": "Mutation testing — testlerin gerçek kalitesini ölçer. Coverage %85 olsa bile testler isim-uyumlu pass edebilir. Stryker kodda bilinçli bug üretir, test'in yakalayıp yakalamadığını ölçer.",
+  "packageManager": "npm",
+  "testRunner": "jest",
+  "reporters": ["progress", "clear-text", "html", "json"],
+  "coverageAnalysis": "perTest",
+  "checkers": [],
+  "disableTypeChecks": "**",
+  "tsconfigFile": "tsconfig.stryker.json",
+  "mutate": [
+    "src/application/use-cases/**/*.ts",
+    "src/domain/**/*.ts",
+    "src/nest/guards/**/*.ts",
+    "src/nest/security/**/*.ts",
+    "src/nest/interceptors/**/*.ts",
+    "!src/**/*.dto.ts",
+    "!src/**/*.module.ts",
+    "!src/**/*.spec.ts",
+    "!src/**/*.test.ts",
+    "!src/**/index.ts"
+  ],
+  "jest": {
+    "projectType": "custom",
+    "configFile": "jest.config.cjs",
+    "enableFindRelatedTests": true
+  },
+  "_thresholds_note": "18 May 2026 iyileştirme: test/CreateTestUseCase=%97.56, test/UpdateTestUseCase=%100, birleşik=%98.46. Diğer use-case'ler eklenince high kademeli ayarlanacak.",
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 40
+  },
+  "_incremental_note": "İlk full run sonrası incremental dosya değişimi bazlı çalışır (CI'da hızlı).",
+  "incremental": true,
+  "incrementalFile": "reports/stryker-incremental.json",
+  "timeoutMS": 30000,
+  "concurrency": 4,
+  "logLevel": "info",
+  "_disable_in_ci_for": "Bazı use case'ler harici servis bağımlısı (ödeme), Stryker mutate edilmiş kodla testi geçirebilir → false positive. Bunları `disableTypeChecks` ve `mutate` exclude ile geç.",
+  "ignorePatterns": [
+    "src/main.ts",
+    "src/index.ts",
+    "src/instrument.ts",
+    "src/infrastructure/queue/email.worker.ts",
+    "src/infrastructure/queue/dlq.worker.ts",
+    "src/infrastructure/queue/stats.worker.ts",
+    "node_modules",
+    "dist",
+    "coverage",
+    "reports"
+  ]
+}

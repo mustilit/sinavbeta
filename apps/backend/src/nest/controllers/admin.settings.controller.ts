@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Inject } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Inject, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOkResponse, ApiForbiddenResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
 import type { PrismaClient } from '@prisma/client';
@@ -7,6 +7,7 @@ import { UpdateAdminSettingsUseCase } from '../../application/use-cases/admin/Up
 import { UpdateAdminSettingsDto } from './dto/update-admin-settings.dto';
 import { GetAdminPaymentSettingsUseCase } from '../../application/use-cases/admin/GetAdminPaymentSettingsUseCase';
 import { UpdatePaymentSettingsUseCase } from '../../application/use-cases/admin/UpdatePaymentSettingsUseCase';
+import { auditContextFromRequest } from '../../infrastructure/audit/AuditLogger';
 
 /**
  * Admin uygulama ayarları — satın alma kill-switch gibi özellik bayraklarını
@@ -35,21 +36,28 @@ export class AdminSettingsController {
   @ApiBearerAuth('bearer')
   @ApiOkResponse({ description: 'Settings updated' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
-  async update(@Body() dto: UpdateAdminSettingsDto) {
-    return this.updateSettings.execute(this.prisma, {
-      commissionPercent: dto.commissionPercent,
-      vatPercent: dto.vatPercent,
-      purchasesEnabled: dto.purchasesEnabled,
-      packageCreationEnabled: dto.packageCreationEnabled,
-      testPublishingEnabled: dto.testPublishingEnabled,
-      testAttemptsEnabled: dto.testAttemptsEnabled,
-      adPurchasesEnabled: dto.adPurchasesEnabled,
-      minPackagePriceCents: dto.minPackagePriceCents,
-      minQuestionsPerTest: dto.minQuestionsPerTest,
-      maxQuestionsPerTest: dto.maxQuestionsPerTest,
-      maxTestsPerPackage: dto.maxTestsPerPackage,
-      maxLiveQuestions: dto.maxLiveQuestions,
-    });
+  async update(@Body() dto: UpdateAdminSettingsDto, @Req() req: any) {
+    // Audit context: actorId/email/role + ip/userAgent — admin değişikliği takibi
+    const ctx = auditContextFromRequest(req);
+    return this.updateSettings.execute(
+      this.prisma,
+      {
+        commissionPercent: dto.commissionPercent,
+        vatPercent: dto.vatPercent,
+        purchasesEnabled: dto.purchasesEnabled,
+        packageCreationEnabled: dto.packageCreationEnabled,
+        testPublishingEnabled: dto.testPublishingEnabled,
+        testAttemptsEnabled: dto.testAttemptsEnabled,
+        adPurchasesEnabled: dto.adPurchasesEnabled,
+        twoFactorSystemEnabled: dto.twoFactorSystemEnabled,
+        minPackagePriceCents: dto.minPackagePriceCents,
+        minQuestionsPerTest: dto.minQuestionsPerTest,
+        maxQuestionsPerTest: dto.maxQuestionsPerTest,
+        maxTestsPerPackage: dto.maxTestsPerPackage,
+        maxLiveQuestions: dto.maxLiveQuestions,
+      },
+      ctx,
+    );
   }
 
   @Get('payment-settings')

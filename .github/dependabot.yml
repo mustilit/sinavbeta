@@ -1,0 +1,123 @@
+# Dependabot configuration — Sınav Salonu
+# Strateji: haftalık + gruplu PR'lar, böylece dependency PR çığlığı CI'yı boğmaz.
+# KALITE-DEGERLENDIRME §12 (Süreç Kalitesi) önerisi.
+version: 2
+updates:
+  # ── Backend (NestJS) ────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+    groups:
+      backend-prod-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      backend-dev-minor-patch:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      backend-major:
+        update-types:
+          - "major"
+      nestjs-family:
+        patterns:
+          - "@nestjs/*"
+      prisma-family:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+    commit-message:
+      prefix: "chore(backend-deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "backend"
+    reviewers: []
+
+  # ── Frontend (React + Vite) ─────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+    groups:
+      frontend-prod-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      frontend-dev-minor-patch:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      frontend-major:
+        update-types:
+          - "major"
+      radix-family:
+        patterns:
+          - "@radix-ui/*"
+      sentry-family:
+        patterns:
+          - "@sentry/*"
+      tanstack-family:
+        patterns:
+          - "@tanstack/*"
+    commit-message:
+      prefix: "chore(frontend-deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  # ── Root (Husky + lint-staged) ──────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(root-deps)"
+    labels:
+      - "dependencies"
+      - "root"
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "dependencies"
+      - "ci"
+
+  # ── Docker base images ──────────────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/infra/docker"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(docker)"
+    labels:
+      - "dependencies"
+      - "docker"

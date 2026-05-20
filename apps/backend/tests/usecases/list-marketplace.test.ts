@@ -2,6 +2,13 @@ import { InMemoryExamRepository } from '../../src/infrastructure/repositories/In
 import { ListMarketplaceTestsUseCase } from '../../src/application/use-cases/test/ListMarketplaceTestsUseCase';
 
 // ReviewAggregationService mock — Prisma bağlantısı gerektirmez
+// Prisma mock — testStats lookup icin gercek client gerekmez
+jest.mock('../../src/infrastructure/database/prisma', () => ({
+  prisma: {
+    testStats: { findMany: jest.fn(async () => []) },
+  },
+}));
+
 jest.mock('../../src/application/services/ReviewAggregationService', () => ({
   ReviewAggregationService: jest.fn().mockImplementation(() => ({
     getAggregatesForTestIds: jest.fn().mockResolvedValue({}),

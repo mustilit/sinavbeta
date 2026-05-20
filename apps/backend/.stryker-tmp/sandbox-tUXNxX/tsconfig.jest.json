@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "strict": false,
+    "strictPropertyInitialization": false,
+    "isolatedModules": true,
+    "types": ["jest", "node"],
+    "skipLibCheck": true
+  },
+  "include": ["tests/**/*.ts", "src/**/*.ts"]
+}

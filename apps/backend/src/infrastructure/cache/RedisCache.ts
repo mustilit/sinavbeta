@@ -32,6 +32,17 @@ export class RedisCache {
     await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
   }
 
+  /**
+   * Atomic SET NX EX — sadece key yoksa yazar. Idempotency lock için.
+   * @returns true: yazıldı, false: zaten var (lock alınamadı)
+   * Redis devre dışıyken her zaman true döner (fail-open, lock yok demek olur).
+   */
+  async setIfNotExists(key: string, value: any, ttlSeconds: number): Promise<boolean> {
+    if (!this.client) return true;
+    const res = await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds, 'NX');
+    return res === 'OK';
+  }
+
   async quit() {
     if (!this.client) return;
     await this.client.quit();

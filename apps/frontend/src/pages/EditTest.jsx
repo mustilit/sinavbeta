@@ -25,6 +25,7 @@ import { Link } from "react-router-dom";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 import { useServiceStatus } from "@/lib/useServiceStatus";
 import { TestPreviewModal } from "@/components/TestPreviewModal";
+import { ModerationStatusBadge } from "@/components/test/ModerationStatusBadge";
 
 const STEPS = [
   { id: 1, label: "Paket",    icon: Package  },
@@ -234,9 +235,15 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
             {complete ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border-2 border-slate-300 flex-shrink-0" />}
             {question.duplicateWarning && <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />}
             {question.content && <span className="text-xs text-slate-400 truncate max-w-xs">{question.content}</span>}
+            {question.moderationStatus && <ModerationStatusBadge status={question.moderationStatus} />}
           </div>
         </AccordionTrigger>
         <AccordionContent className="pt-2 pb-1">
+          {question.moderationStatus === 'REJECTED' && (
+            <div className="mb-3 px-3 py-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700">
+              Bu soru içerik politikasına aykırı bulundu.
+            </div>
+          )}
           <p className="text-xs text-slate-500 mb-3">
             {question.options.filter(o => o.content.trim()).length}/5 seçenek
             {question.options.find(o => o.isCorrect) ? " • Doğru: " + LETTERS[question.options.findIndex(o => o.isCorrect)] : " • Doğru seçilmedi"}
@@ -436,7 +443,14 @@ export default function EditTest() {
       else                        toast.success("Değişiklikler kaydedildi.");
       navigate(buildPageUrl("MyTestPackages"), { replace: true });
     },
-    onError: err => toast.error(err?.response?.data?.message || err?.message || "Kaydetme başarısız"),
+    onError: (err) => {
+      const code = err?.response?.data?.code || err?.response?.data?.error;
+      if (code === 'MODERATION_PENDING') {
+        toast.error("Bu testin bazı soruları moderasyon onayı bekliyor. Onaylanmadan yayımlayamazsınız.");
+      } else {
+        toast.error(err?.response?.data?.message || err?.message || "Kaydetme başarısız");
+      }
+    },
   });
 
   if (!packageId) return (

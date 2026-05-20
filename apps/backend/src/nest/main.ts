@@ -7,7 +7,7 @@ import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import * as express from 'express';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType, VERSION_NEUTRAL } from '@nestjs/common';
 import helmet from 'helmet';
 import { buildCspDirectivesFromEnv } from './security/csp';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -21,6 +21,7 @@ import { tenantMiddleware } from '../middleware/tenant.middleware';
 import { requestIdMiddleware } from '../middleware/request-id.middleware';
 import { validateDatabaseUrl } from '../config/database-url';
 import { validateRedisUrl } from '../config/redis';
+import { RedisCache } from '../infrastructure/cache/RedisCache';
 
 if (!globalThis.crypto) {
   // @ts-ignore
@@ -54,6 +55,14 @@ async function bootstrap() {
     }),
   );
 
+  // Webhook raw body capture — imza doğrulaması için ham byte'lar şart.
+  // Express middleware order önemli: bu kayıt body-parser'dan ÖNCE register edilir,
+  // böylece /webhooks/stripe + /webhooks/iyzico için body Buffer olarak gelir.
+  // Diğer route'lar Nest'in varsayılan JSON parser'ını kullanmaya devam eder.
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.use('/webhooks/stripe', express.raw({ type: 'application/json', limit: '2mb' }));
+  expressApp.use('/webhooks/iyzico', express.raw({ type: 'application/json', limit: '2mb' }));
+
   // Request context middleware (requestId + tenant)
   app.use(requestIdMiddleware);
   app.use(tenantMiddleware);
@@ -62,18 +71,39 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   // Global exception filter for consistent error format
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // ── API versiyonlama ───────────────────────────────────────────────────
+  // URI prefix tabanlı: yeni controller'lar `@Controller({ path: 'foo', version: '1' })`
+  // ile `/v1/foo` üzerinden erişilir. Var olan controller'lar VERSION_NEUTRAL altında
+  // kalmaya devam eder → URL'leri değişmez, frontend kırılmaz.
+  //
+  // Migration planı: docs/api-versioning.md
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: VERSION_NEUTRAL,
+    prefix: 'v',
+  });
   // Swagger / OpenAPI - tsx ile emitDecoratorMetadata uyumsuzluğu nedeniyle devre dışı
   // Dökümantasyon için: npm run build && npm run start ile çalıştırın veya SWAGGER_ENABLED=1 deneyin
   if (process.env.NODE_ENV !== 'production' && process.env.SWAGGER_ENABLED === '1') {
     try {
       const config = new DocumentBuilder()
-        .setTitle('Dal API')
-        .setDescription('Marketplace exam platform API')
+        .setTitle('Sınav Salonu API')
+        .setDescription(
+          'Marketplace exam platform API. Yeni endpoint\'ler `/v1/...` prefix\'i altında, ' +
+            'eski endpoint\'ler legacy (version-neutral) olarak kalır. ' +
+            'Migration rehberi: docs/api-versioning.md',
+        )
         .setVersion('1.0')
         .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'bearer')
+        .addServer('http://localhost:3000', 'Local')
+        .addServer('https://api.staging.sinavsalonu.example', 'Staging')
+        .addServer('https://api.sinavsalonu.example', 'Production')
         .build();
       const document = SwaggerModule.createDocument(app, config);
-      SwaggerModule.setup('docs', app, document, { swaggerOptions: { persistAuthorization: true } });
+      SwaggerModule.setup('docs', app, document, {
+        swaggerOptions: { persistAuthorization: true, displayRequestDuration: true },
+      });
       console.log('📚 Swagger docs: /docs');
     } catch (err) {
       console.warn('⚠️ Swagger atlandı:', (err as Error)?.message || err);
@@ -81,7 +111,8 @@ async function bootstrap() {
   }
   const reflector = app.get(Reflector);
   const jwtService = new JwtService();
-  app.useGlobalGuards(new JwtAuthGuard(jwtService, reflector), new RolesGuard(reflector));
+  const redisCache = new RedisCache();
+  app.useGlobalGuards(new JwtAuthGuard(jwtService, reflector, redisCache), new RolesGuard(reflector));
   // Uploads klasörünü statik olarak sun
   // CORP: cross-origin — frontend farklı port'tan img src ile erişebilsin
   const uploadsDir = join(process.cwd(), 'uploads');

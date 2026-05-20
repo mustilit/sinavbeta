@@ -1,0 +1,42 @@
+%% C4 — Context Diagram
+%% Sınav Salonu sistemi ve dış aktörlerle ilişkisi.
+%% Render: VS Code Mermaid preview veya https://mermaid.live
+%% Doğrudan PNG: npx -y @mermaid-js/mermaid-cli -i c4-context.mmd -o c4-context.png
+
+flowchart TB
+    %% Personas
+    Candidate(["👤 Aday\n(CANDIDATE)\nTest satın alır, çözer"])
+    Educator(["🧑‍🏫 Eğitici\n(EDUCATOR)\nTest oluşturur, satar"])
+    Admin(["🛡️ Yönetici\n(ADMIN)\nPlatformu yönetir"])
+
+    %% System
+    subgraph Sinavsalonu["Sınav Salonu — SaaS Platform"]
+        direction TB
+        Platform["Marketplace<br/>+ Canlı sınav<br/>+ Multi-tenant"]
+    end
+
+    %% External systems
+    Payment[("💳 Iyzico / Stripe<br/>Ödeme + Webhook")]
+    Email[("📧 SMTP / SES<br/>E-posta servisi")]
+    Storage[("🗄️ S3 / R2<br/>Dosya + medya")]
+    Sentry[("🐛 Sentry<br/>Hata izleme")]
+    Analytics[("📊 PostHog<br/>Ürün analitiği")]
+
+    %% Relationships
+    Candidate -->|"Test satın al, çöz"| Platform
+    Educator -->|"Test oluştur, sat, yönet"| Platform
+    Admin -->|"Kullanıcı, ayar, rapor"| Platform
+
+    Platform -->|"Ödeme başlat<br/>(idempotency-key)"| Payment
+    Payment -.->|"Webhook (HMAC)"| Platform
+    Platform -->|"Bildirim gönder"| Email
+    Platform -->|"Avatar, sertifika"| Storage
+    Platform -.->|"Exception + breadcrumb"| Sentry
+    Platform -.->|"Event (consent ile)"| Analytics
+
+    classDef person fill:#08427b,color:white,stroke:#073b6f
+    classDef system fill:#1168bd,color:white,stroke:#0b4884
+    classDef external fill:#999,color:white,stroke:#666
+    class Candidate,Educator,Admin person
+    class Platform system
+    class Payment,Email,Storage,Sentry,Analytics external

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6;"><tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;">
+<tr><td style="padding:24px 32px;background:#4f46e5;color:#ffffff;"><h1 style="margin:0;font-size:20px;font-weight:600;">Haftanın Özeti</h1></td></tr>
+<tr><td style="padding:32px;color:#111827;font-size:14px;line-height:1.6;">
+<p>Merhaba <strong>{{user.username}}</strong>,</p>
+<p>Bu hafta sizin için derlediklerimiz:</p>
+{{#if newPackages.length}}
+<h3 style="font-size:16px;margin:24px 0 8px 0;">Yeni paketler</h3>
+<ul style="padding-left:20px;">
+{{#each newPackages}}
+  <li><a href="{{this.url}}" style="color:#4f46e5;">{{this.title}}</a> — {{this.educator}}</li>
+{{/each}}
+</ul>
+{{/if}}
+{{#if campaigns.length}}
+<h3 style="font-size:16px;margin:24px 0 8px 0;">İndirimli paketler</h3>
+<ul style="padding-left:20px;">
+{{#each campaigns}}
+  <li><a href="{{this.url}}" style="color:#4f46e5;">{{this.title}}</a> — {{this.discount}}% indirim</li>
+{{/each}}
+</ul>
+{{/if}}
+{{> footer}}
+</td></tr></table></td></tr></table></body></html>

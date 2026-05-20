@@ -45,6 +45,24 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
+/**
+ * Read-only replica client (KALITE-DEGERLENDIRME §4 — read replica).
+ * DATABASE_REPLICA_URL tanımlı değilse primary'i kullanır (fallback).
+ *
+ * Yalnızca raporlama/analytics use case'lerinde tercih edilir.
+ * Read-after-write garantisi gerektiren akışlarda primary kullan.
+ */
+const replicaUrl = process.env.DATABASE_REPLICA_URL?.trim();
+
+export const prismaReplica: typeof prisma = replicaUrl
+  ? new PrismaClient({
+      datasources: { db: { url: replicaUrl } },
+      log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
+    })
+  : prisma;
+
+export const isReplicaEnabled = (): boolean => !!replicaUrl;
+
 (prisma as any).$on('error', async (e: any) => {
   // eslint-disable-next-line no-console
   console.error('Prisma connection error', e);

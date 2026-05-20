@@ -3,6 +3,18 @@ import { UnpublishTestUseCase } from '../../src/application/use-cases/test/Unpub
 
 // QueueService mock — UnpublishTestUseCase içinde dinamik require ile çağrılır;
 // gerçek bağlantı olmadığında 20sn timeout'a düşmemesi için mock edilir.
+// Prisma mock — PublishTestUseCase kill-switch icin adminSettings okur; gercek client gerekmez
+jest.mock('../../src/infrastructure/database/prisma', () => ({
+  prisma: {
+    adminSettings: {
+      findFirst: jest.fn(async () => ({ id: 1, testPublishingEnabled: true })),
+    },
+    follow: {
+      findMany: jest.fn(async () => []),
+    },
+  },
+}));
+
 jest.mock('../../src/infrastructure/queue/queue.service', () => ({
   QueueService: jest.fn().mockImplementation(() => ({
     enqueueJob: jest.fn().mockResolvedValue(undefined),

@@ -6,6 +6,7 @@ export interface ExamWithQuestions extends ExamTest {
   questionCount?: number;
   hasSolutions?: boolean;
   packageId?: string | null;
+  priceCents?: number | null;
 }
 
 export interface IExamRepository {

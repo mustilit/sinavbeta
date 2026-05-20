@@ -1,0 +1,39 @@
+{{- if .Values.migrations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Job ismi her release'de unique olmalı — Helm hook bunu sağlar
+  name: {{ include "sinavsalonu.fullname" . }}-migrate-{{ .Release.Revision }}
+  labels:
+    {{- include "sinavsalonu.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+  annotations:
+    # Migration deploy'dan ÖNCE çalışsın — başarısızsa rollout iptal.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.migrations.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "sinavsalonu.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: migrate
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.migrations.image.repository }}:{{ include "sinavsalonu.imageTag" (dict "tag" .Values.migrations.image.tag "root" .) }}"
+          command:
+            {{- toYaml .Values.migrations.command | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "sinavsalonu.fullname" . }}-backend-env
+            - secretRef:
+                name: {{ include "sinavsalonu.fullname" . }}-backend-secrets
+          resources:
+            {{- toYaml .Values.migrations.resources | nindent 12 }}
+{{- end }}

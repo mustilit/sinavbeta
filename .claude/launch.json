@@ -5,7 +5,14 @@
       "name": "frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "5174"],
-      "cwd": "apps/frontend",
+      "cwd": "C:\\Users\\mtulu\\dal\\apps\\frontend",
+      "port": 5174
+    },
+    {
+      "name": "frontend-main",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5174"],
+      "cwd": "C:\\Users\\mtulu\\dal\\apps\\frontend",
       "port": 5174
     },
     {

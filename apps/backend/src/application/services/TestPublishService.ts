@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import { ExamWithQuestions } from '../../domain/interfaces/IExamRepository';
 import { IExamRepository } from '../../domain/interfaces/IExamRepository';
 import { AuditLogService } from './AuditLogService';
+import { AppError } from '../errors/AppError';
 
 /**
  * TestPublishService
@@ -37,6 +38,9 @@ export class TestPublishService {
 
     // 3. Süreli test ise duration null olamaz
     this.validateDurationForTimedTest(test);
+
+    // 4. Moderasyon kontrolü — tüm sorular APPROVED olmalı
+    await this.validateModerationStatus(testId);
 
     // Publish + audit atomik
     const published = await this.prisma.$transaction(async (tx) => {
@@ -92,6 +96,22 @@ export class TestPublishService {
 
     if (!unpublished) throw new Error('TEST_NOT_FOUND');
     return this.toDomain(unpublished);
+  }
+
+  private async validateModerationStatus(testId: string): Promise<void> {
+    const pendingCount = await this.prisma.examQuestion.count({
+      where: {
+        testId,
+        moderationStatus: { in: ['PENDING_REVIEW', 'REJECTED', 'ESCALATED'] },
+      },
+    });
+    if (pendingCount > 0) {
+      throw new AppError(
+        'MODERATION_PENDING',
+        'Bu testin bazı soruları moderasyon onayı bekliyor veya reddedildi. Yayımlamadan önce tüm soruların onaylanması gerekir.',
+        400,
+      );
+    }
   }
 
   private validateMinQuestions(test: ExamWithQuestions): void {

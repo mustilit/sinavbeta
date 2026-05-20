@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -69,13 +70,21 @@ const AuthenticatedApp = () => {
             <MainPage />
           </LayoutWrapper>
         } />
-        {Object.entries(Pages).map(([path, Page]) => (
-          <Route
-            key={path}
-            path={`/${path}`}
-            element={renderRoute(path, Page)}
-          />
-        ))}
+        {Object.entries(Pages).map(([path, Page]) => {
+          // Dinamik parametreli sayfalar
+          const paramPaths = {
+            ModerationResultDetail: '/yonetim/moderasyon/sonuc/:id',
+            EducatorViolationDetail: '/yonetim/moderasyon/eğitici/:id',
+          };
+          const routePath = paramPaths[path] || `/${path}`;
+          return (
+            <Route
+              key={path}
+              path={routePath}
+              element={renderRoute(path, Page)}
+            />
+          );
+        })}
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </Suspense>
@@ -93,6 +102,7 @@ function App() {
               <AuthenticatedApp />
             </Router>
             <Toaster />
+            <SonnerToaster position="top-right" richColors closeButton />
           </QueryClientProvider>
         </AuthProvider>
       </ErrorBoundary>

@@ -15,4 +15,6 @@ export default {
     url: 'http://localhost:5174',
     reuseExistingServer: !process.env.CI,
   },
+  // TypeScript e2e dosyaları için tsconfig
+  tsconfig: './tsconfig.e2e.json',
 };

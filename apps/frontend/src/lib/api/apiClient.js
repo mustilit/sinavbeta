@@ -21,6 +21,20 @@ function handle401() {
   window.location.replace('/Login' + (path && path !== '/' ? `?from=${encodeURIComponent(path)}` : ''));
 }
 
+/**
+ * 402 Payment Required → backend "tier'ı yetmiyor / aktif abonelik yok" demek istiyor.
+ * Sayfalar bunu CustomEvent ile dinleyip TierUpgradePrompt'u açabilsin.
+ * Detay payload backend'in döndüğü body (ör. { requiredTier, currentTier, feature }).
+ */
+function handle402(payload) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.dispatchEvent(new CustomEvent('tier-upgrade-required', { detail: payload ?? {} }));
+  } catch {
+    // ignore (SSR / eski tarayıcı)
+  }
+}
+
 /** Axios response şeklinde wrap */
 function wrap(data) {
   return { data, status: 200, headers: {} };
@@ -32,6 +46,7 @@ function toAxiosError(e) {
   if (!err.response && e?.response) err.response = e.response;
   if (!err.code && e?.code) err.code = e.code;
   if (err.response?.status === 401) handle401();
+  if (err.response?.status === 402) handle402(err.response?.data);
   return err;
 }
 

@@ -1,0 +1,4 @@
+Bu, Sınav Salonu mail sistemi tarafından gönderilen bir test e-postasıdır.
+Gönderim zamanı: {{sentAt}}
+
+Sınav Salonu

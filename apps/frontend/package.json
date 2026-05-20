@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:a11y": "playwright test e2e/specs/a11y.spec.ts",
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
@@ -58,16 +60,20 @@
     "embla-carousel-react": "^8.5.2",
     "framer-motion": "^11.16.4",
     "html2canvas": "^1.4.1",
+    "i18next": "^23.15.0",
+    "i18next-browser-languagedetector": "^8.0.0",
     "input-otp": "^1.4.2",
     "jspdf": "^4.0.0",
     "lucide-react": "^0.475.0",
     "mammoth": "^1.12.0",
     "next-themes": "^0.4.4",
+    "posthog-js": "^1.190.0",
     "react": "^18.2.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.54.2",
     "react-hot-toast": "^2.6.0",
+    "react-i18next": "^15.0.0",
     "react-leaflet": "^4.2.1",
     "react-markdown": "^9.0.1",
     "react-qr-code": "^2.0.21",
@@ -107,6 +113,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.2",
     "vite": "^6.1.0",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0"
   }
 }

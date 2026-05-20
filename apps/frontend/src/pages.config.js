@@ -87,6 +87,7 @@ const MySales = lazy(() => import('./pages/MySales'));
 const MyTestPackages = lazy(() => import('./pages/MyTestPackages'));
 const MyTests = lazy(() => import('./pages/MyTests'));
 const Partnership = lazy(() => import('./pages/Partnership'));
+const Pricing = lazy(() => import('./pages/Pricing'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
 const QuestionReports = lazy(() => import('./pages/QuestionReports'));
@@ -99,6 +100,26 @@ const LiveSessionHost = lazy(() => import('./pages/LiveSessionHost'));
 const LiveSessionJoin = lazy(() => import('./pages/LiveSessionJoin'));
 const ManageLiveTiers = lazy(() => import('./pages/ManageLiveTiers'));
 const MyLiveSessions = lazy(() => import('./pages/MyLiveSessions'));
+// Email Trafiği Modülü
+const EmailDashboard = lazy(() => import('./pages/EmailDashboard'));
+const EmailKillSwitches = lazy(() => import('./pages/EmailKillSwitches'));
+const EmailProviders = lazy(() => import('./pages/EmailProviders'));
+const EmailLogs = lazy(() => import('./pages/EmailLogs'));
+const EmailLogDetail = lazy(() => import('./pages/EmailLogDetail'));
+const EmailTemplates = lazy(() => import('./pages/EmailTemplates'));
+const EmailSuppressions = lazy(() => import('./pages/EmailSuppressions'));
+const EmailPreferences = lazy(() => import('./pages/EmailPreferences'));
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
+const EmailManagement = lazy(() => import('./pages/EmailManagement'));
+// İçerik Moderasyonu
+const ModerationQueue = lazy(() => import('./pages/ModerationQueue'));
+const RiskyEducators = lazy(() => import('./pages/RiskyEducators'));
+const BlockedTerms = lazy(() => import('./pages/BlockedTerms'));
+const ModerationResultDetail = lazy(() => import('./pages/ModerationResultDetail'));
+const EducatorViolationDetail = lazy(() => import('./pages/EducatorViolationDetail'));
+const ModerationSettings = lazy(() => import('./pages/ModerationSettings'));
+const MyModerationStatus = lazy(() => import('./pages/MyModerationStatus'));
+const RiskyContent = lazy(() => import('./pages/RiskyContent'));
 
 
 export const PAGES = {
@@ -139,6 +160,7 @@ export const PAGES = {
     "MyTestPackages": MyTestPackages,
     "MyTests": MyTests,
     "Partnership": Partnership,
+    "Pricing": Pricing,
     "Privacy": Privacy,
     "ProfileSettings": ProfileSettings,
     "QuestionReports": QuestionReports,
@@ -151,6 +173,24 @@ export const PAGES = {
     "LiveSessionJoin": LiveSessionJoin,
     "ManageLiveTiers": ManageLiveTiers,
     "MyLiveSessions": MyLiveSessions,
+    "EmailDashboard": EmailDashboard,
+    "EmailKillSwitches": EmailKillSwitches,
+    "EmailProviders": EmailProviders,
+    "EmailLogs": EmailLogs,
+    "EmailLogDetail": EmailLogDetail,
+    "EmailTemplates": EmailTemplates,
+    "EmailSuppressions": EmailSuppressions,
+    "EmailPreferences": EmailPreferences,
+    "Unsubscribe": Unsubscribe,
+    "EmailManagement": EmailManagement,
+    "ModerationQueue": ModerationQueue,
+    "RiskyEducators": RiskyEducators,
+    "BlockedTerms": BlockedTerms,
+    "ModerationResultDetail": ModerationResultDetail,
+    "EducatorViolationDetail": EducatorViolationDetail,
+    "ModerationSettings": ModerationSettings,
+    "MyModerationStatus": MyModerationStatus,
+    "RiskyContent": RiskyContent,
 }
 
 export const pagesConfig = {

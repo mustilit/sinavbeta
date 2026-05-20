@@ -12,11 +12,29 @@ import { EscalateOverdueObjectionsUseCase } from '../../../application/use-cases
 import { EscalateOverdueRefundsUseCase } from '../../../application/use-cases/refund/EscalateOverdueRefundsUseCase';
 import { PrismaRefundRepository } from '../../../infrastructure/repositories/PrismaRefundRepository';
 import { PrismaAuditLogRepository } from '../../../infrastructure/repositories/PrismaAuditLogRepository';
+import { EmailCronService } from './email-cron.service';
+import { AnonymizeOldEmailLogsUseCase } from '../../../application/use-cases/email/AnonymizeOldEmailLogsUseCase';
+import { CheckBounceRateAlertUseCase } from '../../../application/use-cases/email/CheckBounceRateAlertUseCase';
+import { ResetProviderDailyCountUseCase } from '../../../application/use-cases/email/ResetProviderDailyCountUseCase';
+import { ExpireSuppressionsUseCase } from '../../../application/use-cases/email/ExpireSuppressionsUseCase';
+import { ModerationCronService } from './ModerationCronService';
+import { PrismaModerationViolationRepository } from '../../../infrastructure/repositories/PrismaModerationViolationRepository';
+import { PrismaEducatorRiskScoreRepository } from '../../../infrastructure/repositories/PrismaEducatorRiskScoreRepository';
+import { PrismaModerationActionRepository } from '../../../infrastructure/repositories/PrismaModerationActionRepository';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
   providers: [
     CronService,
+    EmailCronService,
+    ModerationCronService,
+    PrismaModerationViolationRepository,
+    PrismaEducatorRiskScoreRepository,
+    PrismaModerationActionRepository,
+    { provide: AnonymizeOldEmailLogsUseCase, useFactory: () => new AnonymizeOldEmailLogsUseCase() },
+    { provide: CheckBounceRateAlertUseCase, useFactory: () => new CheckBounceRateAlertUseCase() },
+    { provide: ResetProviderDailyCountUseCase, useFactory: () => new ResetProviderDailyCountUseCase() },
+    { provide: ExpireSuppressionsUseCase, useFactory: () => new ExpireSuppressionsUseCase() },
     PrismaNotificationPreferenceRepository,
     PrismaFollowRepository,
     PrismaUserRepository,
@@ -47,7 +65,7 @@ import { PrismaAuditLogRepository } from '../../../infrastructure/repositories/P
       inject: [PrismaRefundRepository],
     },
   ],
-  exports: [CronService],
+  exports: [CronService, EmailCronService, ModerationCronService],
 })
 export class CronModule {}
 

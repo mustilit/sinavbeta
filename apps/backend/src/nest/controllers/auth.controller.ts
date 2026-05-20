@@ -16,6 +16,7 @@ import { JwtService } from '../../infrastructure/services/JwtService';
 import { LoginBruteforceGuard } from '../guards/login-bruteforce.guard';
 import { delKey } from '../common/rate-limit';
 import { prisma } from '../../infrastructure/database/prisma';
+import { auditContextFromRequest } from '../../infrastructure/audit/AuditLogger';
 
 /**
  * Kimlik doğrulama işlemlerini yönetir: kayıt, giriş, şifre sıfırlama ve oturum bilgisi.
@@ -119,7 +120,10 @@ export class AuthController {
     try {
       // DI bazen dev ortamında undefined kalabiliyor (tsx watch + hot reload). Fail-safe:
       const uc = this.loginUseCase ?? new LoginUseCase(new PrismaUserRepository(), new PasswordService(), new JwtService());
-      const result = await uc.execute({ email, password });
+      // Audit context: ip + userAgent + (varsa) requestId — login akışında PII filtresi
+      // use case içinde uygulanır.
+      const ctx = auditContextFromRequest(req);
+      const result = await uc.execute({ email, password }, ctx);
       // Başarılı giriş → brute-force sayaçlarını sıfırla (başarılı girişler bloke etmesin)
       const ip = (req.headers?.['x-forwarded-for']
         ? String(req.headers['x-forwarded-for']).split(',')[0].trim()
@@ -160,10 +164,9 @@ export class AuthController {
     const newPassword = String(body?.newPassword ?? '');
     try {
       await this.resetPasswordUC.execute(token, newPassword);
-      return { message: 'Şifre güncellendi' };
+      return { message: 'Sifre guncellendi' };
     } catch (err: any) {
-      throw new HttpException({ error: err.message || 'İşlem başarısız' }, err.status ?? HttpStatus.BAD_REQUEST);
+      throw new HttpException({ error: err.message || 'Islem basarisiz' }, err.status ?? HttpStatus.BAD_REQUEST);
     }
   }
 }
-

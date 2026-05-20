@@ -1,6 +1,7 @@
 import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
 import { Public } from '../decorators/public.decorator';
 import { prisma } from '../../infrastructure/database/prisma';
+import { ReportingTestRepository } from '../../infrastructure/repositories/ReportingTestRepository';
 import Redis from 'ioredis';
 import { getRedisUrl, isRedisDisabled } from '../../config/redis';
 
@@ -11,10 +12,20 @@ import { getRedisUrl, isRedisDisabled } from '../../config/redis';
  */
 @Controller()
 export class HealthController {
+  constructor(private readonly reportingRepo: ReportingTestRepository = new ReportingTestRepository()) {}
+
   @Public()
   @Get('health')
   health() {
     return { ok: true, service: 'dal' };
+  }
+
+  @Public()
+  @Get('health/replica')
+  async replica() {
+    const enabled = !!process.env.DATABASE_REPLICA_URL;
+    const lag = await this.reportingRepo.replicationLagSeconds();
+    return { enabled, lagSeconds: lag, ok: !enabled || (lag >= 0 && lag < 30) };
   }
 
   @Public()
