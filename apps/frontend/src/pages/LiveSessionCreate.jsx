@@ -13,13 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TopicCombobox } from "@/components/ui/TopicCombobox";
 import { toast } from "sonner";
 import {
   Plus, Trash2, CheckCircle2, ArrowLeft, Zap, Loader2, Users,
-  Eye, BookOpen, Package, AlertTriangle, WrenchIcon, ImagePlus, X, Upload,
+  Eye, BookOpen, Package, AlertTriangle, ImagePlus, X, Upload, Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -427,48 +426,63 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
     }
   }, [autoOpenEdit, onAutoOpenHandled]);
 
-  const isComplete = (question.content.trim() || question.mediaUrl) &&
-    question.options.filter(o => o.content.trim() || o.mediaUrl).length >= 2 &&
-    question.options.some(o => o.isCorrect);
+  const filledOpts = question.options.filter(o => o.content.trim() || o.mediaUrl).length;
+  const correctIdx = question.options.findIndex(o => o.isCorrect);
+  const isComplete = (question.content.trim() || question.mediaUrl) && filledOpts >= 2 && correctIdx >= 0;
+  const correctText = correctIdx >= 0
+    ? " • Doğru cevap: " + LETTERS[correctIdx]
+    : " • Doğru cevap seçilmedi";
 
   return (
     <>
-      <AccordionItem value={question._k}>
-        <AccordionTrigger className="hover:no-underline">
-          <div className="flex items-center gap-3 text-left flex-1">
-            <span className="text-sm font-semibold text-slate-600">Soru {questionIndex + 1}</span>
-            {isComplete
-              ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              : <div className="w-4 h-4 rounded-full border-2 border-slate-300 flex-shrink-0" />
-            }
-            {question.duplicateWarning && (
-              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            )}
-            {question.content && (
-              <span className="text-xs text-slate-400 truncate max-w-xs">{question.content}</span>
-            )}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="pt-2 pb-1">
-          {question.mediaUrl && <p className="text-xs text-slate-500 mb-2">📷 Görsel eklenmiş</p>}
-          <p className="text-xs text-slate-500 mb-3">
-            {question.options.filter(o => o.content.trim()).length}/5 seçenek dolu
-            {question.options.find(o => o.isCorrect)
-              ? " • Doğru cevap: " + LETTERS[question.options.findIndex(o => o.isCorrect)]
-              : " • Doğru cevap seçilmedi"
-            }
-          </p>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
-              <WrenchIcon className="w-3 h-3 mr-1" />Düzenle
+      {/* Kompakt tek satır — CreateTest/EditTest ile birebir aynı düzen.
+          Accordion kaldırıldı, her şey hep görünür; dar ekranda flex-wrap ile alt satıra düşer. */}
+      <div className="border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50/50">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-semibold text-slate-600 flex-shrink-0">Soru {questionIndex + 1}</span>
+          {isComplete
+            ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            : <div className="w-4 h-4 rounded-full border-2 border-slate-300 flex-shrink-0" />}
+          {question.duplicateWarning && (
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          )}
+          {(question.content?.trim() || question.mediaUrl) && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-slate-600 flex-shrink-0">
+              {question.mediaUrl ? "Görsel" : "Metin"}
+            </span>
+          )}
+          {(question.solutionText?.trim() || question.solutionMediaUrl) && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-700 flex-shrink-0">
+              Çözümlü
+            </span>
+          )}
+          <span className="text-xs text-slate-500 flex-shrink-0 ml-auto">
+            {filledOpts}/5 seçenek dolu{correctText}
+          </span>
+          <div className="flex gap-1 flex-shrink-0">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setEditOpen(true)}
+              aria-label="Düzenle"
+              title="Düzenle"
+              className="h-8 w-8 p-0 text-slate-600 hover:bg-slate-100"
+            >
+              <Pencil className="w-4 h-4" aria-hidden="true" />
             </Button>
-            <Button variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-              onClick={() => onDelete(questionIndex)}>
-              <Trash2 className="w-4 h-4 mr-1" />Sil
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+              onClick={() => onDelete(questionIndex)}
+              aria-label="Sil"
+              title="Sil"
+            >
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
             </Button>
           </div>
-        </AccordionContent>
-      </AccordionItem>
+        </div>
+      </div>
 
       {editOpen && (
         <QuestionEditDialog
@@ -914,13 +928,7 @@ export default function LiveSessionCreate() {
             </DialogContent>
           </Dialog>
 
-          <Accordion
-            type="single"
-            collapsible
-            value={openQuestionKey ?? undefined}
-            onValueChange={(v) => setOpenQuestionKey(v || null)}
-            className="space-y-2"
-          >
+          <div className="space-y-2">
             {questions.map((q, idx) => (
               <QuestionItem
                 key={q._k}
@@ -934,7 +942,7 @@ export default function LiveSessionCreate() {
                 onAutoOpenHandled={() => setPendingEditKey(null)}
               />
             ))}
-          </Accordion>
+          </div>
 
           {questions.length === 0 && (
             <Card>
