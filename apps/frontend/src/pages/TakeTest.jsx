@@ -1090,11 +1090,10 @@ export default function TakeTest() {
                 Boş Bırak
               </Button>
             )}
-            {/* Çözümü Gör — review modunda + bu sorunun explanation/solutionMediaUrl'i varsa.
-                test.has_solutions test seviyesindeki publish-time flag idi (tüm sorulara çözüm
-                zorunlu mu); aday review'inde soru-level varlık yeterli. Aksi takdirde bazı
-                sorularda çözüm var ama test flag'i false ise hiç buton görünmüyordu. */}
-            {isReviewMode && (currentQuestion?.explanation || currentQuestion?.solutionMediaUrl) && !showSolution && (
+            {/* Çözümü Gör — bu sorunun explanation/solutionMediaUrl'i varsa görünür.
+                Test çözerken (fresh take) de + review modunda da etkin. Eğiticinin
+                eklediği çözüme aday her zaman erişebilir; 'Seçeneklere Dön' ile kapatılır. */}
+            {(currentQuestion?.explanation || currentQuestion?.solutionMediaUrl) && !showSolution && (
               <Button
                 variant="ghost"
                 size="sm"
