@@ -174,12 +174,15 @@ function SessionCard({ session, round2, onOpenHost, onEdit, onStartRound1, onSta
               </Button>
             )}
 
-            {/* ── Tur 1 ENDED: incele + 2. tur akışı ────────────────────── */}
+            {/* ── Tur 1 ENDED: tek İncele + 2. tur aksiyonu ─────────────── */}
             {isEnded && (
               <>
+                {/* Tek 'İncele' butonu — Tur 1 host sayfasında her iki turun
+                    cevaplama oranı + karşılaştırma zaten birlikte görünüyor;
+                    'Tur 1 İncele' + 'Tur 2 İncele' duplikasyonu kaldırıldı. */}
                 <Button size="sm" variant="outline" onClick={() => onOpenHost(session.id)} className="gap-1">
                   <Eye className="w-3.5 h-3.5" />
-                  {round2 ? t("pages:myLiveSessions.card.reviewRound1") : t("pages:myLiveSessions.card.review")}
+                  {t("pages:myLiveSessions.card.review")}
                 </Button>
 
                 {/* Tur 2 yok veya DRAFT → "2. Oturumu Başlat" (createRound2 gerekirse + start) */}
@@ -195,7 +198,7 @@ function SessionCard({ session, round2, onOpenHost, onEdit, onStartRound1, onSta
                   </Button>
                 )}
 
-                {/* Tur 2 ACTIVE → "Tur 2 Yönet" */}
+                {/* Tur 2 ACTIVE → "2. Oturumu Yönet" */}
                 {round2 && round2.status === "ACTIVE" && (
                   <Button
                     size="sm"
@@ -206,19 +209,7 @@ function SessionCard({ session, round2, onOpenHost, onEdit, onStartRound1, onSta
                     {t("pages:myLiveSessions.card.manageRound2")}
                   </Button>
                 )}
-
-                {/* Tur 2 ENDED → "Tur 2 İncele" */}
-                {round2 && r2Ended && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                    onClick={() => onOpenHost(round2.id)}
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    {t("pages:myLiveSessions.card.reviewRound2")}
-                  </Button>
-                )}
+                {/* Tur 2 ENDED → ek bir buton yok; tek İncele yeterli (kullanıcı tercihi). */}
               </>
             )}
           </div>
