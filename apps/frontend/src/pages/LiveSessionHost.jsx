@@ -156,9 +156,17 @@ export default function LiveSessionHost() {
     refetchInterval: (data) => (data?.status === "ACTIVE" ? 3000 : false),
   });
 
+  // Oturum durumunu değiştiren mutasyonlar — sadece liveState değil
+  // MyLiveSessions listesi de invalidate edilir; aksi takdirde kullanıcı
+  // 'Canlı Testlerime Dön' deyince eski (cache'lenmiş) durumla karşılaşır.
+  const invalidateLive = () => {
+    queryClient.invalidateQueries({ queryKey: ["liveState", sessionId] });
+    queryClient.invalidateQueries({ queryKey: ["myLiveSessions"] });
+  };
+
   const mut = (fn) => ({
     mutationFn: fn,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["liveState", sessionId] }),
+    onSuccess: invalidateLive,
     onError: (e) => {
       // Backend hata response'u birkaç farklı şekilde gelebilir:
       // { error: { code, message } } veya { message } veya { code, message }
@@ -181,7 +189,7 @@ export default function LiveSessionHost() {
   const endMut = useMutation({
     ...mut(() => liveApi.end(sessionId)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["liveState", sessionId] });
+      invalidateLive();
       toast.success(t("pages:liveHost.toasts.ended"));
     },
   });
@@ -189,7 +197,7 @@ export default function LiveSessionHost() {
   const round2Mut = useMutation({
     mutationFn: () => liveApi.createRound2(sessionId),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["liveState", sessionId] });
+      invalidateLive();
       const newId = data?.id ?? data?.sessionId;
       if (!newId) {
         toast.error(t("pages:liveHost.toasts.round2NoNav"));
