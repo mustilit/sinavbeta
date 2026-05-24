@@ -573,25 +573,27 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
           {question.mediaUrl && (
             <p className="text-xs text-slate-500 mb-2">{t("pages:testForm.createPage.imageAdded")}</p>
           )}
-          <p className="text-xs text-slate-500 mb-3">
-            {t("pages:testForm.createPage.questionItem.selectedCount", { filled: question.options.filter(o => o.content.trim()).length })}
-            {question.options.find(o => o.isCorrect)
-              ? " " + t("pages:testForm.createPage.questionItem.correctIs", { letter: LETTERS[question.options.findIndex(o => o.isCorrect)] })
-              : " " + t("pages:testForm.createPage.questionItem.correctMissing")
-            }
-          </p>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
-              <WrenchIcon className="w-3 h-3 mr-1" />{t("pages:testForm.question.edit")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-              onClick={() => onDelete(questionIndex)}
-            >
-              <Trash2 className="w-4 h-4 mr-1" />{t("pages:testForm.question.delete")}
-            </Button>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-slate-500">
+              {t("pages:testForm.createPage.questionItem.selectedCount", { filled: question.options.filter(o => o.content.trim()).length })}
+              {question.options.find(o => o.isCorrect)
+                ? " " + t("pages:testForm.createPage.questionItem.correctIs", { letter: LETTERS[question.options.findIndex(o => o.isCorrect)] })
+                : " " + t("pages:testForm.createPage.questionItem.correctMissing")
+              }
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+                <WrenchIcon className="w-3 h-3 mr-1" />{t("pages:testForm.question.edit")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                onClick={() => onDelete(questionIndex)}
+              >
+                <Trash2 className="w-4 h-4 mr-1" />{t("pages:testForm.question.delete")}
+              </Button>
+            </div>
           </div>
         </AccordionContent>
       </AccordionItem>

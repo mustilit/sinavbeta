@@ -327,12 +327,14 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
               {t("pages:testForm.question.rejectedNotice")}
             </div>
           )}
-          <p className="text-xs text-slate-500 mb-3">
-            {t("pages:testForm.question.selectedCount", { filled: filledOpts })} {correctText}
-          </p>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>{t("pages:testForm.question.edit")}</Button>
-            <Button size="sm" variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={() => onDelete(questionIndex)}><Trash2 className="w-4 h-4 mr-1" />{t("pages:testForm.question.delete")}</Button>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-slate-500">
+              {t("pages:testForm.question.selectedCount", { filled: filledOpts })} {correctText}
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>{t("pages:testForm.question.edit")}</Button>
+              <Button size="sm" variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={() => onDelete(questionIndex)}><Trash2 className="w-4 h-4 mr-1" />{t("pages:testForm.question.delete")}</Button>
+            </div>
           </div>
         </AccordionContent>
       </AccordionItem>
