@@ -1117,9 +1117,20 @@ export const liveSessions = {
     const { data } = await api.post('/live-sessions', body);
     return data;
   },
-  listMy: async () => {
-    const { data } = await api.get('/live-sessions/my');
-    return Array.isArray(data) ? data : [];
+  listMy: async ({ cursor, status, limit = 20 } = {}) => {
+    const qs = new URLSearchParams();
+    if (cursor?.id) qs.set('cursorId', cursor.id);
+    if (cursor?.createdAt) qs.set('cursorCreatedAt', cursor.createdAt);
+    if (limit) qs.set('limit', String(limit));
+    if (status) qs.set('status', status);
+    const { data } = await api.get(`/live-sessions/my?${qs.toString()}`);
+    // v9.x öncesi: dizi döndürüyordu. v9.x+: { items, round2, nextCursor }
+    if (Array.isArray(data)) return { items: data, round2: [], nextCursor: null };
+    return {
+      items: Array.isArray(data?.items) ? data.items : [],
+      round2: Array.isArray(data?.round2) ? data.round2 : [],
+      nextCursor: data?.nextCursor ?? null,
+    };
   },
   pay: async (id) => {
     const { data } = await api.post(`/live-sessions/${id}/pay`);

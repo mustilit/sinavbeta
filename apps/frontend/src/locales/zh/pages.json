@@ -795,8 +795,18 @@
     "empty": {
       "title": "您还没有创建实时测试",
       "desc": "开启一个实时会话,参与者通过二维码或代码加入。",
-      "firstButton": "创建我的第一个实时测试"
+      "firstButton": "创建我的第一个实时测试",
+      "filteredTitle": "此筛选条件下没有会话",
+      "filteredDesc": "选择其他筛选条件或查看全部会话。"
     },
+    "filters": {
+      "all": "全部",
+      "draft": "草稿",
+      "active": "进行中",
+      "ended": "已结束"
+    },
+    "loadMore": "加载更多",
+    "loading": "加载中…",
     "sections": {
       "active": "进行中 ({{count}})",
       "draft": "草稿 ({{count}})",

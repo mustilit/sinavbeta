@@ -795,8 +795,18 @@
     "empty": {
       "title": "Sie haben noch keine Live-Tests erstellt",
       "desc": "Starten Sie eine Live-Sitzung; Teilnehmer treten per QR-Code oder Code bei.",
-      "firstButton": "Meinen ersten Live-Test erstellen"
+      "firstButton": "Meinen ersten Live-Test erstellen",
+      "filteredTitle": "Keine Sitzungen in diesem Filter",
+      "filteredDesc": "Wähle einen anderen Filter oder zeige alle Sitzungen."
     },
+    "filters": {
+      "all": "Alle",
+      "draft": "Entwurf",
+      "active": "Aktiv",
+      "ended": "Beendet"
+    },
+    "loadMore": "Mehr laden",
+    "loading": "Lädt…",
     "sections": {
       "active": "Aktiv ({{count}})",
       "draft": "Entwürfe ({{count}})",

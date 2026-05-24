@@ -795,8 +795,18 @@
     "empty": {
       "title": "You haven't created any live tests yet",
       "desc": "Start a live session; participants join via QR code or code.",
-      "firstButton": "Create Your First Live Test"
+      "firstButton": "Create Your First Live Test",
+      "filteredTitle": "No sessions in this filter",
+      "filteredDesc": "Choose a different filter or view all sessions."
     },
+    "filters": {
+      "all": "All",
+      "draft": "Draft",
+      "active": "Active",
+      "ended": "Ended"
+    },
+    "loadMore": "Load more",
+    "loading": "Loading…",
     "sections": {
       "active": "Active ({{count}})",
       "draft": "Draft ({{count}})",

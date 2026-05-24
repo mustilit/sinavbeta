@@ -8,6 +8,7 @@ import {
   Body,
   Req,
   Inject,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../swagger/decorators';
@@ -137,10 +138,25 @@ export class LiveSessionsController {
 
   @Get('my')
   @Roles('EDUCATOR', 'ADMIN')
-  @ApiOkResponse({ description: 'Kendi oturumlarim' })
+  @ApiOkResponse({ description: 'Kendi oturumlarim — cursor pagination + status filter' })
   @ApiErrorResponses()
-  async listMy(@Req() req: any) {
-    return this.listMyUC.execute(req.user.id);
+  async listMy(
+    @Req() req: any,
+    @Query('cursorId') cursorId?: string,
+    @Query('cursorCreatedAt') cursorCreatedAt?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    const validStatus = status === 'DRAFT' || status === 'ACTIVE' || status === 'ENDED' ? status : undefined;
+    const cursor =
+      cursorId && cursorCreatedAt
+        ? { id: cursorId, createdAt: new Date(cursorCreatedAt) }
+        : undefined;
+    return this.listMyUC.execute(req.user.id, {
+      cursor,
+      limit: limit ? Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100) : 20,
+      status: validStatus,
+    });
   }
 
   @Post(':id/pay')

@@ -798,8 +798,18 @@
     "empty": {
       "title": "Aún no has creado exámenes en vivo",
       "desc": "Inicia una sesión en vivo; los participantes se unen con código QR o código.",
-      "firstButton": "Crear mi primer examen en vivo"
+      "firstButton": "Crear mi primer examen en vivo",
+      "filteredTitle": "No hay sesiones en este filtro",
+      "filteredDesc": "Elige otro filtro o ve todas las sesiones."
     },
+    "filters": {
+      "all": "Todas",
+      "draft": "Borrador",
+      "active": "Activa",
+      "ended": "Finalizada"
+    },
+    "loadMore": "Cargar más",
+    "loading": "Cargando…",
     "sections": {
       "active": "Activos ({{count}})",
       "draft": "Borradores ({{count}})",

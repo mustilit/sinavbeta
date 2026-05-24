@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { liveSessions as liveApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -219,29 +219,49 @@ function SessionCard({ session, round2, onOpenHost, onEdit, onStartRound1, onSta
   );
 }
 
+const STATUS_FILTERS = ["ALL", "DRAFT", "ACTIVE", "ENDED"];
+
 export default function MyLiveSessions() {
   const { t } = useTranslation(["pages"]);
   const { user }       = useAuth();
   const navigate       = useNavigate();
   const queryClient    = useQueryClient();
 
-  const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ["myLiveSessions"],
-    queryFn: () => liveApi.listMy(),
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
+  // Cursor pagination — backend her sayfa için {items, round2, nextCursor} döner.
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ["myLiveSessions", statusFilter],
+    queryFn: ({ pageParam }) =>
+      liveApi.listMy({
+        cursor: pageParam,
+        status: statusFilter === "ALL" ? undefined : statusFilter,
+        limit: 20,
+      }),
     enabled: !!user,
+    initialPageParam: null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    staleTime: 30_000,
   });
 
-  // Tur 2 oturumlarını parent altında grupla — listede ayrı satır olarak görünmesinler
+  // Tüm sayfaları düz listeye çevir + round 2'leri parent'a eşle.
   const { parentSessions, round2ByParent } = useMemo(() => {
+    const pages = data?.pages ?? [];
+    const parents = pages.flatMap((p) => p.items);
     const r2Map = new Map();
-    for (const s of sessions) {
-      if (s.roundNumber === 2 && s.parentSessionId) {
-        r2Map.set(s.parentSessionId, s);
+    for (const p of pages) {
+      for (const s of p.round2 ?? []) {
+        if (s.parentSessionId) r2Map.set(s.parentSessionId, s);
       }
     }
-    const parents = sessions.filter((s) => s.roundNumber !== 2);
     return { parentSessions: parents, round2ByParent: r2Map };
-  }, [sessions]);
+  }, [data]);
 
   // Tur 1 başlatma: DRAFT → ACTIVE; sonra host sayfasına git.
   const startRound1Mut = useMutation({
@@ -284,10 +304,6 @@ export default function MyLiveSessions() {
 
   const starting = startRound1Mut.isPending || startRound2Mut.isPending;
 
-  const draft  = parentSessions.filter((s) => s.status === "DRAFT");
-  const active = parentSessions.filter((s) => s.status === "ACTIVE");
-  const ended  = parentSessions.filter((s) => s.status === "ENDED");
-
   const goToHost   = (id) => navigate(createPageUrl("LiveSessionHost") + "?id=" + id);
   const goToCreate = () => navigate(createPageUrl("LiveSessionCreate"));
 
@@ -300,29 +316,6 @@ export default function MyLiveSessions() {
       </div>
     );
   }
-
-  const renderList = (list) => (
-    <div className="space-y-3">
-      {list.map((s) => (
-        <SessionCard
-          key={s.id}
-          session={s}
-          round2={round2ByParent.get(s.id) ?? null}
-          onOpenHost={goToHost}
-          onEdit={goToHost}
-          onStartRound1={(id) => {
-            if (confirm(t("pages:myLiveSessions.confirms.startRound1")))
-              startRound1Mut.mutate(id);
-          }}
-          onStartRound2={(parentId, existingRound2) => {
-            if (confirm(t("pages:myLiveSessions.confirms.startRound2")))
-              startRound2Mut.mutate({ parentId, existingRound2 });
-          }}
-          starting={starting}
-        />
-      ))}
-    </div>
-  );
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -342,52 +335,86 @@ export default function MyLiveSessions() {
         </Button>
       </div>
 
+      {/* Filtre sekmeleri — pagination cursor'ı statusFilter ile resetlenir
+          (queryKey ['myLiveSessions', statusFilter]). */}
+      <div className="flex items-center gap-1 mb-5 border-b border-slate-200">
+        {STATUS_FILTERS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setStatusFilter(s)}
+            className={`px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              statusFilter === s
+                ? "border-blue-600 text-blue-700"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {t(`pages:myLiveSessions.filters.${s.toLowerCase()}`)}
+          </button>
+        ))}
+      </div>
+
       {parentSessions.length === 0 && (
         <div className="text-center py-20">
           <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Zap className="w-10 h-10 text-amber-400" />
           </div>
           <h2 className="text-xl font-semibold text-slate-900 mb-2">
-            {t("pages:myLiveSessions.empty.title")}
+            {statusFilter === "ALL"
+              ? t("pages:myLiveSessions.empty.title")
+              : t("pages:myLiveSessions.empty.filteredTitle")}
           </h2>
           <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-            {t("pages:myLiveSessions.empty.desc")}
+            {statusFilter === "ALL"
+              ? t("pages:myLiveSessions.empty.desc")
+              : t("pages:myLiveSessions.empty.filteredDesc")}
           </p>
-          <Button onClick={goToCreate} className="bg-amber-500 hover:bg-amber-600 gap-2">
-            <Plus className="w-4 h-4" />
-            {t("pages:myLiveSessions.empty.firstButton")}
-          </Button>
+          {statusFilter === "ALL" && (
+            <Button onClick={goToCreate} className="bg-amber-500 hover:bg-amber-600 gap-2">
+              <Plus className="w-4 h-4" />
+              {t("pages:myLiveSessions.empty.firstButton")}
+            </Button>
+          )}
         </div>
       )}
 
-      {active.length > 0 && (
-        <section className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <h2 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
-              {t("pages:myLiveSessions.sections.active", { count: active.length })}
-            </h2>
-          </div>
-          {renderList(active)}
-        </section>
+      {/* Tek liste — filtre + cursor pagination */}
+      {parentSessions.length > 0 && (
+        <div className="space-y-3">
+          {parentSessions.map((s) => (
+            <SessionCard
+              key={s.id}
+              session={s}
+              round2={round2ByParent.get(s.id) ?? null}
+              onOpenHost={goToHost}
+              onEdit={goToHost}
+              onStartRound1={(id) => {
+                if (confirm(t("pages:myLiveSessions.confirms.startRound1")))
+                  startRound1Mut.mutate(id);
+              }}
+              onStartRound2={(parentId, existingRound2) => {
+                if (confirm(t("pages:myLiveSessions.confirms.startRound2")))
+                  startRound2Mut.mutate({ parentId, existingRound2 });
+              }}
+              starting={starting}
+            />
+          ))}
+        </div>
       )}
 
-      {draft.length > 0 && (
-        <section className="mb-6">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            {t("pages:myLiveSessions.sections.draft", { count: draft.length })}
-          </h2>
-          {renderList(draft)}
-        </section>
-      )}
-
-      {ended.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            {t("pages:myLiveSessions.sections.ended", { count: ended.length })}
-          </h2>
-          {renderList(ended)}
-        </section>
+      {/* Daha fazla göster — cursor sonu null değilse */}
+      {hasNextPage && (
+        <div className="flex justify-center mt-6">
+          <Button
+            variant="outline"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage
+              ? t("pages:myLiveSessions.loading")
+              : t("pages:myLiveSessions.loadMore")}
+          </Button>
+        </div>
       )}
     </div>
   );

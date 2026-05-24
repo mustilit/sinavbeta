@@ -795,8 +795,18 @@
     "empty": {
       "title": "Henüz canlı test oluşturmadınız",
       "desc": "Canlı bir oturum başlatın, katılımcılar QR kod veya kod ile katılsın.",
-      "firstButton": "İlk Canlı Testimi Oluştur"
+      "firstButton": "İlk Canlı Testimi Oluştur",
+      "filteredTitle": "Bu filtrede oturum yok",
+      "filteredDesc": "Farklı bir filtre seçin veya tüm oturumları görüntüleyin."
     },
+    "filters": {
+      "all": "Tümü",
+      "draft": "Taslak",
+      "active": "Aktif",
+      "ended": "Tamamlandı"
+    },
+    "loadMore": "Daha fazla göster",
+    "loading": "Yükleniyor…",
     "sections": {
       "active": "Aktif ({{count}})",
       "draft": "Taslak ({{count}})",
