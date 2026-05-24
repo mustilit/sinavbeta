@@ -415,7 +415,7 @@
       "optionsLabel": "Opciones",
       "optionPlaceholder": "Opción {{letter}}",
       "optionImage": "Imagen",
-      "selectedCount": "{{filled}}/5 opciones",
+      "selectedCount": "{{filled}} opción(es)",
       "correctMissing": "• Sin opción correcta",
       "correctIs": "• Correcta: {{letter}}",
       "errorMissingContent": "Falta el enunciado o la imagen de la pregunta",
@@ -564,7 +564,7 @@
         "goToSettings": "Ir a ajustes de perfil"
       },
       "questionItem": {
-        "selectedCount": "{{filled}}/5 opciones rellenas",
+        "selectedCount": "{{filled}} opción(es)",
         "correctIs": "• Correcta: {{letter}}",
         "correctMissing": "• Opción correcta no seleccionada"
       },

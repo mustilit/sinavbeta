@@ -415,7 +415,7 @@
       "optionsLabel": "Seçenekler",
       "optionPlaceholder": "Seçenek {{letter}}",
       "optionImage": "Görsel",
-      "selectedCount": "{{filled}}/5 seçenek",
+      "selectedCount": "{{filled}} Seçenekli",
       "correctMissing": "• Doğru seçilmedi",
       "correctIs": "• Doğru: {{letter}}",
       "errorMissingContent": "Soru metni veya görseli eksik",
@@ -564,7 +564,7 @@
         "goToSettings": "Profil Ayarlarına Git"
       },
       "questionItem": {
-        "selectedCount": "{{filled}}/5 seçenek dolu",
+        "selectedCount": "{{filled}} Seçenekli",
         "correctIs": "• Doğru cevap: {{letter}}",
         "correctMissing": "• Doğru cevap seçilmedi"
       },

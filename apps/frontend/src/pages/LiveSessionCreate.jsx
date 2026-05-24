@@ -461,7 +461,7 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
             </span>
           )}
           <span className="text-xs text-slate-500 flex-shrink-0 ml-auto">
-            {filledOpts}/5 seçenek dolu{correctText}
+            {filledOpts} Seçenekli{correctText}
           </span>
           <div className="flex gap-1 flex-shrink-0">
             <Button

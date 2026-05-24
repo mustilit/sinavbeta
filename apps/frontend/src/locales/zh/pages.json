@@ -415,7 +415,7 @@
       "optionsLabel": "选项",
       "optionPlaceholder": "选项 {{letter}}",
       "optionImage": "图片",
-      "selectedCount": "{{filled}}/5 选项",
+      "selectedCount": "{{filled}} 项选项",
       "correctMissing": "• 未选择正确答案",
       "correctIs": "• 正确答案: {{letter}}",
       "errorMissingContent": "缺少题干或图片",
@@ -564,7 +564,7 @@
         "goToSettings": "前往个人设置"
       },
       "questionItem": {
-        "selectedCount": "{{filled}}/5 选项已填",
+        "selectedCount": "{{filled}} 项选项",
         "correctIs": "• 正确答案: {{letter}}",
         "correctMissing": "• 未选择正确答案"
       },

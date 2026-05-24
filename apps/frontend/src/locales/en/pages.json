@@ -415,7 +415,7 @@
       "optionsLabel": "Options",
       "optionPlaceholder": "Option {{letter}}",
       "optionImage": "Image",
-      "selectedCount": "{{filled}}/5 options",
+      "selectedCount": "{{filled}} option(s)",
       "correctMissing": "• No correct option selected",
       "correctIs": "• Correct: {{letter}}",
       "errorMissingContent": "Question text or image is missing",
@@ -564,7 +564,7 @@
         "goToSettings": "Go to Profile Settings"
       },
       "questionItem": {
-        "selectedCount": "{{filled}}/5 options filled",
+        "selectedCount": "{{filled}} option(s)",
         "correctIs": "• Correct: {{letter}}",
         "correctMissing": "• Correct option not selected"
       },
