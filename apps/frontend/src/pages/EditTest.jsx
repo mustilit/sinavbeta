@@ -43,6 +43,8 @@ function emptyQuestion() {
   return {
     _k: uid(), id: null, content: "", mediaUrl: "",
     topicId: null, duplicateWarning: null,
+    // Çözüm (opsiyonel) — bkz. CreateTest.emptyQuestion yorumu.
+    solutionText: "", solutionMediaUrl: "",
     options: [emptyOption(), emptyOption(), emptyOption(), emptyOption(), emptyOption()],
   };
 }
@@ -56,7 +58,9 @@ function apiQToLocal(q) {
   while (opts.length < 5) opts.push(emptyOption());
   return {
     _k: uid(), id: q.id, content: q.content ?? "", mediaUrl: q.mediaUrl ?? "",
-    topicId: q.topicId ?? null, duplicateWarning: null, options: opts,
+    topicId: q.topicId ?? null, duplicateWarning: null,
+    solutionText: q.solutionText ?? "", solutionMediaUrl: q.solutionMediaUrl ?? "",
+    options: opts,
   };
 }
 async function doUpload(file) {
@@ -98,7 +102,12 @@ function StepIndicator({ current }) {
 
 function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSaveAndNew, onClose }) {
   const { t } = useTranslation(["pages"]);
-  const mk = (q) => ({ ...q, _imgFile: null, _imgPreview: null, options: q.options.map(o => ({ ...o, _imgFile: null, _imgPreview: null })) });
+  const mk = (q) => ({
+    ...q,
+    _imgFile: null, _imgPreview: null,
+    _solutionImgFile: null, _solutionImgPreview: null,
+    options: q.options.map(o => ({ ...o, _imgFile: null, _imgPreview: null })),
+  });
   const [local, setLocal] = useState(() => mk(question));
   const [dispIdx, setDispIdx] = useState(questionIndex);
   const [submitting, setSubmitting] = useState(false);
@@ -118,14 +127,17 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
   const prepareUpload = async () => {
     let mediaUrl = local.mediaUrl || "";
     if (local._imgFile) mediaUrl = await doUpload(local._imgFile);
+    let solutionMediaUrl = local.solutionMediaUrl || "";
+    if (local._solutionImgFile) solutionMediaUrl = await doUpload(local._solutionImgFile);
     const options = await Promise.all(local.options.map(async opt => {
       let url = opt.mediaUrl || ""; if (opt._imgFile) url = await doUpload(opt._imgFile);
       const { _imgFile, _imgPreview, ...rest } = opt; return { ...rest, mediaUrl: url };
     }));
     if (local._imgPreview) URL.revokeObjectURL(local._imgPreview);
+    if (local._solutionImgPreview) URL.revokeObjectURL(local._solutionImgPreview);
     local.options.forEach(o => { if (o._imgPreview) URL.revokeObjectURL(o._imgPreview); });
-    const { _imgFile, _imgPreview, ...rest } = local;
-    return { ...rest, mediaUrl, options };
+    const { _imgFile, _imgPreview, _solutionImgFile, _solutionImgPreview, ...rest } = local;
+    return { ...rest, mediaUrl, solutionMediaUrl, options };
   };
 
   const validate = () => { if (!local.options.some(o => o.isCorrect)) { toast.error(t("pages:testForm.dialog.validateNoCorrect")); return false; } return true; };
@@ -187,6 +199,56 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
               searchPlaceholder={t("pages:testForm.question.topicSearchPlaceholder", "Konu ara...")}
               emptyText={t("pages:testForm.question.topicEmpty", "Konu bulunamadı")}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>
+              {t("pages:testForm.question.solutionLabel", "Çözüm")}{" "}
+              <span className="text-slate-400 font-normal">{t("pages:testForm.question.solutionOptional", "(opsiyonel)")}</span>
+            </Label>
+            <p className="text-xs text-slate-500">
+              {t("pages:testForm.question.solutionHelp", "Aday testi tamamladıktan sonra 'Çözümü Göster' ile görür. Canlı oturumda gösterilmez.")}
+            </p>
+            <textarea
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              rows={3}
+              placeholder={t("pages:testForm.question.solutionPlaceholder", "Çözüm metnini buraya yazın...")}
+              value={local.solutionText ?? ""}
+              onChange={e => setLocal(p => ({ ...p, solutionText: e.target.value }))}
+            />
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-600">
+                <ImagePlus className="w-4 h-4" />
+                {t("pages:testForm.question.solutionImageSelect", "Çözüm görseli seç")}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const f = e.target.files?.[0]; e.target.value = "";
+                    if (!f) return;
+                    if (local._solutionImgPreview) URL.revokeObjectURL(local._solutionImgPreview);
+                    setLocal(p => ({ ...p, _solutionImgFile: f, _solutionImgPreview: URL.createObjectURL(f), solutionMediaUrl: "" }));
+                  }}
+                />
+              </label>
+              {(local._solutionImgPreview || local.solutionMediaUrl) && (
+                <>
+                  <div className="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                    <img src={local._solutionImgPreview || local.solutionMediaUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (local._solutionImgPreview) URL.revokeObjectURL(local._solutionImgPreview);
+                      setLocal(p => ({ ...p, _solutionImgFile: null, _solutionImgPreview: null, solutionMediaUrl: "" }));
+                    }}
+                    className="inline-flex items-center gap-1 px-2 py-1.5 rounded text-sm border border-rose-200 hover:bg-rose-50 text-rose-600"
+                  >
+                    <X className="w-4 h-4" />{t("pages:testForm.question.clearImage")}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           <div className="space-y-3">
             <Label>{t("pages:testForm.question.optionsLabel")}</Label>
@@ -551,7 +613,14 @@ export default function EditTest() {
           const q = testData.questions[qi];
           if (!isQComplete(q)) continue;
           if (q.id && origQIds.has(q.id)) {
-            await api.patch(`/tests/${examTestId}/questions/${q.id}`, { content: q.content, mediaUrl: q.mediaUrl || undefined, order: qi });
+            await api.patch(`/tests/${examTestId}/questions/${q.id}`, {
+              content: q.content,
+              mediaUrl: q.mediaUrl || undefined,
+              order: qi,
+              // Çözüm alanları opsiyonel — boş gönderilirse null'la (eğitici sildi).
+              solutionText: q.solutionText || null,
+              solutionMediaUrl: q.solutionMediaUrl || null,
+            });
             for (const opt of q.options) {
               if (opt.id) await api.patch(`/tests/${examTestId}/questions/${q.id}/options/${opt.id}`, { content: opt.content, isCorrect: opt.isCorrect });
             }
@@ -559,6 +628,8 @@ export default function EditTest() {
             const filledOpts = q.options.filter(o => o.content.trim() || o.mediaUrl);
             await api.post(`/tests/${examTestId}/questions`, {
               content: q.content, mediaUrl: q.mediaUrl || undefined, topicId: q.topicId || undefined, order: qi,
+              solutionText: q.solutionText || undefined,
+              solutionMediaUrl: q.solutionMediaUrl || undefined,
               options: filledOpts.map(o => ({ content: o.content, mediaUrl: o.mediaUrl || undefined, isCorrect: o.isCorrect })),
             });
           }

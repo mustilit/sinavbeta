@@ -62,6 +62,11 @@ function emptyQuestion() {
     mediaUrl: "",
     options: [emptyOption(), emptyOption(), emptyOption(), emptyOption(), emptyOption()],
     topicId: null,
+    // Çözüm (opsiyonel): eğitici doğru cevabı açıklayan metin ve/veya görsel
+    // ekler; aday testi tamamladıktan sonra review modunda görür. Canlı
+    // oturumda kullanılmaz.
+    solutionText: "",
+    solutionMediaUrl: "",
     duplicateWarning: null,
   };
 }
@@ -130,6 +135,8 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
     ...q,
     _imgFile: null,
     _imgPreview: null,
+    _solutionImgFile: null,
+    _solutionImgPreview: null,
     options: q.options.map(o => ({ ...o, _imgFile: null, _imgPreview: null })),
   });
 
@@ -165,6 +172,9 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
     let mediaUrl = local.mediaUrl || "";
     if (local._imgFile) mediaUrl = await doUpload(local._imgFile);
 
+    let solutionMediaUrl = local.solutionMediaUrl || "";
+    if (local._solutionImgFile) solutionMediaUrl = await doUpload(local._solutionImgFile);
+
     const options = await Promise.all(local.options.map(async (opt) => {
       let optMediaUrl = opt.mediaUrl || "";
       if (opt._imgFile) optMediaUrl = await doUpload(opt._imgFile);
@@ -173,10 +183,11 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
     }));
 
     if (local._imgPreview) URL.revokeObjectURL(local._imgPreview);
+    if (local._solutionImgPreview) URL.revokeObjectURL(local._solutionImgPreview);
     local.options.forEach(o => { if (o._imgPreview) URL.revokeObjectURL(o._imgPreview); });
 
-    const { _imgFile, _imgPreview, ...rest } = local;
-    return { ...rest, mediaUrl, options };
+    const { _imgFile, _imgPreview, _solutionImgFile, _solutionImgPreview, ...rest } = local;
+    return { ...rest, mediaUrl, solutionMediaUrl, options };
   };
 
   const validate = () => {
@@ -316,6 +327,72 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
               searchPlaceholder={t("pages:testForm.question.topicSearchPlaceholder", "Konu ara...")}
               emptyText={t("pages:testForm.question.topicEmpty", "Konu bulunamadı")}
             />
+          </div>
+
+          {/* Çözüm (opsiyonel) — eğiticinin doğru cevap açıklaması */}
+          <div className="space-y-2">
+            <Label>
+              {t("pages:testForm.question.solutionLabel", "Çözüm")}{" "}
+              <span className="text-slate-400 font-normal">{t("pages:testForm.question.solutionOptional", "(opsiyonel)")}</span>
+            </Label>
+            <p className="text-xs text-slate-500">
+              {t("pages:testForm.question.solutionHelp", "Aday testi tamamladıktan sonra 'Çözümü Göster' ile görür. Canlı oturumda gösterilmez.")}
+            </p>
+            <Textarea
+              rows={3}
+              placeholder={t("pages:testForm.question.solutionPlaceholder", "Çözüm metnini buraya yazın...")}
+              value={local.solutionText ?? ""}
+              onChange={(e) => setLocal(prev => ({ ...prev, solutionText: e.target.value }))}
+            />
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-600">
+                <ImagePlus className="w-4 h-4" />
+                {t("pages:testForm.question.solutionImageSelect", "Çözüm görseli seç")}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!f) return;
+                    if (local._solutionImgPreview) URL.revokeObjectURL(local._solutionImgPreview);
+                    setLocal(prev => ({
+                      ...prev,
+                      _solutionImgFile: f,
+                      _solutionImgPreview: URL.createObjectURL(f),
+                      solutionMediaUrl: "",
+                    }));
+                  }}
+                />
+              </label>
+              {(local._solutionImgPreview || local.solutionMediaUrl) && (
+                <>
+                  <div className="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+                    <img
+                      src={local._solutionImgPreview || local.solutionMediaUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (local._solutionImgPreview) URL.revokeObjectURL(local._solutionImgPreview);
+                      setLocal(prev => ({
+                        ...prev,
+                        _solutionImgFile: null,
+                        _solutionImgPreview: null,
+                        solutionMediaUrl: "",
+                      }));
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-rose-200 bg-white hover:bg-rose-50 text-rose-600"
+                  >
+                    <X className="w-4 h-4" />{t("pages:testForm.question.clearImage")}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Seçenekler */}
@@ -982,6 +1059,9 @@ export default function CreateTest() {
             mediaUrl: q.mediaUrl || undefined,
             topicId: q.topicId || undefined,
             order: qi,
+            // Çözüm (opsiyonel) — boşsa undefined gönderilir, backend NULL kaydeder
+            solutionText: q.solutionText?.trim() || undefined,
+            solutionMediaUrl: q.solutionMediaUrl || undefined,
             options: filledOpts.map(o => ({
               content: o.content,
               mediaUrl: o.mediaUrl || undefined,
