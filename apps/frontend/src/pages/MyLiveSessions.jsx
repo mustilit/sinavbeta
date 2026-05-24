@@ -152,7 +152,7 @@ function SessionCard({ session, round2, onOpenHost, onEdit, onStartRound1, onSta
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-amber-500 hover:bg-amber-600 gap-1"
+                  className="bg-emerald-600 hover:bg-emerald-700 gap-1"
                   onClick={() => onStartRound1(session.id)}
                   disabled={starting}
                 >
@@ -189,7 +189,7 @@ function SessionCard({ session, round2, onOpenHost, onEdit, onStartRound1, onSta
                 {(!round2 || round2.status === "DRAFT") && (
                   <Button
                     size="sm"
-                    className="bg-amber-500 hover:bg-amber-600 gap-1"
+                    className="bg-emerald-600 hover:bg-emerald-700 gap-1"
                     onClick={() => onStartRound2(session.id, round2)}
                     disabled={starting}
                   >
