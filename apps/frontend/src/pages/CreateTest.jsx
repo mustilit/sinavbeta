@@ -570,14 +570,14 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
           )}
           {/* İçerik metni yerine sabit etiketler: tür + çözümlü işareti. */}
           {(question.content?.trim() || question.mediaUrl) && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-transparent border border-slate-300 text-slate-600 flex-shrink-0">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-slate-600 flex-shrink-0">
               {question.mediaUrl
                 ? t("pages:testForm.question.typeImage")
                 : t("pages:testForm.question.typeText")}
             </span>
           )}
           {(question.solutionText?.trim() || question.solutionMediaUrl) && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-transparent border border-emerald-300 text-emerald-700 flex-shrink-0">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-700 flex-shrink-0">
               {t("pages:testForm.question.hasSolution")}
             </span>
           )}
@@ -594,11 +594,11 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
           <div className="flex gap-1 flex-shrink-0">
             <Button
               size="sm"
-              variant="outline"
+              variant="ghost"
               onClick={() => setEditOpen(true)}
               aria-label={t("pages:testForm.question.edit")}
               title={t("pages:testForm.question.edit")}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 text-slate-600 hover:bg-slate-100"
             >
               <Pencil className="w-4 h-4" aria-hidden="true" />
             </Button>
