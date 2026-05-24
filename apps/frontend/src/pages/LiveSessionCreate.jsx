@@ -101,22 +101,26 @@ function TierCard({ tier, selected, onSelect }) {
       type="button"
       onClick={() => onSelect(tier)}
       className={cn(
-        "w-full text-left p-4 rounded-xl border-2 transition-all hover:border-amber-400",
+        "w-full text-left p-3 rounded-xl border-2 transition-all hover:border-amber-400",
         selected ? "border-amber-500 bg-amber-50" : "border-slate-200 bg-white"
       )}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-semibold text-slate-900">{tier.label}</span>
-        {selected && <CheckCircle2 className="w-5 h-5 text-amber-600" />}
+      {/* Üst satır: label + ✓ solda, fiyat sağda — yatay yer kazanır. */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-semibold text-slate-900 truncate">{tier.label}</span>
+          {selected && <CheckCircle2 className="w-4 h-4 text-amber-600 flex-shrink-0" aria-hidden="true" />}
+        </div>
+        <span className={cn(
+          "text-base font-bold flex-shrink-0",
+          tier.priceCents === 0 ? "text-emerald-600" : "text-amber-600"
+        )}>{price}</span>
       </div>
-      <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-        <Users className="w-4 h-4" />
+      {/* Alt satır: katılımcı aralığı küçük, ikonlu */}
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+        <Users className="w-3.5 h-3.5" aria-hidden="true" />
         <span>{rangeLabel}</span>
       </div>
-      <span className={cn(
-        "text-lg font-bold",
-        tier.priceCents === 0 ? "text-emerald-600" : "text-amber-600"
-      )}>{price}</span>
     </button>
   );
 }
