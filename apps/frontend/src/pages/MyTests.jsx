@@ -169,6 +169,22 @@ export default function MyTests() {
   const pendingTests = purchasedTests.filter(t => !completedTestIds.has(t.id));
   const completedTests = purchasedTests.filter(t => completedTestIds.has(t.id));
 
+  // Sıralama: Devam edilecek → Başlanmamış → Tamamlanan
+  // packageAggregate her paketin TestPackageCard CTA mantığıyla aynı:
+  //   allCompleted=true → "İncele" (Bitenler — en alt)
+  //   noneStarted=true  → "Teste Başla" (Başlanmamış — orta)
+  //   diğer            → "Devam Et" (en az bir attempt başlamış — en üst)
+  // Aynı tier içinde Array.prototype.sort stable olduğu için orijinal sıra
+  // (en yeni satın alma üstte) korunur.
+  const tierOf = (pkgId) => {
+    const agg = packageAggregate[pkgId];
+    if (!agg) return 1; // veri yoksa "Başlanmamış" gibi davran
+    if (agg.allCompleted) return 2; // Tamamlanan — en alt
+    if (agg.noneStarted) return 1;  // Başlanmamış — orta
+    return 0; // Devam edilecek — en üst
+  };
+  purchasedTests = [...purchasedTests].sort((a, b) => tierOf(a.id) - tierOf(b.id));
+
   // Paging — 10 paket / sayfa. Filtre değişimlerinde 1. sayfaya dön.
   const [page, setPage] = useState(1);
   useEffect(() => { setPage(1); }, [selectedExamType, selectedEducator, completionFilter]);
