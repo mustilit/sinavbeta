@@ -115,9 +115,10 @@
       "all": "All",
       "allEducators": "All Educators",
       "priceFree": "Free",
-      "priceUnder50": "Under ₺50",
-      "price50to100": "₺50 – ₺100",
-      "priceOver100": "Over ₺100",
+      "price100to250": "₺100 – ₺250",
+      "price251to500": "₺251 – ₺500",
+      "price501to1000": "₺501 – ₺1000",
+      "priceOver1000": "Over ₺1000",
       "active": "Active filters:",
       "clear": "Clear"
     },

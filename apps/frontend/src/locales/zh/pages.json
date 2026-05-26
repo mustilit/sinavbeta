@@ -115,9 +115,10 @@
       "all": "全部",
       "allEducators": "所有讲师",
       "priceFree": "免费",
-      "priceUnder50": "₺50 以下",
-      "price50to100": "₺50 – ₺100",
-      "priceOver100": "₺100 以上",
+      "price100to250": "₺100 – ₺250",
+      "price251to500": "₺251 – ₺500",
+      "price501to1000": "₺501 – ₺1000",
+      "priceOver1000": "₺1000 以上",
       "active": "活动筛选器:",
       "clear": "清除"
     },

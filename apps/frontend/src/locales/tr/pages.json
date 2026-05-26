@@ -115,9 +115,10 @@
       "all": "Tümü",
       "allEducators": "Tüm Eğiticiler",
       "priceFree": "Ücretsiz",
-      "priceUnder50": "₺50 Altı",
-      "price50to100": "₺50 - ₺100",
-      "priceOver100": "₺100 Üstü",
+      "price100to250": "₺100 – ₺250",
+      "price251to500": "₺251 – ₺500",
+      "price501to1000": "₺501 – ₺1000",
+      "priceOver1000": "₺1000 Üstü",
       "active": "Aktif filtreler:",
       "clear": "Temizle"
     },

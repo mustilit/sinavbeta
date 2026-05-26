@@ -124,12 +124,19 @@ export default function Explore() {
 
     const matchesDifficulty = !selectedDifficulty || test.difficulty === selectedDifficulty;
     const matchesRating = !minRating || (test.average_rating || 0) >= minRating;
-    const matchesEducator = !selectedEducator || test.educator_email === selectedEducator;
+    // Eğitici filtresi text search'e dönüştürüldü — sistemdeki tüm eğiticileri
+    // dropdown'a yığmak (binlerce) UX açısından mümkün değil. İsim VEYA email
+    // alanında case-insensitive substring araması yapılır.
+    const educatorQuery = selectedEducator.trim().toLowerCase();
+    const matchesEducator = !educatorQuery
+      || (test.educator_name || "").toLowerCase().includes(educatorQuery)
+      || (test.educator_email || "").toLowerCase().includes(educatorQuery);
 
     let matchesPrice = true;
-    if (priceRange === "under50") matchesPrice = test.price < 50;
-    else if (priceRange === "50to100") matchesPrice = test.price >= 50 && test.price <= 100;
-    else if (priceRange === "over100") matchesPrice = test.price > 100;
+    if (priceRange === "100to250") matchesPrice = test.price >= 100 && test.price <= 250;
+    else if (priceRange === "251to500") matchesPrice = test.price >= 251 && test.price <= 500;
+    else if (priceRange === "501to1000") matchesPrice = test.price >= 501 && test.price <= 1000;
+    else if (priceRange === "over1000") matchesPrice = test.price > 1000;
 
     return matchesDifficulty && matchesPrice && matchesRating && matchesEducator;
   });
@@ -145,12 +152,6 @@ export default function Explore() {
         return bMatch - aMatch; // takip edilenler önce
       })
     : filteredTests;
-
-  // Get unique educators for filter
-  const educators = [...new Set(allTests.map(t => t.educator_email))].map(email => {
-    const test = allTests.find(t => t.educator_email === email);
-    return { email, name: test?.educator_name || email };
-  });
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -222,24 +223,23 @@ export default function Explore() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>{t("pages:explore.filter.all")}</SelectItem>
-                <SelectItem value="under50">{t("pages:explore.filter.priceUnder50")}</SelectItem>
-                <SelectItem value="50to100">{t("pages:explore.filter.price50to100")}</SelectItem>
-                <SelectItem value="over100">{t("pages:explore.filter.priceOver100")}</SelectItem>
+                <SelectItem value="100to250">{t("pages:explore.filter.price100to250")}</SelectItem>
+                <SelectItem value="251to500">{t("pages:explore.filter.price251to500")}</SelectItem>
+                <SelectItem value="501to1000">{t("pages:explore.filter.price501to1000")}</SelectItem>
+                <SelectItem value="over1000">{t("pages:explore.filter.priceOver1000")}</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select value={selectedEducator} onValueChange={setSelectedEducator}>
-              <SelectTrigger aria-label={t("pages:explore.filter.educatorAria")} className="w-full lg:w-44 h-12">
-                <SelectValue placeholder={t("pages:explore.filter.educator")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={null}>{t("pages:explore.filter.allEducators")}</SelectItem>
-                {educators.map((edu) => (
-                  /* edu.name user-generated — çevrilmez */
-                  <SelectItem key={edu.email} value={edu.email}>{edu.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Eğitici filtresi — text input. Marketplace'te potansiyel binlerce
+                eğitici olabileceği için dropdown ölçeklenmez. Aday eğitici adının
+                bir kısmını yazar, client-side filter case-insensitive eşler. */}
+            <Input
+              aria-label={t("pages:explore.filter.educatorAria")}
+              placeholder={t("pages:explore.filter.educator")}
+              value={selectedEducator}
+              onChange={(e) => setSelectedEducator(e.target.value)}
+              className="w-full lg:w-44 h-12"
+            />
 
             <div className="flex items-center gap-2 px-3 h-12 bg-white border rounded-md min-w-[140px]">
               <Star className="w-4 h-4 text-amber-500" />
