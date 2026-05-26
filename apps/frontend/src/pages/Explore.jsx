@@ -127,8 +127,7 @@ export default function Explore() {
     const matchesEducator = !selectedEducator || test.educator_email === selectedEducator;
 
     let matchesPrice = true;
-    if (priceRange === "free") matchesPrice = test.price === 0;
-    else if (priceRange === "under50") matchesPrice = test.price < 50;
+    if (priceRange === "under50") matchesPrice = test.price < 50;
     else if (priceRange === "50to100") matchesPrice = test.price >= 50 && test.price <= 100;
     else if (priceRange === "over100") matchesPrice = test.price > 100;
 
@@ -223,7 +222,6 @@ export default function Explore() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>{t("pages:explore.filter.all")}</SelectItem>
-                <SelectItem value="free">{t("pages:explore.filter.priceFree")}</SelectItem>
                 <SelectItem value="under50">{t("pages:explore.filter.priceUnder50")}</SelectItem>
                 <SelectItem value="50to100">{t("pages:explore.filter.price50to100")}</SelectItem>
                 <SelectItem value="over100">{t("pages:explore.filter.priceOver100")}</SelectItem>
