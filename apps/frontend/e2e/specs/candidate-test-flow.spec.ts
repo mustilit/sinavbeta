@@ -193,6 +193,53 @@ test.describe('Aday — Test çözme akışı', () => {
     await expect(clearAnswer).toBeVisible({ timeout: 5000 });
   });
 
+  test('Half-finished resume: PAUSED teste Q3 ekle, ilk donuste Q3 gorunur', async ({ candidatePage }) => {
+    // User-reported: yarım test aç, yeni cevap ekle, Kaydet ve Çık,
+    // ilk dönüşte yeni cevap görünmüyordu. Fix: onSuccess flushQueue +
+    // invalidate sıralaması.
+    //
+    // Senaryo:
+    //   Session A: Q1, Q2 işaretle → Kaydet ve Çık (DB'de Q1, Q2 saved, PAUSED)
+    //   Session B: Aç → resume → Q3 işaretle → ANINDA Kaydet ve Çık
+    //   Session C (kritik): Aç → resume → grid'de Q1, Q2, Q3 hepsi mavi olmalı
+    //     (Önceki bug: sadece Q1, Q2 görünür, Q3 yok; ikinci girişte gelir.)
+
+    // Session A
+    await openFirstTest(candidatePage);
+    await candidatePage.locator('button:has(span:text-is("A"))').first().click();
+    await candidatePage.waitForTimeout(200);
+    await candidatePage.getByRole('button', { name: /^sonraki$/i }).first().click();
+    await candidatePage.waitForTimeout(150);
+    await candidatePage.locator('button:has(span:text-is("A"))').first().click();
+    await candidatePage.waitForTimeout(500);
+    await candidatePage.getByRole('button', { name: /kaydet ve çık/i }).click();
+    await candidatePage.waitForURL(/\/MyTests/i, { timeout: 10000 });
+
+    // Session B
+    await openFirstTest(candidatePage);
+    // Q3'e Sonraki x2
+    await candidatePage.getByRole('button', { name: /^sonraki$/i }).first().click();
+    await candidatePage.waitForTimeout(150);
+    await candidatePage.getByRole('button', { name: /^sonraki$/i }).first().click();
+    await candidatePage.waitForTimeout(150);
+    await expect(candidatePage.locator('h2', { hasText: 'Soru 3' })).toBeVisible({ timeout: 10000 });
+    // Q3 C işaretle
+    await candidatePage.locator('button:has(span:text-is("C"))').first().click();
+    // ANINDA Kaydet ve Çık (race)
+    await candidatePage.getByRole('button', { name: /kaydet ve çık/i }).click();
+    await candidatePage.waitForURL(/\/MyTests/i, { timeout: 10000 });
+
+    // Session C — KRİTİK doğrulama
+    await openFirstTest(candidatePage);
+    // Grid'de Q1, Q2, Q3 hepsi 'bg-indigo-600' (cevaplı)
+    for (let n = 1; n <= 3; n++) {
+      const btn = candidatePage.locator(`button[data-nav-idx="${n - 1}"]`).first();
+      await expect(btn).toBeVisible({ timeout: 10000 });
+      const cls = await btn.getAttribute('class');
+      expect(cls, `Q${n} grid butonu cevaplı görünmeli (bg-indigo-600)`).toContain('bg-indigo-600');
+    }
+  });
+
   test('Grid mismatch: DB Q1-Q7 cevap → ilk girişte grid Q1-Q7 mavi olmalı', async ({ candidatePage }) => {
     // Önce manuel olarak Q1-Q3 işaretle, çık. Sonra tekrar gir, Q4-Q7 işaretle, çık.
     // Üçüncü dönüşte grid'de tüm Q1-Q7'nin mavi (cevaplı) görünmesi gerekir.
