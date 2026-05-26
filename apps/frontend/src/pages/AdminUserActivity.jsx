@@ -237,7 +237,7 @@ export default function AdminUserActivity() {
           <History className="w-5 h-5 text-indigo-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Kullanıcı İşlem Geçmişi</h1>
+          <h1 className="text-2xl font-bold text-slate-900">İşlem Geçmişi</h1>
           <p className="text-sm text-slate-500">
             Aday veya eğitici hesabının audit log kayıtlarını görüntüle
           </p>
