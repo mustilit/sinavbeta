@@ -1501,6 +1501,7 @@
       "testFallback": "Test"
     },
     "loadMore": "Daha Fazla Göster ({{count}} kaldı)",
+    "pageInfo": "{{from}}–{{to}} / {{total}} sonuç",
     "overtime": {
       "title": "Gelişime Açık Yön: Süre Yönetimi",
       "desc": "Aşağıdaki {{count}} testte izin verilen süreden daha geç teslim yaptın. Sınav koşullarında gecikmeli teslim mümkün değildir — süre yönetimine odaklanmak performansını önemli ölçüde artırabilir.",

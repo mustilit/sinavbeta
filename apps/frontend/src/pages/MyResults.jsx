@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import html2canvas from "html2canvas";
 import { entities } from "@/api/dalClient";
@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import StatCard from "@/components/ui/StatCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import PaginationBar from "@/components/ui/PaginationBar";
 import {
   BarChart3,
   CheckCircle,
@@ -30,7 +31,6 @@ import {
   AlertTriangle,
   Share2,
   Download,
-  ChevronDown,
 } from "lucide-react";
 
 const PAGE_SIZE = 15;
@@ -168,6 +168,19 @@ export default function MyResults() {
     }
     return true;
   });
+
+  // Sayfalama: 15 satır/sayfa. Filtre değişimlerinde 1. sayfaya dön ki aday
+  // 8. sayfada filtre değiştirip "boş sonuç" görmesin. totalPages'a clamp
+  // ediyoruz çünkü liste küçülünce currentPage geçersiz olabilir.
+  const totalPages = Math.max(1, Math.ceil(filteredResults.length / PAGE_SIZE));
+  useEffect(() => { setPage(1); }, [filterTest, filterExamType, filterTimeRange]);
+  const currentPage = Math.min(page, totalPages);
+  const pagedResults = useMemo(
+    () => filteredResults.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    // filteredResults her render'da yeni referans; filtre/page tetikler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentPage, filterTest, filterExamType, filterTimeRange, results.length],
+  );
 
   const stats = {
     totalTests: filteredResults.length,
@@ -524,7 +537,7 @@ export default function MyResults() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredResults.slice(0, page * PAGE_SIZE).map((result, idx) => {
+                  {pagedResults.map((result, idx) => {
                     const answeredSum = (result.correct_count ?? 0) + (result.wrong_count ?? 0) + (result.empty_count ?? 0);
                     const total = result.question_count ?? (answeredSum > 0 ? answeredSum : null);
                     const mins = result.time_spent_seconds ? Math.floor(result.time_spent_seconds / 60) : null;
@@ -578,18 +591,20 @@ export default function MyResults() {
                 </TableBody>
               </Table>
             </div>
-            {filteredResults.length > page * PAGE_SIZE && (
-              <div className="flex justify-center mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => p + 1)}
-                  className="text-slate-600"
-                >
-                  <ChevronDown className="w-4 h-4 mr-1.5" />
-                  {t("pages:myResults.loadMore", { count: filteredResults.length - page * PAGE_SIZE })}
-                </Button>
-              </div>
+            <PaginationBar
+              page={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+            {totalPages > 1 && (
+              <p className="text-center text-xs text-slate-500 mt-2">
+                {t("pages:myResults.pageInfo", {
+                  defaultValue: "{{from}}–{{to}} / {{total}} sonuç",
+                  from: (currentPage - 1) * PAGE_SIZE + 1,
+                  to: Math.min(currentPage * PAGE_SIZE, filteredResults.length),
+                  total: filteredResults.length,
+                })}
+              </p>
             )}
             </>
           )}

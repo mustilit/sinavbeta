@@ -1504,6 +1504,7 @@
       "testFallback": "Prueba"
     },
     "loadMore": "Mostrar Más ({{count}} restantes)",
+    "pageInfo": "{{from}}–{{to}} de {{total}} resultados",
     "overtime": {
       "title": "Área a Mejorar: Gestión del Tiempo",
       "desc": "Entregaste {{count}} pruebas más tarde del tiempo permitido. La entrega tardía no es posible en condiciones de examen — enfocarte en la gestión del tiempo puede mejorar significativamente tu rendimiento.",

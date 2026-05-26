@@ -1501,6 +1501,7 @@
       "testFallback": "Test"
     },
     "loadMore": "Show More ({{count}} remaining)",
+    "pageInfo": "{{from}}–{{to}} of {{total}} results",
     "overtime": {
       "title": "Area to Improve: Time Management",
       "desc": "You submitted {{count}} tests below later than the allowed time. Late submission isn't possible under exam conditions — focusing on time management can significantly boost your performance.",

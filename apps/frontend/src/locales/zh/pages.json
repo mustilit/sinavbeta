@@ -1501,6 +1501,7 @@
       "testFallback": "测试"
     },
     "loadMore": "显示更多(还剩 {{count}})",
+    "pageInfo": "{{from}}–{{to}} / 共 {{total}} 条",
     "overtime": {
       "title": "可改进领域:时间管理",
       "desc": "你在以下 {{count}} 道测试中比允许的时间晚提交。考试条件下不允许延迟提交 — 专注于时间管理可以显著提升你的表现。",
