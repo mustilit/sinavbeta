@@ -635,6 +635,7 @@
     }
   },
   "mySales": {
+    "pageInfo": "{{from}}–{{to}} of {{total}} results",
     "stats": {
       "totalSales": "Total Sales",
       "totalRevenue": "Total Revenue",

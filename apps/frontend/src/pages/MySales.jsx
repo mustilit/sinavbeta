@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { entities } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -26,7 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import PaginationBar from "@/components/ui/PaginationBar";
 import { toast } from "sonner";
+
+const PAGE_SIZE = 15;
 
 export default function MySales() {
   const { t } = useTranslation(["pages"]);
@@ -34,6 +37,7 @@ export default function MySales() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  const [page, setPage] = useState(1);
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["mySales", user?.email],
@@ -65,6 +69,19 @@ export default function MySales() {
     
     return matchesSearch && matchesStatus && matchesDate;
   });
+
+  // Sayfalama: 15 satır/sayfa. Filtre değişimlerinde 1. sayfaya dön.
+  // currentPage'i totalPages'a clamp ediyoruz çünkü filtre liste boyutunu
+  // küçültürse mevcut sayfa numarası geçersiz olabilir.
+  const totalPages = Math.max(1, Math.ceil(filteredSales.length / PAGE_SIZE));
+  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, dateFilter]);
+  const currentPage = Math.min(page, totalPages);
+  const pagedSales = useMemo(
+    () => filteredSales.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    // filteredSales her render'da yeni referans; filtre/page tetikler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentPage, searchQuery, statusFilter, dateFilter, sales.length],
+  );
 
   const totalRevenue = sales.reduce((sum, s) => sum + (s.price_paid || 0), 0);
   const uniqueBuyers = new Set(sales.map(s => s.user_email)).size;
@@ -239,7 +256,7 @@ export default function MySales() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSales.map((sale) => (
+                  {pagedSales.map((sale) => (
                     <TableRow key={sale.id}>
                       <TableCell>
                         <div>
@@ -274,6 +291,21 @@ export default function MySales() {
                   ))}
                 </TableBody>
               </Table>
+              <PaginationBar
+                page={currentPage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+              {totalPages > 1 && (
+                <p className="text-center text-xs text-slate-500 mt-2">
+                  {t("pages:mySales.pageInfo", {
+                    defaultValue: "{{from}}–{{to}} / {{total}} sonuç",
+                    from: (currentPage - 1) * PAGE_SIZE + 1,
+                    to: Math.min(currentPage * PAGE_SIZE, filteredSales.length),
+                    total: filteredSales.length,
+                  })}
+                </p>
+              )}
             </div>
           )}
         </CardContent>

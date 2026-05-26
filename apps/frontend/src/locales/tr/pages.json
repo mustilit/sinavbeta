@@ -635,6 +635,7 @@
     }
   },
   "mySales": {
+    "pageInfo": "{{from}}–{{to}} / {{total}} sonuç",
     "stats": {
       "totalSales": "Toplam Satış",
       "totalRevenue": "Toplam Gelir",

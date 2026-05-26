@@ -638,6 +638,7 @@
     }
   },
   "mySales": {
+    "pageInfo": "{{from}}–{{to}} de {{total}} resultados",
     "stats": {
       "totalSales": "Ventas totales",
       "totalRevenue": "Ingresos totales",

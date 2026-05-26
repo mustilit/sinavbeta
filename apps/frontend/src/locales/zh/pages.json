@@ -635,6 +635,7 @@
     }
   },
   "mySales": {
+    "pageInfo": "{{from}}–{{to}} / 共 {{total}} 条",
     "stats": {
       "totalSales": "总销售",
       "totalRevenue": "总收入",

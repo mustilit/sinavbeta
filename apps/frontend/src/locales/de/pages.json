@@ -635,6 +635,7 @@
     }
   },
   "mySales": {
+    "pageInfo": "{{from}}–{{to}} von {{total}} Ergebnissen",
     "stats": {
       "totalSales": "Verkäufe gesamt",
       "totalRevenue": "Einnahmen gesamt",
