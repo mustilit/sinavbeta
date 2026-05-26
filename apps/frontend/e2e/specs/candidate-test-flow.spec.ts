@@ -193,6 +193,24 @@ test.describe('Aday — Test çözme akışı', () => {
     await expect(clearAnswer).toBeVisible({ timeout: 5000 });
   });
 
+  test('Race fix: işaretle + ANINDA Kaydet ve Çık → flush garanti, dönüşte cevap geliyor', async ({ candidatePage }) => {
+    await openFirstTest(candidatePage);
+
+    // Q1'e A işaretle, hemen (bekleme olmadan) Kaydet ve Çık
+    await candidatePage.locator('button:has(span:text-is("A"))').first().click();
+    // Daha önce bug: API call yetişmeden pause çağrılıyordu, cevap reject oluyordu
+    // Fix: saveAndExit pause öncesi flushQueue çağırır
+    await candidatePage.getByRole('button', { name: /kaydet ve çık/i }).click();
+    await candidatePage.waitForURL(/\/MyTests/i, { timeout: 10000 });
+
+    // Tek refresh ile cevap görünmeli (race fix). Eskiden ilk girişte cevap
+    // kayıp olup ikinci girişte gelirdi.
+    await openFirstTest(candidatePage);
+    await expect(candidatePage.locator('h2', { hasText: 'Soru 1' })).toBeVisible({ timeout: 10000 });
+    // 'Boş Bırak' butonu = answers state restore oldu
+    await expect(candidatePage.getByRole('button', { name: /boş bırak/i })).toBeVisible({ timeout: 10000 });
+  });
+
   test('Resume + cevap state: Soru 1 A, Soru 2 B işaretle → çık → dön → A ve B hâlâ işaretli', async ({ candidatePage }) => {
     await openFirstTest(candidatePage);
 

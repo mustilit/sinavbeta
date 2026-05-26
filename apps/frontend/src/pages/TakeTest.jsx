@@ -414,7 +414,7 @@ export default function TakeTest() {
   });
 
   // localStorage destekli cevap kuyruğu
-  const { submitAnswer: queuedSubmitAnswer, pendingCount, isFlushing, clearQueue } = useAnswerQueue(
+  const { submitAnswer: queuedSubmitAnswer, pendingCount, isFlushing, clearQueue, flush: flushQueue } = useAnswerQueue(
     resolvedAttemptId ?? null,
   );
 
@@ -440,6 +440,10 @@ export default function TakeTest() {
       // PAUSED → IN_PROGRESS geçişinden sonra attemptState taze çekilmeli
       // (önceden seçili cevaplar UI'da işaretlensin)
       queryClient.invalidateQueries({ queryKey: ["attemptState", data.attemptId] });
+      // Eski sürümlerde queue'da takılı kalmış cevaplar varsa şimdi flush et —
+      // attempt IN_PROGRESS, backend kabul eder. Aksi takdirde geçmiş cevap
+      // yeniden gözükmeyebilir (queue'da kalmış olur).
+      flushQueue().catch(() => { /* sessiz */ });
     },
     onError: (err) => {
       const code = err?.response?.data?.code ?? err?.code;
@@ -610,6 +614,18 @@ export default function TakeTest() {
     // Süresiz testte geçen süreyi localStorage'a kaydet
     if (resolvedAttemptId && !test?.is_timed) {
       localStorage.setItem(`elapsed_${resolvedAttemptId}`, String(elapsedSec));
+    }
+    // KRİTİK: pause'dan ÖNCE bekleyen cevap kuyruğunu flush et.
+    // Backend SubmitAnswerUseCase, attempt PAUSED iken cevapları reddeder
+    // (ATTEMPT_NOT_IN_PROGRESS). Race: handleAnswer fire-and-forget API call
+    // pause endpoint'i arar, pause önce ulaşırsa cevap reject olur ve queue'da
+    // kalır → tekrar girişte cevap görünmez. Flush ile garantili sıralama.
+    if (resolvedAttemptId) {
+      try {
+        await flushQueue();
+      } catch (e) {
+        console.warn('[TakeTest] queue flush failed before pause:', e?.message ?? e);
+      }
     }
     // Süreli teste DURAKLAT — backend lastResumedAt'ten itibaren geçen süreyi
     // remainingSec'ten düşer ve attempt'ı PAUSED yapar. Aksi takdirde kullanıcı
