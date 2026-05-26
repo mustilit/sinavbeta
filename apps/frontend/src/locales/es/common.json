@@ -110,6 +110,8 @@
       "systemControls": "Controles del sistema",
       "liveTiers": "Paquetes de exámenes en vivo",
       "adPackages": "Paquetes de anuncios",
+      "packagesManagement": "Gestión de paquetes",
+      "packagesManagementDesc": "Paquetes de capacidad de exámenes en vivo y paquetes de anuncios para educadores",
       "emailManagement": "Gestión de correo",
       "riskyContent": "Contenido riesgoso",
       "backup": "Copia de seguridad"

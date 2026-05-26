@@ -110,6 +110,8 @@
       "systemControls": "System Controls",
       "liveTiers": "Live Test Packages",
       "adPackages": "Ad Packages",
+      "packagesManagement": "Package Management",
+      "packagesManagementDesc": "Live test capacity packages and educator ad packages",
       "emailManagement": "Email Management",
       "riskyContent": "Risky Content",
       "backup": "Backup"

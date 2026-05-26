@@ -110,6 +110,8 @@
       "systemControls": "Systemsteuerung",
       "liveTiers": "Live-Testpakete",
       "adPackages": "Werbepakete",
+      "packagesManagement": "Paketverwaltung",
+      "packagesManagementDesc": "Live-Test-Kapazitätspakete und Werbepakete für Lehrkräfte",
       "emailManagement": "E-Mail-Verwaltung",
       "riskyContent": "Riskante Inhalte",
       "backup": "Sicherung"

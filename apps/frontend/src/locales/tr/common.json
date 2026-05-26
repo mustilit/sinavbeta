@@ -110,6 +110,8 @@
       "systemControls": "Sistem Kontrolleri",
       "liveTiers": "Canlı Test Paketleri",
       "adPackages": "Reklam Paketleri",
+      "packagesManagement": "Paket Yönetimi",
+      "packagesManagementDesc": "Canlı test kapasite paketleri ve eğitici reklam paketleri",
       "emailManagement": "Mail Yönetimi",
       "riskyContent": "Riskli İçerik",
       "backup": "Yedekleme"

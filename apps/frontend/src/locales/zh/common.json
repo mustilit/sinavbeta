@@ -110,6 +110,8 @@
       "systemControls": "系统控制",
       "liveTiers": "实时测试套餐",
       "adPackages": "广告套餐",
+      "packagesManagement": "套餐管理",
+      "packagesManagementDesc": "实时测试容量套餐和教育者广告套餐",
       "emailManagement": "邮件管理",
       "riskyContent": "风险内容",
       "backup": "备份"
