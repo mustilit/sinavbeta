@@ -52,18 +52,18 @@ module.exports = {
     //   Sprint 0: %9.51 (24 May) → Sprint 3: %35.2 → Sprint 4: %55.8.
     // Threshold = ölçüm - 2 pt (CI dalgalanma toleransı). Ratchet workflow ile artırılır.
     global: {
-      branches: 41,
-      functions: 46,
-      lines: 54,
-      statements: 53,
+      branches: 46,
+      functions: 53,
+      lines: 60,
+      statements: 59,
     },
     // Use-cases katmanı (toplam): sprint 1: %22 → sprint 3: %51 → sprint 4: %64.
     // admin/moderation/live derinleştirildi; controllers + common dahil edildi.
     './src/application/use-cases/': {
-      branches: 46,
-      functions: 48,
-      lines: 63,
-      statements: 61,
+      branches: 56,
+      functions: 66,
+      lines: 75,
+      statements: 73,
     },
 
     // ── Path-spesifik %85+ HEDEF olan modüller (KALITE-DEGERLENDIRME §11) ────
@@ -85,40 +85,55 @@ module.exports = {
       functions: 62,
       lines: 85,
     },
-    // Auth (2FA, login, device verification): %65.4 stmts.
+    // Auth (2FA, login, device verification): sprint 5 ölçüm %65.4 stmts.
     './src/application/use-cases/auth/': {
       statements: 62,
       branches: 46,
       functions: 65,
       lines: 62,
     },
-    // Attempt (test çözme akışı — overtime, finish, snapshot): %68.9 stmts.
+    // Attempt (test çözme akışı — overtime, snapshot, resume): sprint 5 ölçüm
+    // %86.3 stmts (sprint 4'te %68.9'du; agent attempt domain'ini derinleştirdi).
     './src/application/use-cases/attempt/': {
-      statements: 65,
-      branches: 53,
-      functions: 65,
-      lines: 67,
+      statements: 83,
+      branches: 70,
+      functions: 80,
+      lines: 83,
     },
-    // Admin (sprint 4 ölçüm %67.1 stmts — admin paneli use-case'leri).
+    // Admin (admin paneli use-case'leri): sprint 5 ölçüm %67.1 stmts.
     './src/application/use-cases/admin/': {
       statements: 63,
       branches: 38,
       functions: 47,
       lines: 62,
     },
-    // Moderation (sprint 4 ölçüm %83.7 stmts — AI içerik koruması).
+    // Moderation (AI içerik koruması): sprint 5 ölçüm %83.7 stmts.
     './src/application/use-cases/moderation/': {
       statements: 80,
       branches: 55,
       functions: 70,
       lines: 80,
     },
-    // Live session (sprint 4 ölçüm %61.1 stmts — gerçek zamanlı oturum).
+    // Live session: sprint 5 ölçüm %83.7 stmts (sprint 4'te %61'di; +22pt).
     './src/application/use-cases/live/': {
-      statements: 58,
-      branches: 43,
-      functions: 30,
-      lines: 60,
+      statements: 80,
+      branches: 73,
+      functions: 60,
+      lines: 82,
+    },
+    // Email use-cases: sprint 5 ölçüm %75.5 stmts (sprint 4'te %30.2'ydi; +45pt).
+    './src/application/use-cases/email/': {
+      statements: 72,
+      branches: 56,
+      functions: 78,
+      lines: 76,
+    },
+    // Purchase use-cases: sprint 5 ölçüm %75.4 stmts (sprint 4'te %25'di; +50pt).
+    './src/application/use-cases/purchase/': {
+      statements: 72,
+      branches: 65,
+      functions: 70,
+      lines: 72,
     },
     // Services (AuditLogger, ReviewAggregation, Email): %43.8 stmts.
     './src/application/services/': {
@@ -180,14 +195,14 @@ module.exports = {
       functions: 95,
       lines: 70,
     },
-    // Domain (saf utility'ler): sprint 4 ölçüm %21.1 stmts — kısmi (5 utility).
-    // Bazı domain klasörü dosyaları üretim kodu değil placeholder olduğu için
-    // %85'e ulaşmak yapılandırılmamış. Sprint 5'te genişletilecek.
+    // Domain (saf utility'ler + entity): sprint 5 ölçüm %57.9 stmts (sprint 4'te
+    // %21.1'di; agent 3 yeni domain test ekledi: bankerRound, AppErrorHierarchy,
+    // ensureEducatorActive). Placeholder dosyalar nedeniyle %85'e zor ulaşır.
     './src/domain/': {
-      statements: 18,
-      branches: 0,
-      functions: 0,
-      lines: 20,
+      statements: 55,
+      branches: 56,
+      functions: 30,
+      lines: 60,
     },
   },
 };
