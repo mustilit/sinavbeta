@@ -4,6 +4,18 @@ Bu projede yapılan tüm önemli değişiklikler bu dosyada belgelenir.
 
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/) ve [Semantic Versioning](https://semver.org/lang/tr/) standartlarına uygundur.
 
+## [1.0.1](https://github.com/mustilit/sinavsalonu1_6/compare/v1.0.0...v1.0.1) (2026-05-27)
+
+### 🐛 Düzeltmeler
+
+* **frontend-tests:** mock güçlendirmeleri sprint 7 agent follow-up ([ae1f07e](https://github.com/mustilit/sinavsalonu1_6/commit/ae1f07e80e70a06bc04b5355e8bc75187302b0cb))
+
+### 🔧 Bakım
+
+* sprint 6 — hızlı kapamalar (8 iş tamamı) ([7b9b746](https://github.com/mustilit/sinavsalonu1_6/commit/7b9b746c62e5eb45d827a6e111293f56801ce7c5))
+* sprint 7+8+9 + frontend Vitest sprint (16 dosya) ([61faa23](https://github.com/mustilit/sinavsalonu1_6/commit/61faa23f190d0cea8a09f863b40ea96e005357cd)), closes [#19](https://github.com/mustilit/sinavsalonu1_6/issues/19)
+* **sprint9:** read replica router + CDN URL helper ([4bdefb9](https://github.com/mustilit/sinavsalonu1_6/commit/4bdefb936ff3409246a808ce00cc5e9a082447e6)), closes [#21](https://github.com/mustilit/sinavsalonu1_6/issues/21) [#22](https://github.com/mustilit/sinavsalonu1_6/issues/22)
+
 ## 1.0.0 (2026-05-27)
 
 ### ✨ Özellikler
