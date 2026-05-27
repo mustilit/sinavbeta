@@ -1,5 +1,5 @@
 import { GetQuestionSolutionUseCase } from '../../src/application/use-cases/question/GetQuestionSolutionUseCase';
-import { BadRequestException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { makeAttempt, makeAttemptRepo } from '../helpers/fakes';
 
 describe('GetQuestionSolutionUseCase', () => {
@@ -21,14 +21,18 @@ describe('GetQuestionSolutionUseCase', () => {
     await expect(uc.execute('att-not-owner', 'q1', 'u1')).rejects.toThrow(ForbiddenException);
   });
 
-  it('throws when attempt not submitted', async () => {
-    // Arrange: attempt IN_PROGRESS durumunda
+  it('allows IN_PROGRESS attempts (çözümlü/çalışma modu)', async () => {
+    // Arrange: hasSolutions=true testlerde IN_PROGRESS sırasında da çözüm açılır
+    // (commit e56fcff sonrası davranış). Eski sürümde ConflictException atılıyordu.
     const repo = makeAttemptRepo({
-      findAttemptById: async () => makeAttempt({ id: 'att-not-submitted', candidateId: 'u1', testId: 'test-with-solutions', status: 'IN_PROGRESS' }),
+      findAttemptById: async () => makeAttempt({ id: 'att-in-progress', candidateId: 'u1', testId: 'test-with-solutions', status: 'IN_PROGRESS' }),
     });
     const uc = new GetQuestionSolutionUseCase(repo, fakeExamRepo);
-    // Act & Assert
-    await expect(uc.execute('att-not-submitted', 'q1', 'u1')).rejects.toThrow(ConflictException);
+    // Act
+    const res = await uc.execute('att-in-progress', 'q1', 'u1');
+    // Assert
+    expect(res).toHaveProperty('questionId', 'q1');
+    expect(res).toHaveProperty('solutionText', 's1');
   });
 
   it('throws when solutions disabled', async () => {
