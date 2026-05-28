@@ -332,7 +332,10 @@ export default function MyTests() {
         </div>
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Sprint 13 — auto-fill: ekran genişliğine göre 1-6 sütun (min 280px kart).
+              Tailwind sm/lg breakpoint'leriyle sabit 3 sütun verince geniş ekranda
+              kartlar çok genişliyor ve garip görünüyordu. */}
+          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
             {pagedTests.map((test) => {
               const agg = packageAggregate[test.id];
               // Agrega varsa kullan; yoksa eski tek-test mantığına düş (geriye dönük uyum)

@@ -59,18 +59,19 @@ export default function TestPackageCard({ test, onBuy, isPurchased, isCompleted,
             ? (
               <Link
                 to={createPageUrl("EducatorProfile") + `?email=${encodeURIComponent(test.educator_email)}`}
-                className="flex items-center gap-2 mt-2 text-sm text-slate-500 transition-colors w-fit" style={{color: 'inherit'}} onMouseEnter={(e) => e.currentTarget.style.color = '#0000CD'} onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}
+                className="flex items-center gap-2 mt-2 text-sm text-slate-500 transition-colors max-w-full min-w-0" style={{color: 'inherit'}} onMouseEnter={(e) => e.currentTarget.style.color = '#0000CD'} onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}
                 onClick={(e) => e.stopPropagation()}>
-                <User className="w-4 h-4" />
-                {/* test.educator_name user-generated — çevrilmez */}
-                <span>{test.educator_name}</span>
+                <User className="w-4 h-4 flex-shrink-0" />
+                {/* test.educator_name user-generated — çevrilmez; uzun username
+                    dar kartta taşmasın diye truncate (Sprint 13). */}
+                <span className="truncate">{test.educator_name}</span>
               </Link>
             )
             : (
-              <span className="flex items-center gap-2 mt-2 text-sm text-slate-500 w-fit">
-                <User className="w-4 h-4" />
-                {/* test.educator_name user-generated — çevrilmez */}
-                <span>{test.educator_name}</span>
+              <span className="flex items-center gap-2 mt-2 text-sm text-slate-500 max-w-full min-w-0">
+                <User className="w-4 h-4 flex-shrink-0" />
+                {/* test.educator_name user-generated — çevrilmez; truncate güvenliği. */}
+                <span className="truncate">{test.educator_name}</span>
               </span>
             )
         )}
@@ -119,8 +120,11 @@ export default function TestPackageCard({ test, onBuy, isPurchased, isCompleted,
           })()}
         </div>
 
-        <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-100">
-          <div>
+        {/* Sprint 13 — dar kartta fiyat + buton sığmazsa alt alta wrap olsun:
+            `flex-wrap gap-3`. Geniş kartta yine yan yana görünür. `min-w-0`
+            fiyat label'ının ellipsis'e izin verir (uzun kampanya fiyatları). */}
+        <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-100 flex-wrap gap-3">
+          <div className="min-w-0">
             {test.campaign_price && test.campaign_price > 0 && test.campaign_price < test.price ?
             <div>
                 <span className="text-2xl font-bold text-slate-900">₺{test.campaign_price}</span>

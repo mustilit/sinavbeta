@@ -269,7 +269,7 @@ export default function Explore() {
 
       {/* Results */}
       {isLoading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="bg-white rounded-2xl border border-slate-200 h-80 animate-pulse">
               <div className="h-40 bg-slate-200 rounded-t-2xl" />
@@ -292,7 +292,7 @@ export default function Explore() {
       ) : (
         <>
           <p className="text-sm text-slate-500 mb-6">{t("pages:explore.countFound", { count: sortedTests.length })}</p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
             {sortedTests.map((test) => {
               const agg = packageAggregate[test.id];
               const isCompleted = agg ? agg.allCompleted : completedIds.has(test.id);

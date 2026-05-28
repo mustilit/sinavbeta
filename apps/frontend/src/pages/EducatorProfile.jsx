@@ -145,7 +145,7 @@ export default function EducatorProfile() {
       <div className="max-w-6xl mx-auto animate-pulse">
         <div className="h-8 bg-slate-200 rounded w-40 mb-6" />
         <div className="h-48 bg-slate-200 rounded-2xl mb-6" />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-56 bg-slate-200 rounded-2xl" />
           ))}
@@ -252,7 +252,7 @@ export default function EducatorProfile() {
         </div>
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))] mb-8">
             {pagedTests.map((t) => (
               <TestPackageCard
                 key={t.id}

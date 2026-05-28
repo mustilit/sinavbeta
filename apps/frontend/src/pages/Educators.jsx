@@ -121,7 +121,7 @@ export default function Educators() {
 
       {/* Sonuçlar */}
       {isLoading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="bg-white rounded-2xl border border-slate-200 p-6 h-40 animate-pulse">
               <div className="flex gap-4">
@@ -155,7 +155,7 @@ export default function Educators() {
       ) : (
         <>
           <p className="text-sm text-slate-500 mb-6">{filteredEducators.length} eğitici bulundu</p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
             {pagedEducators.map((educator) => (
               <Link
                 key={educator.id}

@@ -534,7 +534,7 @@ export default function Home() {
               <p>{t("pages:home.empty.noPackages")}</p>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
               {packages.map((pkg) => (
                 <TestPackageCard
                   key={pkg.id}
