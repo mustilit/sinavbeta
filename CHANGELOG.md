@@ -4,6 +4,19 @@ Bu projede yapılan tüm önemli değişiklikler bu dosyada belgelenir.
 
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/) ve [Semantic Versioning](https://semver.org/lang/tr/) standartlarına uygundur.
 
+## [1.1.0](https://github.com/mustilit/sinavsalonu1_6/compare/v1.0.1...v1.1.0) (2026-05-28)
+
+### ✨ Özellikler
+
+* **sprint10:** production sertifikasyonu — graceful shutdown + circuit breaker + Grafana/Prometheus + replica routing + SLO ([fab304d](https://github.com/mustilit/sinavsalonu1_6/commit/fab304d74cf511dd1a27592b66606c5a85f1c667)), closes [#1](https://github.com/mustilit/sinavsalonu1_6/issues/1) [#2](https://github.com/mustilit/sinavsalonu1_6/issues/2) [#3](https://github.com/mustilit/sinavsalonu1_6/issues/3) [#4](https://github.com/mustilit/sinavsalonu1_6/issues/4) [#5](https://github.com/mustilit/sinavsalonu1_6/issues/5)
+* **sprint11:** mobil UX + performans — Brotli + Sharp + PWA + Lighthouse + mobile a11y + onboarding ([aa43902](https://github.com/mustilit/sinavsalonu1_6/commit/aa439025e604ed5ed22efb732f4dc5432c6f76e1)), closes [#1](https://github.com/mustilit/sinavsalonu1_6/issues/1) [#2](https://github.com/mustilit/sinavsalonu1_6/issues/2) [#3](https://github.com/mustilit/sinavsalonu1_6/issues/3) [#4](https://github.com/mustilit/sinavsalonu1_6/issues/4) [#5](https://github.com/mustilit/sinavsalonu1_6/issues/5) [#6](https://github.com/mustilit/sinavsalonu1_6/issues/6)
+* **sprint12:** performance polish — bundle split + AVIF + strict touch target ([0891937](https://github.com/mustilit/sinavsalonu1_6/commit/08919372279c30e4aa84a472998d752d2f60163e)), closes [#1](https://github.com/mustilit/sinavsalonu1_6/issues/1) [#2](https://github.com/mustilit/sinavsalonu1_6/issues/2) [#3](https://github.com/mustilit/sinavsalonu1_6/issues/3)
+
+### 📚 Dokümantasyon
+
+* **sprint12:** CLAUDE.md + skill + agent dokümanlarını Sprint 12 koduyla senkronize et ([b505f68](https://github.com/mustilit/sinavsalonu1_6/commit/b505f6864154b9793af925cc94c176dbe14656cd)), closes [#3](https://github.com/mustilit/sinavsalonu1_6/issues/3)
+* **sprints:** CLAUDE.md + skill + agent dokümanlarını Sprint 10/11 koduyla senkronize et ([5998179](https://github.com/mustilit/sinavsalonu1_6/commit/59981798b94031d1f6d26912fabe86efe759c917)), closes [#5](https://github.com/mustilit/sinavsalonu1_6/issues/5) [#2](https://github.com/mustilit/sinavsalonu1_6/issues/2) [#3](https://github.com/mustilit/sinavsalonu1_6/issues/3)
+
 ## [1.0.1](https://github.com/mustilit/sinavsalonu1_6/compare/v1.0.0...v1.0.1) (2026-05-27)
 
 ### 🐛 Düzeltmeler
