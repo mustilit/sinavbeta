@@ -1097,6 +1097,14 @@ model AdPurchase {
   canceledAt           DateTime?
   canceledReason       String?
 
+  // Sprint 15 — Platform admin promo kodu uygulanmışsa snapshot.
+  // Ödenen tutar (paidCents) reporting/audit için saklanır; AdPackage.priceCents
+  // hâlâ baz fiyat olarak kalır. promoCodeId snapshot (FK) — promo silinse de
+  // kayıt korunur.
+  paidCents                    Int?
+  platformPromoCodeId          String? @db.Uuid
+  platformPromoDiscountCents   Int?
+
   educator    User           @relation("educatorAdPurchases", fields: [educatorId], references: [id], onDelete: Cascade)
   adPackage   AdPackage      @relation(fields: [adPackageId], references: [id], onDelete: Cascade)
   test        ExamTest?      @relation(fields: [testId], references: [id], onDelete: Cascade)
@@ -1247,6 +1255,12 @@ model LiveSession {
   parentSessionId         String?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
+
+  // Sprint 15 — Platform admin promo kodu uygulanmışsa snapshot.
+  // Tier.priceCents baz fiyat; ödenen tutar paidCents'te. Reporting + audit için.
+  paidCents                    Int?
+  platformPromoCodeId          String? @db.Uuid
+  platformPromoDiscountCents   Int?
 
   educator     User              @relation("EducatorLiveSessions", fields: [educatorId], references: [id])
   tier         LiveSessionTier?  @relation(fields: [tierId], references: [id])
@@ -1685,4 +1699,63 @@ model BackupLog {
   @@index([tenantId, createdAt(sort: Desc)])
   @@index([tenantId, status, createdAt(sort: Desc)])
   @@map("backup_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Sprint 15 — Platform Admin Promo Code (LIVE_SESSION + AD_PACKAGE scope)
+// ---------------------------------------------------------------------------
+// Eğitici canlı test (LiveSession) ve reklam paketi (AdPurchase) satın alırken
+// kullanabileceği admin-tarafından oluşturulmuş promosyon kodu.
+//
+// Mevcut `DiscountCode` modelinden FARKLI:
+//   - DiscountCode      : educator → candidate (paket alımı için eğitici tarafından üretilir)
+//   - PlatformPromoCode : admin → educator (canlı test + reklam paketi için)
+// İki kavram ayrı tabloda; yetki/scope açık.
+// ---------------------------------------------------------------------------
+
+enum PlatformPromoScope {
+  LIVE_SESSION  // Eğitici canlı test ödemesinde
+  AD_PACKAGE    // Eğitici reklam paketi ödemesinde
+}
+
+model PlatformPromoCode {
+  id          String               @id @default(uuid()) @db.Uuid
+  code        String               @unique
+  description String?
+  percentOff  Int                  // 1-100
+  scopes      PlatformPromoScope[] // hangi akışlarda geçerli (birden fazla olabilir)
+  maxUses     Int?                 // null = sınırsız
+  usedCount   Int                  @default(0)
+  validFrom   DateTime?
+  validUntil  DateTime?
+  isActive    Boolean              @default(true)
+  createdById String?              // admin userId — denormalize, FK on-delete tehlikeli
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  usages PlatformPromoCodeUsage[]
+
+  @@index([code])
+  @@index([isActive, validUntil])
+  @@map("platform_promo_codes")
+}
+
+// Her kullanımı kaydeder. Unique constraint sayesinde aynı eğitici aynı kodu
+// aynı purchase'da iki kez kullanamaz. Race condition koruması için Promo
+// kullanımı her zaman bir transaction içinde `usedCount++` ile yapılır.
+model PlatformPromoCodeUsage {
+  id           String   @id @default(uuid()) @db.Uuid
+  promoCodeId  String   @db.Uuid
+  educatorId   String
+  purchaseType String   // 'LIVE_SESSION' | 'AD_PACKAGE'
+  purchaseId   String   // liveSessionId veya adPurchaseId
+  discountCents Int     // hesaplanan indirim tutarı (audit/reporting için)
+  usedAt       DateTime @default(now())
+
+  promoCode PlatformPromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, purchaseId])
+  @@index([educatorId])
+  @@index([purchaseId])
+  @@map("platform_promo_code_usages")
 }

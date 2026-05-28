@@ -164,8 +164,10 @@ export class LiveSessionsController {
   @Roles('EDUCATOR', 'ADMIN')
   @ApiOkResponse({ description: 'Oturum odeme' })
   @ApiErrorResponses()
-  async pay(@Param('id') id: string, @Req() req: any) {
-    return this.payUC.execute(id, req.user.id);
+  async pay(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    // Sprint 15 #4 — body.promoCode opsiyonel; varsa atomik validate + apply
+    const promoCode = typeof body?.promoCode === 'string' ? body.promoCode : undefined;
+    return this.payUC.execute(id, req.user.id, promoCode);
   }
 
   @Post(':id/start')

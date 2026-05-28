@@ -25,8 +25,10 @@ export class PurchaseAdUseCase {
    * @param adPackageId  - Satın alınacak reklam paketinin ID'si.
    * @param testId       - TEST türünde zorunlu; EDUCATOR türünde null.
    * @param targetType   - 'TEST' | 'EDUCATOR'; varsayılan 'TEST'
+   * @param promoCode    - Sprint 15 #4: opsiyonel platform promo (AD_PACKAGE scope).
+   *                       Varsa atomik validate + apply + Usage kaydı + AdPurchase snapshot.
    */
-  async execute(educatorId: string, adPackageId: string, testId: string | null, targetType: 'TEST' | 'EDUCATOR' = 'TEST') {
+  async execute(educatorId: string, adPackageId: string, testId: string | null, targetType: 'TEST' | 'EDUCATOR' = 'TEST', promoCode?: string) {
     // Admin reklam kill-switch kontrolü — false ise satın alma engellenir (fail-open: satır yoksa izin verilir)
     const settings = await prisma.adminSettings.findFirst({ where: { id: 1 } });
     if (settings && (settings as any).adPurchasesEnabled === false) {
@@ -70,6 +72,90 @@ export class PurchaseAdUseCase {
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + adPackage.durationDays);
 
+    // Sprint 15 #4 — Promo kodu opsiyonel uygulama. Atomik:
+    //   1) promo validate + usedCount++ (race-safe maxUses kontrolü)
+    //   2) AdPurchase create (snapshot alanları dahil)
+    //   3) PlatformPromoCodeUsage kaydı
+    // Promo yoksa klasik akış: paidCents = adPackage.priceCents (varsa) veya null.
+    const basePriceCents = (adPackage as any).priceCents ?? 0;
+
+    if (promoCode) {
+      const code = promoCode.trim().toUpperCase();
+      const result = await prisma.$transaction(async (tx) => {
+        const promo = await tx.platformPromoCode.findUnique({ where: { code } });
+        if (!promo) throw new AppError('PROMO_NOT_FOUND', 'Promo kodu bulunamadı', 404);
+        if (!promo.isActive)
+          throw new AppError('PROMO_NOT_ACTIVE', 'Promo kodu pasif', 409);
+        if (!promo.scopes.includes('AD_PACKAGE'))
+          throw new AppError('PROMO_SCOPE_MISMATCH', 'Bu kod reklam paketi için geçerli değil', 409);
+        const now = new Date();
+        if (promo.validFrom && promo.validFrom > now)
+          throw new AppError('PROMO_OUT_OF_WINDOW', 'Promo kodu henüz aktif değil', 409);
+        if (promo.validUntil && promo.validUntil < now)
+          throw new AppError('PROMO_OUT_OF_WINDOW', 'Promo kodunun süresi dolmuş', 409);
+
+        if (promo.maxUses != null) {
+          const updated = await tx.platformPromoCode.updateMany({
+            where: { id: promo.id, usedCount: { lt: promo.maxUses } },
+            data: { usedCount: { increment: 1 } },
+          });
+          if (updated.count === 0) {
+            throw new AppError('PROMO_USAGE_EXHAUSTED', 'Promo kodu kullanım hakkı tükendi', 409);
+          }
+        } else {
+          await tx.platformPromoCode.update({
+            where: { id: promo.id },
+            data: { usedCount: { increment: 1 } },
+          });
+        }
+
+        const percent = Math.min(Math.max(promo.percentOff, 1), 100);
+        const discountCents = Math.floor((basePriceCents * percent) / 100);
+        const paidCents = Math.max(0, basePriceCents - discountCents);
+
+        const purchase = await tx.adPurchase.create({
+          data: {
+            tenantId,
+            educatorId,
+            adPackageId,
+            targetType,
+            testId: resolvedTestId,
+            validUntil,
+            impressionsRemaining: adPackage.impressions,
+            impressionsDelivered: 0,
+            paidCents,
+            platformPromoCodeId: promo.id,
+            platformPromoDiscountCents: discountCents,
+          } as any,
+        });
+
+        await tx.platformPromoCodeUsage.create({
+          data: {
+            promoCodeId: promo.id,
+            educatorId,
+            purchaseType: 'AD_PACKAGE',
+            purchaseId: purchase.id,
+            discountCents,
+          },
+        });
+
+        return purchase;
+      });
+
+      return {
+        id:                   result.id,
+        targetType:           result.targetType,
+        adPackageId,
+        testId:               resolvedTestId,
+        validUntil:           result.validUntil,
+        impressionsRemaining: result.impressionsRemaining,
+        createdAt:            result.createdAt,
+        paidCents:            (result as any).paidCents,
+        platformPromoDiscountCents: (result as any).platformPromoDiscountCents,
+      };
+    }
+
+    // Promo yok — klasik akış
     const purchase = await prisma.adPurchase.create({
       data: {
         tenantId,
@@ -80,7 +166,8 @@ export class PurchaseAdUseCase {
         validUntil,
         impressionsRemaining: adPackage.impressions,
         impressionsDelivered: 0,
-      },
+        paidCents:            basePriceCents,
+      } as any,
     });
 
     return {

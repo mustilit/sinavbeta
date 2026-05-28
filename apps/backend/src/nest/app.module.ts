@@ -102,6 +102,16 @@ import { UpdateContractUseCase } from '../application/use-cases/contract/UpdateC
 import { ListAuditLogsUseCase } from '../application/use-cases/admin/ListAuditLogsUseCase';
 import { CreateDiscountCodeUseCase } from '../application/use-cases/discount/CreateDiscountCodeUseCase';
 import { ListEducatorDiscountCodesUseCase } from '../application/use-cases/discount/ListEducatorDiscountCodesUseCase';
+import { ValidateDiscountCodeUseCase } from '../application/use-cases/discount/ValidateDiscountCodeUseCase';
+import { DiscountValidateController } from './controllers/discount-validate.controller';
+// Sprint 15 #3 — Platform admin promo kodu (LIVE_SESSION + AD_PACKAGE)
+import { CreatePlatformPromoCodeUseCase } from '../application/use-cases/platform-promo/CreatePlatformPromoCodeUseCase';
+import { ListPlatformPromoCodesUseCase } from '../application/use-cases/platform-promo/ListPlatformPromoCodesUseCase';
+import { DeletePlatformPromoCodeUseCase } from '../application/use-cases/platform-promo/DeletePlatformPromoCodeUseCase';
+import { TogglePlatformPromoCodeUseCase } from '../application/use-cases/platform-promo/TogglePlatformPromoCodeUseCase';
+import { ValidatePlatformPromoCodeUseCase } from '../application/use-cases/platform-promo/ValidatePlatformPromoCodeUseCase';
+import { AdminPlatformPromoController } from './controllers/admin.platform-promo.controller';
+import { PlatformPromoValidateController } from './controllers/platform-promo-validate.controller';
 import { ListAllDiscountCodesUseCase } from '../application/use-cases/discount/ListAllDiscountCodesUseCase';
 import { DeleteDiscountCodeUseCase } from '../application/use-cases/discount/DeleteDiscountCodeUseCase';
 import { AdminDiscountCodesController } from './controllers/admin.discount-codes.controller';
@@ -309,6 +319,11 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     WebhookController,
     BillingController,
     TwoFactorController,
+    // Sprint 15 — Aday indirim kodu validate endpoint'i
+    DiscountValidateController,
+    // Sprint 15 #3 — Platform promo kodu (admin CRUD + educator validate)
+    AdminPlatformPromoController,
+    PlatformPromoValidateController,
     // İçerik Moderasyonu
     AdminModerationController,
     AdminBackupController,
@@ -544,6 +559,38 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
       useFactory: (userRepo: PrismaUserRepository, auditRepo: PrismaAuditLogRepository) =>
         new CreateDiscountCodeUseCase(userRepo, auditRepo),
       inject: [USER_REPO, PrismaAuditLogRepository],
+    },
+    // Sprint 15 #2 — Aday paket öncesi indirim kodu doğrulama (validate, usage atmaz)
+    {
+      provide: ValidateDiscountCodeUseCase,
+      useFactory: () => new ValidateDiscountCodeUseCase(),
+    },
+    // Sprint 15 #3 — Platform admin promo kodu (LIVE_SESSION + AD_PACKAGE)
+    {
+      provide: CreatePlatformPromoCodeUseCase,
+      useFactory: (auditRepo: PrismaAuditLogRepository) =>
+        new CreatePlatformPromoCodeUseCase(auditRepo),
+      inject: [PrismaAuditLogRepository],
+    },
+    {
+      provide: ListPlatformPromoCodesUseCase,
+      useFactory: () => new ListPlatformPromoCodesUseCase(),
+    },
+    {
+      provide: DeletePlatformPromoCodeUseCase,
+      useFactory: (auditRepo: PrismaAuditLogRepository) =>
+        new DeletePlatformPromoCodeUseCase(auditRepo),
+      inject: [PrismaAuditLogRepository],
+    },
+    {
+      provide: TogglePlatformPromoCodeUseCase,
+      useFactory: (auditRepo: PrismaAuditLogRepository) =>
+        new TogglePlatformPromoCodeUseCase(auditRepo),
+      inject: [PrismaAuditLogRepository],
+    },
+    {
+      provide: ValidatePlatformPromoCodeUseCase,
+      useFactory: () => new ValidatePlatformPromoCodeUseCase(),
     },
     {
       provide: ListEducatorDiscountCodesUseCase,

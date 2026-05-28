@@ -159,11 +159,14 @@ export class EducatorsController {
   @ApiErrorResponses()
   async purchaseAd(@Req() req: any, @Body() dto: PurchaseAdDto) {
     const educatorId = (req as any).user?.id;
+    // Sprint 15 #4 — opsiyonel platform promo kodu (AD_PACKAGE scope)
+    const promoCode = typeof (dto as any).promoCode === 'string' ? (dto as any).promoCode : undefined;
     return this.purchaseAdUC.execute(
       educatorId,
       dto.adPackageId,
       dto.testId ?? null,
       (dto as any).targetType ?? 'TEST',
+      promoCode,
     );
   }
 

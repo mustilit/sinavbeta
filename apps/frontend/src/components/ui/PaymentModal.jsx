@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { entities, contracts as contractsApi } from "@/api/dalClient";
+import { entities, contracts as contractsApi, discounts as discountsApi } from "@/api/dalClient";
 import {
   Dialog,
   DialogContent,
@@ -99,6 +99,78 @@ const PROVIDERS = [
 ];
 
 // ---------------------------------------------------------------------------
+// Sprint 15 #2 — İndirim kodu input
+// ---------------------------------------------------------------------------
+
+/**
+ * "İndirim kodun var mı?" input + Uygula butonu.
+ *
+ *   - applied yoksa: input + buton görünür
+ *   - applied dolu: badge ("✓ %X indirim — ₺Y") + Kaldır butonu
+ *   - error varsa: input altında kırmızı mesaj
+ */
+function DiscountCodeInput({ value, onChange, applied, error, loading, onApply, onRemove }) {
+  if (applied) {
+    return (
+      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-center justify-between gap-3">
+        <div className="text-sm text-emerald-800">
+          <span className="font-semibold">✓ {applied.code}</span>{" "}
+          <span>—</span>{" "}
+          <span>
+            %{applied.percentOff} indirim ({formatPrice(applied.discountCents)} ₺)
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-xs text-emerald-700 underline hover:no-underline"
+        >
+          Kaldır
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-2">
+      <label className="block text-sm font-medium text-slate-700">
+        İndirim kodun var mı?
+      </label>
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="KOD"
+          className="flex-1 uppercase"
+          aria-label="İndirim kodu"
+          onKeyDown={(e) => {
+            // Enter ile uygula
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onApply();
+            }
+          }}
+        />
+        <Button
+          type="button"
+          onClick={onApply}
+          disabled={loading || !value?.trim()}
+          variant="outline"
+          className="shrink-0"
+        >
+          {loading ? "..." : "Uygula"}
+        </Button>
+      </div>
+      {error && <p className="text-xs text-rose-600">{error}</p>}
+    </div>
+  );
+}
+
+/** Cents → "₺X" string formatlamasına yardımcı (basit). */
+function formatPrice(cents) {
+  return (cents / 100).toFixed(2).replace(/\.00$/, "");
+}
+
+// ---------------------------------------------------------------------------
 // Sprint 14 — Mesafeli Satış Sözleşmesi onay checkbox'ı
 // ---------------------------------------------------------------------------
 
@@ -169,6 +241,14 @@ export function PaymentModal({ isOpen, onClose, test, discountCode }) {
   const [distanceSaleContract, setDistanceSaleContract] = useState(null);
   const [acceptedDistanceSale, setAcceptedDistanceSale] = useState(false);
 
+  // Sprint 15 #2 — İndirim kodu input + validate state.
+  // discountCode prop'u varsa initial state'e konur (geriye dönük uyumluluk);
+  // kullanıcı modal'da yeni kod girip Uygula'ya basabilir.
+  const [discountInput, setDiscountInput] = useState(discountCode || "");
+  const [appliedDiscount, setAppliedDiscount] = useState(null); // { code, percentOff, discountCents, finalAmountCents }
+  const [discountError, setDiscountError] = useState(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
     contractsApi
@@ -197,8 +277,46 @@ export function PaymentModal({ isOpen, onClose, test, discountCode }) {
     resetCardForm();
     setErrorMessage(null);
     setAcceptedDistanceSale(false);
+    // Sprint 15 — indirim state'ini de sıfırla
+    setDiscountInput("");
+    setAppliedDiscount(null);
+    setDiscountError(null);
     purchaseMutation.reset();
     onClose();
+  };
+
+  // Sprint 15 #2 — İndirim kodu validate handler.
+  // Backend `POST /discounts/validate` 200 dönerse appliedDiscount set olur ve
+  // son fiyat UI'da gösterilir. Hata varsa kısa kullanıcı dostu mesaj.
+  const handleValidateDiscount = async () => {
+    setDiscountError(null);
+    const code = (discountInput || "").trim().toUpperCase();
+    if (!code) return;
+    setDiscountLoading(true);
+    try {
+      const basePrice = Math.round((test?.price ?? 0) * 100); // ₺ → cents
+      const result = await discountsApi.validate(code, test.id, basePrice);
+      setAppliedDiscount(result);
+    } catch (err) {
+      const errorCode = err?.response?.data?.code || err?.response?.data?.error?.code;
+      const map = {
+        DISCOUNT_NOT_FOUND: "İndirim kodu bulunamadı",
+        DISCOUNT_NOT_ACTIVE: "Bu kod pasif",
+        DISCOUNT_OUT_OF_WINDOW: "Bu kod artık geçerli değil",
+        DISCOUNT_USAGE_EXHAUSTED: "Kullanım hakkı tükendi",
+        DISCOUNT_NOT_OWNED: "Bu kod bu paket için geçerli değil",
+      };
+      setDiscountError(map[errorCode] || "İndirim kodu doğrulanamadı");
+      setAppliedDiscount(null);
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountInput("");
+    setDiscountError(null);
   };
 
   // ---------------------------------------------------------------------------
@@ -209,9 +327,14 @@ export function PaymentModal({ isOpen, onClose, test, discountCode }) {
     mutationFn: async () => {
       // Sprint 14 — Mesafeli Satış sözleşmesi acceptance backend'e gönderilir.
       // Backend bunu aktif contract ID ile karşılaştırır; eşleşmezse 400 atar.
+      //
+      // Sprint 15 #2 — İndirim kodu: önce kullanıcının modal içinde validate
+      // edip uyguladığı `appliedDiscount.code`, yoksa parent'tan gelen
+      // `discountCode` prop'u (geriye dönük). Backend `PurchaseUseCase`
+      // race-condition korumalı şekilde usedCount++ yapar.
       await entities.Purchase.create({
         test_package_id: test.id,
-        discount_code: discountCode || undefined,
+        discount_code: appliedDiscount?.code || discountCode || undefined,
         payment_provider: selectedProvider,
         acceptedDistanceSaleContractId: distanceSaleContract?.id,
       });
@@ -343,6 +466,21 @@ export function PaymentModal({ isOpen, onClose, test, discountCode }) {
                 )}
               </DialogDescription>
             </DialogHeader>
+
+            {/* Sprint 15 #2 — İndirim kodu input (ücretsiz paket dışı her durumda).
+                Kullanıcı kodu yazar, "Uygula" backend'e validate eder, başarılıysa
+                indirim oranı + son fiyat gösterilir. Submit'te aynı kod body'ye gider. */}
+            {!isFree && (
+              <DiscountCodeInput
+                value={discountInput}
+                onChange={setDiscountInput}
+                applied={appliedDiscount}
+                error={discountError}
+                loading={discountLoading}
+                onApply={handleValidateDiscount}
+                onRemove={handleRemoveDiscount}
+              />
+            )}
 
             {/* Sprint 14 — Mesafeli Satış Sözleşmesi onayı (TKHK m.48).
                 Ücretli + ücretsiz akış öncesinde gösterilir; eksikse satın alma butonu disabled. */}

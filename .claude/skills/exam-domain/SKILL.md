@@ -1,6 +1,6 @@
 ---
 name: exam-domain
-description: Sinav Salonu domain modeli — Test/ExamTest, ExamQuestion, Attempt, User (CANDIDATE/EDUCATOR/ADMIN), TestPackage (satın alma birimi), Purchase, AdminSettings, BackupLog, DiscountCode, AdPackage. Yeni özellik veya veri modeli üzerinde çalışırken referans alın.
+description: Sinav Salonu domain modeli — Test/ExamTest, ExamQuestion, Attempt, User (CANDIDATE/EDUCATOR/ADMIN), TestPackage (satın alma birimi), Purchase, AdminSettings, BackupLog, DiscountCode (educator→aday), PlatformPromoCode (admin→eğitici, LIVE_SESSION/AD_PACKAGE scope), AdPackage. Yeni özellik veya veri modeli üzerinde çalışırken referans alın.
 ---
 
 # Sinav Salonu — Domain Modeli
@@ -95,10 +95,24 @@ DB yedekleme audit log.
 
 ### DiscountCode
 
-EDUCATOR'ın oluşturduğu indirim kodu. **TestPackage üzerine uygulanır.**
+EDUCATOR'ın oluşturduğu indirim kodu. **TestPackage üzerine uygulanır (aday akışı).**
 
-- `id, code, educatorId, discountPercent, validFrom, validUntil, usageLimit, usageCount, testPackageId (opsiyonel — belirli pakete özel; null ise educator'ın tüm paketleri)`
-- Doğrulama: aktif tarih aralığı + usage limit + (opsiyonel) paket eşleşmesi + paketi yaratan educator ile kod sahibi educator aynı mı.
+- `id, code, createdById (educator), percentOff, validFrom, validUntil, maxUses, usedCount, isActive, description`
+- Sahiplik kuralı: `DiscountCode.createdById === TestPackage.educatorId` zorunlu — başka eğiticinin kodu o pakette geçerli değil.
+- Doğrulama: `ValidateDiscountCodeUseCase` aday "Uygula" tıklayınca kodu doğrular (aktiflik, tarih, usage limit, sahiplik). %50 indirim üst sınırı clamp.
+- usedCount artırma: ayrı endpoint DEĞİL; asıl `PurchaseUseCase` transaction'ı içinde race-safe (`updateMany ... lt: maxUses` + `Purchase.discountCodeId/discountAmount` snapshot). Yarış kontrolünden çıkmaz.
+- Hata kodları: `DISCOUNT_NOT_FOUND/NOT_ACTIVE/NOT_OWNED/OUT_OF_WINDOW/USAGE_EXHAUSTED`.
+
+### PlatformPromoCode (Sprint 15 — admin → eğitici)
+
+**`DiscountCode`'tan AYRI bir model.** Admin tarafından oluşturulur, eğitici LiveSession (canlı test) veya AdPackage (reklam) satın alırken kullanır.
+
+- `id, code, description, percentOff (1-100), scopes: PlatformPromoScope[] ('LIVE_SESSION' | 'AD_PACKAGE'), maxUses, usedCount, validFrom, validUntil, isActive, createdById`
+- `PlatformPromoCodeUsage` ayrı tablo: `@@unique([promoCodeId, purchaseId])` — her satın alma için tek kullanım satırı.
+- `LiveSession` + `AdPurchase` modellerinde 3 snapshot kolonu (`paidCents`, `platformPromoCodeId`, `platformPromoDiscountCents`) — TKHK + audit kanıt zinciri (kod silinse bile raporlama bozulmaz).
+- Doğrulama: `ValidatePlatformPromoCodeUseCase` (`POST /platform-promo-codes/validate`, EDUCATOR rolü). Scope mismatch → `PROMO_SCOPE_MISMATCH`.
+- usedCount artırma: `PayLiveSessionUseCase` veya `PurchaseAdUseCase` transaction'ı içinde atomik (`updateMany ... lt: maxUses`).
+- Admin CRUD: `/admin/platform-promo-codes` (List/Create/Toggle/Delete). 5 use case `application/use-cases/platform-promo/` altında.
 
 ### AdPackage / AdPurchase
 
@@ -206,7 +220,9 @@ Gerçek zamanlı toplu sınav özelliği. **6 Prisma modeli:**
 | Başkasının paketini düzenle | - | - | ✓ |
 | **TestPackage satın al** | **✓** | **-** | **-** |
 | Pakette test çöz | ✓ (paket satın almışsa) | - | - |
-| DiscountCode yarat | - | ✓ (kendi paketleri için) | ✓ |
+| DiscountCode yarat (kendi paketi için) | - | ✓ | ✓ |
+| PlatformPromoCode (LIVE/AD) yarat | - | - | ✓ |
+| PlatformPromoCode uygula (satın alırken) | - | ✓ | - |
 | Skor görüntüle | kendi | kendi yazdığı paketler + kendi çözdüğü | tüm |
 | AdPackage satın al (reklam) | - | ✓ | ✓ |
 | AdminSettings | - | - | ✓ |
@@ -238,7 +254,8 @@ Kod İngilizce, UI Türkçe. API yanıtları İngilizce alan adlı, frontend'de 
 | Eğitici | Educator | `educator` (AUTHOR DEĞİL) |
 | Aday | Candidate | `candidate` (STUDENT DEĞİL) |
 | Yönetici | Admin | `admin` |
-| İndirim kodu | Discount code | `discountCode` |
+| İndirim kodu (eğitici→aday, paket) | Discount code | `discountCode` |
+| Platform promo kodu (admin→eğitici, LIVE/AD) | Platform promo code | `platformPromoCode` |
 | Reklam paketi | Ad package | `adPackage` |
 | Yedek log | Backup log | `backupLog` |
 | Yönetici ayarları | Admin settings | `adminSettings` |

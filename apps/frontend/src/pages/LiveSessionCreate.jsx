@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { liveSessions as liveApi, liveSessionTiers as tiersApi, topics as topicsApi } from "@/api/dalClient";
+import { liveSessions as liveApi, liveSessionTiers as tiersApi, topics as topicsApi, platformPromoCodes as promoApi } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import api from "@/lib/api/apiClient";
@@ -549,6 +549,48 @@ export default function LiveSessionCreate() {
   // Ödeme onay modal'ı durumu — Önizleme sonrası, kayıt yapılmadan önce açılır
   const [paymentOpen, setPaymentOpen]   = useState(false);
   const [paymentProvider, setPaymentProvider] = useState("iyzico");
+
+  // Sprint 15 #4/6 — Platform admin promo kodu state (LIVE_SESSION scope).
+  // Eğitici opsiyonel olarak admin'den aldığı kodu uygular; backend atomik
+  // validate eder ve usedCount++ yapar.
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState(null); // { id, code, percentOff, discountCents, finalAmountCents }
+  const [promoError, setPromoError] = useState(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  const handleValidatePromo = async () => {
+    setPromoError(null);
+    const code = (promoInput || "").trim().toUpperCase();
+    if (!code) return;
+    const basePrice = selectedTier?.priceCents ?? 0;
+    if (basePrice === 0) {
+      setPromoError("Ücretsiz pakette indirim uygulanamaz");
+      return;
+    }
+    setPromoLoading(true);
+    try {
+      const result = await promoApi.validate(code, "LIVE_SESSION", basePrice);
+      setAppliedPromo(result);
+    } catch (err) {
+      const errorCode = err?.response?.data?.code || err?.response?.data?.error?.code;
+      const map = {
+        PROMO_NOT_FOUND: "Promo kodu bulunamadı",
+        PROMO_NOT_ACTIVE: "Bu kod pasif",
+        PROMO_OUT_OF_WINDOW: "Bu kod artık geçerli değil",
+        PROMO_USAGE_EXHAUSTED: "Kullanım hakkı tükendi",
+        PROMO_SCOPE_MISMATCH: "Bu kod canlı test için geçerli değil",
+      };
+      setPromoError(map[errorCode] || "Promo kodu doğrulanamadı");
+      setAppliedPromo(null);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoInput("");
+    setPromoError(null);
+  };
   // Accordion'da hangi sorunun açık olduğunu tutan controlled değer.
   // İlk render'da varsa ilk sorunun _k'sı açılır; yeni soru eklenince onun _k'sı set edilir.
   const [openQuestionKey, setOpenQuestionKey] = useState(null);
@@ -723,8 +765,10 @@ export default function LiveSessionCreate() {
       const price = selectedTier?.priceCents ?? 0;
       try {
         // Ödeme adımı — provider seçimi metadata olarak gönderiliyor (mock).
-        // Başarısız olursa oturum DRAFT/unpaid kalır → kullanıcıya hata mesajı.
-        await liveApi.pay(session.id);
+        // Sprint 15 #4: appliedPromo varsa promoCode body'sine eklenir; backend
+        // atomik validate + apply + usedCount++ yapar. Başarısız olursa oturum
+        // DRAFT/unpaid kalır → kullanıcıya hata mesajı.
+        await liveApi.pay(session.id, appliedPromo ? { promoCode: appliedPromo.code } : {});
         toast.success(price > 0
           ? `Ödeme tamamlandı! (₺${(price / 100).toFixed(2)} — ${paymentProvider})`
           : "Canlı test oluşturuldu!"
@@ -1153,11 +1197,79 @@ export default function LiveSessionCreate() {
               </div>
               <div className="flex items-center justify-between border-t border-slate-200 pt-2 mt-2">
                 <span className="text-sm font-semibold text-slate-700">Tutar</span>
-                <span className="text-lg font-bold text-amber-700">
-                  ₺{((selectedTier?.priceCents ?? 0) / 100).toFixed(2)}
-                </span>
+                <div className="text-right">
+                  {appliedPromo ? (
+                    <>
+                      <div className="text-xs text-slate-400 line-through">
+                        ₺{((selectedTier?.priceCents ?? 0) / 100).toFixed(2)}
+                      </div>
+                      <div className="text-lg font-bold text-emerald-700">
+                        ₺{(appliedPromo.finalAmountCents / 100).toFixed(2)}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-lg font-bold text-amber-700">
+                      ₺{((selectedTier?.priceCents ?? 0) / 100).toFixed(2)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Sprint 15 #4 — Platform Promo Kodu (admin-issued).
+                Ücretli tier için input + Uygula butonu. Validate başarılıysa
+                yeşil rozet + son fiyat üstte gösterilir. */}
+            {(selectedTier?.priceCents ?? 0) > 0 && (
+              <div className="rounded-lg border border-slate-200 p-3 space-y-2 bg-slate-50">
+                {appliedPromo ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm text-emerald-800">
+                      <span className="font-semibold">✓ {appliedPromo.code}</span>
+                      {" — "}
+                      <span>%{appliedPromo.percentOff} indirim</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemovePromo}
+                      className="text-xs text-emerald-700 underline hover:no-underline"
+                    >
+                      Kaldır
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <label htmlFor="promo-code" className="text-xs font-medium text-slate-600">
+                      Promo kodun var mı? (Sınav Salonu yöneticisinden)
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="promo-code"
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value)}
+                        placeholder="KOD"
+                        className="flex-1 uppercase h-9"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleValidatePromo();
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleValidatePromo}
+                        disabled={promoLoading || !promoInput.trim()}
+                      >
+                        {promoLoading ? "..." : "Uygula"}
+                      </Button>
+                    </div>
+                    {promoError && <p className="text-xs text-rose-600">{promoError}</p>}
+                  </>
+                )}
+              </div>
+            )}
 
             {(selectedTier?.priceCents ?? 0) > 0 && (
               <div>

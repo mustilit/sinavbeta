@@ -1207,8 +1207,10 @@ export const liveSessions = {
       nextCursor: data?.nextCursor ?? null,
     };
   },
-  pay: async (id) => {
-    const { data } = await api.post(`/live-sessions/${id}/pay`);
+  pay: async (id, opts = {}) => {
+    // Sprint 15 #4 — opts.promoCode opsiyonel (admin PlatformPromoCode, LIVE_SESSION scope)
+    const body = opts.promoCode ? { promoCode: opts.promoCode } : {};
+    const { data } = await api.post(`/live-sessions/${id}/pay`, body);
     return data;
   },
   start: async (id) => {
@@ -1538,6 +1540,73 @@ export const adminBackup = {
   },
 };
 
+
+/**
+ * Platform Promo Codes — Sprint 15 #3/4.
+ *
+ * Eğiticinin canlı test (LiveSession) ve reklam paketi (AdPurchase) satın
+ * almasında kullandığı admin-issued promo kodu. `DiscountCode` modelinden
+ * AYRI: bunlar admin yönetir, scope LIVE_SESSION/AD_PACKAGE.
+ */
+export const platformPromoCodes = {
+  /** Admin: tüm promo kodlarını listele (cursor pagination + opsiyonel filter) */
+  list: async ({ cursor, limit = 50, scope, onlyActive } = {}) => {
+    const qs = new URLSearchParams();
+    if (cursor) qs.set('cursor', cursor);
+    if (limit) qs.set('limit', String(limit));
+    if (scope) qs.set('scope', scope);
+    if (onlyActive) qs.set('onlyActive', 'true');
+    const { data } = await api.get(`/admin/platform-promo-codes?${qs.toString()}`);
+    return data ?? { items: [], nextCursor: null };
+  },
+  /** Admin: yeni kod oluştur */
+  create: async (input) => {
+    const { data } = await api.post('/admin/platform-promo-codes', input);
+    return data;
+  },
+  /** Admin: aktif/pasif toggle */
+  toggle: async (id, isActive) => {
+    const { data } = await api.patch(`/admin/platform-promo-codes/${id}/toggle`, { isActive });
+    return data;
+  },
+  /** Admin: sil (dikkat — usage kayıtları cascade) */
+  delete: async (id) => {
+    await api.delete(`/admin/platform-promo-codes/${id}`);
+  },
+  /** Educator: ödeme öncesi promo kodu doğrula (validate, usage atmaz) */
+  validate: async (code, scope, basePriceCents) => {
+    const { data } = await api.post('/platform-promo-codes/validate', {
+      code,
+      scope,
+      basePriceCents,
+    });
+    return data;
+  },
+};
+
+/**
+ * Discounts API — Sprint 15 #2.
+ *
+ * Aday paket satın almadan önce indirim kodunu doğrular. Backend 200 dönerse
+ * indirim oranı + son fiyatı UI gösterir; submit'te aynı kod Purchase.create
+ * body'sine eklenir (gerçek `usedCount++` orada race-condition korumalı).
+ */
+export const discounts = {
+  /**
+   * @param {string} code - Kullanıcının girdiği kod
+   * @param {string} packageId - TestPackage ID
+   * @param {number} basePriceCents - Paket baz fiyatı (cents)
+   * @returns { code, percentOff, discountCents, finalAmountCents, description }
+   */
+  validate: async (code, packageId, basePriceCents) => {
+    const { data } = await api.post('/discounts/validate', {
+      code,
+      packageId,
+      basePriceCents,
+    });
+    return data;
+  },
+};
 
 /**
  * Contracts API — Sprint 14.

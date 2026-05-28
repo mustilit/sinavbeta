@@ -11,11 +11,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api/apiClient";
+import { platformPromoCodes as promoApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useServiceStatus } from "@/lib/useServiceStatus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -45,6 +47,11 @@ export default function MyAds() {
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [selectedTestId, setSelectedTestId]       = useState("");
   const [targetType, setTargetType]               = useState("TEST");
+  // Sprint 15 #4/6 — Admin platform promo kodu (AD_PACKAGE scope)
+  const [promoInput, setPromoInput]               = useState("");
+  const [appliedAdPromo, setAppliedAdPromo]       = useState(null);
+  const [promoError, setPromoError]               = useState(null);
+  const [promoLoading, setPromoLoading]           = useState(false);
   const queryClient = useQueryClient();
 
   // Reklam istatistiklerini yükle
@@ -88,11 +95,23 @@ export default function MyAds() {
     enabled: !!user,
   });
 
+  // Sprint 15 #4/6 — Platform admin promo kodu (AD_PACKAGE scope) input + validate.
+  // Eğitici opsiyonel olarak admin'den aldığı kodu uygular; backend atomik
+  // validate + apply + usedCount++ yapar. Fiyat selectedPackageId'nin
+  // adPackage.priceCents'ından alınır.
+  const selectedPackage = (packages ?? []).find((p) => p.id === selectedPackageId);
+  const adBasePriceCents = (selectedPackage?.priceCents ?? selectedPackage?.price_cents ?? 0);
+  const adDiscountedCents = appliedAdPromo
+    ? Math.max(0, adBasePriceCents - Math.floor((adBasePriceCents * (appliedAdPromo.percentOff ?? 0)) / 100))
+    : adBasePriceCents;
+
   // Yeni reklam satın alma mutation'ı
   const purchaseMutation = useMutation({
     mutationFn: async () => {
       const body = { adPackageId: selectedPackageId, targetType };
       if (targetType === "TEST") body.testId = selectedTestId;
+      // Sprint 15 #4 — appliedPromo varsa promoCode body'sine eklenir
+      if (appliedAdPromo?.code) body.promoCode = appliedAdPromo.code;
       const res = await api.post("/educators/me/ads", body);
       return res.data;
     },
@@ -114,6 +133,44 @@ export default function MyAds() {
     if (!selectedPackageId) { toast.error(t("pages:myAds.toasts.selectPackage")); return; }
     if (targetType === "TEST" && !selectedTestId) { toast.error(t("pages:myAds.toasts.selectTest")); return; }
     purchaseMutation.mutate();
+  };
+
+  // Sprint 15 #6 — Promo kodu doğrulama handler'ı (AD_PACKAGE scope).
+  const handleValidatePromo = async () => {
+    setPromoError(null);
+    const code = (promoInput || "").trim().toUpperCase();
+    if (!code) return;
+    if (!selectedPackageId) {
+      setPromoError("Önce reklam paketi seçin");
+      return;
+    }
+    if (adBasePriceCents === 0) {
+      setPromoError("Ücretsiz pakette indirim uygulanamaz");
+      return;
+    }
+    setPromoLoading(true);
+    try {
+      const result = await promoApi.validate(code, "AD_PACKAGE", adBasePriceCents);
+      setAppliedAdPromo(result);
+    } catch (err) {
+      const errorCode = err?.response?.data?.code || err?.response?.data?.error?.code;
+      const map = {
+        PROMO_NOT_FOUND: "Promo kodu bulunamadı",
+        PROMO_NOT_ACTIVE: "Bu kod pasif",
+        PROMO_OUT_OF_WINDOW: "Bu kod artık geçerli değil",
+        PROMO_USAGE_EXHAUSTED: "Kullanım hakkı tükendi",
+        PROMO_SCOPE_MISMATCH: "Bu kod reklam paketi için geçerli değil",
+      };
+      setPromoError(map[errorCode] || "Promo kodu doğrulanamadı");
+      setAppliedAdPromo(null);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+  const handleRemovePromo = () => {
+    setAppliedAdPromo(null);
+    setPromoInput("");
+    setPromoError(null);
   };
 
   // Yayında olan testleri filtrele (sadece bunlara reklam alınabilir)
@@ -469,7 +526,14 @@ export default function MyAds() {
                   <button
                     key={pkg.id}
                     type="button"
-                    onClick={() => setSelectedPackageId(pkg.id)}
+                    onClick={() => {
+                      setSelectedPackageId(pkg.id);
+                      // Paket değiştiğinde fiyat farklılaşacağı için
+                      // önceden uygulanmış promo kodu sıfırla — yeniden uygulasın.
+                      setAppliedAdPromo(null);
+                      setPromoInput("");
+                      setPromoError(null);
+                    }}
                     className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                       selectedPackageId === pkg.id
                         ? "border-indigo-500 bg-indigo-50"
@@ -492,6 +556,74 @@ export default function MyAds() {
               </div>
             )}
           </div>
+
+          {/* Sprint 15 #6 — Admin platform promo kodu (AD_PACKAGE scope).
+              Eğitici opsiyonel olarak admin'den aldığı kodu uygular. Ücretsiz
+              paketlerde gizlenir. Backend ValidatePlatformPromoCodeUseCase
+              doğrular; satın alma sırasında PurchaseAdUseCase atomik olarak
+              usedCount++ ve PlatformPromoCodeUsage kaydı yazar. */}
+          {selectedPackageId && adBasePriceCents > 0 && (
+            <div className="rounded-lg border border-slate-200 p-3 space-y-2 bg-slate-50">
+              {appliedAdPromo ? (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm text-emerald-800">
+                      <span className="font-semibold">✓ {appliedAdPromo.code}</span>
+                      {" — "}
+                      <span>%{appliedAdPromo.percentOff} indirim</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemovePromo}
+                      className="text-xs text-emerald-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded"
+                    >
+                      Kaldır
+                    </button>
+                  </div>
+                  {/* Önce/sonra fiyat — şeffaflık (TKHK uyumu) */}
+                  <div className="text-xs text-slate-600 flex items-center gap-2">
+                    <span className="line-through">
+                      {(adBasePriceCents / 100).toLocaleString("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 0 })}
+                    </span>
+                    <span className="font-semibold text-emerald-700">
+                      {(adDiscountedCents / 100).toLocaleString("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <label htmlFor="ad-promo-code" className="text-xs font-medium text-slate-600">
+                    Promo kodun var mı? (Sınav Salonu yöneticisinden)
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="ad-promo-code"
+                      value={promoInput}
+                      onChange={(e) => setPromoInput(e.target.value)}
+                      placeholder="KOD"
+                      className="flex-1 uppercase h-9"
+                      aria-invalid={Boolean(promoError)}
+                      aria-describedby={promoError ? "ad-promo-error" : undefined}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleValidatePromo}
+                      disabled={promoLoading || !promoInput.trim()}
+                    >
+                      {promoLoading ? "..." : "Uygula"}
+                    </Button>
+                  </div>
+                  {promoError && (
+                    <p id="ad-promo-error" role="alert" className="text-xs text-rose-600">
+                      {promoError}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Satın alma butonu */}
           <Button
