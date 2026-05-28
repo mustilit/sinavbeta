@@ -93,7 +93,7 @@ async function makeSmallJpeg(): Promise<Buffer> {
 }
 
 describe('processImage — JPEG', () => {
-  it('origin + 3 responsive WebP + thumbnail üretir', async () => {
+  it('origin + 3 responsive (WebP+AVIF) + thumbnail üretir', async () => {
     const buf = await makeJpeg();
     const result = await processImage(buf, {
       outputDir,
@@ -108,21 +108,28 @@ describe('processImage — JPEG', () => {
     expect(result.original.height).toBe(1500);
     expect(existsSync(join(outputDir, 'test-jpeg.jpg'))).toBe(true);
 
-    // 3 responsive + 1 thumb = 4 variant
-    expect(result.variants).toHaveLength(RESPONSIVE_WIDTHS.length + 1);
+    // 3 width × 2 format (WebP + AVIF) + 1 thumb (sadece WebP) = 7 variant
+    expect(result.variants).toHaveLength(RESPONSIVE_WIDTHS.length * 2 + 1);
 
     for (const w of RESPONSIVE_WIDTHS) {
-      const v = result.variants.find((x) => x.label === `${w}w`);
-      expect(v).toBeDefined();
-      expect(v!.format).toBe('webp');
-      expect(v!.width).toBe(w);
-      expect(v!.filename).toBe(`test-jpeg-${w}w.webp`);
-      expect(existsSync(join(outputDir, v!.filename))).toBe(true);
-      // WebP, aynı genişlikteki origin JPEG'den küçük olmalı (genelde)
-      expect(v!.bytes).toBeGreaterThan(0);
+      // WebP varyant
+      const webp = result.variants.find((x) => x.label === `${w}w` && x.format === 'webp');
+      expect(webp).toBeDefined();
+      expect(webp!.width).toBe(w);
+      expect(webp!.filename).toBe(`test-jpeg-${w}w.webp`);
+      expect(existsSync(join(outputDir, webp!.filename))).toBe(true);
+      expect(webp!.bytes).toBeGreaterThan(0);
+
+      // AVIF varyant (Sprint 12 #2)
+      const avif = result.variants.find((x) => x.label === `${w}w` && x.format === 'avif');
+      expect(avif).toBeDefined();
+      expect(avif!.width).toBe(w);
+      expect(avif!.filename).toBe(`test-jpeg-${w}w.avif`);
+      expect(existsSync(join(outputDir, avif!.filename))).toBe(true);
+      expect(avif!.bytes).toBeGreaterThan(0);
     }
 
-    // Thumbnail kare
+    // Thumbnail kare, sadece WebP (AVIF küçük boyutta avantaj sağlamıyor)
     const thumb = result.variants.find((x) => x.label === 'thumb');
     expect(thumb).toBeDefined();
     expect(thumb!.width).toBe(THUMBNAIL_SIZE);
@@ -197,7 +204,7 @@ describe('processImage — PNG', () => {
 });
 
 describe('processImage — WebP', () => {
-  it('origin WebP + WebP varyantlar (her ikisi de webp)', async () => {
+  it('origin WebP + responsive WebP + AVIF varyantları', async () => {
     const buf = await makeWebp();
     const result = await processImage(buf, {
       outputDir,
@@ -207,7 +214,11 @@ describe('processImage — WebP', () => {
 
     expect(result.original.filename).toBe('test-webp.webp');
     expect(result.original.format).toBe('webp');
-    expect(result.variants[0].format).toBe('webp');
+
+    // 3 width × 2 format + 1 thumb = 7 variant
+    expect(result.variants.length).toBe(RESPONSIVE_WIDTHS.length * 2 + 1);
+    expect(result.variants.some((v) => v.format === 'avif')).toBe(true);
+    expect(result.variants.some((v) => v.format === 'webp')).toBe(true);
   });
 });
 
@@ -252,7 +263,7 @@ describe('processImage — bozuk dosya', () => {
 });
 
 describe('buildImageUrls', () => {
-  it('srcset + thumb URL\'lerini doğru üretir', async () => {
+  it('srcsetWebp + srcsetAvif + thumb URL\'lerini doğru üretir', async () => {
     const buf = await makeJpeg();
     const result = await processImage(buf, {
       outputDir,
@@ -264,16 +275,26 @@ describe('buildImageUrls', () => {
 
     expect(urls.original).toBe('https://cdn.example.com/uploads/urlgen.jpg');
     expect(urls.thumb).toBe('https://cdn.example.com/uploads/urlgen-thumb.webp');
-    // srcset 3 girişi, virgülle ayrılmış, "Nw" descriptor'lı
-    expect(urls.srcset).toContain('/uploads/urlgen-320w.webp 320w');
-    expect(urls.srcset).toContain('/uploads/urlgen-640w.webp 640w');
-    expect(urls.srcset).toContain('/uploads/urlgen-1024w.webp 1024w');
+
+    // WebP srcset
+    expect(urls.srcsetWebp).toContain('/uploads/urlgen-320w.webp 320w');
+    expect(urls.srcsetWebp).toContain('/uploads/urlgen-640w.webp 640w');
+    expect(urls.srcsetWebp).toContain('/uploads/urlgen-1024w.webp 1024w');
+
+    // AVIF srcset (Sprint 12 #2)
+    expect(urls.srcsetAvif).toContain('/uploads/urlgen-320w.avif 320w');
+    expect(urls.srcsetAvif).toContain('/uploads/urlgen-640w.avif 640w');
+    expect(urls.srcsetAvif).toContain('/uploads/urlgen-1024w.avif 1024w');
+
+    // Geriye dönük uyumluluk: `srcset` === `srcsetWebp`
+    expect(urls.srcset).toBe(urls.srcsetWebp);
+
     expect(urls.sizes).toMatch(/max-width.*640px/);
     expect(urls.width).toBe(2000);
     expect(urls.height).toBe(1500);
   });
 
-  it('GIF için thumb null, srcset boş', async () => {
+  it('GIF için thumb null, srcsetWebp ve srcsetAvif boş', async () => {
     const tinyGif = Buffer.from([
       0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
       0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x21, 0xf9, 0x04, 0x00, 0x00, 0x00, 0x00,
@@ -289,6 +310,8 @@ describe('buildImageUrls', () => {
     const urls = buildImageUrls(result, 'http://localhost:3000');
     expect(urls.thumb).toBeNull();
     expect(urls.srcset).toBe('');
+    expect(urls.srcsetWebp).toBe('');
+    expect(urls.srcsetAvif).toBe('');
     expect(urls.original).toBe('http://localhost:3000/uploads/gif-urls.gif');
   });
 });

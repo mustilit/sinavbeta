@@ -86,6 +86,9 @@ for (const p of PAGES) {
           // Skip link gibi sr-only öğeler focus'ta büyür, statikte 1px — bunları
           // boyut testinden hariç tut.
           if (r.width < 4 && r.height < 4) continue;
+          // Görünür alanın bir parçası DEĞİL — viewport dışı (ör. açılır menü
+          // kapalıyken DOM'da olabilir).
+          if (r.bottom < 0 || r.right < 0) continue;
 
           if (r.width < MIN || r.height < MIN) {
             out.push({
@@ -99,14 +102,14 @@ for (const p of PAGES) {
         return out;
       });
 
+      // Sprint 12 #3 — STRICT assertion. Button component default 40px;
+      // tüm size variantları min-h-10 ile garanti altında. Yeni component
+      // ≤ 40 buton üretirse CI kırmızıya döner.
       if (violations.length) {
         // eslint-disable-next-line no-console
         console.log(`Küçük touch target'lar (${p.name}):`, JSON.stringify(violations, null, 2));
       }
-      // Soft assertion — touch target ihlali bilgi olarak görünsün ama
-      // mevcut kod kırmızıya dönmesin. Sprint 12'de strict yapılacak.
-      // Sprint 11'in hedefi: regresyon görüntülemek + iyileştirme yapmak.
-      expect(violations.length).toBeLessThanOrEqual(5);
+      expect(violations).toEqual([]);
     });
   });
 }

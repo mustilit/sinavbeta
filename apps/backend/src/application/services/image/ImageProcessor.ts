@@ -37,10 +37,18 @@
  *   `.rotate()` (parametresiz) bunu otomatik düzeltir, sonra metadata strip
  *   olunca tarayıcı yeniden döndürmeye kalkışmaz.
  *
- * KAPSAM DIŞI (Phase 2):
- *   - AVIF varyantları (browser support < %90 hala) — Sprint 12'ye
+ * AVIF (Sprint 12 #2):
+ *   Her WebP varyantına paralel olarak AVIF de üretilir (browser support %93+
+ *   Chrome 85 / Safari 16 / Firefox 93). Frontend `<picture>` ile fallback chain
+ *   kurar — AVIF destekleyen tarayıcı %30-40 daha küçük dosya indirir.
+ *
+ *   Trade-off: AVIF encode WebP'ye göre ~12x yavaş (libavif effort=4).
+ *   Yüksek upload hacminde dedicated worker'a taşınabilir (Phase 3).
+ *
+ * KAPSAM DIŞI (Phase 3):
  *   - S3 multipart upload — şu an local disk
  *   - On-demand resize (CDN behind /uploads/) — şu an precompute
+ *   - AVIF encode'u BullMQ worker'a taşımak — yüksek upload hacminde
  */
 
 import sharp from 'sharp';
@@ -58,7 +66,7 @@ export interface ImageVariant {
   label: string; // "320w" | "640w" | "1024w" | "thumb"
   width: number;
   height: number;
-  format: 'jpeg' | 'png' | 'webp';
+  format: 'jpeg' | 'png' | 'webp' | 'avif';
   filename: string;
   bytes: number;
 }
@@ -143,20 +151,32 @@ export async function processImage(
     bytes: originBuffer.length,
   };
 
-  // --- Responsive WebP varyantları ---
+  // --- Responsive varyantları: her width için WebP + AVIF ---
   // Kaynaktan büyük üretmiyoruz (`withoutEnlargement: true`).
+  // Sprint 12 #2: AVIF eklendi — AV1 codec, WebP'den ~%30 daha küçük; encode 12x yavaş.
   const variants: ImageVariant[] = [];
   for (const w of RESPONSIVE_WIDTHS) {
-    const v = await renderVariant(buffer, {
+    const webp = await renderVariant(buffer, {
       width: w,
       label: `${w}w`,
       baseSlug,
       outputDir,
+      format: 'webp',
     });
-    if (v) variants.push(v);
+    if (webp) variants.push(webp);
+
+    const avif = await renderVariant(buffer, {
+      width: w,
+      label: `${w}w`,
+      baseSlug,
+      outputDir,
+      format: 'avif',
+    });
+    if (avif) variants.push(avif);
   }
 
-  // --- Thumbnail (square crop, smartcrop) ---
+  // --- Thumbnail (square crop, smartcrop) — WebP yeter; AVIF tek küçük varyant
+  //     için encode/decode maliyetine değmez (avatar boyutunda %5-10 fark).
   const thumb = await renderVariant(buffer, {
     width: THUMBNAIL_SIZE,
     height: THUMBNAIL_SIZE,
@@ -164,6 +184,7 @@ export async function processImage(
     baseSlug,
     outputDir,
     fit: 'cover',
+    format: 'webp',
   });
   if (thumb) variants.push(thumb);
 
@@ -186,33 +207,45 @@ interface VariantRenderOpts {
   baseSlug: string;
   outputDir: string;
   fit?: 'cover' | 'inside';
+  /** Çıktı formatı — WebP (varsayılan) veya AVIF (Sprint 12 #2). */
+  format?: 'webp' | 'avif';
 }
 
 async function renderVariant(
   buffer: Buffer,
   o: VariantRenderOpts,
 ): Promise<ImageVariant | null> {
+  const format = o.format ?? 'webp';
+
   // Origin'den her zaman yeni pipeline; clone() animated GIF olmadığı için güvenli.
-  const pipeline = sharp(buffer)
+  let pipeline = sharp(buffer)
     .rotate()
     .resize({
       width: o.width,
       height: o.height,
       fit: o.fit ?? 'inside',
       withoutEnlargement: true,
-    })
-    .webp({ quality: 80, effort: 4 });
+    });
+
+  if (format === 'avif') {
+    // effort=4 dengeli: 0 hızlı/büyük, 9 yavaş/küçük. 4 prod sweet spot.
+    // quality=60 AVIF için makul (WebP 80 ≈ AVIF 60).
+    pipeline = pipeline.avif({ quality: 60, effort: 4 });
+  } else {
+    pipeline = pipeline.webp({ quality: 80, effort: 4 });
+  }
 
   const data = await pipeline.toBuffer({ resolveWithObject: true });
   // resize sonrası gerçek genişlik/yükseklik info içinde geliyor.
-  const filename = `${o.baseSlug}-${o.label}.webp`;
+  const ext = format === 'avif' ? 'avif' : 'webp';
+  const filename = `${o.baseSlug}-${o.label}.${ext}`;
   await writeFile(join(o.outputDir, filename), data.data);
 
   return {
     label: o.label,
     width: data.info.width,
     height: data.info.height,
-    format: 'webp',
+    format,
     filename,
     bytes: data.data.length,
   };
@@ -236,33 +269,52 @@ function applyFormat(
 }
 
 /**
- * URL builder — controller `<img srcset>` için frontend'in tükettiği shape'i çevirir.
+ * URL builder — controller `<picture>` ve `<img srcset>` için frontend'in tükettiği shape'i çevirir.
+ *
+ * Sprint 12 #2: AVIF + WebP srcset'leri ayrı stringlerde döner. Frontend `<picture>`
+ * elementinde `<source type="image/avif">` + `<source type="image/webp">` + `<img>`
+ * fallback chain'i kurar; tarayıcı destekleyen ilk format'ı indirir.
  *
  * Çıktı:
  *   {
- *     original: '/uploads/abc.jpg',
- *     thumb:    '/uploads/abc-thumb.webp',
- *     srcset:   '/uploads/abc-320w.webp 320w, /uploads/abc-640w.webp 640w, /uploads/abc-1024w.webp 1024w',
- *     sizes:    '(max-width: 640px) 100vw, 1024px'
+ *     original:   '/uploads/abc.jpg',
+ *     thumb:      '/uploads/abc-thumb.webp',
+ *     srcsetAvif: '/uploads/abc-320w.avif 320w, ...',
+ *     srcsetWebp: '/uploads/abc-320w.webp 320w, ...',
+ *     srcset:     <=>= srcsetWebp (geriye dönük uyumluluk),
+ *     sizes:      '(max-width: 640px) 100vw, 1024px'
  *   }
  */
 export function buildImageUrls(processed: ProcessedImage, baseUrl: string) {
   const base = `${baseUrl}/uploads`;
-  const srcsetParts: string[] = [];
+  const avifParts: string[] = [];
+  const webpParts: string[] = [];
   let thumb: string | null = null;
 
   for (const v of processed.variants) {
     if (v.label === 'thumb') {
       thumb = `${base}/${v.filename}`;
-    } else if (v.label.endsWith('w')) {
-      srcsetParts.push(`${base}/${v.filename} ${v.label}`);
+      continue;
+    }
+    if (!v.label.endsWith('w')) continue;
+
+    if (v.format === 'avif') {
+      avifParts.push(`${base}/${v.filename} ${v.label}`);
+    } else if (v.format === 'webp') {
+      webpParts.push(`${base}/${v.filename} ${v.label}`);
     }
   }
+
+  const srcsetWebp = webpParts.join(', ');
+  const srcsetAvif = avifParts.join(', ');
 
   return {
     original: `${base}/${processed.original.filename}`,
     thumb,
-    srcset: srcsetParts.join(', '),
+    // Geriye dönük uyumluluk: eski client'lar `srcset` bekler → WebP listesini ver
+    srcset: srcsetWebp,
+    srcsetWebp,
+    srcsetAvif,
     // 640px altı mobile → tam viewport; üstü desktop → max 1024px container.
     sizes: '(max-width: 640px) 100vw, 1024px',
     width: processed.original.width,

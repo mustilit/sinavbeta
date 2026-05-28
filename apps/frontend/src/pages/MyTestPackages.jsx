@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import * as XLSX from "xlsx";
+// Sprint 12 #1 — xlsx (429 KB) lazy load: sadece "Excel'e aktar" butonuna basılınca yüklenir.
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
@@ -121,7 +121,9 @@ export default function MyTestPackages() {
     setCurrentPage(1);
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    // Sprint 12 #1: xlsx (~429 KB) yalnızca burada gerek; sayfa açılışında değil
+    const XLSX = await import("xlsx");
     const h = t("pages:myTestPackages.excel.headers", { returnObjects: true });
     const publishedLabel = t("pages:myTestPackages.excel.published");
     const draftLabel = t("pages:myTestPackages.excel.draft");

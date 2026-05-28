@@ -20,11 +20,16 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
+      // Sprint 12 #3 — Strict touch target (WCAG 2.5.5 hedef AA: ≥ 40×40px).
+      // `default` ve `icon` 40px'e çıkarıldı (eskiden 36/36). `sm` görsel olarak
+      // kompakt kalsın diye `text-xs px-3` korundu ama `min-h-10` ile **hit area
+      // 40px** garanti edilir (kullanıcı text'in altındaki padding'i de tıklayabilir).
+      // `lg` Apple HIG'a uyumlu 44px.
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
+        default: "h-10 px-4 py-2",
+        sm: "h-8 min-h-10 rounded-md px-3 text-xs",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
       },
     },
     defaultVariants: {

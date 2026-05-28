@@ -126,10 +126,13 @@ export class UploadController {
       size: file.size,
       detectedType: validation.detected.type,
       mimeType: validation.detected.mimeType,
-      // Responsive payload — frontend `<img srcset>`'e doğrudan basabilir.
+      // Responsive payload — frontend `<picture>` + `<img srcset>` ile tüketir.
+      // Sprint 12 #2: srcsetAvif + srcsetWebp ayrı; `srcset` legacy alias (=== webp).
       responsive: {
         thumb: urls.thumb,
-        srcset: urls.srcset,
+        srcset: urls.srcset,         // legacy — webp ile aynı
+        srcsetWebp: urls.srcsetWebp,
+        srcsetAvif: urls.srcsetAvif,
         sizes: urls.sizes,
         width: urls.width,
         height: urls.height,
@@ -138,6 +141,7 @@ export class UploadController {
         label: v.label,
         width: v.width,
         height: v.height,
+        format: v.format,
         bytes: v.bytes,
         url: `${baseUrl}/uploads/${v.filename}`,
       })),

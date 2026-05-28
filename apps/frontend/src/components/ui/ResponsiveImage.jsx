@@ -1,17 +1,27 @@
 /**
- * ResponsiveImage — Sprint 11 #2: Sharp pipeline tüketicisi.
+ * ResponsiveImage — Sharp pipeline tüketicisi.
  *
- * Backend `/upload/image` artık `responsive: { thumb, srcset, sizes, width, height }`
- * blok döner. Bu component bunu doğrudan `<img srcset>`'e basar. CDN'siz, runtime
- * resize'sız, hash'lenmiş statik dosyalar — Cloudflare'i sadece edge cache için
- * kullanır.
+ * Sprint 11 #2'de oluşturuldu. Sprint 12 #2'de `<picture>` + AVIF/WebP fallback
+ * chain eklendi: tarayıcı destekliyorsa AVIF (~%30 daha küçük), yoksa WebP, yoksa
+ * origin JPEG/PNG. Tarayıcı negotiation otomatik — JS yok.
+ *
+ * Backend `/upload/image` payload shape:
+ *   responsive: {
+ *     thumb:      string | null,         // 96x96 WebP
+ *     srcset:     string,                // legacy alias = srcsetWebp
+ *     srcsetWebp: string,                // "url 320w, url 640w, url 1024w"
+ *     srcsetAvif: string,                // AVIF varyantları (boş olabilir — eski kayıt)
+ *     sizes:      string,                // "(max-width: 640px) 100vw, 1024px"
+ *     width:      number,                // origin width — CLS reserve
+ *     height:     number,                // origin height
+ *   }
  *
  * KULLANIM:
  *
  *   // 1) Backend upload payload'undan (TestPackage kapak, soru görseli vb.)
  *   <ResponsiveImage
  *     src={pkg.coverImageUrl}
- *     responsive={pkg.coverImageResponsive}  // { srcset, sizes, thumb, width, height }
+ *     responsive={pkg.coverImageResponsive}
  *     alt={pkg.title}
  *     className="w-full h-48 object-cover rounded"
  *   />
@@ -22,11 +32,22 @@
  *   // 3) Avatar: srcset gereksiz, thumb yeter
  *   <ResponsiveImage src={user.avatarUrl} variant="thumb" alt={user.name} />
  *
+ *   // 4) Hero / above-the-fold — LCP'yi etkiler
+ *   <ResponsiveImage src={hero.url} responsive={hero.responsive} priority alt={hero.alt} />
+ *
+ * RENDER DAVRANIŞI:
+ *   - `responsive.srcsetAvif` ve `responsive.srcsetWebp` ikisi de varsa → `<picture>`
+ *     ile AVIF + WebP source + img fallback. Browser ilk destekleneni indirir.
+ *   - Sadece srcset (legacy backend) → düz `<img srcset>`.
+ *   - variant="thumb" → her ihtimalde tek `<img src={thumb}>` (kare avatar, srcset gereksiz).
+ *   - responsive yoksa → fallback düz `<img src>` (legacy kayıt).
+ *
  * NEDEN BU KADAR ZIP?
  *   - `loading="lazy"` — viewport altı görseller LCP'yi etkilemez
  *   - `decoding="async"` — main thread'i bloklamaz
  *   - `width`/`height` attribute → CLS=0 (layout reserve edilir)
- *   - `<img srcset>` → 360px ekran 320w varyantı çeker (~80KB), 4K ekran 1024w (~280KB)
+ *   - AVIF: %30-40 daha küçük → mobil veri tasarrufu
+ *   - WebP: %96 browser support → güvenli fallback
  *
  * `priority` (hero) görselleri için `loading="eager"` + `fetchpriority="high"` ver.
  */
@@ -34,14 +55,18 @@
 import PropTypes from 'prop-types';
 import { cdnUrl } from '../../lib/cdn';
 
-/**
- * @typedef {Object} ResponsivePayload
- * @property {string|null} thumb     — 96x96 kare WebP (avatar/kart)
- * @property {string}      srcset    — "url 320w, url 640w, url 1024w"
- * @property {string}      sizes     — "(max-width: 640px) 100vw, 1024px"
- * @property {number}      width     — origin width (CLS reserve için)
- * @property {number}      height    — origin height
- */
+/** Backend srcset'ini CDN URL'lerine rewrite eder. */
+function rewriteSrcset(srcset) {
+  if (!srcset) return '';
+  return srcset
+    .split(',')
+    .map((part) => {
+      const trimmed = part.trim();
+      const [url, descriptor] = trimmed.split(/\s+/);
+      return `${cdnUrl(url)} ${descriptor || ''}`.trim();
+    })
+    .join(', ');
+}
 
 export function ResponsiveImage({
   src,
@@ -53,6 +78,9 @@ export function ResponsiveImage({
   sizes: sizesOverride,
   ...rest
 }) {
+  const loading = priority ? 'eager' : 'lazy';
+  const priorityProps = priority ? { fetchpriority: 'high' } : {};
+
   // Variant=thumb → küçük WebP varsa kullan, yoksa origin'e düş.
   if (variant === 'thumb' && responsive?.thumb) {
     return (
@@ -61,40 +89,62 @@ export function ResponsiveImage({
         alt={alt}
         width={96}
         height={96}
-        loading={priority ? 'eager' : 'lazy'}
+        loading={loading}
         decoding="async"
         className={className}
-        {...(priority ? { fetchpriority: 'high' } : {})}
+        {...priorityProps}
         {...rest}
       />
     );
   }
 
-  // Sharp payload var → srcset bas
-  if (responsive?.srcset) {
-    // Backend mutlak URL döner; CDN base set edilmişse onun üstünden geçir.
-    // cdnUrl absolute URL gelirse aynen döner, yoksa CDN prefix ekler.
-    const rewrittenSrcset = responsive.srcset
-      .split(',')
-      .map((part) => {
-        const trimmed = part.trim();
-        const [url, descriptor] = trimmed.split(/\s+/);
-        return `${cdnUrl(url)} ${descriptor}`;
-      })
-      .join(', ');
+  // Sharp payload var → `<picture>` ile AVIF + WebP + origin fallback.
+  // Sprint 12 #2: `srcsetAvif` boşsa AVIF source basmıyoruz (tarayıcı boş srcset'i
+  // hata olarak görmez ama temiz olsun).
+  if (responsive?.srcsetWebp || responsive?.srcset) {
+    const webpSrcset = rewriteSrcset(responsive.srcsetWebp || responsive.srcset);
+    const avifSrcset = rewriteSrcset(responsive.srcsetAvif || '');
+    const sizes = sizesOverride || responsive.sizes;
+    const width = responsive.width || undefined;
+    const height = responsive.height || undefined;
+    const fallbackSrc = cdnUrl(src || '');
 
+    // AVIF varsa picture, yoksa düz img — gereksiz wrapping olmasın.
+    if (avifSrcset) {
+      return (
+        <picture>
+          <source type="image/avif" srcSet={avifSrcset} sizes={sizes} />
+          <source type="image/webp" srcSet={webpSrcset} sizes={sizes} />
+          <img
+            src={fallbackSrc}
+            srcSet={webpSrcset}
+            sizes={sizes}
+            width={width}
+            height={height}
+            alt={alt}
+            loading={loading}
+            decoding="async"
+            className={className}
+            {...priorityProps}
+            {...rest}
+          />
+        </picture>
+      );
+    }
+
+    // Legacy backend (Sprint 11) — sadece WebP srcset
     return (
       <img
-        src={cdnUrl(src || '')}
-        srcSet={rewrittenSrcset}
-        sizes={sizesOverride || responsive.sizes}
-        width={responsive.width || undefined}
-        height={responsive.height || undefined}
+        src={fallbackSrc}
+        srcSet={webpSrcset}
+        sizes={sizes}
+        width={width}
+        height={height}
         alt={alt}
-        loading={priority ? 'eager' : 'lazy'}
+        loading={loading}
         decoding="async"
         className={className}
-        {...(priority ? { fetchpriority: 'high' } : {})}
+        {...priorityProps}
         {...rest}
       />
     );
@@ -105,10 +155,10 @@ export function ResponsiveImage({
     <img
       src={cdnUrl(src || '')}
       alt={alt}
-      loading={priority ? 'eager' : 'lazy'}
+      loading={loading}
       decoding="async"
       className={className}
-      {...(priority ? { fetchpriority: 'high' } : {})}
+      {...priorityProps}
       {...rest}
     />
   );
@@ -121,6 +171,8 @@ ResponsiveImage.propTypes = {
   responsive: PropTypes.shape({
     thumb: PropTypes.string,
     srcset: PropTypes.string,
+    srcsetWebp: PropTypes.string,
+    srcsetAvif: PropTypes.string,
     sizes: PropTypes.string,
     width: PropTypes.number,
     height: PropTypes.number,

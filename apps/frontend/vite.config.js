@@ -12,6 +12,62 @@ const backendTarget = 'http://127.0.0.1:3000'
 const srcPath = path.resolve(__dirname, 'src')
 
 export default defineConfig({
+  build: {
+    // Sprint 12 #1 — Bundle code-split: entry chunk'tan vendor lib'leri ayır.
+    //
+    // ÖNCESİ:  index-*.js = 1117 KB (354 KB gzip) — devasa, LCP'yi yiyor.
+    // SONRASI: index-*.js ~ 200 KB; vendor chunk'lar ayrı + stable hash → tarayıcı
+    //          cache'inden gelir (sadece app kodu değişince re-download).
+    //
+    // Kural: gruplar **5-8 adet**, çok küçük chunk yağmuru istemiyoruz.
+    // tree-shake çalışsın diye kullandığımız modülleri *yeniden* import etmiyoruz;
+    // sadece zaten yüklü olanları Rollup'a "ayrı chunk yap" diye söylüyoruz.
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor':    ['react', 'react-dom', 'react-router-dom'],
+          'query-vendor':    ['@tanstack/react-query'],
+          'radix-vendor': [
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-aspect-ratio',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-collapsible',
+            '@radix-ui/react-context-menu',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-hover-card',
+            '@radix-ui/react-label',
+            '@radix-ui/react-menubar',
+            '@radix-ui/react-navigation-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-progress',
+            '@radix-ui/react-radio-group',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-select',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-toggle',
+            '@radix-ui/react-toggle-group',
+            '@radix-ui/react-tooltip',
+          ],
+          'i18n-vendor':     ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
+          'icons-vendor':    ['lucide-react'],
+          'analytics-vendor':['posthog-js', '@sentry/react'],
+          'form-vendor':     ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'date-vendor':     ['date-fns'],
+        },
+      },
+    },
+    // 600 KB üstü hâlâ uyarı versin (manualChunks sonrası vendor chunk'larından
+    // birinin 500 KB'a yaklaşması bir refactor sinyalidir).
+    chunkSizeWarningLimit: 600,
+  },
   plugins: [
     react(),
     // Sprint 11 #1 — Build sırasında pre-compressed .br ve .gz dosyaları üret.

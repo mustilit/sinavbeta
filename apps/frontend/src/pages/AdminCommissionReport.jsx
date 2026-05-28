@@ -10,7 +10,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api/apiClient";
-import * as XLSX from "xlsx";
+// Sprint 12 #1 — xlsx (429 KB) lazy load: handleExport içinde dynamic import.
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -102,10 +102,12 @@ export default function AdminCommissionReport() {
     setPage(1);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!data || items.length === 0) return;
     setExportLoading(true);
     try {
+      // Sprint 12 #1: xlsx (~429 KB) yalnızca burada gerek
+      const XLSX = await import("xlsx");
       const monthStr = String(appliedMonth).padStart(2, "0");
       const periodLabel2 = `${MONTHS.find((m) => m.value === appliedMonth)?.label} ${appliedYear}`;
 

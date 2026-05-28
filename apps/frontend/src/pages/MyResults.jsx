@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import html2canvas from "html2canvas";
+// Sprint 12 #1 — html2canvas (~250 KB) lazy: handleShare içinde dynamic import.
 import { entities } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -84,6 +84,8 @@ export default function MyResults() {
     if (!shareRef.current || isSharing) return;
     setIsSharing(true);
     try {
+      // Sprint 12 #1: html2canvas dynamic import — sayfa ilk yüklenirken indirilmez.
+      const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(shareRef.current, {
         backgroundColor: "#ffffff",
         scale: 2,
