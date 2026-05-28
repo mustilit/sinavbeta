@@ -1343,8 +1343,12 @@ export default function TakeTest() {
         )}
 
         {/* Çözüm görünürken seçenekler gizlenir; toggle butonu header'da.
-            Buradaki kart sadece çözüm içeriğini gösterir, ayrı bir 'Seçeneklere Dön'
-            butonu yoktur (header'daki toggle yeterli). */}
+            Buradaki kart çözüm içeriği + doğru cevap rozetini gösterir.
+            Ayrı bir 'Seçeneklere Dön' butonu yoktur (header'daki toggle yeterli).
+
+            "Doğru Cevap: X" satırı (alt kısımda) seçenekler gizlendiği için
+            adayın hangi şıkkın doğru olduğunu görmesini sağlar. Eğitici zaten
+            açıklamayı aktif etmişse cevabı da görmek mantıklı. */}
         {showSolution && (currentQuestion?.explanation || currentQuestion?.solutionMediaUrl) ? (
           <div className="p-5 bg-indigo-50 border border-indigo-200 rounded-xl mb-6 space-y-3">
             <p className="text-sm font-semibold text-indigo-700 flex items-center gap-1.5">
@@ -1360,6 +1364,20 @@ export default function TakeTest() {
                 className="max-w-full rounded-lg border border-indigo-200"
                 size="lg"
               />
+            )}
+            {/* Doğru Cevap rozeti — çözüm açıklamasının altında, sadece harf.
+                Seçenek metni/görseli kasıtlı olarak basılmaz: gürültü
+                yaratmasın, kart sade kalsın. */}
+            {currentQuestion.correct_answer && (
+              <div className="pt-3 mt-3 border-t border-indigo-200 flex items-center gap-3">
+                <span className="text-sm font-semibold text-emerald-800 flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  Doğru Cevap:
+                </span>
+                <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">
+                  {currentQuestion.correct_answer}
+                </span>
+              </div>
             )}
           </div>
         ) : null}
