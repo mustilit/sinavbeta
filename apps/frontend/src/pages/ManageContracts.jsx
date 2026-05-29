@@ -42,10 +42,25 @@ export default function ManageContracts() {
   // editing: { mode: 'create' | 'edit', type, contract? } | null
   const [editing, setEditing] = useState(null);
 
-  const { data: allContracts = [], isLoading } = useQuery({
+  const {
+    data: allContracts = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["admin-contracts"],
     queryFn: () => contractsApi.adminList(), // filtresiz → 4 tip de gelir
   });
+  // Hata mesajını çöz (401 → oturum, 403 → yetki, diğer → genel)
+  const errStatus = error?.response?.status ?? error?.status;
+  const errMessage =
+    errStatus === 401
+      ? "Oturumunuz sona ermiş olabilir. Çıkış yapıp tekrar giriş yapın."
+      : errStatus === 403
+        ? "Bu sayfa için admin yetkisi gerekiyor."
+        : "Sözleşmeler yüklenemedi (sunucuya ulaşılamadı veya hata). Tekrar deneyin.";
 
   const setActiveMutation = useMutation({
     mutationFn: (id) => contractsApi.adminSetActive(id),
@@ -99,6 +114,32 @@ export default function ManageContracts() {
         </div>
       </div>
 
+      {/* Yükleme/hata sebebini açıkça göster — sessiz "boş" görünümünü engelle */}
+      {isError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start justify-between gap-3 p-4 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-800"
+        >
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Sözleşmeler yüklenemedi</p>
+              <p className="text-rose-700 mt-0.5">{errMessage}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex-shrink-0"
+          >
+            {isFetching ? "..." : "Tekrar dene"}
+          </Button>
+        </div>
+      )}
+
       <Tabs defaultValue="CANDIDATE">
         <TabsList>
           {TYPES.map((ty) => (
@@ -131,6 +172,12 @@ export default function ManageContracts() {
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               {isLoading ? (
                 <div className="p-8 text-center text-slate-500">Yükleniyor...</div>
+              ) : isError ? (
+                <div className="p-12 text-center">
+                  <AlertTriangle className="w-12 h-12 text-rose-300 mx-auto mb-3" />
+                  <p className="text-slate-600">Liste yüklenemedi.</p>
+                  <p className="text-sm text-slate-400 mt-1">Yukarıdaki uyarıdan "Tekrar dene"yi kullanın.</p>
+                </div>
               ) : (byType[ty.value] ?? []).length === 0 ? (
                 <div className="p-12 text-center">
                   <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />

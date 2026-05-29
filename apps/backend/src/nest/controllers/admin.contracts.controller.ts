@@ -17,11 +17,15 @@ import type { IContractRepository } from '../../domain/interfaces/IContractRepos
 @Controller('admin/contracts')
 @ApiTags('admin/contracts')
 export class AdminContractsController {
+  // NOT: Use case'ler @Inject ile EXPLICIT token alır. tsx/esbuild
+  // `emitDecoratorMetadata` üretmediğinden, salt tip-bazlı injection
+  // (parametre tipinden token çıkarımı) `undefined` enjekte eder ve
+  // runtime'da "Cannot read properties of undefined" hatası verir.
   constructor(
     @Inject(CONTRACT_REPO) private readonly contractRepo: IContractRepository,
-    private readonly listContracts: ListContractsUseCase,
-    private readonly createContract: CreateContractUseCase,
-    private readonly updateContract: UpdateContractUseCase,
+    @Inject(ListContractsUseCase) private readonly listContracts: ListContractsUseCase,
+    @Inject(CreateContractUseCase) private readonly createContract: CreateContractUseCase,
+    @Inject(UpdateContractUseCase) private readonly updateContract: UpdateContractUseCase,
   ) {}
 
   @Get()
