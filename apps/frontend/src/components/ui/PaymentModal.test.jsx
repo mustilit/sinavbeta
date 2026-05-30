@@ -283,10 +283,10 @@ describe('PaymentModal', () => {
       );
     });
 
-    it('403 → yetki hatası mesajı', async () => {
+    it('403 → "yalnızca aday satın alabilir" yönlendirmesi', async () => {
       await triggerIyzicoError(403, {});
       await waitFor(() =>
-        expect(screen.getByText(/yetkiniz bulunmuyor/i)).toBeDefined()
+        expect(screen.getByText(/sadece aday olarak kayıtlı kişiler/i)).toBeDefined()
       );
     });
 

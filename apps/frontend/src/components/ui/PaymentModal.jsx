@@ -366,8 +366,11 @@ export function PaymentModal({ isOpen, onClose, test, discountCode }) {
       if (code === "ALREADY_PURCHASED" || httpStatus === 409) {
         setErrorMessage("Bu testi zaten satın aldınız.");
       } else if (httpStatus === 403) {
+        // Paket satın alma yalnızca CANDIDATE'a açık (PurchaseUseCase + rol guard);
+        // EDUCATOR/ADMIN/WORKER bu dala düşer. Mesaj hem yanlış rolü hem eğitici
+        // akışındaki doğru aksiyonu (paket oluştur) söyler.
         setErrorMessage(
-          "Bu işlem için yetkiniz bulunmuyor. Lütfen tekrar giriş yapın."
+          "Sınav Salonu uygulamasında sadece aday olarak kayıtlı kişiler test paketi satın alabilir. Paket oluşturarak testlerinizi adaylara ulaştırabilirsiniz."
         );
       } else if (httpStatus === 429) {
         setErrorMessage(
