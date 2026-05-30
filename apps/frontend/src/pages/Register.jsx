@@ -85,7 +85,16 @@ export default function Register() {
     } catch (err) {
       // Hata olursa dialog'u kapat ki form üzerindeki hata mesajı görünsün.
       setShowContractDialog(false);
-      setError(err?.response?.data?.error || err?.response?.data?.message || t('auth:register.failed'));
+      // Backend hata yanıtı iki farklı şekilde gelebilir:
+      //   • Yeni format: { error: { code, message, details } }  → .error.message kullan
+      //   • Eski format: { error: 'string' } veya { message: 'string' }
+      // setError'a object koymak React render'ı patlatır ("Objects are not valid as a React child").
+      const data = err?.response?.data;
+      const msg =
+        (typeof data?.error === 'string' ? data.error : data?.error?.message) ||
+        data?.message ||
+        t('auth:register.failed');
+      setError(typeof msg === 'string' ? msg : t('auth:register.failed'));
     } finally {
       setLoading(false);
     }
