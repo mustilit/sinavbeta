@@ -28,8 +28,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { FileText, GraduationCap, Mail, UserCircle, AlertTriangle, Loader2, ExternalLink } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Worker sayfaları — sayfa ağacı tanımı
@@ -158,6 +161,15 @@ export default function ManageUsers() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectUserId, setRejectUserId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  // Eğitici başvuru "İncele" popup'ı — detay + onayla/reddet (inline sebep) tek modal
+  const [reviewUserId, setReviewUserId] = useState(null);
+  const [reviewRejectMode, setReviewRejectMode] = useState(false);
+  const [reviewRejectReason, setReviewRejectReason] = useState("");
+  const closeReviewModal = () => {
+    setReviewUserId(null);
+    setReviewRejectMode(false);
+    setReviewRejectReason("");
+  };
 
   // Davet form state
   const [inviteEmail, setInviteEmail] = useState("");
@@ -205,6 +217,14 @@ export default function ManageUsers() {
       const msg = err?.response?.data?.error?.message || err?.response?.data?.message || "Onaylama başarısız";
       toast.error(typeof msg === "string" ? msg : "Onaylama başarısız");
     },
+  });
+
+  // İncele popup'ı için eğitici detayını çek — yalnız modal açıkken
+  const { data: reviewDetail, isLoading: reviewLoading } = useQuery({
+    queryKey: ["adminEducatorDetail", reviewUserId],
+    queryFn: () => adminEducators.getDetail(reviewUserId),
+    enabled: !!reviewUserId,
+    staleTime: 0,
   });
 
   // Pending eğitici başvurusunu reddet — sebep zorunlu (/admin/educators/:id/reject)
@@ -475,31 +495,16 @@ export default function ManageUsers() {
                         <div className="flex gap-2">
                           {u.role === "EDUCATOR" && (
                             <>
-                              {/* Pending başvuru → Onayla + Reddet (yeni adanmış endpoint'ler) */}
+                              {/* Pending başvuru → tek "İncele" butonu, popup içinde Onayla/Reddet */}
                               {u.status === "PENDING_EDUCATOR_APPROVAL" && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-emerald-600 hover:text-emerald-700"
-                                    onClick={() => approveEducatorMutation.mutate(u.id)}
-                                    disabled={approveEducatorMutation.isPending}
-                                  >
-                                    Onayla
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-rose-600 hover:text-rose-700"
-                                    onClick={() => {
-                                      setRejectUserId(u.id);
-                                      setShowRejectDialog(true);
-                                    }}
-                                    disabled={rejectEducatorMutation.isPending}
-                                  >
-                                    Reddet
-                                  </Button>
-                                </>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-indigo-600 hover:text-indigo-700"
+                                  onClick={() => setReviewUserId(u.id)}
+                                >
+                                  İncele
+                                </Button>
                               )}
                               {/* Aktif eğitici: Askıya Al (mevcut suspend akışı) */}
                               {u.status === "ACTIVE" && (
@@ -669,6 +674,190 @@ export default function ManageUsers() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Eğitici başvurusu "İncele" popup'ı — tüm bilgi + Onayla/Reddet aynı modal içinde */}
+      <Dialog open={!!reviewUserId} onOpenChange={(open) => { if (!open) closeReviewModal(); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Eğitici Başvurusu</DialogTitle>
+            <DialogDescription>
+              Bilgileri inceleyin; uygunsa onaylayın, uygun değilse sebep girip reddedin.
+            </DialogDescription>
+          </DialogHeader>
+
+          {reviewLoading && (
+            <div className="py-12 flex justify-center" role="status" aria-live="polite">
+              <Loader2 className="w-6 h-6 animate-spin text-indigo-600" aria-hidden="true" />
+            </div>
+          )}
+
+          {!reviewLoading && reviewDetail && (
+            <div className="space-y-5">
+              {/* Kişisel bilgi */}
+              <div className="rounded-lg border border-slate-200 p-4">
+                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <UserCircle className="w-4 h-4 text-indigo-500" aria-hidden="true" />
+                  Kişisel Bilgi
+                </h3>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <dt className="text-slate-500">Ad Soyad</dt>
+                  <dd className="text-slate-900 font-medium">
+                    {(reviewDetail.firstName || reviewDetail.lastName) ? `${reviewDetail.firstName ?? ""} ${reviewDetail.lastName ?? ""}`.trim() : "—"}
+                  </dd>
+                  <dt className="text-slate-500">Kullanıcı Adı</dt>
+                  <dd className="text-slate-900">{reviewDetail.username}</dd>
+                  <dt className="text-slate-500 flex items-center gap-1"><Mail className="w-3 h-3" aria-hidden="true" /> E-posta</dt>
+                  <dd className="text-slate-900">
+                    {reviewDetail.email}
+                    {reviewDetail.emailVerified && <span className="ml-2 text-xs text-emerald-600">✓ doğrulandı</span>}
+                  </dd>
+                  <dt className="text-slate-500">Kayıt Tarihi</dt>
+                  <dd className="text-slate-900">{reviewDetail.createdAt && format(new Date(reviewDetail.createdAt), "d MMM yyyy HH:mm", { locale: tr })}</dd>
+                </dl>
+              </div>
+
+              {/* CV */}
+              {reviewDetail.metadata?.cv_url && (
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <h3 className="text-sm font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-indigo-500" aria-hidden="true" />
+                    CV / Özgeçmiş
+                  </h3>
+                  <a
+                    href={reviewDetail.metadata.cv_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline"
+                  >
+                    CV'yi yeni sekmede aç <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                  </a>
+                </div>
+              )}
+
+              {/* Uzmanlık alanları */}
+              {reviewDetail.specializations?.length > 0 && (
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <h3 className="text-sm font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-indigo-500" aria-hidden="true" />
+                    Uzmanlık Alanları
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {reviewDetail.specializations.map((s) => (
+                      <span
+                        key={s.id}
+                        className="text-xs px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 font-medium"
+                      >
+                        {s.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mezuniyet ve tanıtım */}
+              {(reviewDetail.metadata?.education_info || reviewDetail.bio) && (
+                <div className="rounded-lg border border-slate-200 p-4 space-y-3">
+                  {reviewDetail.metadata?.education_info && (
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Mezuniyet Bilgisi</p>
+                      <p className="text-sm text-slate-900 whitespace-pre-wrap">{reviewDetail.metadata.education_info}</p>
+                    </div>
+                  )}
+                  {reviewDetail.bio && (
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Tanıtım Metni</p>
+                      <p className="text-sm text-slate-900 whitespace-pre-wrap">{reviewDetail.bio}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Sözleşme kabul (delil) */}
+              {reviewDetail.contractAcceptances?.length > 0 && (
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <h3 className="text-sm font-semibold text-slate-900 mb-2">Sözleşme Onayları</h3>
+                  <ul className="text-xs text-slate-600 space-y-1">
+                    {reviewDetail.contractAcceptances.map((a, i) => (
+                      <li key={i}>
+                        <strong>{a.contract?.title || a.contract?.type}</strong>
+                        {a.contract?.version != null && <span className="ml-1 text-slate-400">v{a.contract.version}</span>}
+                        <span className="text-slate-400"> · {a.acceptedAt && format(new Date(a.acceptedAt), "d MMM yyyy HH:mm", { locale: tr })}</span>
+                        {a.ip && <span className="text-slate-400"> · IP: {a.ip}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Reddet sebebi inline (sadece Reddet'e basıldıktan sonra) */}
+              {reviewRejectMode && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
+                  <h3 className="text-sm font-semibold text-rose-900 mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                    Red Sebebi
+                  </h3>
+                  <Textarea
+                    value={reviewRejectReason}
+                    onChange={(e) => setReviewRejectReason(e.target.value)}
+                    placeholder="Eğiticiye iletilecek açıklama (zorunlu, en az 5 karakter)..."
+                    rows={4}
+                    className="bg-white"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 flex-row sm:justify-end">
+            <Button variant="outline" onClick={closeReviewModal}>
+              Kapat
+            </Button>
+            {reviewDetail && !reviewRejectMode && (
+              <>
+                <Button
+                  variant="outline"
+                  className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                  onClick={() => setReviewRejectMode(true)}
+                >
+                  Reddet
+                </Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => approveEducatorMutation.mutate(reviewDetail.id, {
+                    onSuccess: closeReviewModal,
+                  })}
+                  disabled={approveEducatorMutation.isPending}
+                >
+                  {approveEducatorMutation.isPending ? "Kaydediliyor…" : "Onayla"}
+                </Button>
+              </>
+            )}
+            {reviewDetail && reviewRejectMode && (
+              <>
+                <Button variant="outline" onClick={() => { setReviewRejectMode(false); setReviewRejectReason(""); }}>
+                  Geri
+                </Button>
+                <Button
+                  className="bg-rose-600 hover:bg-rose-700"
+                  onClick={() => {
+                    if (reviewRejectReason.trim().length < 5) {
+                      toast.error("Red sebebi en az 5 karakter olmalı");
+                      return;
+                    }
+                    rejectEducatorMutation.mutate(
+                      { id: reviewDetail.id, reason: reviewRejectReason.trim() },
+                      { onSuccess: closeReviewModal },
+                    );
+                  }}
+                  disabled={rejectEducatorMutation.isPending}
+                >
+                  {rejectEducatorMutation.isPending ? "Kaydediliyor…" : "Red Sebebini Gönder"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

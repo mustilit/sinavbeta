@@ -1171,6 +1171,17 @@ export const adminUsers = {
  *   - suspend / unsuspend: aktif eğiticiyi askıya al / askıdan kaldır
  */
 export const adminEducators = {
+  /**
+   * Admin için eğitici başvurusu detayı — popup "İncele" ekranı kullanır.
+   * Döner: { id, email, username, firstName, lastName, role, status, emailVerified,
+   *         educatorApprovedAt, rejectionReason, rejectedAt, createdAt,
+   *         metadata: { cv_url, education_info, bio }, specializations: [{id, name}],
+   *         contractAcceptances: [{contract, acceptedAt, ip, userAgent}] }
+   */
+  getDetail: async (educatorId) => {
+    const { data } = await api.get(`/admin/educators/${educatorId}`);
+    return data;
+  },
   approve: async (educatorId) => {
     const { data } = await api.post(`/admin/educators/${educatorId}/approve`);
     return data;
