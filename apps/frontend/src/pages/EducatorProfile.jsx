@@ -268,24 +268,6 @@ export default function EducatorProfile() {
               )}
             </div>
 
-            {/* Aday bu eğiticiden test satın almışsa eğiticiyi puanlayabilir
-                (educatorRating — test puanından bağımsız). */}
-            {isCandidate && myRating?.eligible && (
-              <div className="mb-4">
-                <Button
-                  onClick={openRateModal}
-                  variant={myRating?.rating ? 'outline' : 'default'}
-                  className={myRating?.rating ? '' : 'bg-indigo-600 hover:bg-indigo-700'}
-                >
-                  <Star
-                    className={`w-4 h-4 mr-1.5 ${myRating?.rating ? 'fill-amber-400 text-amber-400' : ''}`}
-                    aria-hidden="true"
-                  />
-                  {myRating?.rating ? `Puanını Güncelle (${myRating.rating}/5)` : 'Eğiticiyi Değerlendir'}
-                </Button>
-              </div>
-            )}
-
             {/* Uzmanlık Alanları */}
             {specialties.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
@@ -304,6 +286,24 @@ export default function EducatorProfile() {
               </div>
             )}
           </div>
+
+          {/* Aday bu eğiticiden test satın almışsa eğiticiyi puanlayabilir
+              (educatorRating — test puanından bağımsız). Kartın sağ üstünde. */}
+          {isCandidate && myRating?.eligible && (
+            <div className="flex-shrink-0 md:ml-auto">
+              <Button
+                onClick={openRateModal}
+                variant={myRating?.rating ? 'outline' : 'default'}
+                className={myRating?.rating ? '' : 'bg-indigo-600 hover:bg-indigo-700'}
+              >
+                <Star
+                  className={`w-4 h-4 mr-1.5 ${myRating?.rating ? 'fill-amber-400 text-amber-400' : ''}`}
+                  aria-hidden="true"
+                />
+                {myRating?.rating ? `Puanını Güncelle (${myRating.rating}/5)` : 'Eğiticiyi Değerlendir'}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
