@@ -60,6 +60,25 @@ export const auth = {
     const { data } = await api.post('/auth/register/educator', body);
     return data;
   },
+  /**
+   * Email ve username'in uygun olup olmadığını kayıt formundan ÖNCE kontrol eder
+   * (sözleşme dialog'u açılmadan önce). Fail-open: backend hatası varsa true döner —
+   * gerçek kontrol kayıt isteğinde tekrar yapılır, kullanıcı dead-end'te kalmaz.
+   */
+  async checkAvailability(email, username) {
+    try {
+      const qs = new URLSearchParams();
+      if (email) qs.set('email', email);
+      if (username) qs.set('username', username);
+      const { data } = await api.get('/auth/check-availability?' + qs.toString());
+      return {
+        emailAvailable: data?.emailAvailable !== false,
+        usernameAvailable: data?.usernameAvailable !== false,
+      };
+    } catch {
+      return { emailAvailable: true, usernameAvailable: true };
+    }
+  },
   // Eğiticinin onboarding tamamlanma durumu (firstName/lastName + cv + uzmanlık alanı)
   async educatorOnboardingStatus() {
     try {

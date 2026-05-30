@@ -51,10 +51,26 @@ export default function Register() {
   const [showContractDialog, setShowContractDialog] = useState(false);
   const navigate = useAppNavigate();
 
-  // "Kayıt Ol" → form alanları (HTML5 required) geçtiyse sözleşme dialog'unu aç.
-  const submit = (e) => {
+  // "Kayıt Ol" → form alanları (HTML5 required) geçtiyse ÖNCE email/username uygunluğunu
+  // kontrol et, sonra sözleşme dialog'unu aç. Kullanıcı çakışan email ile sözleşmeleri
+  // okuyup onaylayıp sonradan "zaten kayıtlı" hatasıyla karşılaşmasın.
+  const submit = async (e) => {
     e.preventDefault();
     setError(null);
+    try {
+      const check = await auth.checkAvailability(email, username);
+      if (!check.emailAvailable) {
+        setError(t('auth:register.emailTaken', { defaultValue: 'Bu e-posta adresi zaten kayıtlı.' }));
+        return;
+      }
+      if (!check.usernameAvailable) {
+        setError(t('auth:register.usernameTaken', { defaultValue: 'Bu kullanıcı adı kullanılıyor.' }));
+        return;
+      }
+    } catch {
+      // Availability endpoint hatası → kullanıcıyı durdurmadan devam et (fail-open).
+      // Gerçek kontrol kayıt isteğinde tekrar yapılır.
+    }
     setShowContractDialog(true);
   };
 

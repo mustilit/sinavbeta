@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Req, HttpException, HttpStatus, UseGuards, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, HttpException, HttpStatus, UseGuards, HttpCode, Query } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { RegisterUseCase } from '../../application/use-cases/auth/RegisterUseCase';
 import { RegisterEducatorUseCase } from '../../application/use-cases/auth/RegisterEducatorUseCase';
@@ -93,6 +93,33 @@ export class AuthController {
     }
 
     return { user: userResponse };
+  }
+
+  /**
+   * Email ve username uygunluk kontrolü — kayıt formunda sözleşme dialog'u açılmadan
+   * ÖNCE çağrılır. Kullanıcı çakışan email/username ile sözleşmeleri okuyup onaylayıp
+   * sonradan "zaten kayıtlı" hatasıyla karşılaşmasın diye. Public + throttled.
+   * Boş string'ler kontrol edilmez (kısmi kontrole izin verir).
+   */
+  @Public()
+  @Get('check-availability')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  async checkAvailability(
+    @Query('email') email?: string,
+    @Query('username') username?: string,
+  ) {
+    const result = { emailAvailable: true, usernameAvailable: true };
+    const e = (email || '').trim().toLowerCase();
+    if (e) {
+      const existing = await this.userRepo.findByEmail(e);
+      if (existing) result.emailAvailable = false;
+    }
+    const u = (username || '').trim();
+    if (u) {
+      const existing = await this.userRepo.findByUsername(u);
+      if (existing) result.usernameAvailable = false;
+    }
+    return result;
   }
 
   /** Yeni aday kaydı — kayıt sonrası email doğrulama linki gönderir (fire-and-forget) */
