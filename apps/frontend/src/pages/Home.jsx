@@ -107,14 +107,13 @@ function EducatorCard({ educator }) {
               {t("pages:card.salesCount", { count: educator.saleCount })}
             </span>
           )}
-          {/* Puan — en sağa hizalı (ml-auto). Puanı varsa ⭐X.X, yoksa "Henüz puan yok". */}
-          {educator.ratingAvg != null && Number(educator.ratingAvg) > 0 ? (
+          {/* Eğitici puanı (Review.educatorRating ortalaması) — yalnızca varsa, en sağa hizalı.
+              Puan yoksa hiçbir şey gösterilmez. Test puanından TÜRETİLMEZ. */}
+          {educator.ratingAvg != null && Number(educator.ratingAvg) > 0 && (
             <span className="flex items-center gap-1 ml-auto font-medium text-amber-600">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
               {Number(educator.ratingAvg).toFixed(1)}
             </span>
-          ) : (
-            <span className="ml-auto text-xs text-slate-400">{t("pages:card.noRating")}</span>
           )}
         </div>
       </div>
