@@ -41,6 +41,21 @@ export class MarketplaceController {
     );
   }
 
+  /**
+   * `:id` parametresi TestPackage id'si VEYA ExamTest id'si olabilir — TestDetail
+   * bazı akışlarda (örn. eğitici profili test kartı) test id'siyle açılıyor. Her
+   * iki durumda da paketin gerçek id'sini döndürür; çözülemezse orijinali bırakır
+   * (use case NOT_FOUND/boş döner). Review ve view endpoint'leri paket bazlıdır.
+   */
+  private async resolvePackageId(id: string): Promise<string> {
+    if (!id) return id;
+    const { prisma } = require('../../../infrastructure/database/prisma');
+    const pkg = await prisma.testPackage.findUnique({ where: { id }, select: { id: true } });
+    if (pkg) return pkg.id;
+    const test = await prisma.examTest.findUnique({ where: { id }, select: { packageId: true } });
+    return test?.packageId ?? id;
+  }
+
   @Public()
   @Get('tests')
   @ApiOkResponse({ type: ListMarketplaceTestsResponseDto })
@@ -86,8 +101,9 @@ export class MarketplaceController {
   ) {
     const n = limit ? parseInt(limit, 10) : 10;
     const o = offset ? parseInt(offset, 10) : 0;
+    const packageId = await this.resolvePackageId(id);
     return this.getPackageReviewsUC.execute(
-      id,
+      packageId,
       isNaN(n) ? 10 : n,
       isNaN(o) ? 0 : o,
     );
@@ -104,7 +120,8 @@ export class MarketplaceController {
   async getMyPackageReview(@Param('id') id: string, @Req() req: any) {
     const candidateId = req.user?.id;
     if (!candidateId) return null;
-    return this.getMyPackageReviewUC.execute(id, candidateId);
+    const packageId = await this.resolvePackageId(id);
+    return this.getMyPackageReviewUC.execute(packageId, candidateId);
   }
 
   /**
@@ -123,7 +140,8 @@ export class MarketplaceController {
     @Req() req: any,
   ) {
     const candidateId = req.user?.id;
-    return this.upsertReviewUC.execute(id, candidateId, body);
+    const packageId = await this.resolvePackageId(id);
+    return this.upsertReviewUC.execute(packageId, candidateId, body);
   }
 
   /**
@@ -149,7 +167,7 @@ export class MarketplaceController {
     // Bekletmeden 204 dön — log async (await yine de yapıyoruz hata yutmamak için, ama HTTP 204).
     try {
       await this.recordViewUC.execute({
-        packageId: id,
+        packageId: await this.resolvePackageId(id),
         viewerId,
         sessionId: body?.sessionId ?? null,
         ip,
