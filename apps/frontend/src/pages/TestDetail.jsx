@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import StarRating from "@/components/ui/StarRating";
 import {
   BookOpen,
+  MessageSquare,
   Star,
   User,
   CheckCircle,
@@ -348,19 +349,8 @@ export default function TestDetail() {
                     : t("pages:testDetail.packageRating.noReviews")}
                 </p>
               </div>
-
-              {/* Değerlendir butonu — sadece aday paketi aldıysa görünür */}
-              {user && isPurchased && (
-                <Button
-                  onClick={openReviewModal}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <Star className="w-4 h-4 mr-2" />
-                  {myPackageReview
-                    ? t("pages:testDetail.packageRating.updateButton")
-                    : t("pages:testDetail.packageRating.rateButton")}
-                </Button>
-              )}
+              {/* Değerlendir butonu artık aşağıdaki "Yorumlar" başlık satırında (sağda) —
+                  EducatorProfile ile aynı konum. */}
             </div>
           </div>
 
@@ -554,8 +544,9 @@ export default function TestDetail() {
       </div>
 
       {/* Reviews — sayfa en altında, tam genişlik, kendi içinde paging (sayfa başına 10) */}
-      {(reviews.length > 0 || packageReviewData.count > 0) && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-8">
+      {/* Yorumlar — paket yorum/puanları; EducatorProfile ile aynı yapı (her zaman görünür).
+          Değerlendir/Puanı Güncelle butonu başlık satırında sağda — aday paketi aldıysa. */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mt-8">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h2 className="text-lg font-semibold text-slate-900">
               {t("pages:testDetail.reviews.title")}
@@ -563,12 +554,33 @@ export default function TestDetail() {
                 ({packageReviewData.count})
               </span>
             </h2>
-            {totalReviewPages > 1 && (
-              <p className="text-sm text-slate-500">
-                {t("pages:testDetail.reviews.pageOf", { current: reviewPage, total: totalReviewPages })}
-              </p>
-            )}
+            <div className="flex items-center gap-3">
+              {totalReviewPages > 1 && (
+                <p className="text-sm text-slate-500">
+                  {t("pages:testDetail.reviews.pageOf", { current: reviewPage, total: totalReviewPages })}
+                </p>
+              )}
+              {user && isPurchased && (
+                <Button
+                  onClick={openReviewModal}
+                  size="sm"
+                  className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Star className="w-4 h-4 mr-1.5" aria-hidden="true" />
+                  {myPackageReview
+                    ? t("pages:testDetail.packageRating.updateButton")
+                    : t("pages:testDetail.packageRating.rateButton")}
+                </Button>
+              )}
+            </div>
           </div>
+          {reviews.length === 0 ? (
+            <div className="text-center py-10">
+              <MessageSquare className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="text-slate-400 text-sm">{t("pages:testDetail.packageRating.noReviews")}</p>
+            </div>
+          ) : (
+          <>
           <div className={`space-y-4 ${isFetchingReviews ? "opacity-60" : ""}`}>
             {reviews.map((review) => (
               <div key={review.id} className="pb-4 border-b border-slate-100 last:border-0">
@@ -625,8 +637,9 @@ export default function TestDetail() {
               </Button>
             </div>
           )}
+          </>
+          )}
         </div>
-      )}
 
       <PaymentModal
         isOpen={isPaymentModalOpen}
