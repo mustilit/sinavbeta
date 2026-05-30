@@ -11,7 +11,8 @@
     "salesCount_one": "{{count}} Verkauf",
     "salesCount_other": "{{count}} Verkäufe",
     "testsCount_one": "{{count}} Test",
-    "testsCount_other": "{{count}} Tests"
+    "testsCount_other": "{{count}} Tests",
+    "noRating": "Noch keine Bewertungen"
   },
   "home": {
     "nav": {

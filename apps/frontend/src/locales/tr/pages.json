@@ -11,7 +11,8 @@
     "salesCount_one": "{{count}} satış",
     "salesCount_other": "{{count}} satış",
     "testsCount_one": "{{count}} test",
-    "testsCount_other": "{{count}} test"
+    "testsCount_other": "{{count}} test",
+    "noRating": "Henüz puan yok"
   },
   "home": {
     "nav": {

@@ -11,7 +11,8 @@
     "salesCount_one": "{{count}} 次销售",
     "salesCount_other": "{{count}} 次销售",
     "testsCount_one": "{{count}} 个测试",
-    "testsCount_other": "{{count}} 个测试"
+    "testsCount_other": "{{count}} 个测试",
+    "noRating": "尚无评分"
   },
   "home": {
     "nav": {

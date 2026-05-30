@@ -11,7 +11,8 @@
     "salesCount_one": "{{count}} sale",
     "salesCount_other": "{{count}} sales",
     "testsCount_one": "{{count}} test",
-    "testsCount_other": "{{count}} tests"
+    "testsCount_other": "{{count}} tests",
+    "noRating": "No ratings yet"
   },
   "home": {
     "nav": {

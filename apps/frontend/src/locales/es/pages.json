@@ -11,7 +11,8 @@
     "salesCount_one": "{{count}} venta",
     "salesCount_other": "{{count}} ventas",
     "testsCount_one": "{{count}} examen",
-    "testsCount_other": "{{count}} exámenes"
+    "testsCount_other": "{{count}} exámenes",
+    "noRating": "Sin calificaciones aún"
   },
   "home": {
     "nav": {
