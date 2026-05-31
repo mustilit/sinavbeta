@@ -147,7 +147,40 @@ async function suppressOverlays(ctx: BrowserContext) {
   await page.close();
 }
 
+/**
+ * Her sayfaya navigasyondan ÖNCE i18n dilini TR'ye + consent'i granted'a sabitler.
+ * LanguageDetector öncelik sırası localStorage > navigator; `locale: 'tr-TR'`
+ * config'i tek başına yetmiyor (tr-TR → tr map'i yok, EN'e düşüyor). addInitScript
+ * localStorage'ı her load'dan önce set ettiği için garantili TR sağlar.
+ */
+async function injectTrLocale(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('i18nextLng', 'tr');
+      localStorage.setItem('analytics_consent', 'granted');
+      sessionStorage.setItem(
+        'dal_completed_tours',
+        JSON.stringify({
+          ob_cand_welcome: true,
+          ob_cand_test: true,
+          ob_edu_welcome: true,
+          ob_edu_create: true,
+        }),
+      );
+    } catch {
+      /* ignore */
+    }
+  });
+}
+
 export const test = base.extend<AuthFixtures>({
+  // Base `page` fixture override — tüm spec'ler (foundation, educator-*, vb.)
+  // otomatik TR locale + consent + tour-suppressed başlar.
+  page: async ({ page }, use) => {
+    await injectTrLocale(page);
+    await use(page);
+  },
+
   adminPage: async ({ browser }, use) => {
     const ctx: BrowserContext = await browser.newContext();
     await suppressOverlays(ctx);

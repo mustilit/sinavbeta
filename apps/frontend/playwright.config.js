@@ -11,6 +11,10 @@ export default {
   use: {
     baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
+    // UI tamamen Türkçe; i18n LanguageDetector navigator.language'i okur.
+    // tr-TR olmazsa EN yüklenir ve TR metin assertion'ları (notices, butonlar)
+    // kırılır. localStorage i18nextLng boşken bu fallback'i garantiler.
+    locale: 'tr-TR',
   },
   webServer: {
     command: 'npm run dev',
