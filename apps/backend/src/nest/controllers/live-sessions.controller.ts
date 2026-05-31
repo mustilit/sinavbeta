@@ -244,7 +244,9 @@ export class LiveSessionsController {
   @ApiOkResponse({ description: 'Oturuma katil' })
   @ApiErrorResponses()
   async join(@Param('code') code: string, @Req() req: any) {
-    return this.joinUC.execute(code.toUpperCase(), req.user.id);
+    // IP — kapatma saldırısı limiti için (aynı cihazdan max katılım).
+    const ip = req?.ip ?? req?.headers?.['x-forwarded-for'] ?? null;
+    return this.joinUC.execute(code.toUpperCase(), req.user.id, { ip: Array.isArray(ip) ? ip[0] : ip });
   }
 
   @Post(':id/ping')

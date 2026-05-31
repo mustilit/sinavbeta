@@ -4,7 +4,8 @@
  * Doğrulanan davranışlar:
  * - Oturum bulunamazsa → SESSION_NOT_FOUND
  * - ENDED oturum → SESSION_ENDED
- * - DRAFT oturum → SESSION_NOT_STARTED
+ * - DRAFT oturum → katılıma izin verir (beklemeye alınır — artık reddedilmez)
+ * - Aynı IP'den katılım limiti aşıldı → DEVICE_QUOTA_EXCEEDED (kapatma saldırısı)
  * - Kullanıcı bulunamazsa → USER_NOT_FOUND
  * - Kullanıcı aktif değilse → USER_NOT_ACTIVE
  * - Round 2 ve round 1 katılımı yoksa → NOT_IN_ROUND1
@@ -26,6 +27,8 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
       upsert: jest.fn(),
     },
     user: { findUnique: jest.fn() },
+    $queryRaw: jest.fn(),
+    $executeRaw: jest.fn(),
   },
 }));
 
@@ -68,6 +71,9 @@ describe('JoinLiveSessionUseCase', () => {
     mockPrisma.liveSession.update.mockResolvedValue(makeSession());
     mockPrisma.liveSession.updateMany.mockResolvedValue({ count: 1 });
     mockPrisma.liveParticipant.upsert.mockResolvedValue(makeParticipant());
+    // IP limiti sorgusu — varsayılan: aynı IP'den 0 katılım (limit aşılmadı)
+    mockPrisma.$queryRaw.mockResolvedValue([{ cnt: 0n }]);
+    mockPrisma.$executeRaw.mockResolvedValue(0);
   });
 
   it('oturum bulunamazsa SESSION_NOT_FOUND fırlatır', async () => {
@@ -82,10 +88,39 @@ describe('JoinLiveSessionUseCase', () => {
     await expect(uc.execute('ABC123', 'u1')).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('DRAFT oturum → SESSION_NOT_STARTED fırlatır', async () => {
+  it('DRAFT oturum → katılıma izin verir (beklemeye alınır, reddedilmez)', async () => {
     mockPrisma.liveSession.findUnique.mockResolvedValue(makeSession({ status: 'DRAFT' }));
     const uc = new JoinLiveSessionUseCase();
-    await expect(uc.execute('ABC123', 'u1')).rejects.toBeInstanceOf(BadRequestException);
+    const result = await uc.execute('ABC123', 'u1');
+    // Artık reddedilmez — katılımcı kaydı oluşur (frontend bekleme odası gösterir)
+    expect(mockPrisma.liveParticipant.upsert).toHaveBeenCalledTimes(1);
+    expect(result.sessionId).toBe('sess-1');
+  });
+
+  it('aynı IP\'den limit (3) aşıldıysa → DEVICE_QUOTA_EXCEEDED (kapatma saldırısı)', async () => {
+    // Aynı oturum + IP'den zaten 3 katılım var
+    mockPrisma.$queryRaw.mockResolvedValue([{ cnt: 3n }]);
+    const uc = new JoinLiveSessionUseCase();
+    await expect(uc.execute('ABC123', 'u-new', { ip: '203.0.113.5' })).rejects.toMatchObject({
+      response: { code: 'DEVICE_QUOTA_EXCEEDED' },
+    });
+    // Kota aşıldıysa katılımcı oluşturulmaz
+    expect(mockPrisma.liveParticipant.upsert).not.toHaveBeenCalled();
+  });
+
+  it('aynı IP\'den limit altındaysa katılıma izin verir + join_ip kaydeder', async () => {
+    mockPrisma.$queryRaw.mockResolvedValue([{ cnt: 1n }]); // limit (3) altı
+    const uc = new JoinLiveSessionUseCase();
+    const result = await uc.execute('ABC123', 'u-new', { ip: '203.0.113.5' });
+    expect(result.sessionId).toBe('sess-1');
+    // Yeni katılımda join_ip raw SQL ile yazılır
+    expect(mockPrisma.$executeRaw).toHaveBeenCalled();
+  });
+
+  it('IP yoksa kota kontrolü atlanır (limit sorgusu çağrılmaz)', async () => {
+    const uc = new JoinLiveSessionUseCase();
+    await uc.execute('ABC123', 'u1'); // ctx yok → ip null
+    expect(mockPrisma.$queryRaw).not.toHaveBeenCalled();
   });
 
   it('kullanıcı bulunamazsa USER_NOT_FOUND fırlatır', async () => {

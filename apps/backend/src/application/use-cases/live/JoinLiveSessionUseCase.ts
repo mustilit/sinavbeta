@@ -2,14 +2,25 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 
+/**
+ * Aynı cihaz/IP'den bir oturuma izin verilen maksimum katılım. "Kapatma
+ * saldırısı" korumasını sağlar: tek bir cihaz çok sayıda sahte hesapla tüm
+ * kotayı dolduramaz. Meşru paylaşımlı IP (ev/okul) için makul üst sınır.
+ */
+const MAX_JOINS_PER_IP = 3;
+
 export class JoinLiveSessionUseCase {
-  async execute(joinCode: string, userId: string) {
+  /**
+   * @param ctx.ip — istek IP'si (controller'dan). Kapatma saldırısı limiti için.
+   */
+  async execute(joinCode: string, userId: string, ctx?: { ip?: string | null }) {
     const session = await prisma.liveSession.findUnique({ where: { joinCode: joinCode.toUpperCase() } });
     if (!session) throw new AppError('SESSION_NOT_FOUND', 'Session not found — check the code', 404);
     if (session.status === 'ENDED')
       throw new BadRequestException({ code: 'SESSION_ENDED', message: 'Bu oturum sona erdi' });
-    if (session.status === 'DRAFT')
-      throw new BadRequestException({ code: 'SESSION_NOT_STARTED', message: 'Oturum henüz başlamadı' });
+    // NOT: DRAFT artık REDDEDİLMEZ — aday beklemeye alınır (frontend "test henüz
+    // başlatılmadı" bekleme ekranı gösterir, status ACTIVE olunca otomatik girer).
+    // Yalnızca ENDED reddedilir.
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
@@ -24,15 +35,34 @@ export class JoinLiveSessionUseCase {
         throw new ForbiddenException({ code: 'NOT_IN_ROUND1', message: '1. tura katılmış olmanız gerekiyor' });
     }
 
-    // Mevcut katılımcı kontrolü — zaten kayıtlı ise kapasite değişmez
+    // Mevcut katılımcı kontrolü — zaten kayıtlı ise kapasite/IP limiti değişmez
     const existing = await prisma.liveParticipant.findUnique({
       where: { sessionId_userId: { sessionId: session.id, userId } },
     });
 
+    const ip = ctx?.ip?.trim() || null;
+
     if (!existing) {
+      // ── Kapatma saldırısı koruması: aynı IP'den katılım limiti ──
+      // Sadece yeni katılımda + IP biliniyorsa. Bu kullanıcının kendi kaydı
+      // henüz yok; aynı IP'den FARKLI kullanıcıların sayısına bakılır.
+      if (ip) {
+        const rows = await prisma.$queryRaw<Array<{ cnt: bigint }>>`
+          SELECT COUNT(*)::bigint AS cnt
+          FROM live_participants
+          WHERE "sessionId" = ${session.id} AND join_ip = ${ip}
+        `;
+        const sameIpCount = Number(rows[0]?.cnt ?? 0);
+        if (sameIpCount >= MAX_JOINS_PER_IP) {
+          throw new ForbiddenException({
+            code: 'DEVICE_QUOTA_EXCEEDED',
+            message: `Bu cihazdan bu oturuma en fazla ${MAX_JOINS_PER_IP} katılım yapılabilir.`,
+          });
+        }
+      }
+
+      // ── Kapasite kontrolü (atomik) ──
       if (session.maxParticipants != null) {
-        // Atomic kapasite kontrolü — count() + check race condition'ını önler.
-        // currentParticipantCount < maxParticipants ise atomik olarak artır; aksi hâlde 0 satır güncellenir.
         const updated = await prisma.liveSession.updateMany({
           where: {
             id: session.id,
@@ -44,7 +74,6 @@ export class JoinLiveSessionUseCase {
           throw new BadRequestException({ code: 'SESSION_FULL', message: `Kapasite doldu (${session.maxParticipants})` });
         }
       } else {
-        // Limitsiz oturum — sadece sayacı artır
         await prisma.liveSession.update({
           where: { id: session.id },
           data: { currentParticipantCount: { increment: 1 } },
@@ -58,6 +87,15 @@ export class JoinLiveSessionUseCase {
       create: { sessionId: session.id, userId },
       update: {},
     });
+
+    // join_ip'i kaydet — Prisma client kolonu görmüyor (EPERM regenerate engeli),
+    // yeni katılımda raw SQL ile set et (idempotent; mevcut katılımda dokunmaz).
+    if (!existing && ip) {
+      await prisma.$executeRaw`
+        UPDATE live_participants SET join_ip = ${ip} WHERE id = ${participant.id}
+      `;
+    }
+
     return { sessionId: session.id, participantId: participant.id, session };
   }
 }

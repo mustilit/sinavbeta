@@ -156,7 +156,9 @@ export default function LiveSessionJoin() {
     );
   }
 
-  // ── Waiting for session to start ──
+  // ── Bekleme odası: test henüz başlatılmadı (DRAFT) ──
+  // Aday koda girip katıldı ama eğitici testi henüz başlatmadı. Burada bekler;
+  // state polling (2s) status ACTIVE olduğunda otomatik olarak test ekranına geçer.
   if (state.status === "DRAFT") {
     return (
       <div className="max-w-sm mx-auto pt-16 text-center">
@@ -165,9 +167,16 @@ export default function LiveSessionJoin() {
             <Zap className="w-8 h-8 text-amber-500" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-1">{state.title}</h2>
-          <p className="text-slate-500 text-sm mb-4">Eğitici testi başlatana kadar bekleyin…</p>
+          {/* Net uyarı: test henüz başlatılmadı */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium mb-3">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Test henüz başlatılmadı
+          </div>
+          <p className="text-slate-500 text-sm mb-4">
+            Bekleme odasındasınız. Eğitici testi başlattığında otomatik olarak içeri alınacaksınız — sayfayı kapatmayın.
+          </p>
           <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
-            <Users className="w-4 h-4" /> {state.participantCount} katılımcı bekleniyor
+            <Users className="w-4 h-4" /> {state.participantCount} katılımcı bekliyor
           </div>
           <div className="flex justify-center gap-1 mt-4">
             {[0, 1, 2].map((i) => (
