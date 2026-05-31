@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Zap, Users, Loader2, LogIn, TrendingUp, TrendingDown, Minus, ZoomIn, X as XIcon } from "lucide-react";
+import { CheckCircle2, Zap, Users, Loader2, LogIn, TrendingUp, TrendingDown, Minus, ZoomIn, X as XIcon, ShieldAlert } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -31,6 +31,22 @@ const LETTER_BG = [
   "bg-rose-500", "bg-blue-500", "bg-amber-500", "bg-emerald-500", "bg-violet-500"
 ];
 
+/**
+ * Bekleme odası + aktif test ekranını sidebar'ın üstüne kaplayan tam ekran katman.
+ * Kullanıcı isteği: "kod giriş ekranında soldaki menüyü öldürme; teste atılır ya da
+ * bekleme odasına alınırsa tam ekrana geçebilirsin." Bu yüzden kod giriş ve sonuç
+ * (ENDED) ekranları normal Layout içinde (sidebar görünür) kalır; yalnızca DRAFT
+ * (bekleme) ve ACTIVE (test) durumları bu overlay ile tam ekran olur.
+ * Layout artık LiveSessionJoin'i FULLSCREEN_PAGES'te tutmuyor — kontrol burada.
+ */
+function FullscreenStage({ children }) {
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-50 dark:bg-gray-900">
+      <div className="min-h-full px-4 py-8 lg:p-8">{children}</div>
+    </div>
+  );
+}
+
 export default function LiveSessionJoin() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -42,6 +58,8 @@ export default function LiveSessionJoin() {
   const [submittedOptionId, setSubmittedOptionId] = useState(null);
   // Görsel büyüteç (lightbox)
   const [lightboxUrl, setLightboxUrl] = useState(null);
+  // Katılım engeli ekranı: SESSION_FULL (kontenjan dolu) / DEVICE_QUOTA_EXCEEDED (cihaz kotası)
+  const [blocked, setBlocked] = useState(null);
 
   // Poll session state while joined
   const { data: state, isLoading: stateLoading } = useQuery({
@@ -79,7 +97,20 @@ export default function LiveSessionJoin() {
       setSessionId(data.sessionId);
       toast.success("Oturuma katıldınız!");
     },
-    onError: (e) => toast.error(e?.response?.data?.message || "Katılım başarısız"),
+    onError: (e) => {
+      // http.js hata nesnesini normalize eder: e.code = backend error.code,
+      // e.message = çözülmüş mesaj. Ham gövde { error: { code, message } }
+      // kontratında (e.response.data.error.*) — bu yüzden ÖNCE e.code okunur.
+      const code = e?.code ?? e?.response?.data?.error?.code;
+      const message = e?.message ?? e?.response?.data?.error?.message;
+      // Terminal katılım engelleri (kontenjan dolu / cihaz kotası) → kaybolan
+      // toast yerine adanmış ekran. Diğer hatalar kısa toast.
+      if (code === "SESSION_FULL" || code === "DEVICE_QUOTA_EXCEEDED") {
+        setBlocked({ code, message });
+      } else {
+        toast.error(message || "Katılım başarısız");
+      }
+    },
   });
 
   const answerMutation = useMutation({
@@ -89,7 +120,8 @@ export default function LiveSessionJoin() {
       setSubmittedOptionId(vars.optionId);
       queryClient.invalidateQueries({ queryKey: ["liveJoinState", sessionId] });
     },
-    onError: (e) => toast.error(e?.response?.data?.message || "Cevap gönderilemedi"),
+    // http.js e.message'ı normalize eder; e.response.data.error.message ham gövde yedeği.
+    onError: (e) => toast.error(e?.message || e?.response?.data?.error?.message || "Cevap gönderilemedi"),
   });
 
   const handleAnswer = (optionId) => {
@@ -109,6 +141,42 @@ export default function LiveSessionJoin() {
             <LogIn className="w-4 h-4" /> Giriş Yap
           </Button>
         </Link>
+      </div>
+    );
+  }
+
+  // ── Katılım engellendi: kontenjan dolu (SESSION_FULL) ya da aynı cihazdan kota
+  //    aşımı (DEVICE_QUOTA_EXCEEDED). Aday henüz katılmadı → normal Layout (sidebar)
+  //    içinde kalır; "Başka kod gir" ile koda dönebilir. Tam ekran DEĞİL.
+  if (blocked) {
+    const isFull = blocked.code === "SESSION_FULL";
+    const Icon = isFull ? Users : ShieldAlert;
+    return (
+      <div className="max-w-sm mx-auto pt-16 text-center">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8">
+          <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Icon className="w-8 h-8 text-rose-500" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-1">
+            {isFull ? "Kontenjan Dolu" : "Katılım Engellendi"}
+          </h2>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium mb-3 mt-1">
+            <XIcon className="w-3.5 h-3.5" />
+            {blocked.message || (isFull ? "Oturum dolu" : "Bu cihazdan katılım sınırına ulaşıldı")}
+          </div>
+          <p className="text-slate-500 text-sm mb-5">
+            {isFull
+              ? "Bu canlı testin katılımcı kontenjanı dolduğu için şu an katılamıyorsunuz. Eğiticinizle iletişime geçin."
+              : "Aynı cihazdan bu oturuma izin verilen katılım sayısına ulaşıldı. Eğiticinizle iletişime geçin."}
+          </p>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => { setBlocked(null); setCodeInput(""); }}
+          >
+            <Zap className="w-4 h-4" /> Başka kod gir
+          </Button>
+        </div>
       </div>
     );
   }
@@ -147,12 +215,14 @@ export default function LiveSessionJoin() {
     );
   }
 
-  // ── Loading ──
+  // ── Loading ── (sessionId set → oturuma giriyoruz; bekleme/test gibi tam ekran)
   if (stateLoading || !state) {
     return (
-      <div className="flex justify-center pt-20">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-      </div>
+      <FullscreenStage>
+        <div className="flex justify-center pt-20">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+        </div>
+      </FullscreenStage>
     );
   }
 
@@ -161,6 +231,7 @@ export default function LiveSessionJoin() {
   // state polling (2s) status ACTIVE olduğunda otomatik olarak test ekranına geçer.
   if (state.status === "DRAFT") {
     return (
+      <FullscreenStage>
       <div className="max-w-sm mx-auto pt-16 text-center">
         <div className="bg-white rounded-2xl border border-slate-200 p-8">
           <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
@@ -189,6 +260,7 @@ export default function LiveSessionJoin() {
           </div>
         </div>
       </div>
+      </FullscreenStage>
     );
   }
 
@@ -343,6 +415,7 @@ export default function LiveSessionJoin() {
   const statsData = state.showStats ? state.stats?.[q?.id] : null;
 
   return (
+    <FullscreenStage>
     <div className="max-w-lg mx-auto pb-10">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
@@ -500,5 +573,6 @@ export default function LiveSessionJoin() {
         </DialogContent>
       </Dialog>
     </div>
+    </FullscreenStage>
   );
 }

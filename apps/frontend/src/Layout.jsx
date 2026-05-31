@@ -34,11 +34,14 @@ export default function Layout({ children, currentPageName }) {
   const isAuthPage = AUTH_PAGES.includes(currentPageName) ||
     /^\/login$/i.test(path) || /^\/register$/i.test(path);
   // Tam ekran sayfalar: sidebar tamamen gizlenir.
-  // Soru çözme + canlı test ekranları + zorunlu onboarding adımları.
+  // Soru çözme + canlı test host ekranı + zorunlu onboarding adımları.
+  // NOT: LiveSessionJoin bilinçli olarak burada DEĞİL — aday koda girmeden önce
+  // soldaki menüde gezinebilsin diye kod giriş ekranında sidebar görünür kalır.
+  // Aday bekleme odasına alındığında veya test başladığında sayfanın KENDİSİ
+  // tam ekran overlay'e geçer (LiveSessionJoin.jsx → FullscreenStage).
   const FULLSCREEN_PAGES = [
     "TakeTest",
     "LiveSessionHost",
-    "LiveSessionJoin",
     "EducatorOnboarding", // CV + uzmanlık alanı tamamlanana kadar başka yere gidemez
     "SelectExamTypes",    // Aday onboarding'i — ilgi alanı seçilene kadar
     "CompleteProfile",    // Profil tamamlama
