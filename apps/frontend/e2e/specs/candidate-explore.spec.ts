@@ -77,4 +77,22 @@ test.describe('Aday — marketplace keşfet (read-only)', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });
+
+  test('sidebar "Canlı Teste Katıl" → LiveSessionJoin + kod girişi', async ({ page }) => {
+    const login = new LoginPage(page);
+    await login.loginAsUser(DEMO.candidate);
+    await page.goto('/Explore');
+    await expect(page).toHaveURL(/Explore/i, { timeout: 10000 });
+
+    // Aday sidebar'ında "Canlı Teste Katıl" linki olmalı (yeni eklendi)
+    const joinLink = page.getByRole('link', { name: /[Cc]anl[ıi] [Tt]este [Kk]at[ıi]l/ }).first();
+    await expect(joinLink).toBeVisible({ timeout: 8000 });
+    await joinLink.click();
+
+    // LiveSessionJoin sayfası — kod girişi (kod ile katılım)
+    await expect(page).toHaveURL(/LiveSessionJoin/i, { timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /[Cc]anl[ıi] [Tt]este [Kk]at[ıi]l/ }).first()).toBeVisible({ timeout: 8000 });
+    // Kod input alanı (placeholder ABCD12)
+    await expect(page.getByPlaceholder(/ABCD|[A-Z0-9]{4,}/).first()).toBeVisible({ timeout: 6000 });
+  });
 });

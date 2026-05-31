@@ -88,6 +88,9 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   const candidateLinks = [
     { name: t("sidebar.candidate.home"), page: "Home", icon: Home },
     { name: t("sidebar.candidate.explore"), page: "Explore", icon: Search },
+    // Canlı teste kod ile katılım — eğiticinin paylaştığı joinCode'u girip katılır.
+    // E-posta davetindeki link de buraya (/LiveSessionJoin?code=...) gelir.
+    { name: t("sidebar.candidate.joinLive"), page: "LiveSessionJoin", icon: Zap },
     { name: t("sidebar.candidate.myTests"), page: "MyTests", icon: BookOpen },
     { name: t("sidebar.candidate.myResults"), page: "MyResults", icon: BarChart3 },
     // Konu Performansım — BookOpen (MyTests) ile çakışıyordu; Target ikonu
