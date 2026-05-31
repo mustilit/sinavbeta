@@ -4,6 +4,79 @@ Bu projede yapılan tüm önemli değişiklikler bu dosyada belgelenir.
 
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/) ve [Semantic Versioning](https://semver.org/lang/tr/) standartlarına uygundur.
 
+## [1.6.0](https://github.com/mustilit/sinavsalonu1_6/compare/v1.5.0...v1.6.0) (2026-05-31)
+
+### ✨ Özellikler
+
+* **admin-contracts:** yasal sözleşme yönetim sayfası (frontend yoktu) ([a440906](https://github.com/mustilit/sinavsalonu1_6/commit/a440906b547a22cfd51cd4a96385e047c6c8cd58))
+* **admin:** egitici basvurusu Incele popup'i (Sprint 3) ([edb84cc](https://github.com/mustilit/sinavsalonu1_6/commit/edb84cc389e019ce94fa550564e8986799b02e22))
+* **admin:** egitici basvurusunu reddetme + sebep (Sprint 1) ([d374279](https://github.com/mustilit/sinavsalonu1_6/commit/d3742794da73da3e020e95507570f57ccd1573f5))
+* **admin:** ManageUsers durum etiketlerini TR'lestir + Durum filtresi ([28e0ebb](https://github.com/mustilit/sinavsalonu1_6/commit/28e0ebb3b2de64a944f0d0fc21406e68e3b2e16e))
+* **admin:** popup'ta Islem Gecmisi timeline (sozlesme + onay/red/geri gonderim) ([f804673](https://github.com/mustilit/sinavsalonu1_6/commit/f804673ab12e6c35214813437681efcc4bdbaf03))
+* **admin:** Sınav Türleri + Soru Konuları → "İçerik Yönetimi" tek sayfa 2 sekme ([f33746a](https://github.com/mustilit/sinavsalonu1_6/commit/f33746ad5d25d9065f22a2afdd039aa55fda08d6))
+* **auth:** pre-registration tablosu — dogrulanmamis kayit User'a yazilmaz ([e533233](https://github.com/mustilit/sinavsalonu1_6/commit/e5332338f530eb45eb595001625109957f7b7fcc))
+* **auth:** REJECTED eğitici girişi + içerik üretim kısıtlaması ([792108e](https://github.com/mustilit/sinavsalonu1_6/commit/792108ebdc537e5b6c000fbe0ca081772044ef81))
+* **discount-codes:** admin platform promo yönetimini İndirim Kodları'na 2. sekme yap ([402c518](https://github.com/mustilit/sinavsalonu1_6/commit/402c5181bc96b098079db558742d4a136e780adc))
+* **discount:** admin indirim kodu global olsun + DiscountCode/PlatformPromoCode çakışma engeli ([6ccf0f3](https://github.com/mustilit/sinavsalonu1_6/commit/6ccf0f3d6b42e4d6bbefedd59d2ab4c31ee9b6a7))
+* **educator:** aday egiticiyi puanlayabilsin (EducatorProfile Degerlendir) ([5180dca](https://github.com/mustilit/sinavsalonu1_6/commit/5180dcaf097e009403e153c0b742e4fda10b9869))
+* **educator:** LinkedIn + web baglantilarini kayitta al, popup'ta CV indirme/ac ([62ddb25](https://github.com/mustilit/sinavsalonu1_6/commit/62ddb257ed985a31af6295897e30838cc19dd83e))
+* **educators:** istatistikleri tek satira indir - Test solda, puan + satis sagda ([4fced51](https://github.com/mustilit/sinavsalonu1_6/commit/4fced517359b2df428d504563c5f0cb93c4b57ca))
+* **home:** eğitici kartında puanı en sağa hizala + puansızda "Henüz puan yok" ([ff2eaa4](https://github.com/mustilit/sinavsalonu1_6/commit/ff2eaa491153bc8dc808c4501b6704b8af2920e3))
+* **register:** 3-adimli wizard + egitici zorunlu alanlari kayit aninda ([6ad7415](https://github.com/mustilit/sinavsalonu1_6/commit/6ad74158c35368e63dc59dcf93846ddcb16bfbf0))
+* **register:** görünür rol seçici — sessiz aday-varsayımı belirsizliğini gider ([10eddd9](https://github.com/mustilit/sinavsalonu1_6/commit/10eddd99d6d15aa65c1828096a4c36b587555953))
+* **register:** kullanici sozlesmeleri okumadan once email/username uygunluk kontrolu ([0eee7b6](https://github.com/mustilit/sinavsalonu1_6/commit/0eee7b62c95c848bb45f9f673b4519d9f396fe7c))
+* **register:** sözleşme onayını popup'a taşı — mount fetch dead-end'i kaldır ([d49ae31](https://github.com/mustilit/sinavsalonu1_6/commit/d49ae315ee414ac75a3fccf3d70bddbe9bf804d0))
+* **testdetail:** Egitici kartina test/satis/puan ozeti ekle ([23534e0](https://github.com/mustilit/sinavsalonu1_6/commit/23534e01e75dff493edef75feb79157ba8c4fd63))
+
+### 🐛 Düzeltmeler
+
+* **admin-contracts:** use case'lere explicit @Inject — 500 (undefined.execute) gider ([078ce41](https://github.com/mustilit/sinavsalonu1_6/commit/078ce4161f43348e06a259b353541f59d9ae8aa1))
+* **admin:** /admin/users REJECTED enum yuzunden 500 veriyordu - raw SQL'e cevir ([6c59732](https://github.com/mustilit/sinavsalonu1_6/commit/6c59732e150211f819a3d7f12703aa2f6355782d))
+* **auth/me:** kayıt wizard alanlarını user objesine flatten et ([9b8f109](https://github.com/mustilit/sinavsalonu1_6/commit/9b8f1093b1f3893b8781c9f3811a858ac0a5a2cf))
+* **auth:** LoginUseCase sessionId update raw SQL — REJECTED enum bypass ([a6d80fe](https://github.com/mustilit/sinavsalonu1_6/commit/a6d80febaea4a2a3113689896c929aeed74a87f2))
+* **dev:** Vite proxy'ye /contracts, /discounts, /platform-promo-codes ekle ([6d5cc2f](https://github.com/mustilit/sinavsalonu1_6/commit/6d5cc2fe3aaf994a16b0f97e08a91a9f3e021940))
+* **educator-settings:** CV upload PDF için /upload/document endpoint'ine geç ([17b3a4c](https://github.com/mustilit/sinavsalonu1_6/commit/17b3a4c493115b03b65448b04866a611a91595c6))
+* **educator-settings:** resubmit akışı raw SQL + toast hata sebebini gösterir ([26ea83b](https://github.com/mustilit/sinavsalonu1_6/commit/26ea83b744beeea6d75fdf876f9d637b9daaa60a))
+* **educator:** profil headline puani educatorRating'den - testlerden TURETME ([c3d8f2d](https://github.com/mustilit/sinavsalonu1_6/commit/c3d8f2dcdd780ad6acc9c2ce1009e21e585c6e9a))
+* **educator:** profil testlerini tam cek (limit=50), pagination sayfa sayisi dogru ([a1f1243](https://github.com/mustilit/sinavsalonu1_6/commit/a1f1243785de02323b2ef8679060af4ea1b753a9))
+* **educator:** test listesi auto-fill sayfalama + sayfa degisince grid'e scroll ([af92010](https://github.com/mustilit/sinavsalonu1_6/commit/af920105b902ba1ba57b6b4183e5dbddb7ad6919))
+* **educator:** Yorumlar bolumu sadece egitici yorumlarini (educatorRating) gostersin ([dcbed7b](https://github.com/mustilit/sinavsalonu1_6/commit/dcbed7bda8fd25cca722c5779f1ffd90bae3dec0))
+* **home:** egitici puani yoksa hicbir sey gosterme (Henuz puan yok kaldirildi) ([5465c60](https://github.com/mustilit/sinavsalonu1_6/commit/5465c60727d43301a5a48c6d2334cae54ccea39b))
+* **home:** Test Paketleri önizlemesi tam 2 satır doldursun (auto-fill'e duyarlı) ([651b235](https://github.com/mustilit/sinavsalonu1_6/commit/651b235e7b68661c1b915e76df002373ca0c5769))
+* **i18n:** EducatorCard "Henüz puan yok" çevirisi çözülmüyordu ([22f5146](https://github.com/mustilit/sinavsalonu1_6/commit/22f5146857335dde1fb2298da9a43799f82002ec))
+* **marketplace:** review/view endpoint'leri test id'sini de pakete cozsun ([806f656](https://github.com/mustilit/sinavsalonu1_6/commit/806f656bb7e826618a3b394e592462f7634c3ab8))
+* **register:** backend error object'i state'e koyup react render'i patlatiyordu ([9512195](https://github.com/mustilit/sinavsalonu1_6/commit/95121956404f11e035591f2afb21c89fcd2e0032))
+* **register:** sozlesme dialogunda 'Tekrar dene' butonu (transient hata icin) ([48d858a](https://github.com/mustilit/sinavsalonu1_6/commit/48d858a736df0b77b87840dd5e2a45e01d5f9df6))
+* **routing:** onay aşamasındaki eğitici sadece /EducatorSettings'e erişsin ([4ddc342](https://github.com/mustilit/sinavsalonu1_6/commit/4ddc3426baac2dddd2b4f2c2ed4a365a6d628c09))
+* **testdetail:** Soru Sayisi paket toplamini gostersin (tek testin degil) ([78dcc8b](https://github.com/mustilit/sinavsalonu1_6/commit/78dcc8b04498d75925c0ec65b72f7ebd54190dee))
+* **upload:** CV PDF yuklemesi icin ayri /upload/document endpoint'i ([6c0404a](https://github.com/mustilit/sinavsalonu1_6/commit/6c0404a03d699e35500d4f2666b0908197ea2660))
+
+### 🔧 Bakım
+
+* backend junit.xml runtime snapshot (B10 öncesi temizlik) ([0e531c2](https://github.com/mustilit/sinavsalonu1_6/commit/0e531c2d58ef409321db90c3431e9efd92c76bbb))
+* **release:** 1.6.0 [skip ci] ([1a8dc3b](https://github.com/mustilit/sinavsalonu1_6/commit/1a8dc3b0b8dd6f0b85815b1bb2e6483eed02426d))
+
+### 📚 Dokümantasyon
+
+* **agents:** delege rehberi + skill referans yelpazesi + a11y/refactor disiplini ([ba207c3](https://github.com/mustilit/sinavsalonu1_6/commit/ba207c3f8502930bc1684a6b98cc64b8e5b31f1e)), closes [#3](https://github.com/mustilit/sinavsalonu1_6/issues/3) [#1](https://github.com/mustilit/sinavsalonu1_6/issues/1) [#3](https://github.com/mustilit/sinavsalonu1_6/issues/3)
+* KALITE-DEGERLENDIRME v4 → v5 güncelleme ([6eac845](https://github.com/mustilit/sinavsalonu1_6/commit/6eac8453365182071fbc74da09d1a0534a32b226))
+* **legal:** 4 sözleşme taslağını kapsamlı hale getir + DB'ye re-import ([3e81d10](https://github.com/mustilit/sinavsalonu1_6/commit/3e81d10ff5be9f7526799737a9a946533357eb2b))
+
+### 🧪 Testler
+
+* B9 kapsamlı paket — 4 spec, 45 yeni test ([ac190b7](https://github.com/mustilit/sinavsalonu1_6/commit/ac190b7b2ab19815cb247328d49780f4549c6cb6))
+* B9 minimum koruma paketi (3 spec — REJECTED gating regresyon) ([2268e7e](https://github.com/mustilit/sinavsalonu1_6/commit/2268e7e23bceb8faaeddfe377b1c1e8b78ed57d0))
+* **e2e:** Sprint 17.1 Foundation — user pool + POM + seed + foundation spec ([9385980](https://github.com/mustilit/sinavsalonu1_6/commit/938598094138f2e255e804ed4f327b955d44279d))
+* **e2e:** Sprint 17.2 [#1](https://github.com/mustilit/sinavsalonu1_6/issues/1) — educator rejected-resubmit + TR locale altyapısı ([33ac13f](https://github.com/mustilit/sinavsalonu1_6/commit/33ac13f66122f0327cca0236ad84435f4a25d5af))
+* **e2e:** Sprint 17.2 [#2](https://github.com/mustilit/sinavsalonu1_6/issues/2) — educator pending-locked (12 test) ([c487e3d](https://github.com/mustilit/sinavsalonu1_6/commit/c487e3d11f5e52be386cc4a369361881288e8e57))
+* **e2e:** Sprint 17.2 [#3](https://github.com/mustilit/sinavsalonu1_6/issues/3) — educator discount-code create (2 test, form-create) ([c8d9c6f](https://github.com/mustilit/sinavsalonu1_6/commit/c8d9c6f6efb8f1b4c319d1a27710accd0abffa6d))
+* **e2e:** Sprint 17.2 [#4](https://github.com/mustilit/sinavsalonu1_6/issues/4) — educator my-sales (4 test, read-only) ([a149423](https://github.com/mustilit/sinavsalonu1_6/commit/a14942379eb4d148f0e2b78386ca6c367e0ede62))
+* **e2e:** Sprint 17.3 [#1](https://github.com/mustilit/sinavsalonu1_6/issues/1) — candidate explore marketplace (5 test, read-only) ([00e09d2](https://github.com/mustilit/sinavsalonu1_6/commit/00e09d293f2499befc843732c2dd0f947adf12c3))
+* **e2e:** Sprint 17.3+17.5 — worker erişim matrisi + candidate results (13 test) ([1b7fe1b](https://github.com/mustilit/sinavsalonu1_6/commit/1b7fe1b78d722a2aff4690c314328087a582f0e3))
+* **e2e:** Sprint 17.5 — admin erişim + kullanıcı yönetimi (16 test) ([cbbcd18](https://github.com/mustilit/sinavsalonu1_6/commit/cbbcd1810a200e083b11ea33c0fe58d63757e31c))
+* **e2e:** Sprint 17.7 — legal documents public sayfalar (5 test) ([6054d02](https://github.com/mustilit/sinavsalonu1_6/commit/6054d02eb199cdfd660f8b2b193fd220ebb1c262))
+* **routeRoles:** B9 REJECTED + PENDING eğitici tek-sayfa kilit testleri ([0545c75](https://github.com/mustilit/sinavsalonu1_6/commit/0545c759da9907dffa46773827ff4992749548c3))
+
 ## [1.6.0](https://github.com/mustilit/sinavsalonu1_6/compare/v1.5.0...v1.6.0) (2026-05-30)
 
 ### ✨ Özellikler
