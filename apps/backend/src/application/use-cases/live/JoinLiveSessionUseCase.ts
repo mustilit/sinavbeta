@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { PrismaAuditLogRepository } from '../../../infrastructure/repositories/PrismaAuditLogRepository';
 
 /**
  * Aynı cihaz/IP'den bir oturuma izin verilen maksimum katılım. "Kapatma
@@ -54,6 +55,10 @@ export class JoinLiveSessionUseCase {
         `;
         const sameIpCount = Number(rows[0]?.cnt ?? 0);
         if (sameIpCount >= MAX_JOINS_PER_IP) {
+          // Kapatma saldırısı tespiti → forensic/abuse izi. Best-effort:
+          // audit yazımı asıl reddi (ve client yanıtını) asla maskelemez.
+          // SUSPICIOUS_RATE_LIMIT ile aynı sınıf güvenlik olayı.
+          await this.logQuotaExceeded(userId, session.id, session.joinCode, ip, sameIpCount);
           throw new ForbiddenException({
             code: 'DEVICE_QUOTA_EXCEEDED',
             message: `Bu cihazdan bu oturuma en fazla ${MAX_JOINS_PER_IP} katılım yapılabilir.`,
@@ -97,5 +102,35 @@ export class JoinLiveSessionUseCase {
     }
 
     return { sessionId: session.id, participantId: participant.id, session };
+  }
+
+  /**
+   * Kapatma saldırısı kotası aşıldığında audit log yazar (best-effort).
+   * Hata yutulur — loglama başarısız olsa bile katılım reddi etkilenmez.
+   * Admin DLQ "errors" görünümünde (admin/dlq?action=DEVICE_QUOTA_EXCEEDED) izlenebilir.
+   */
+  private async logQuotaExceeded(
+    userId: string,
+    sessionId: string,
+    joinCode: string,
+    ip: string | null,
+    sameIpCount: number,
+  ): Promise<void> {
+    try {
+      const auditRepo = new PrismaAuditLogRepository();
+      await auditRepo
+        .create({
+          action: 'DEVICE_QUOTA_EXCEEDED',
+          entityType: 'LiveSession',
+          entityId: sessionId,
+          actorId: userId,
+          metadata: { ip, joinCode, sameIpCount, max: MAX_JOINS_PER_IP },
+        })
+        .catch(() => {
+          // audit hatasını yut — asıl akışı maskeleme
+        });
+    } catch {
+      // ignore audit errors
+    }
   }
 }

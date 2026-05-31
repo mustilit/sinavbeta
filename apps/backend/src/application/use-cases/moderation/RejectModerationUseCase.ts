@@ -108,6 +108,24 @@ export class RejectModerationUseCase {
           },
         });
       }
+
+      // EducatorProfile: İhlal onaylanınca tanıtım metnini (bio) KALDIR. entityId =
+      // educator userId. metadata.bio raw SQL ile temizlenir — suspended/rejected
+      // eğiticilerde Prisma enum hydration sorununu önlemek için (updateEducatorProfile
+      // ile aynı pattern). Eğitici sonradan temiz bir metin girebilir (yeniden moderasyon).
+      if (result.entityType === 'EducatorProfile') {
+        const urows = await tx.$queryRaw<Array<{ metadata: any }>>`
+          SELECT metadata FROM users WHERE id = ${result.entityId} LIMIT 1
+        `;
+        if (urows[0]) {
+          const meta = (urows[0].metadata as Record<string, unknown>) ?? {};
+          meta.bio = '';
+          await tx.$executeRaw`
+            UPDATE users SET metadata = ${JSON.stringify(meta)}::jsonb, "updatedAt" = NOW()
+            WHERE id = ${result.entityId}
+          `;
+        }
+      }
     });
 
     // Risk skoru yeniden hesapla

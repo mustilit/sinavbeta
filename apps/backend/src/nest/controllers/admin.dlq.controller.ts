@@ -4,7 +4,12 @@ import { Roles } from '../decorators/roles.decorator';
 import { prisma } from '../../infrastructure/database/prisma';
 
 /** FR-Y-04: Hata bilgisi görüntüleme - email hataları ve diğer kritik loglar */
-const ERROR_ACTIONS = ['EMAIL_FAILED', 'CSP_VIOLATION', 'SUSPICIOUS_RATE_LIMIT'] as const;
+const ERROR_ACTIONS = [
+  'EMAIL_FAILED',
+  'CSP_VIOLATION',
+  'SUSPICIOUS_RATE_LIMIT',
+  'DEVICE_QUOTA_EXCEEDED',
+] as const;
 
 /**
  * Dead Letter Queue (DLQ) izleme — başarısız e-postaları ve kritik hata loglarını listeler.

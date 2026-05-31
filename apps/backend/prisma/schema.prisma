@@ -112,6 +112,8 @@ enum AuditAction {
   TOPIC_DELETED
   CSP_VIOLATION
   SUSPICIOUS_RATE_LIMIT
+  // Canlı oturum kapatma saldırısı koruması — aynı cihaz/IP kotası aşımı (JoinLiveSessionUseCase)
+  DEVICE_QUOTA_EXCEEDED
   AUTH_MFA_ENABLED
   AUTH_MFA_DISABLED
   AUTH_MFA_RECOVERY_USED

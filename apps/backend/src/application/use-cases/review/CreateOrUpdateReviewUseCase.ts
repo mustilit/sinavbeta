@@ -3,6 +3,7 @@ import { IPurchaseRepository } from '../../../domain/interfaces/IPurchaseReposit
 import { IAttemptRepository } from '../../../domain/interfaces/IAttemptRepository';
 import { IAuditLogRepository } from '../../../domain/interfaces/IAuditLogRepository';
 import { BadRequestException } from '@nestjs/common';
+import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
 
 /**
  * Paket bazlı review oluşturur veya günceller (upsert).
@@ -27,6 +28,8 @@ export class CreateOrUpdateReviewUseCase {
     // attempt kuralı kontrol ediyordu, kural kaldırıldı.
     private readonly _attemptRepo: IAttemptRepository,
     private readonly auditRepo: IAuditLogRepository,
+    // Opsiyonel — verilirse yorum metni moderasyondan geçer (sert blok). Test'lerde verilmez.
+    private readonly moderate?: ModerateTextContentUseCase,
   ) {}
 
   async execute(
@@ -68,6 +71,29 @@ export class CreateOrUpdateReviewUseCase {
     }
 
     const educatorId = pkg.educatorId;
+
+    // İçerik moderasyonu — uygunsuz yorum SERT BLOK (REJECTED). Belirsiz (SUSPECT)
+    // yayınlanır ama admin moderasyon kuyruğuna düşer. moderate verilmemişse atlanır.
+    if (this.moderate && comment && comment.trim()) {
+      const candidate = await prisma.user.findUnique({
+        where: { id: candidateId },
+        select: { tenantId: true },
+      });
+      const verdict = await this.moderate.execute({
+        entityType: 'Review',
+        entityId: `${packageId}:${candidateId}`,
+        userId: candidateId,
+        tenantId: candidate?.tenantId ?? '',
+        text: comment,
+        isEducatorContent: false,
+      });
+      if (!verdict.allowed) {
+        throw new BadRequestException({
+          code: 'COMMENT_REJECTED',
+          message: verdict.message ?? 'Yorumunuz uygunsuz içerik nedeniyle reddedildi.',
+        });
+      }
+    }
 
     // Upsert (packageId, candidateId)
     const created = await this.reviewRepo.upsertPackageReview({

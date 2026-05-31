@@ -14,6 +14,9 @@ import { ListEducatorReviewsUseCase } from '../../application/use-cases/review/L
 import { RateEducatorUseCase } from '../../application/use-cases/review/RateEducatorUseCase';
 import { GetMyEducatorRatingUseCase } from '../../application/use-cases/review/GetMyEducatorRatingUseCase';
 import { UpdateEducatorProfileUseCase } from '../../application/use-cases/educator/UpdateEducatorProfileUseCase';
+import { getSharedModerateTextContentUseCase } from '../../application/services/content-safety/sharedModeration';
+import { CheckDuplicateQuestionUseCase } from '../../application/use-cases/question/CheckDuplicateQuestionUseCase';
+import { CheckDuplicateQuestionDto } from './dto/check-duplicate-question.dto';
 import { CreateDiscountCodeUseCase } from '../../application/use-cases/discount/CreateDiscountCodeUseCase';
 import { ListEducatorDiscountCodesUseCase } from '../../application/use-cases/discount/ListEducatorDiscountCodesUseCase';
 import { GetEducatorSalesReportUseCase } from '../../application/use-cases/report/GetEducatorSalesReportUseCase';
@@ -67,8 +70,21 @@ export class EducatorsController {
   @ApiErrorResponses()
   async patchMe(@Req() req: any, @Body() dto: PatchEducatorProfileDto) {
     const actorId = (req as any).user?.id;
-    const uc = new UpdateEducatorProfileUseCase(this.userRepo, this.auditRepo);
+    const uc = new UpdateEducatorProfileUseCase(this.userRepo, this.auditRepo, getSharedModerateTextContentUseCase());
     return uc.execute(actorId, { metadata: dto.metadata as Record<string, unknown> });
+  }
+
+  /**
+   * Kopya soru tespiti — eğitici soru girerken (blur) çağrılır. Eğiticinin TÜM
+   * sorularıyla (yayım durumu / paket fark etmez) Jaccard benzerliği; >= %75 ise
+   * isDuplicate=true. Frontend amber uyarı gösterir (CreateTest + EditTest).
+   */
+  @Post('me/questions/check-duplicate')
+  @Roles('EDUCATOR', 'ADMIN')
+  async checkDuplicateQuestion(@Body() dto: CheckDuplicateQuestionDto, @Req() req: any) {
+    const educatorId = (req as any).user?.id;
+    const uc = new CheckDuplicateQuestionUseCase();
+    return uc.execute(educatorId, dto.content, dto.excludeQuestionId ?? null);
   }
 
   /**
@@ -324,7 +340,7 @@ export class EducatorsController {
   @ApiErrorResponses()
   async rateEducator(@Param('id') id: string, @Body() dto: RateEducatorDto, @Req() req: any) {
     const candidateId = (req as any).user?.id;
-    const uc = new RateEducatorUseCase();
+    const uc = new RateEducatorUseCase(getSharedModerateTextContentUseCase());
     return uc.execute(id, candidateId, { rating: dto.rating, comment: dto.comment });
   }
 

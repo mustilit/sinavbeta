@@ -15,7 +15,7 @@ export class UpdateExamTypeUseCase {
     private readonly auditRepo: IAuditLogRepository,
   ) {}
 
-  async execute(id: string, input: { name?: string; slug?: string; description?: string | null; active?: boolean }, actorId?: string) {
+  async execute(id: string, input: { name?: string; slug?: string; description?: string | null; active?: boolean; metadata?: Record<string, unknown> | null }, actorId?: string) {
     const existing = await this.repo.findById(id);
     if (!existing) return null;
 
@@ -30,11 +30,19 @@ export class UpdateExamTypeUseCase {
       }
     }
 
+    // metadata verildiyse mevcut metadata ile birleştir — iconUrl güncellemesi
+    // diğer metadata alanlarını ezmesin.
+    const mergedMetadata =
+      input.metadata !== undefined
+        ? { ...(((existing as any).metadata as Record<string, unknown>) ?? {}), ...input.metadata }
+        : undefined;
+
     const updated = await this.repo.update(id, {
       name: input.name,
       slug,
       description: input.description,
       active: input.active,
+      metadata: mergedMetadata,
     });
     if (updated && this.auditRepo) {
       try {

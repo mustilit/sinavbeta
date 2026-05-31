@@ -316,15 +316,21 @@ export default function Home() {
   const { data: packages = [], isLoading: pkgsLoading } = useQuery({
     queryKey: ["home-popular-packages", examTypeIdsParam],
     queryFn: async () => {
-      // Önizleme için cömert çek (12); gösterimde grid'in gerçek sütun sayısına
-      // göre tam 2 satır kadar kesilir (aşağıdaki visiblePackages).
-      const params = new URLSearchParams({ limit: "12" });
-      if (examTypeIdsParam) {
-        const firstType = examTypeIdsParam.split(",")[0]?.trim();
-        if (firstType) params.set("examTypeId", firstType);
-      }
-      const { data } = await api.get(`/marketplace/packages?${params}`);
-      return Array.isArray(data?.items) ? data.items : [];
+      // Genel popüler paketler — grid HER ZAMAN dolar (boş yer kalmaz).
+      const general = await api
+        .get(`/marketplace/packages?${new URLSearchParams({ limit: "12" })}`)
+        .then((r) => (Array.isArray(r.data?.items) ? r.data.items : []));
+      // İlgi alanı yoksa doğrudan genel liste.
+      if (!examTypeIdsParam) return general;
+      // "Size Özel": ilgi alanına uyan paketleri BAŞA al, kalanı genel listeden doldur.
+      const firstType = examTypeIdsParam.split(",")[0]?.trim();
+      const personalized = firstType
+        ? await api
+            .get(`/marketplace/packages?${new URLSearchParams({ limit: "12", examTypeId: firstType })}`)
+            .then((r) => (Array.isArray(r.data?.items) ? r.data.items : []))
+        : [];
+      const seen = new Set(personalized.map((p) => p.id));
+      return [...personalized, ...general.filter((p) => !seen.has(p.id))];
     },
     staleTime: 3 * 60 * 1000,
   });
@@ -349,7 +355,8 @@ export default function Home() {
     return () => ro.disconnect();
   }, [packages.length]);
   // Ölçülene kadar 8 (4 sütunlu masaüstünde 2 satır) ile başla; ölçüm sonrası tam 2 satır.
-  const visiblePackages = packages.slice(0, (pkgCols > 0 ? pkgCols : 4) * 2);
+  // (visiblePackages, satın alınan paketler çıkarıldıktan SONRA aşağıda hesaplanır —
+  //  ownedPackages query'sinin altında.)
 
   const { data: ownedPackages = [] } = useQuery({
     queryKey: ["home-owned-packages", user?.id],
@@ -384,13 +391,27 @@ export default function Home() {
     staleTime: 60 * 1000,
   });
 
+  // Satın alınan paketleri öneri listesinden çıkar — Home "Test Paketleri" yalnızca
+  // YENİ keşif önerir. Satın alınanlar "Satın Alınan Testler" sayfasında görünür.
+  const ownedPackageIds = new Set(ownedPackages.map((p) => p.id));
+  const visiblePackages = packages
+    .filter((p) => !ownedPackageIds.has(p.id))
+    .slice(0, (pkgCols > 0 ? pkgCols : 4) * 2);
+
   const { data: educators = [], isLoading: eduLoading } = useQuery({
     queryKey: ["home-featured-educators", examTypeIdsParam],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: "6" });
-      if (examTypeIdsParam) params.set("examTypeIds", examTypeIdsParam);
-      const { data } = await api.get(`/site/featured-educators?${params}`);
-      return Array.isArray(data) ? data : [];
+      // Genel öne çıkan eğiticiler — grid'i doldurur (boş yer kalmaz).
+      const general = await api
+        .get(`/site/featured-educators?${new URLSearchParams({ limit: "6" })}`)
+        .then((r) => (Array.isArray(r.data) ? r.data : []));
+      if (!examTypeIdsParam) return general;
+      // İlgi alanına uyan eğiticileri BAŞA al, kalanı genel listeden doldur.
+      const personalized = await api
+        .get(`/site/featured-educators?${new URLSearchParams({ limit: "6", examTypeIds: examTypeIdsParam })}`)
+        .then((r) => (Array.isArray(r.data) ? r.data : []));
+      const seen = new Set(personalized.map((e) => e.id));
+      return [...personalized, ...general.filter((e) => !seen.has(e.id))].slice(0, 6);
     },
     staleTime: 3 * 60 * 1000,
   });

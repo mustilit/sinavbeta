@@ -37,4 +37,9 @@ export class ListPendingModerationsQueryDto {
   @IsOptional()
   @IsString()
   userId?: string;
+
+  /** Durum filtresi: 'pending' (varsayılan) | 'reviewed' | 'all' */
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

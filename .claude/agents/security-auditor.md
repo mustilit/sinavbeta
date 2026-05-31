@@ -125,6 +125,7 @@ grep -rn "sk_live_\|pk_live_\|password.*=.*['\"]\|secret.*=.*['\"]\|api_key" app
 - [ ] Yorum/değerlendirme: aynı kullanıcı 1x mi?
 - [ ] Reklam impression: dedup mantığı var mı (IP+ad+window)?
 - [ ] Resource enumeration: `/users/1`, `/users/2`, ... → tek bir denemede 1000 user listelenebiliyor mu?
+- [ ] **Abuse limiti tetiklendiğinde audit log var mı?** Her oran/kota/anti-bot limiti (rate limit, IP/cihaz kotası, kapatma saldırısı koruması, brute-force kilidi) **tetiklendiğinde** `AuditLog`'a yazmalı (`SUSPICIOUS_RATE_LIMIT` / `DEVICE_QUOTA_EXCEEDED` gibi ayrı bir `AuditAction`). Loglama yoksa forensic iz yok → bulgu aç. Loglama **best-effort** olmalı (try/catch + `.catch(()=>{})`), asıl reddi maskelememeli. `admin/dlq` `ERROR_ACTIONS` listesinde izlenebilir olmalı. Referans: `JoinLiveSessionUseCase.logQuotaExceeded`, `http-exception.filter.ts`.
 
 ## 12. CORS & Headers
 

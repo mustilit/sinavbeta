@@ -98,6 +98,13 @@
     "durationFull": "{{h}}h {{m}}min",
     "durationShort": "{{m}}min {{s}}s"
   },
+  "sort": {
+    "label": "Ordenar",
+    "recommended": "Recomendado",
+    "rating": "Por valoración",
+    "popular": "Popular",
+    "new": "Más recientes"
+  },
   "explore": {
     "title": "Explorar exámenes",
     "subtitle": "Encuentra el examen adecuado entre miles disponibles",

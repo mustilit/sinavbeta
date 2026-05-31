@@ -83,8 +83,10 @@ export default function ExamTypes() {
                 className="group bg-white rounded-2xl border border-slate-100 p-6 hover:shadow-xl hover:border-indigo-200 transition-all"
               >
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-violet-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <GraduationCap className="w-8 h-8 text-indigo-600" />
+                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-violet-100 rounded-2xl flex items-center justify-center mb-4 overflow-hidden group-hover:scale-110 transition-transform">
+                    {examType.iconUrl
+                      ? <img src={examType.iconUrl} alt="" className="w-full h-full object-cover" />
+                      : <GraduationCap className="w-8 h-8 text-indigo-600" />}
                   </div>
                   <h3 className="font-semibold text-lg text-slate-900 group-hover:text-indigo-600 transition-colors mb-2">
                     {examType.name}

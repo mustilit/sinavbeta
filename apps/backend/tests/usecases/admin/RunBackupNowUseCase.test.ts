@@ -7,6 +7,13 @@
  * - error mesajı ile BACKUP_FAILED 500 status taşır
  */
 
+// BackupSchedulerService yalnızca tip olarak kullanılır (constructor parametre tipi).
+// Gerçek modülü import etmek prisma singleton'ını + BackupService'i yükler; bu da
+// birim testini DB altyapısına bağlar. Stub'layarak testi izole tutuyoruz.
+jest.mock('../../../src/nest/services/BackupSchedulerService', () => ({
+  BackupSchedulerService: class {},
+}));
+
 import { RunBackupNowUseCase } from '../../../src/application/use-cases/admin/RunBackupNowUseCase';
 
 function makeScheduler(result: { success: boolean; logId?: string; error?: string }) {

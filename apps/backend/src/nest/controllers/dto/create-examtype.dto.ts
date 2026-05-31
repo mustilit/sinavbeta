@@ -17,4 +17,9 @@ export class CreateExamTypeDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  /** Sınav türü logosu/ikonu (yüklenen görselin URL'i). metadata.iconUrl olarak saklanır. */
+  @IsOptional()
+  @IsString()
+  iconUrl?: string;
 }

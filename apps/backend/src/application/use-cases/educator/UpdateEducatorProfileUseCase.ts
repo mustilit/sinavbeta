@@ -1,13 +1,17 @@
 import { AppError } from '../../errors/AppError';
+import { prisma } from '../../../infrastructure/database/prisma';
 import type { IUserRepository } from '../../../domain/interfaces/IUserRepository';
 import type { IAuditLogRepository } from '../../../domain/interfaces/IAuditLogRepository';
 import type { UserPublic } from '../../../domain/entities/User';
+import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
 
 /** FR-E-02: Eğitici profil bilgilerini düzenleme. Whitelist: metadata (bio, avatarUrl, displayName vb.) */
 export class UpdateEducatorProfileUseCase {
   constructor(
     private readonly userRepo: IUserRepository,
     private readonly auditRepo: IAuditLogRepository,
+    // Opsiyonel — verilirse bio/tanıtım metni moderasyondan geçer (sert blok). Test'lerde verilmez.
+    private readonly moderate?: ModerateTextContentUseCase,
   ) {}
 
   async execute(actorId: string | undefined, input: { metadata?: Record<string, unknown> }): Promise<UserPublic & { metadata?: Record<string, unknown> }> {
@@ -35,6 +39,33 @@ export class UpdateEducatorProfileUseCase {
     }
     if (Object.keys(filtered).length === 0) {
       return this.toPublic(user);
+    }
+
+    // İçerik moderasyonu — bio/displayName (tanıtım metni) uygunsuzsa SERT BLOK.
+    // moderate verilmemişse atlanır (test/geriye uyum).
+    if (this.moderate) {
+      const text = ['bio', 'displayName']
+        .map((k) => filtered[k])
+        .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+        .join('\n');
+      if (text) {
+        const u = await prisma.user.findUnique({ where: { id: actorId }, select: { tenantId: true } });
+        const verdict = await this.moderate.execute({
+          entityType: 'EducatorProfile',
+          entityId: actorId,
+          userId: actorId,
+          tenantId: u?.tenantId ?? '',
+          text,
+          isEducatorContent: true,
+        });
+        if (!verdict.allowed) {
+          throw new AppError(
+            'PROFILE_TEXT_REJECTED',
+            verdict.message ?? 'Profil metniniz uygunsuz içerik nedeniyle reddedildi.',
+            400,
+          );
+        }
+      }
     }
 
     const updated = await this.userRepo.updateEducatorProfile(actorId, { metadata: filtered });

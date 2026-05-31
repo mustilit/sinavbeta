@@ -98,6 +98,13 @@
     "durationFull": "{{h}}s {{m}}dk",
     "durationShort": "{{m}}dk {{s}}s"
   },
+  "sort": {
+    "label": "Sırala",
+    "recommended": "Önerilen",
+    "rating": "Puana göre",
+    "popular": "Popüler",
+    "new": "Yeni"
+  },
   "explore": {
     "title": "Testleri Keşfet",
     "subtitle": "Binlerce test arasından sana uygun olanı bul",

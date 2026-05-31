@@ -140,7 +140,7 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
   });
 
   const [local, setLocal] = useState(() => makeLocalState(question));
-  const [displayIndex, setDisplayIndex] = useState(questionIndex);
+  const [displayIndex] = useState(questionIndex);
   const [submitting, setSubmitting] = useState(false);
   const [duplicateLoading, setDuplicateLoading] = useState(false);
   const [dialogErrors, setDialogErrors] = useState({});
@@ -221,11 +221,10 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
     setSubmitting(true);
     try {
       const saved = await prepareAndUpload();
-      onSaveAndNew(saved); // ebeveyni güncelle + yeni boş soru ekle
-      // Dialog'u sıfırla — yeni boş soru için
-      const newQ = emptyQuestion();
-      setDisplayIndex(prev => prev + 1);
-      setLocal(makeLocalState(newQ));
+      // Mevcut soruyu kaydet + yeni soru ekle (atomik) ve BU dialog'u kapat — yeni
+      // eklenen soru kendi editörünü autoOpen ile açar (çift dialog/üzerine yazma olmaz).
+      onSaveAndNew(saved);
+      onClose();
     } catch (e) {
       console.error("Yeni Soru error:", e);
       toast.error(e?.message || t("pages:testForm.createPage.questionDialog.saveError"));
@@ -550,7 +549,7 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
 }
 
 // ─── Soru maddesi accordion ──────────────────────────────────────────────────
-function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, onAddNew, validationAttempted, autoOpen, onAutoOpenConsumed }) {
+function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, onAddNew, onSaveAndAddNew, validationAttempted, autoOpen, onAutoOpenConsumed }) {
   const { t } = useTranslation(["pages"]);
   // "+ Soru Ekle" akışında mount olur olmaz dialog'u aç; parent'a haber ver.
   const [editOpen, setEditOpen] = useState(!!autoOpen);
@@ -661,8 +660,8 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
           topicList={topicList}
           onSave={(updated) => onUpdate(updated)}
           onSaveAndNew={(updated) => {
-            onUpdate(updated);
-            if (onAddNew) onAddNew();
+            if (onSaveAndAddNew) { onSaveAndAddNew(updated); }
+            else { onUpdate(updated); if (onAddNew) onAddNew(); }
           }}
           onClose={() => setEditOpen(false)}
         />
@@ -985,6 +984,16 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
                   onTestUpdate({
                     ...test,
                     questions: [...test.questions, nq],
+                  });
+                }}
+                // "Kaydet ve Yeni": düzenlenen soruyu güncelle + yeni soru ekle TEK
+                // state güncellemesinde (stale `test` clobbering'ini önler).
+                onSaveAndAddNew={(updatedQ) => {
+                  const nq = emptyQuestion();
+                  setAutoOpenKey(nq._k);
+                  onTestUpdate({
+                    ...test,
+                    questions: [...test.questions.map((x, i) => i === qIdx ? updatedQ : x), nq],
                   });
                 }}
               />

@@ -14,6 +14,7 @@ import { PrismaReviewRepository } from '../../../infrastructure/repositories/Pri
 import { PrismaPurchaseRepository } from '../../../infrastructure/repositories/PrismaPurchaseRepository';
 import { PrismaAttemptRepository } from '../../../infrastructure/repositories/PrismaAttemptRepository';
 import { PrismaAuditLogRepository } from '../../../infrastructure/repositories/PrismaAuditLogRepository';
+import { getSharedModerateTextContentUseCase } from '../../../application/services/content-safety/sharedModeration';
 import { Roles } from '../../decorators/roles.decorator';
 import { Public } from '../../decorators/public.decorator';
 import { ListMarketplaceTestsDto } from './dto/list-marketplace-tests.dto';
@@ -38,6 +39,7 @@ export class MarketplaceController {
       new PrismaPurchaseRepository(),
       new PrismaAttemptRepository(),
       new PrismaAuditLogRepository(),
+      getSharedModerateTextContentUseCase(),
     );
   }
 

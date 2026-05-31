@@ -98,6 +98,13 @@
     "durationFull": "{{h}} Std. {{m}} Min.",
     "durationShort": "{{m}} Min. {{s}} Sek."
   },
+  "sort": {
+    "label": "Sortieren",
+    "recommended": "Empfohlen",
+    "rating": "Nach Bewertung",
+    "popular": "Beliebt",
+    "new": "Neueste"
+  },
   "explore": {
     "title": "Tests entdecken",
     "subtitle": "Finden Sie den richtigen Test aus Tausenden",

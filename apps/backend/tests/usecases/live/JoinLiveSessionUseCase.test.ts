@@ -27,6 +27,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
       upsert: jest.fn(),
     },
     user: { findUnique: jest.fn() },
+    auditLog: { create: jest.fn() },
     $queryRaw: jest.fn(),
     $executeRaw: jest.fn(),
   },
@@ -74,6 +75,7 @@ describe('JoinLiveSessionUseCase', () => {
     // IP limiti sorgusu — varsayılan: aynı IP'den 0 katılım (limit aşılmadı)
     mockPrisma.$queryRaw.mockResolvedValue([{ cnt: 0n }]);
     mockPrisma.$executeRaw.mockResolvedValue(0);
+    mockPrisma.auditLog.create.mockResolvedValue({ id: 'audit-1' });
   });
 
   it('oturum bulunamazsa SESSION_NOT_FOUND fırlatır', async () => {
@@ -106,6 +108,42 @@ describe('JoinLiveSessionUseCase', () => {
     });
     // Kota aşıldıysa katılımcı oluşturulmaz
     expect(mockPrisma.liveParticipant.upsert).not.toHaveBeenCalled();
+  });
+
+  it('kota aşımında DEVICE_QUOTA_EXCEEDED audit log yazılır (forensic iz)', async () => {
+    mockPrisma.$queryRaw.mockResolvedValue([{ cnt: 3n }]);
+    const uc = new JoinLiveSessionUseCase();
+    await expect(
+      uc.execute('ABC123', 'u-new', { ip: '203.0.113.5' }),
+    ).rejects.toMatchObject({ response: { code: 'DEVICE_QUOTA_EXCEEDED' } });
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: 'DEVICE_QUOTA_EXCEEDED',
+          entityType: 'LiveSession',
+          entityId: 'sess-1',
+          actorId: 'u-new',
+          metadata: expect.objectContaining({ ip: '203.0.113.5', sameIpCount: 3, max: 3 }),
+        }),
+      }),
+    );
+  });
+
+  it('audit log yazımı patlasa bile kota reddi korunur (best-effort)', async () => {
+    mockPrisma.$queryRaw.mockResolvedValue([{ cnt: 3n }]);
+    mockPrisma.auditLog.create.mockRejectedValue(new Error('db down'));
+    const uc = new JoinLiveSessionUseCase();
+    // Audit hatası yutulur — yine de DEVICE_QUOTA_EXCEEDED fırlatılır
+    await expect(
+      uc.execute('ABC123', 'u-new', { ip: '203.0.113.5' }),
+    ).rejects.toMatchObject({ response: { code: 'DEVICE_QUOTA_EXCEEDED' } });
+  });
+
+  it('normal katılımda audit log yazılmaz', async () => {
+    const uc = new JoinLiveSessionUseCase();
+    await uc.execute('ABC123', 'u-new', { ip: '203.0.113.5' });
+    expect(mockPrisma.auditLog.create).not.toHaveBeenCalled();
   });
 
   it('aynı IP\'den limit altındaysa katılıma izin verir + join_ip kaydeder', async () => {

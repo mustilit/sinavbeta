@@ -165,6 +165,8 @@ const examTypeAdapter = (e) => ({
   slug: e.slug,
   description: e.description ?? null,
   is_active: e.active !== false,
+  // Admin'in yüklediği sınav türü logosu (metadata.iconUrl). Yoksa null → UI fallback ikon.
+  iconUrl: e.metadata?.iconUrl ?? e.iconUrl ?? null,
 });
 
 function roleToUserType(role) {
@@ -1453,6 +1455,7 @@ export const adminModeration = {
     if (opts.dateFrom) qs.set('dateFrom', opts.dateFrom);
     if (opts.dateTo) qs.set('dateTo', opts.dateTo);
     if (opts.userId) qs.set('userId', opts.userId);
+    if (opts.status) qs.set('status', opts.status);
     const { data } = await api.get(`/admin/moderation/queue?${qs.toString()}`);
     return data ?? { items: [], nextCursor: null };
   },
@@ -1487,7 +1490,8 @@ export const adminModeration = {
    */
   listRiskyEducators: async (opts = {}) => {
     const qs = new URLSearchParams();
-    if (opts.cursor?.id) qs.set('cursorId', opts.cursor.id);
+    // Backend cursor: { computedScore, userId } → query param: cursorUserId + cursorScore
+    if (opts.cursor?.userId) qs.set('cursorUserId', opts.cursor.userId);
     if (opts.cursor?.computedScore) qs.set('cursorScore', String(opts.cursor.computedScore));
     if (opts.limit) qs.set('limit', String(opts.limit));
     if (opts.riskLevel?.length) qs.set('riskLevel', opts.riskLevel.join(','));
@@ -1496,7 +1500,21 @@ export const adminModeration = {
     if (opts.dateTo) qs.set('dateTo', opts.dateTo);
     if (opts.q) qs.set('q', opts.q);
     const { data } = await api.get(`/admin/moderation/risky-educators?${qs.toString()}`);
-    return data ?? { items: [], nextCursor: null };
+    const raw = data ?? { items: [], nextCursor: null };
+    // Backend EducatorRiskScore satırını UI'ın beklediği FLAT şekle indir: user alanı
+    // nested geliyor (r.user.username vb.); id = educator userId (aksiyon + detay linki
+    // bunu kullanır). username her zaman string olsun ki list render'ı (initial harf) patlamasın.
+    return {
+      ...raw,
+      items: (raw.items ?? []).map((r) => ({
+        ...r,
+        id: r.userId ?? r.id,
+        username: r.user?.username ?? r.username ?? '—',
+        email: r.user?.email ?? r.email ?? '',
+        isBanned: r.user?.isBanned ?? r.isBanned ?? false,
+        suspendedUntil: r.user?.suspendedUntil ?? r.suspendedUntil ?? null,
+      })),
+    };
   },
 
   /**

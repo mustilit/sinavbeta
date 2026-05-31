@@ -67,6 +67,7 @@ export class AdminModerationController {
       dateFrom: q.dateFrom ? new Date(q.dateFrom) : undefined,
       dateTo: q.dateTo ? new Date(q.dateTo) : undefined,
       userId: q.userId,
+      statusFilter: q.status,
     });
   }
 

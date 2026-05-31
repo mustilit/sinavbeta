@@ -155,6 +155,17 @@ await this.audit.log(ctx, {
 | `auth.login.fail` | User | Self (email ile) |
 | `auth.mfa.enable` / `disable` | User | Self |
 | `backup.run` | BackupLog | System |
+| `SUSPICIOUS_RATE_LIMIT` (rate limit / throttle) | Throttler | Self/Anon |
+| `DEVICE_QUOTA_EXCEEDED` (cihaz/IP kotası — kapatma saldırısı) | LiveSession | Self/Anon |
+
+> **Abuse / kötüye-kullanım koruması = audit log zorunlu.** Yeni bir oran/kota/anti-bot
+> limiti (rate limit, IP/cihaz kotası, kapatma saldırısı koruması, brute-force kilidi vb.)
+> eklerken limit tetiklendiğinde **mutlaka** audit log yaz. Bu olaylar `SUSPICIOUS_RATE_LIMIT`
+> / `DEVICE_QUOTA_EXCEEDED` gibi ayrı bir `AuditAction` değeri alır ve `admin/dlq` "errors"
+> görünümünde (`ERROR_ACTIONS`) izlenir. Loglama **best-effort** olmalı: bir try/catch +
+> `.catch(() => {})` ile sarmalanır, audit yazımı başarısız olsa bile asıl reddi/yanıtı
+> maskelemez (örnek: `JoinLiveSessionUseCase.logQuotaExceeded`, `http-exception.filter.ts`).
+> Metadata'ya forensic alanlar koy: `ip`, ilgili entity id, sayaç/eşik değerleri.
 
 ## 3. CSRF Koruması
 

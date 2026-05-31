@@ -42,7 +42,13 @@ export class AdminExamTypesController {
   async create(@Body() body: CreateExamTypeDto, @Req() req: any) {
     const actorId = (req as any).user?.id;
     return this.createExamType.execute(
-      { name: body.name, slug: body.slug, description: body.description, active: body.active },
+      {
+        name: body.name,
+        slug: body.slug,
+        description: body.description,
+        active: body.active,
+        metadata: body.iconUrl !== undefined ? { iconUrl: body.iconUrl } : undefined,
+      },
       actorId,
     );
   }
@@ -56,7 +62,17 @@ export class AdminExamTypesController {
   @ApiConflictResponse({ description: 'Slug exists' })
   async update(@Param('id') id: string, @Body() body: UpdateExamTypeDto, @Req() req: any) {
     const actorId = (req as any).user?.id;
-    return this.updateExamType.execute(id, { name: body.name, slug: body.slug, description: body.description, active: body.active }, actorId);
+    return this.updateExamType.execute(
+      id,
+      {
+        name: body.name,
+        slug: body.slug,
+        description: body.description,
+        active: body.active,
+        metadata: body.iconUrl !== undefined ? { iconUrl: body.iconUrl } : undefined,
+      },
+      actorId,
+    );
   }
 
   @Delete(':id')

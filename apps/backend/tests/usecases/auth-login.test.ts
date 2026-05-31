@@ -21,6 +21,8 @@ jest.mock('../../src/infrastructure/database/prisma', () => ({
       update: jest.fn(async () => ({})),
     },
     $queryRaw: jest.fn(async () => [{ twoFactorSystemEnabled: true }]),
+    // LoginUseCase başarılı girişte activeSessionId'yi $executeRaw ile yazar (tek-oturum zorlaması).
+    $executeRaw: jest.fn(async () => 0),
   },
 }));
 

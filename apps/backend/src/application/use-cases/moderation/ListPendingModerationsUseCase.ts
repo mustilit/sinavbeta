@@ -2,6 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { ModerationCategory, ModerationStatus } from '@prisma/client';
 import { prisma } from '../../../infrastructure/database/prisma';
 
+/**
+ * Durum filtresi → ModerationStatus eşlemesi.
+ *  - pending: henüz incelenmemiş (kuyrukta bekleyen)
+ *  - reviewed: incelenmiş (geçmiş) — APPROVED (Uygun) / REJECTED (İhlal)
+ *  - all: tümü
+ */
+const STATUS_BY_FILTER: Record<string, ModerationStatus[]> = {
+  pending: ['PENDING_REVIEW', 'ESCALATED'],
+  reviewed: ['APPROVED', 'REJECTED'],
+  all: ['PENDING_REVIEW', 'ESCALATED', 'APPROVED', 'REJECTED'],
+};
+
 export interface ListPendingModerationsParams {
   tenantId: string;
   cursor?: { id: string };
@@ -10,6 +22,8 @@ export interface ListPendingModerationsParams {
   dateFrom?: Date;
   dateTo?: Date;
   userId?: string;
+  /** 'pending' (varsayılan) | 'reviewed' | 'all' */
+  statusFilter?: string;
 }
 
 @Injectable()
@@ -21,7 +35,7 @@ export class ListPendingModerationsUseCase {
     const rows = await prisma.moderationResult.findMany({
       where: {
         tenantId: params.tenantId,
-        status: { in: ['PENDING_REVIEW', 'ESCALATED'] as ModerationStatus[] },
+        status: { in: STATUS_BY_FILTER[params.statusFilter ?? 'pending'] ?? STATUS_BY_FILTER.pending },
         ...(params.category && { categories: { has: params.category } }),
         ...(params.userId && { userId: params.userId }),
         ...(params.dateFrom || params.dateTo

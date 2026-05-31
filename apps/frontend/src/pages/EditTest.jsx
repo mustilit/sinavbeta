@@ -108,7 +108,7 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
     options: q.options.map(o => ({ ...o, _imgFile: null, _imgPreview: null })),
   });
   const [local, setLocal] = useState(() => mk(question));
-  const [dispIdx, setDispIdx] = useState(questionIndex);
+  const [dispIdx] = useState(questionIndex);
   const [submitting, setSubmitting] = useState(false);
   const [dupLoading, setDupLoading] = useState(false);
 
@@ -149,9 +149,17 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
 
   const handleSaveNew = async () => {
     if (!validate()) return; setSubmitting(true);
-    try { const saved = await prepareUpload(); onSaveAndNew(saved); setDispIdx(p => p + 1); setLocal(mk(emptyQuestion())); }
-    catch (e) { toast.error(e?.message || t("pages:testForm.dialog.genericError")); }
-    finally { setSubmitting(false); }
+    try {
+      const saved = await prepareUpload();
+      // Mevcut soruyu kaydet + yeni soru ekle (atomik) ve BU dialog'u kapat — yeni
+      // eklenen soru kendi editörünü autoOpen ile açar. Böylece çift dialog olmaz ve
+      // bu dialog'tan yapılacak sonraki kayıt yanlışlıkla mevcut soruyu ezmez.
+      onSaveAndNew(saved);
+      onClose();
+    } catch (e) {
+      toast.error(e?.message || t("pages:testForm.dialog.genericError"));
+      setSubmitting(false);
+    }
   };
 
   const qImg = local._imgPreview || local.mediaUrl || null;
@@ -323,7 +331,7 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
   );
 }
 
-function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, onAddNew, validationAttempted, autoOpen, onAutoOpenConsumed }) {
+function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, onAddNew, onSaveAndAddNew, validationAttempted, autoOpen, onAutoOpenConsumed }) {
   const { t } = useTranslation(["pages"]);
   // Soru Ekle akışında mount olur olmaz dialog'u aç; parent'a bilgi geç (key sıfırlansın).
   const [editOpen, setEditOpen] = useState(!!autoOpen);
@@ -417,7 +425,7 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
           </p>
         )}
       </div>
-      {editOpen && <QuestionEditDialog question={question} questionIndex={questionIndex} topicList={topicList} onSave={u => onUpdate(u)} onSaveAndNew={u => { onUpdate(u); onAddNew?.(); }} onClose={() => setEditOpen(false)} />}
+      {editOpen && <QuestionEditDialog question={question} questionIndex={questionIndex} topicList={topicList} onSave={u => onUpdate(u)} onSaveAndNew={u => (onSaveAndAddNew ? onSaveAndAddNew(u) : (onUpdate(u), onAddNew?.()))} onClose={() => setEditOpen(false)} />}
     </>
   );
 }
@@ -584,6 +592,14 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
                 const nq = emptyQuestion();
                 setAutoOpenKey(nq._k);
                 onTestUpdate({ ...test, questions: [...test.questions, nq] });
+              }}
+              // "Kaydet ve Yeni": düzenlenen soruyu güncelle + yeni soru ekle TEK state
+              // güncellemesinde. Ayrı onUpdate+onAddNew çağrıları aynı stale `test`'ten
+              // türetip birbirini eziyordu → düzenlenen soru kaybolurdu.
+              onSaveAndAddNew={updatedQ => {
+                const nq = emptyQuestion();
+                setAutoOpenKey(nq._k);
+                onTestUpdate({ ...test, questions: [...test.questions.map((x, i) => i === qi ? updatedQ : x), nq] });
               }}
             />
           ))}

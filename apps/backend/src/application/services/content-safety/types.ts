@@ -2,7 +2,13 @@ import { ModerationCategory, ModerationStatus } from '@prisma/client';
 
 // ── Giriş tipleri ──────────────────────────────────────────────────────────────
 
-export type EntityType = 'ExamQuestion' | 'ExamOption' | 'ExamTest' | 'Review';
+export type EntityType =
+  | 'ExamQuestion'
+  | 'ExamOption'
+  | 'ExamTest'
+  | 'Review'
+  | 'EducatorProfile'
+  | 'LiveQuestion';
 
 export interface ModerationInput {
   entityType: EntityType;

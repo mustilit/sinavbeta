@@ -1,14 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api/apiClient';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -88,6 +86,7 @@ function DecideModal({ isOpen, onClose, onSubmit, status }) {
 export default function ModerationQueue() {
   const navigate = useNavigate();
   const [category, setCategory] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('pending'); // pending | reviewed | all
   const [searchEmail, setSearchEmail] = useState('');
   const debouncedEmail = useDebouncedValue(searchEmail, 300);
   const [dateFrom, setDateFrom] = useState('');
@@ -105,7 +104,7 @@ export default function ModerationQueue() {
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ['adminModeration', 'queue', category, debouncedEmail, dateFrom, dateTo],
+    queryKey: ['adminModeration', 'queue', category, debouncedEmail, dateFrom, dateTo, statusFilter],
     queryFn: ({ pageParam }) =>
       adminModeration.listQueue({
         cursor: pageParam,
@@ -114,6 +113,7 @@ export default function ModerationQueue() {
         userId: debouncedEmail || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        status: statusFilter,
       }),
     initialPageParam: null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
@@ -185,14 +185,29 @@ export default function ModerationQueue() {
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-gray-50">İnceleme Kuyruğu</h1>
         <p className="text-slate-500 dark:text-gray-400 mt-2">
-          {items.length} sonuç — {decideAction === 'approve' ? 'Onay' : 'Reddetme'} bekleniyor
+          {items.length} sonuç{statusFilter === 'pending' ? ' — inceleme bekliyor' : statusFilter === 'reviewed' ? ' — incelendi (geçmiş)' : ''}
         </p>
       </div>
 
       {/* Filter Bar */}
       <Card>
         <CardContent className="p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <Label htmlFor="filter-status" className="text-xs font-medium">
+                Durum
+              </Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger id="filter-status" className="mt-1.5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">İnceleme Bekliyor</SelectItem>
+                  <SelectItem value="reviewed">İncelendi</SelectItem>
+                  <SelectItem value="all">Tümü</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label htmlFor="filter-category" className="text-xs font-medium">
                 Kategori
@@ -260,7 +275,13 @@ export default function ModerationQueue() {
         <Card>
           <CardContent className="p-8 text-center">
             <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
-            <p className="text-slate-600 dark:text-gray-400">İncelenecek içerik yok — sistem temiz görünüyor!</p>
+            <p className="text-slate-600 dark:text-gray-400">
+              {statusFilter === 'reviewed'
+                ? 'Henüz incelenmiş içerik yok.'
+                : statusFilter === 'all'
+                ? 'Kayıt bulunamadı.'
+                : 'İncelenecek içerik yok — sistem temiz görünüyor!'}
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -281,6 +302,11 @@ export default function ModerationQueue() {
                       >
                         {MODERATION_STATUS_LABELS_TR[result.status] || result.status}
                       </Badge>
+                      {(result.status === 'APPROVED' || result.status === 'REJECTED') && (
+                        <Badge className={result.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}>
+                          {result.status === 'APPROVED' ? 'Sonuç: Uygun' : 'Sonuç: İhlal'}
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="text-xs">
                         {PROVIDER_LABELS_TR[result.provider] || result.provider}
                       </Badge>
@@ -320,34 +346,38 @@ export default function ModerationQueue() {
                     >
                       Detay
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setDecideAction('approve');
-                        setDecideResultId(result.id);
-                        setDecideOpen(true);
-                      }}
-                      className="whitespace-nowrap"
-                      aria-label={`${result.id} içeriğini temiz işaretle`}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Temiz
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setDecideAction('reject');
-                        setDecideResultId(result.id);
-                        setDecideOpen(true);
-                      }}
-                      className="whitespace-nowrap text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20"
-                      aria-label={`${result.id} içeriğinde ihlal onayla`}
-                    >
-                      <XCircle className="w-4 h-4 mr-1" />
-                      İhlal
-                    </Button>
+                    {result.status !== 'APPROVED' && result.status !== 'REJECTED' && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setDecideAction('approve');
+                            setDecideResultId(result.id);
+                            setDecideOpen(true);
+                          }}
+                          className="whitespace-nowrap"
+                          aria-label={`${result.id} içeriğini temiz işaretle`}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Temiz
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setDecideAction('reject');
+                            setDecideResultId(result.id);
+                            setDecideOpen(true);
+                          }}
+                          className="whitespace-nowrap text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20"
+                          aria-label={`${result.id} içeriğinde ihlal onayla`}
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          İhlal
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>

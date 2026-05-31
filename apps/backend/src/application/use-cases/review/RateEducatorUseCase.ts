@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaPurchaseRepository } from '../../../infrastructure/repositories/PrismaPurchaseRepository';
+import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
 
 /**
  * Aday bir eğiticiyi puanlar (1-5) — `Review.educatorRating`.
@@ -13,6 +14,9 @@ import { PrismaPurchaseRepository } from '../../../infrastructure/repositories/P
  *         (testRating = null — sahte test puanı üretilmez).
  */
 export class RateEducatorUseCase {
+  // Opsiyonel — verilirse yorum metni moderasyondan geçer (sert blok). Test'lerde verilmez.
+  constructor(private readonly moderate?: ModerateTextContentUseCase) {}
+
   async execute(
     educatorId: string,
     candidateId: string,
@@ -32,6 +36,25 @@ export class RateEducatorUseCase {
       select: { id: true, role: true },
     });
     if (!educator || educator.role !== 'EDUCATOR') throw new NotFoundException('EDUCATOR_NOT_FOUND');
+
+    // İçerik moderasyonu — uygunsuz yorum SERT BLOK. moderate verilmemişse atlanır.
+    if (this.moderate && comment && comment.trim()) {
+      const c = await prisma.user.findUnique({ where: { id: candidateId }, select: { tenantId: true } });
+      const verdict = await this.moderate.execute({
+        entityType: 'Review',
+        entityId: `educator:${educatorId}:${candidateId}`,
+        userId: candidateId,
+        tenantId: c?.tenantId ?? '',
+        text: comment,
+        isEducatorContent: false,
+      });
+      if (!verdict.allowed) {
+        throw new BadRequestException({
+          code: 'COMMENT_REJECTED',
+          message: verdict.message ?? 'Yorumunuz uygunsuz içerik nedeniyle reddedildi.',
+        });
+      }
+    }
 
     // Tek oy: önce educatorRating dolu satır, yoksa adayın bu eğitici için herhangi review'u
     let target = await (prisma as any).review.findFirst({

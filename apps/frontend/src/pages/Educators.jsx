@@ -5,7 +5,8 @@ import { createPageUrl } from "@/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, BookOpen, Star, User, TrendingUp, GraduationCap } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, BookOpen, Star, User, TrendingUp, GraduationCap, ArrowUpDown } from "lucide-react";
 import api from "@/lib/api/apiClient";
 import PaginationBar from "@/components/ui/PaginationBar";
 
@@ -15,6 +16,8 @@ export default function Educators() {
   const { t } = useTranslation(["pages"]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedExamTypeId, setSelectedExamTypeId] = useState(null);
+  // Sıralama — filtreden bağımsız: "recommended" (varsayılan, featured/reklam sırası) / "new" / "popular" / "rating"
+  const [sortBy, setSortBy] = useState("recommended");
 
   // Sınav türleri
   const { data: examTypes = [] } = useQuery({
@@ -48,16 +51,28 @@ export default function Educators() {
       testCount: e.testCount ?? 0,
       totalSales: e.saleCount ?? 0,
       avgRating: e.ratingAvg ?? 0,
-    }))
-    .sort((a, b) => b.totalSales - a.totalSales || b.testCount - a.testCount);
+      createdAt: e.createdAt ?? null,
+    }));
 
-  const filteredEducators = educators.filter((edu) =>
+  const searchedEducators = educators.filter((edu) =>
     !searchQuery || (edu.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase())
   );
 
+  // Sıralama (filtreden bağımsız):
+  //  - recommended (varsayılan): backend featured/bestseller sırası korunur — reklam/öne çıkarma burada devreye girer
+  //  - new: sisteme kayıt tarihi (en yeni), popular: satış, rating: puan
+  const filteredEducators =
+    sortBy === "rating"
+      ? [...searchedEducators].sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0) || (b.totalSales || 0) - (a.totalSales || 0))
+      : sortBy === "popular"
+      ? [...searchedEducators].sort((a, b) => (b.totalSales || 0) - (a.totalSales || 0) || (b.testCount || 0) - (a.testCount || 0))
+      : sortBy === "new"
+      ? [...searchedEducators].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      : searchedEducators; // recommended → backend sırası korunur
+
   // Paging — 10 satır / sayfa. Filtre veya arama değişince 1. sayfaya dön.
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [searchQuery, selectedExamTypeId]);
+  useEffect(() => { setPage(1); }, [searchQuery, selectedExamTypeId, sortBy]);
   const totalPages = Math.max(1, Math.ceil(filteredEducators.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pagedEducators = useMemo(
@@ -154,7 +169,23 @@ export default function Educators() {
         </div>
       ) : (
         <>
-          <p className="text-sm text-slate-500 mb-6">{filteredEducators.length} eğitici bulundu</p>
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <p className="text-sm text-slate-500">{filteredEducators.length} eğitici bulundu</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <ArrowUpDown className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger aria-label={t("pages:sort.label")} className="w-40 h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recommended">{t("pages:sort.recommended")}</SelectItem>
+                  <SelectItem value="new">{t("pages:sort.new")}</SelectItem>
+                  <SelectItem value="popular">{t("pages:sort.popular")}</SelectItem>
+                  <SelectItem value="rating">{t("pages:sort.rating")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
             {pagedEducators.map((educator) => (
               <Link
@@ -198,7 +229,7 @@ export default function Educators() {
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-100">
                   <Button variant="ghost" size="sm" className="w-full text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
-                    Testleri Görüntüle
+                    İncele
                   </Button>
                 </div>
               </Link>

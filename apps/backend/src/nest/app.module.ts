@@ -173,6 +173,7 @@ import { AdminStatsController } from './controllers/admin.stats.controller';
 import { GetAdminStatsUseCase } from '../application/use-cases/admin/GetAdminStatsUseCase';
 import { LiveSessionsController } from './controllers/live-sessions.controller';
 import { CreateLiveSessionUseCase } from '../application/use-cases/live/CreateLiveSessionUseCase';
+import { getSharedModerateTextContentUseCase } from '../application/services/content-safety/sharedModeration';
 import { GetLiveSessionStateUseCase } from '../application/use-cases/live/GetLiveSessionStateUseCase';
 import { JoinLiveSessionUseCase } from '../application/use-cases/live/JoinLiveSessionUseCase';
 import { SubmitLiveAnswerUseCase } from '../application/use-cases/live/SubmitLiveAnswerUseCase';
@@ -692,7 +693,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     // Admin stats dashboard — bağımlılıksız, doğrudan prisma kullanır
     GetAdminStatsUseCase,
     // LiveSession use-cases — singleton prisma kullanır, bağımlılıksız
-    { provide: CreateLiveSessionUseCase, useFactory: () => new CreateLiveSessionUseCase() },
+    { provide: CreateLiveSessionUseCase, useFactory: () => new CreateLiveSessionUseCase(getSharedModerateTextContentUseCase()) },
     { provide: GetLiveSessionStateUseCase, useFactory: () => new GetLiveSessionStateUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },

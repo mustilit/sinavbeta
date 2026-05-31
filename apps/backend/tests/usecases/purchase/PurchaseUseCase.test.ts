@@ -15,6 +15,8 @@
  * - Kampanya fiyatı geçerliyse uygulanır
  * - Başarı: purchase kaydı oluşturulur, audit log yazılır
  * - Duplicate purchase → ALREADY_PURCHASED ConflictException
+ * - Sprint 14: aktif DISTANCE_SALE sözleşmesi yoksa → CONTRACT_NOT_AVAILABLE
+ * - Sprint 14: mesafeli satış onayı eksik/eşleşmiyor → TERMS_NOT_ACCEPTED
  */
 
 process.env.REDIS_DISABLED = '1';
@@ -30,10 +32,12 @@ const mockDiscountCodeUpdate = jest.fn();
 const mockAuditLogCreate = jest.fn();
 const mockTransaction = jest.fn();
 const mockExamTestFindMany = jest.fn();
+const mockContractFindFirst = jest.fn();
 
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     adminSettings: { findFirst: (...args: any[]) => mockAdminSettingsFindFirst(...args) },
+    contract: { findFirst: (...args: any[]) => mockContractFindFirst(...args) },
     examTest: {
       findUnique: (...args: any[]) => mockExamTestFindUnique(...args),
       findMany: (...args: any[]) => mockExamTestFindMany(...args),
@@ -107,6 +111,11 @@ const setupTransaction = () => {
   mockExamTestFindMany.mockResolvedValue([]);
 };
 
+// Sprint 14 — Mesafeli satış sözleşmesi onayı zorunlu. Aktif DISTANCE_SALE
+// contract'ının ID'si ile eşleşen ctx geçilmeli; aksi halde TERMS_NOT_ACCEPTED.
+const ACTIVE_DSALE_ID = 'dsale-1';
+const CTX = { acceptedDistanceSaleContractId: ACTIVE_DSALE_ID };
+
 describe('PurchaseUseCase', () => {
   let prismaClient: any;
 
@@ -115,6 +124,7 @@ describe('PurchaseUseCase', () => {
     const { prisma } = require('../../../src/infrastructure/database/prisma');
     prismaClient = prisma;
     mockAdminSettingsFindFirst.mockResolvedValue({ id: 1, purchasesEnabled: true });
+    mockContractFindFirst.mockResolvedValue({ id: ACTIVE_DSALE_ID, type: 'DISTANCE_SALE', isActive: true, version: 1 });
     mockExamTestFindUnique.mockResolvedValue(makeTest());
     mockUserFindUnique.mockResolvedValue(makeUser());
     mockDiscountCodeFindFirst.mockResolvedValue(null);
@@ -134,7 +144,7 @@ describe('PurchaseUseCase', () => {
   it('purchasesEnabled=false ise PURCHASES_DISABLED fırlatır', async () => {
     mockAdminSettingsFindFirst.mockResolvedValue({ id: 1, purchasesEnabled: false });
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1')).rejects.toMatchObject({
+    await expect(uc.execute('test-1', 'cand-1', undefined, undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'PURCHASES_DISABLED' }),
     });
   });
@@ -144,7 +154,7 @@ describe('PurchaseUseCase', () => {
     // TestPackage da yok
     mockTestPackageFindUnique.mockResolvedValue(null);
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-missing', 'cand-1')).rejects.toMatchObject({
+    await expect(uc.execute('test-missing', 'cand-1', undefined, undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'TEST_NOT_FOUND' }),
     });
   });
@@ -152,7 +162,7 @@ describe('PurchaseUseCase', () => {
   it('test PUBLISHED değilse TEST_NOT_PUBLISHED fırlatır', async () => {
     mockExamTestFindUnique.mockResolvedValue(makeTest({ status: 'DRAFT' }));
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1')).rejects.toMatchObject({
+    await expect(uc.execute('test-1', 'cand-1', undefined, undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'TEST_NOT_PUBLISHED' }),
     });
   });
@@ -160,7 +170,7 @@ describe('PurchaseUseCase', () => {
   it('aday SUSPENDED ise CANDIDATE_NOT_ACTIVE fırlatır', async () => {
     mockUserFindUnique.mockResolvedValue(makeUser({ status: 'SUSPENDED' }));
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1')).rejects.toMatchObject({
+    await expect(uc.execute('test-1', 'cand-1', undefined, undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'CANDIDATE_NOT_ACTIVE' }),
     });
   });
@@ -168,7 +178,7 @@ describe('PurchaseUseCase', () => {
   it('discount kodu bulunamazsa DISCOUNT_NOT_FOUND fırlatır', async () => {
     mockDiscountCodeFindFirst.mockResolvedValue(null);
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1', 'INVALID_CODE')).rejects.toMatchObject({
+    await expect(uc.execute('test-1', 'cand-1', 'INVALID_CODE', undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'DISCOUNT_NOT_FOUND' }),
     });
   });
@@ -184,7 +194,7 @@ describe('PurchaseUseCase', () => {
       usedCount: 0,
     });
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1', 'SAVE10')).rejects.toMatchObject({
+    await expect(uc.execute('test-1', 'cand-1', 'SAVE10', undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'DISCOUNT_NOT_STARTED' }),
     });
   });
@@ -200,7 +210,7 @@ describe('PurchaseUseCase', () => {
       usedCount: 0,
     });
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1', 'OLD10')).rejects.toMatchObject({
+    await expect(uc.execute('test-1', 'cand-1', 'OLD10', undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'DISCOUNT_EXPIRED' }),
     });
   });
@@ -216,7 +226,7 @@ describe('PurchaseUseCase', () => {
       usedCount: 100,
     });
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1', 'FULL10')).rejects.toMatchObject({
+    await expect(uc.execute('test-1', 'cand-1', 'FULL10', undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'DISCOUNT_MAXED_OUT' }),
     });
   });
@@ -232,7 +242,7 @@ describe('PurchaseUseCase', () => {
       usedCount: 0,
     });
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1', 'BIG75')).rejects.toMatchObject({
+    await expect(uc.execute('test-1', 'cand-1', 'BIG75', undefined, CTX)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'DISCOUNT_TOO_HIGH' }),
     });
   });
@@ -245,14 +255,14 @@ describe('PurchaseUseCase', () => {
       makeTest({ campaignPriceCents: 1000, campaignValidFrom: from, campaignValidUntil: until }),
     );
     const uc = new PurchaseUseCase(prismaClient);
-    await uc.execute('test-1', 'cand-1');
+    await uc.execute('test-1', 'cand-1', undefined, undefined, CTX);
     const purchaseData = mockPurchaseCreate.mock.calls[0][0].data;
     expect(purchaseData.amountCents).toBe(1000);
   });
 
   it('başarı: purchase kaydı oluşturulur', async () => {
     const uc = new PurchaseUseCase(prismaClient);
-    const result = await uc.execute('test-1', 'cand-1');
+    const result = await uc.execute('test-1', 'cand-1', undefined, undefined, CTX);
     expect(mockPurchaseCreate).toHaveBeenCalledTimes(1);
     expect(result.purchase).toBeDefined();
     expect(result.purchase.id).toBe('pur-1');
@@ -265,6 +275,31 @@ describe('PurchaseUseCase', () => {
       throw err;
     });
     const uc = new PurchaseUseCase(prismaClient);
-    await expect(uc.execute('test-1', 'cand-1')).rejects.toBeInstanceOf(ConflictException);
+    await expect(uc.execute('test-1', 'cand-1', undefined, undefined, CTX)).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  // ── Sprint 14 — Mesafeli satış sözleşmesi onayı ───────────────────────
+  it('aktif DISTANCE_SALE sözleşmesi yoksa CONTRACT_NOT_AVAILABLE fırlatır', async () => {
+    mockContractFindFirst.mockResolvedValue(null);
+    const uc = new PurchaseUseCase(prismaClient);
+    await expect(uc.execute('test-1', 'cand-1', undefined, undefined, CTX)).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'CONTRACT_NOT_AVAILABLE' }),
+    });
+  });
+
+  it('mesafeli satış onayı verilmemişse TERMS_NOT_ACCEPTED fırlatır', async () => {
+    const uc = new PurchaseUseCase(prismaClient);
+    await expect(uc.execute('test-1', 'cand-1')).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'TERMS_NOT_ACCEPTED' }),
+    });
+  });
+
+  it('onaylanan sözleşme ID aktif olanla eşleşmezse TERMS_NOT_ACCEPTED fırlatır', async () => {
+    const uc = new PurchaseUseCase(prismaClient);
+    await expect(
+      uc.execute('test-1', 'cand-1', undefined, undefined, { acceptedDistanceSaleContractId: 'wrong-id' }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'TERMS_NOT_ACCEPTED' }),
+    });
   });
 });

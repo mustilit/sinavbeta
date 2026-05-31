@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import TestPackageCard from "@/components/ui/TestPackageCard";
-import { Search, SlidersHorizontal, X, Star } from "lucide-react";
+import { Search, SlidersHorizontal, X, Star, ArrowUpDown } from "lucide-react";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 
 export default function Explore() {
@@ -27,6 +27,8 @@ export default function Explore() {
   const [minRating, setMinRating] = useState(0);
   const [selectedEducator, setSelectedEducator] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  // Sıralama — filtreden bağımsız: "recommended" (varsayılan) / "rating" / "popular"
+  const [sortBy, setSortBy] = useState("recommended");
 
   // useDeferredValue: kullanıcı yazarken UI bloklanmaz; 2+ karakter sunucuya gider
   const deferredSearch = useDeferredValue(searchQuery);
@@ -145,13 +147,30 @@ export default function Explore() {
   // sınav türündeki paketler listenin başına çekilir. Diğerleri API'nin
   // döndüğü sıra (yayım tarihi DESC) korunur. Hiç takip yoksa sıralama
   // değişmez. View history bazlı puanlama backend desteği gerektirir; sonra.
-  const sortedTests = followedExamTypeIds.size > 0
-    ? [...filteredTests].sort((a, b) => {
-        const aMatch = followedExamTypeIds.has(a.exam_type_id) ? 1 : 0;
-        const bMatch = followedExamTypeIds.has(b.exam_type_id) ? 1 : 0;
-        return bMatch - aMatch; // takip edilenler önce
-      })
-    : filteredTests;
+  // Sıralama: kullanıcı seçimi (Puana göre / Popüler) filtreden bağımsız uygulanır.
+  // "recommended" (varsayılan) → takip edilen sınav türleri öne çekilir (mevcut davranış).
+  let sortedTests;
+  if (sortBy === "rating") {
+    sortedTests = [...filteredTests].sort(
+      (a, b) => (b.average_rating || 0) - (a.average_rating || 0) || (b.total_sales || 0) - (a.total_sales || 0),
+    );
+  } else if (sortBy === "popular") {
+    sortedTests = [...filteredTests].sort(
+      (a, b) => (b.total_sales || 0) - (a.total_sales || 0) || (b.average_rating || 0) - (a.average_rating || 0),
+    );
+  } else if (sortBy === "new") {
+    sortedTests = [...filteredTests].sort(
+      (a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime(),
+    );
+  } else if (followedExamTypeIds.size > 0) {
+    sortedTests = [...filteredTests].sort((a, b) => {
+      const aMatch = followedExamTypeIds.has(a.exam_type_id) ? 1 : 0;
+      const bMatch = followedExamTypeIds.has(b.exam_type_id) ? 1 : 0;
+      return bMatch - aMatch; // takip edilenler önce
+    });
+  } else {
+    sortedTests = filteredTests;
+  }
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -291,7 +310,23 @@ export default function Explore() {
         </div>
       ) : (
         <>
-          <p className="text-sm text-slate-500 mb-6">{t("pages:explore.countFound", { count: sortedTests.length })}</p>
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <p className="text-sm text-slate-500">{t("pages:explore.countFound", { count: sortedTests.length })}</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <ArrowUpDown className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger aria-label={t("pages:sort.label")} className="w-40 h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recommended">{t("pages:sort.recommended")}</SelectItem>
+                  <SelectItem value="new">{t("pages:sort.new")}</SelectItem>
+                  <SelectItem value="popular">{t("pages:sort.popular")}</SelectItem>
+                  <SelectItem value="rating">{t("pages:sort.rating")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
             {sortedTests.map((test) => {
               const agg = packageAggregate[test.id];

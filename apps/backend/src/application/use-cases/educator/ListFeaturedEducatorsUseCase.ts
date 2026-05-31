@@ -8,6 +8,7 @@ export type FeaturedEducator = {
   testCount: number;
   saleCount: number;
   ratingAvg: number | null;
+  createdAt: Date;
 };
 
 export class ListFeaturedEducatorsUseCase {
@@ -78,6 +79,37 @@ export class ListFeaturedEducatorsUseCase {
       educatorIds = [...educatorIds, ...globalRows.map((r) => r.educator_id)];
     }
 
+    // Phase 3: kalan kapasiteyi YENİ kaydolan aktif eğiticilerle doldur — henüz
+    // satışı olmayan yeni eğiticiler de listede görünsün ki "Yeni" sıralaması ve
+    // dizin (directory) eksiksiz olsun. createdAt DESC ile en yeniler eklenir.
+    if (educatorIds.length < capped) {
+      const remaining = capped - educatorIds.length;
+      const recentWhere: any = { role: 'EDUCATOR', status: 'ACTIVE' };
+      if (examTypeIds && examTypeIds.length > 0) {
+        const safeIds = examTypeIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+        if (safeIds.length > 0) {
+          const testRows = await prisma.examTest.findMany({
+            where: { publishedAt: { not: null }, examTypeId: { in: safeIds } },
+            select: { educatorId: true },
+            distinct: ['educatorId'],
+          });
+          const eIds = testRows.map((t) => t.educatorId).filter(Boolean) as string[];
+          recentWhere.id = educatorIds.length > 0 ? { in: eIds, notIn: educatorIds } : { in: eIds };
+        } else if (educatorIds.length > 0) {
+          recentWhere.id = { notIn: educatorIds };
+        }
+      } else if (educatorIds.length > 0) {
+        recentWhere.id = { notIn: educatorIds };
+      }
+      const recent = await prisma.user.findMany({
+        where: recentWhere,
+        orderBy: { createdAt: 'desc' },
+        take: remaining,
+        select: { id: true },
+      });
+      educatorIds = [...educatorIds, ...recent.map((u) => u.id)];
+    }
+
     // Fallback: no purchase data at all — return active educators by creation date
     if (educatorIds.length === 0) {
       let fallbackWhere: any = { role: 'EDUCATOR', status: 'ACTIVE' };
@@ -100,6 +132,7 @@ export class ListFeaturedEducatorsUseCase {
         select: {
           id: true,
           username: true,
+          createdAt: true,
           userPreference: { select: { preferences: true } },
         },
       });
@@ -116,6 +149,7 @@ export class ListFeaturedEducatorsUseCase {
         testCount: byEducator[u.id] ?? 0,
         saleCount: 0,
         ratingAvg: null as number | null,
+        createdAt: u.createdAt,
       }));
     }
 
@@ -125,6 +159,7 @@ export class ListFeaturedEducatorsUseCase {
       select: {
         id: true,
         username: true,
+        createdAt: true,
         userPreference: { select: { preferences: true } },
       },
     });
@@ -171,6 +206,7 @@ export class ListFeaturedEducatorsUseCase {
           testCount: testCountMap.get(id) ?? 0,
           saleCount: saleMap.get(id) ?? 0,
           ratingAvg: ratingMap.get(id) ?? null,
+          createdAt: u.createdAt,
         };
       });
   }

@@ -5,7 +5,7 @@ export interface IExamTypeRepository {
   findBySlug(slug: string): Promise<ExamType | null>;
   findById(id: string): Promise<ExamType | null>;
   list(filter?: { activeOnly?: boolean }): Promise<ExamType[]>;
-  update(id: string, data: { name?: string; slug?: string; description?: string | null; active?: boolean }): Promise<ExamType | null>;
+  update(id: string, data: { name?: string; slug?: string; description?: string | null; active?: boolean; metadata?: Record<string, unknown> | null }): Promise<ExamType | null>;
   delete(id: string): Promise<boolean>;
 }
 

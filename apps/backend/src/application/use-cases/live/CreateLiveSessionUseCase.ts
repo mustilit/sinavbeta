@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
 
 function generateJoinCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -28,6 +29,9 @@ interface CreateLiveSessionInput {
 }
 
 export class CreateLiveSessionUseCase {
+  // Opsiyonel — verilirse her soru (içerik + seçenekler) moderasyondan geçer (sert blok). Test'lerde verilmez.
+  constructor(private readonly moderate?: ModerateTextContentUseCase) {}
+
   async execute(input: CreateLiveSessionInput) {
     const { educatorId, title, questions, tierId } = input;
     const educator = await prisma.user.findUnique({ where: { id: educatorId } });
@@ -63,6 +67,33 @@ export class CreateLiveSessionUseCase {
         const optHasMedia   = !!o.mediaUrl?.trim();
         if (!optHasContent && !optHasMedia)
           throw new AppError('VALIDATION_ERROR', 'Each option must have content or image', 400);
+      }
+    }
+
+    // İçerik moderasyonu — her sorunun metni + seçenekleri SERT BLOK kontrolü.
+    // Açık ihlal (REJECTED) → oturum oluşturulmaz. Belirsiz (SUSPECT) → oluşturulur,
+    // admin moderasyon kuyruğuna düşer. moderate verilmemişse atlanır.
+    if (this.moderate) {
+      for (const q of questions) {
+        const combined = [q.content ?? '', ...q.options.map((o) => o.content ?? '')]
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join('\n');
+        if (!combined) continue;
+        const verdict = await this.moderate.execute({
+          entityType: 'LiveQuestion',
+          entityId: `pending-live:${q.order}`,
+          userId: educatorId,
+          tenantId: educator.tenantId,
+          text: combined,
+          isEducatorContent: true,
+        });
+        if (!verdict.allowed) {
+          throw new BadRequestException({
+            code: 'LIVE_QUESTION_REJECTED',
+            message: `${q.order}. soru uygunsuz içerik nedeniyle reddedildi. ${verdict.message ?? ''}`.trim(),
+          });
+        }
       }
     }
 

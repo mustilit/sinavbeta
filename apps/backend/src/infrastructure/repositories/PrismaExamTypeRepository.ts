@@ -35,12 +35,13 @@ export class PrismaExamTypeRepository implements IExamTypeRepository {
     return r as any;
   }
 
-  async update(id: string, data: { name?: string; slug?: string; description?: string | null; active?: boolean }): Promise<ExamType | null> {
+  async update(id: string, data: { name?: string; slug?: string; description?: string | null; active?: boolean; metadata?: Record<string, unknown> | null }): Promise<ExamType | null> {
     const clean: Record<string, unknown> = {};
     if (data.name !== undefined) clean.name = data.name;
     if (data.slug !== undefined) clean.slug = data.slug;
     if (data.description !== undefined) clean.description = data.description;
     if (data.active !== undefined) clean.active = data.active;
+    if (data.metadata !== undefined) clean.metadata = (data.metadata ?? {}) as Prisma.InputJsonValue;
     if (Object.keys(clean).length === 0) return this.findById(id);
     const r = await prisma.examType.updateMany({ where: { id }, data: clean as any });
     if (r.count === 0) return null;

@@ -15,6 +15,7 @@ import { PrismaPurchaseRepository } from '../../infrastructure/repositories/Pris
 import { PrismaAttemptRepository } from '../../infrastructure/repositories/PrismaAttemptRepository';
 import { PrismaAuditLogRepository } from '../../infrastructure/repositories/PrismaAuditLogRepository';
 import { prisma } from '../../infrastructure/database/prisma';
+import { getSharedModerateTextContentUseCase } from '../../application/services/content-safety/sharedModeration';
 
 /**
  * Test bazlı review endpoint'leri — yeni domain modeli (paket bazlı review) ile
@@ -37,7 +38,7 @@ export class ReviewsController {
     const purchaseRepo = new PrismaPurchaseRepository();
     const attemptRepo = new PrismaAttemptRepository();
     const auditRepo = new PrismaAuditLogRepository();
-    this.createUc = new CreateOrUpdateReviewUseCase(reviewRepo, purchaseRepo, attemptRepo, auditRepo);
+    this.createUc = new CreateOrUpdateReviewUseCase(reviewRepo, purchaseRepo, attemptRepo, auditRepo, getSharedModerateTextContentUseCase());
     this.listUc = new ListTestReviewsUseCase(reviewRepo);
     this.aggUc = new GetTestRatingAggregateUseCase(reviewRepo);
   }
