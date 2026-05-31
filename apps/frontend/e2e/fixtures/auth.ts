@@ -10,6 +10,8 @@
  * ortam değişkenlerinden okunur.
  */
 import { test as base, expect, type Page, type BrowserContext } from '@playwright/test';
+import type { E2EUser } from './users';
+import { E2E_PASSWORD } from './users';
 
 // Demo credential'lar — staging seed'e göre
 const DEMO_CREDENTIALS = {
@@ -55,6 +57,39 @@ export async function loginAs(
   if (await cookieAccept.isVisible({ timeout: 3000 }).catch(() => false)) {
     await cookieAccept.click();
   }
+}
+
+/**
+ * Generic credential login (Sprint 17.1) — e2e user pool veya ad-hoc kullanıcı.
+ * loginAs'in role-bağımsız versiyonu; worker ve e2e-spesifik kullanıcılar için.
+ */
+export async function loginWithCredentials(
+  page: Page,
+  email: string,
+  password: string = E2E_PASSWORD,
+): Promise<void> {
+  await page.goto('/Login');
+  const emailInput = page.getByLabel(/e-?(posta|mail)/i).first();
+  await expect(emailInput).toBeVisible({ timeout: 15000 });
+  await emailInput.fill(email);
+  await page.getByLabel(/şifre|password/i).first().fill(password);
+  await page.getByRole('button', { name: /giriş yap|sign in|log in/i }).first().click();
+  await page.waitForURL((url) => !url.pathname.toLowerCase().includes('/login'), {
+    timeout: 15000,
+  });
+  const cookieAccept = page.getByRole('button', { name: /kabul et|accept|tümüne izin/i }).first();
+  if (await cookieAccept.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await cookieAccept.click();
+  }
+}
+
+/**
+ * E2E user pool nesnesiyle login (users.ts). Worker/pending/rejected dahil.
+ * REJECTED/PENDING eğitici login'i başarılı olur ama EducatorSettings'e kilitlenir;
+ * waitForURL /login dışına çıkmayı bekler — bu durumda da geçerli.
+ */
+export async function loginAsUser(page: Page, user: E2EUser): Promise<void> {
+  return loginWithCredentials(page, user.email, user.password);
 }
 
 /**
