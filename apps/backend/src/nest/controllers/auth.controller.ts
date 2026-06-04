@@ -7,6 +7,8 @@ import { LoginUseCase } from '../../application/use-cases/auth/LoginUseCase';
 import { GoogleAuthUseCase } from '../../application/use-cases/auth/GoogleAuthUseCase';
 import { ForgotPasswordUseCase } from '../../application/use-cases/auth/ForgotPasswordUseCase';
 import { ResetPasswordUseCase } from '../../application/use-cases/auth/ResetPasswordUseCase';
+import { ChangePasswordUseCase } from '../../application/use-cases/auth/ChangePasswordUseCase';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { VerifyDeviceUseCase } from '../../application/use-cases/auth/VerifyDeviceUseCase';
 import { SendEmailVerificationUseCase } from '../../application/use-cases/auth/SendEmailVerificationUseCase';
 import { VerifyEmailUseCase } from '../../application/use-cases/auth/VerifyEmailUseCase';
@@ -41,6 +43,7 @@ export class AuthController {
     @Inject(USER_REPO) private readonly userRepo: IUserRepository,
     @Inject(ForgotPasswordUseCase) private readonly forgotPasswordUC: ForgotPasswordUseCase,
     @Inject(ResetPasswordUseCase) private readonly resetPasswordUC: ResetPasswordUseCase,
+    @Inject(ChangePasswordUseCase) private readonly changePasswordUC: ChangePasswordUseCase,
     @Inject(GoogleAuthUseCase) private readonly googleAuthUC: GoogleAuthUseCase,
     @Inject(VerifyDeviceUseCase) private readonly verifyDeviceUC: VerifyDeviceUseCase,
   ) {}
@@ -548,6 +551,30 @@ export class AuthController {
       return { message: 'Sifre guncellendi' };
     } catch (err: any) {
       throw new HttpException({ error: err.message || 'Islem basarisiz' }, err.status ?? HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Oturum açmış kullanıcının şifresini değiştirir.
+   * Public DEĞİL — JWT zorunlu; kullanıcı ID token'dan (req.user.sub) alınır.
+   * Mevcut şifre backend'de doğrulanır; eşleşmezse 400 INVALID_CURRENT_PASSWORD.
+   */
+  @Post('change-password')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 300000 } })
+  async changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new HttpException({ error: 'Oturum bulunamadı', code: 'UNAUTHORIZED' }, HttpStatus.UNAUTHORIZED);
+    }
+    try {
+      await this.changePasswordUC.execute(userId, dto.currentPassword, dto.newPassword);
+      return { message: 'Şifre güncellendi' };
+    } catch (err: any) {
+      throw new HttpException(
+        { error: err.message || 'İşlem başarısız', code: err.code ?? 'CHANGE_PASSWORD_FAILED' },
+        err.status ?? HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }

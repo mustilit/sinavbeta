@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SensitiveProfileOtpDialog from "@/components/settings/SensitiveProfileOtpDialog";
 import { toast } from "sonner";
-import { User, Save, Phone, Globe, Linkedin, Undo2, Clock, CheckCircle2, XCircle, ShoppingBag, Filter, GraduationCap, AlertCircle, MessageSquare, Camera } from "lucide-react";
+import { User, Save, Phone, Globe, Linkedin, Undo2, Clock, CheckCircle2, XCircle, ShoppingBag, Filter, GraduationCap, AlertCircle, MessageSquare, Camera, Lock, KeyRound, Eye, EyeOff } from "lucide-react";
 import RefundRequestModal from "@/components/refund/RefundRequestModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -201,6 +201,47 @@ export default function ProfileSettings() {
     }
   });
 
+  // ── Şifre değiştirme ──────────────────────────────────────────────────
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [showPasswords, setShowPasswords] = useState(false);
+
+  const newPwTooShort = passwordForm.newPassword.length > 0 && passwordForm.newPassword.length < 8;
+  const pwMismatch = passwordForm.confirmPassword.length > 0 && passwordForm.newPassword !== passwordForm.confirmPassword;
+  const canSubmitPassword =
+    passwordForm.currentPassword.length > 0 &&
+    passwordForm.newPassword.length >= 8 &&
+    passwordForm.newPassword === passwordForm.confirmPassword;
+
+  const changePasswordMutation = useMutation({
+    mutationFn: () => auth.changePassword(passwordForm.currentPassword, passwordForm.newPassword),
+    onSuccess: () => {
+      toast.success(t("pages:profileSettings.security.success"));
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    },
+    onError: (err) => {
+      const d = err?.response?.data;
+      const msg =
+        d?.error?.message ||
+        (typeof d?.error === "string" ? d.error : null) ||
+        d?.message ||
+        t("pages:profileSettings.security.failed");
+      toast.error(msg);
+    },
+  });
+
+  const handleChangePassword = (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword.length < 8) {
+      toast.error(t("pages:profileSettings.security.minLength"));
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error(t("pages:profileSettings.security.mismatch"));
+      return;
+    }
+    changePasswordMutation.mutate();
+  };
+
   // OTP dialog başarılı olduğunda çağrılır — initial state'i taze formData'ya çek
   const handleOtpSuccess = () => {
     setInitialFormData(formData);
@@ -294,6 +335,7 @@ export default function ProfileSettings() {
             <TabsTrigger value="notifications">{t("pages:profileSettings.tabs.notifications")}</TabsTrigger>
             <TabsTrigger value="exams">{t("pages:profileSettings.tabs.exams")}</TabsTrigger>
             <TabsTrigger value="financial">{t("pages:profileSettings.tabs.financial")}</TabsTrigger>
+            <TabsTrigger value="security">{t("pages:profileSettings.tabs.security")}</TabsTrigger>
           </TabsList>
 
           {/* İletişim Tab */}
@@ -666,6 +708,92 @@ export default function ProfileSettings() {
             {purchases.length === 0 && refundRequests.length === 0 && (
               <p className="text-center text-slate-500 py-8">{t("pages:profileSettings.financial.noTransactions")}</p>
             )}
+          </TabsContent>
+
+          {/* Güvenlik — şifre değiştirme */}
+          <TabsContent value="security">
+            <form onSubmit={handleChangePassword} className="space-y-6 max-w-md">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Lock className="w-5 h-5" />
+                <h2 className="text-lg font-semibold">{t("pages:profileSettings.security.title")}</h2>
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {t("pages:profileSettings.security.description")}
+              </p>
+
+              <div>
+                <Label htmlFor="currentPassword" className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4" />
+                  {t("pages:profileSettings.security.currentPassword")}
+                </Label>
+                <Input
+                  id="currentPassword"
+                  type={showPasswords ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="newPassword" className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  {t("pages:profileSettings.security.newPassword")}
+                </Label>
+                <Input
+                  id="newPassword"
+                  type={showPasswords ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  className={`mt-2 ${newPwTooShort ? "border-rose-500" : ""}`}
+                />
+                {newPwTooShort && (
+                  <p className="text-sm text-rose-600 mt-1">{t("pages:profileSettings.security.minLength")}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="confirmPassword" className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  {t("pages:profileSettings.security.confirmPassword")}
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type={showPasswords ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  className={`mt-2 ${pwMismatch ? "border-rose-500" : ""}`}
+                />
+                {pwMismatch && (
+                  <p className="text-sm text-rose-600 mt-1">{t("pages:profileSettings.security.mismatch")}</p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPasswords((v) => !v)}
+                className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 min-h-10"
+              >
+                {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPasswords
+                  ? t("pages:profileSettings.security.hidePasswords")
+                  : t("pages:profileSettings.security.showPasswords")}
+              </button>
+
+              <Button
+                type="submit"
+                className="bg-indigo-600 hover:bg-indigo-700 w-full"
+                disabled={changePasswordMutation.isPending || !canSubmitPassword}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {changePasswordMutation.isPending
+                  ? t("pages:profileSettings.security.saving")
+                  : t("pages:profileSettings.security.submit")}
+              </Button>
+            </form>
           </TabsContent>
         </Tabs>
       </div>

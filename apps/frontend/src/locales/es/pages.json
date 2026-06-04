@@ -699,7 +699,10 @@
   },
   "myDiscountCodes": {
     "newCode": "Nuevo código",
-    "tabs": { "candidateCodes": "Códigos de descuento de candidatos", "educatorPromos": "Códigos promocionales de educadores" },
+    "tabs": {
+      "candidateCodes": "Códigos de descuento de candidatos",
+      "educatorPromos": "Códigos promocionales de educadores"
+    },
     "filter": {
       "codeLabel": "Código",
       "codePlaceholder": "Buscar código…",
@@ -1548,7 +1551,8 @@
       "contact": "Contacto",
       "notifications": "Notificaciones",
       "exams": "Preferencias de Examen",
-      "financial": "Finanzas"
+      "financial": "Finanzas",
+      "security": "Seguridad"
     },
     "contact": {
       "phoneLabel": "Teléfono",
@@ -1643,6 +1647,21 @@
       "refundFailed": "No se pudo enviar la solicitud de reembolso",
       "appealSubmitted": "Tu apelación ha sido enviada. Será revisada por el admin.",
       "appealFailed": "No se pudo enviar la apelación"
+    },
+    "security": {
+      "title": "Cambiar contraseña",
+      "description": "Actualiza la contraseña de tu cuenta. Debes verificar tu contraseña actual para continuar.",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Nueva contraseña (repetir)",
+      "minLength": "La nueva contraseña debe tener al menos 8 caracteres",
+      "mismatch": "Las contraseñas no coinciden",
+      "showPasswords": "Mostrar contraseñas",
+      "hidePasswords": "Ocultar contraseñas",
+      "submit": "Actualizar contraseña",
+      "saving": "Actualizando...",
+      "success": "Tu contraseña se ha actualizado correctamente",
+      "failed": "No se pudo actualizar la contraseña"
     }
   },
   "educatorOnboarding": {

@@ -138,6 +138,17 @@ export const auth = {
     const { data } = await api.post('/me/preferences/sensitive/verify', body);
     return data;
   },
+  /**
+   * Oturum açmış kullanıcının şifresini değiştirir.
+   * Mevcut şifre backend'de doğrulanır; yeni şifre tekrarı UI'da kontrol edilir.
+   * @param {string} currentPassword
+   * @param {string} newPassword
+   * @returns {Promise<{ message: string }>}
+   */
+  async changePassword(currentPassword, newPassword) {
+    const { data } = await api.post('/auth/change-password', { currentPassword, newPassword });
+    return data;
+  },
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('dal_auth');

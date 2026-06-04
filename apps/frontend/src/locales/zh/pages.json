@@ -696,7 +696,10 @@
   },
   "myDiscountCodes": {
     "newCode": "新代码",
-    "tabs": { "candidateCodes": "考生折扣码", "educatorPromos": "教育者促销码" },
+    "tabs": {
+      "candidateCodes": "考生折扣码",
+      "educatorPromos": "教育者促销码"
+    },
     "filter": {
       "codeLabel": "代码",
       "codePlaceholder": "搜索代码…",
@@ -1545,7 +1548,8 @@
       "contact": "联系方式",
       "notifications": "通知",
       "exams": "考试偏好",
-      "financial": "财务"
+      "financial": "财务",
+      "security": "安全"
     },
     "contact": {
       "phoneLabel": "电话",
@@ -1640,6 +1644,21 @@
       "refundFailed": "退款申请提交失败",
       "appealSubmitted": "你的申诉已提交。将由管理员审核。",
       "appealFailed": "申诉提交失败"
+    },
+    "security": {
+      "title": "修改密码",
+      "description": "更新您的账户密码。您需要验证当前密码才能继续。",
+      "currentPassword": "当前密码",
+      "newPassword": "新密码",
+      "confirmPassword": "确认新密码",
+      "minLength": "新密码至少需要 8 个字符",
+      "mismatch": "两次输入的密码不一致",
+      "showPasswords": "显示密码",
+      "hidePasswords": "隐藏密码",
+      "submit": "更新密码",
+      "saving": "更新中...",
+      "success": "您的密码已成功更新",
+      "failed": "无法更新密码"
     }
   },
   "educatorOnboarding": {

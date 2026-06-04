@@ -696,7 +696,10 @@
   },
   "myDiscountCodes": {
     "newCode": "New Code",
-    "tabs": { "candidateCodes": "Candidate Discount Codes", "educatorPromos": "Educator Promo Codes" },
+    "tabs": {
+      "candidateCodes": "Candidate Discount Codes",
+      "educatorPromos": "Educator Promo Codes"
+    },
     "filter": {
       "codeLabel": "Code",
       "codePlaceholder": "Search code…",
@@ -1545,7 +1548,8 @@
       "contact": "Contact",
       "notifications": "Notifications",
       "exams": "Exam Preferences",
-      "financial": "Financial"
+      "financial": "Financial",
+      "security": "Security"
     },
     "contact": {
       "phoneLabel": "Phone",
@@ -1640,6 +1644,21 @@
       "refundFailed": "Refund request could not be submitted",
       "appealSubmitted": "Your appeal has been submitted. It will be reviewed by the admin.",
       "appealFailed": "Appeal could not be submitted"
+    },
+    "security": {
+      "title": "Change Password",
+      "description": "Update your account password. You must verify your current password to continue.",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "New Password (Repeat)",
+      "minLength": "New password must be at least 8 characters",
+      "mismatch": "Passwords do not match",
+      "showPasswords": "Show passwords",
+      "hidePasswords": "Hide passwords",
+      "submit": "Update Password",
+      "saving": "Updating...",
+      "success": "Your password has been updated successfully",
+      "failed": "Could not update password"
     }
   },
   "educatorOnboarding": {

@@ -5,6 +5,7 @@ import { RegisterEducatorUseCase } from '../../../application/use-cases/auth/Reg
 import { LoginUseCase } from '../../../application/use-cases/auth/LoginUseCase';
 import { ForgotPasswordUseCase } from '../../../application/use-cases/auth/ForgotPasswordUseCase';
 import { ResetPasswordUseCase } from '../../../application/use-cases/auth/ResetPasswordUseCase';
+import { ChangePasswordUseCase } from '../../../application/use-cases/auth/ChangePasswordUseCase';
 import { GoogleAuthUseCase } from '../../../application/use-cases/auth/GoogleAuthUseCase';
 import { NotifyNewDeviceLoginUseCase } from '../../../application/use-cases/auth/NotifyNewDeviceLoginUseCase';
 import { VerifyDeviceUseCase } from '../../../application/use-cases/auth/VerifyDeviceUseCase';
@@ -89,6 +90,12 @@ import { SendEmailUseCase } from '../../../application/use-cases/email/SendEmail
       provide: ResetPasswordUseCase,
       useFactory: (userRepo: PrismaUserRepository, passwordService: PasswordService) =>
         new ResetPasswordUseCase(userRepo, passwordService),
+      inject: [PrismaUserRepository, PasswordService],
+    },
+    {
+      provide: ChangePasswordUseCase,
+      useFactory: (userRepo: PrismaUserRepository, passwordService: PasswordService) =>
+        new ChangePasswordUseCase(userRepo, passwordService),
       inject: [PrismaUserRepository, PasswordService],
     },
     PrismaAuditLogRepository,

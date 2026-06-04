@@ -696,7 +696,10 @@
   },
   "myDiscountCodes": {
     "newCode": "Yeni Kod",
-    "tabs": { "candidateCodes": "Aday İndirim Kodları", "educatorPromos": "Eğitici Promo Kodları" },
+    "tabs": {
+      "candidateCodes": "Aday İndirim Kodları",
+      "educatorPromos": "Eğitici Promo Kodları"
+    },
     "filter": {
       "codeLabel": "Kod",
       "codePlaceholder": "Kod ara…",
@@ -1545,7 +1548,8 @@
       "contact": "İletişim",
       "notifications": "Bildirimler",
       "exams": "Sınav Tercihleri",
-      "financial": "Mali İşlemler"
+      "financial": "Mali İşlemler",
+      "security": "Güvenlik"
     },
     "contact": {
       "phoneLabel": "Telefon",
@@ -1640,6 +1644,21 @@
       "refundFailed": "İade talebi gönderilemedi",
       "appealSubmitted": "İtirazınız iletildi. Admin tarafından incelenecek.",
       "appealFailed": "İtiraz gönderilemedi"
+    },
+    "security": {
+      "title": "Şifre Değiştir",
+      "description": "Hesabının şifresini güncelle. Devam etmek için mevcut şifreni doğrulaman gerekir.",
+      "currentPassword": "Mevcut Şifre",
+      "newPassword": "Yeni Şifre",
+      "confirmPassword": "Yeni Şifre (Tekrar)",
+      "minLength": "Yeni şifre en az 8 karakter olmalı",
+      "mismatch": "Şifreler eşleşmiyor",
+      "showPasswords": "Şifreleri göster",
+      "hidePasswords": "Şifreleri gizle",
+      "submit": "Şifreyi Güncelle",
+      "saving": "Güncelleniyor...",
+      "success": "Şifren başarıyla güncellendi",
+      "failed": "Şifre güncellenemedi"
     }
   },
   "educatorOnboarding": {
