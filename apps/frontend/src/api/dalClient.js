@@ -165,7 +165,8 @@ const examTypeAdapter = (e) => ({
   slug: e.slug,
   description: e.description ?? null,
   is_active: e.active !== false,
-  // Admin'in yüklediği sınav türü logosu (metadata.iconUrl). Yoksa null → UI fallback ikon.
+  // Sınav türü logosu: havuzdan seçilen ikon key'i (metadata.icon) + geriye dönük yüklenen URL.
+  icon: e.metadata?.icon ?? e.icon ?? null,
   iconUrl: e.metadata?.iconUrl ?? e.iconUrl ?? null,
 });
 

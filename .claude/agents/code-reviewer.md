@@ -69,6 +69,7 @@ Sınav Salonu projesi için kod inceleme uzmanısın. İşin hata bulmak, düzel
 - Update operasyonunda `before` snapshot alınıp metadata'ya `before/after` yazılmış mı?
 - Hem başarı hem başarısızlık path'i log'lanıyor mu? (`AUTH_LOGIN_FAIL`, `REFUND_REJECTED` gibi negatif eylemler de zorunlu)
 - `await this.audit.log(...)` mı yoksa `logAsync` mi? `await` use case'i bloke eder, fire-and-forget tercih edilmeli.
+- **Best-effort audit/yan-etki `catch`'i sessiz yutuyor mu?** `try { auditRepo.create(...) } catch {}`, `catch { /* swallow */ }` veya `.catch(() => {})` → KRİTİK. `logger.warn('<domain>.<action>.audit_failed', { error: err?.message, entityId, actorId })` zorunlu; aksi halde audit pipeline bozulsa kimse fark etmez. Aynı kural stats enqueue / risk recompute gibi yan-etki catch'leri için de geçerli.
 - PII (password, JWT, kart numarası, recovery code) metadata'ya sızıyor mu?
 - Yeni AuditAction enum değeri eklendiyse migration var mı?
 - **Korumalı endpoint (`@Roles(...)`)** controller `actorId`'i (`req.user?.id`) use case'e geçiyor mu? Geçmezse ownership guard sessizce atlanır + audit log `actorId: null` yazar — KRİTİK.

@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/Pagination";
 import { Plus, Edit2, Trash2, Award, Search, X, CalendarDays } from "lucide-react";
+import { EXAM_TYPE_ICONS, getExamTypeIcon } from "@/lib/examTypeIcons";
 import {
   Select,
   SelectContent,
@@ -40,30 +41,10 @@ export default function ManageExamTypes() {
   const [showDialog, setShowDialog] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const [formData, setFormData] = useState({ name: "", description: "", active: true, iconUrl: "" });
+  const [formData, setFormData] = useState({ name: "", description: "", active: true, icon: "" });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const queryClient = useQueryClient();
-  const [uploading, setUploading] = useState(false);
-
-  // Sınav türü logosu yükle — Sharp pipeline (/upload/image) → URL'i formData.iconUrl'e yaz.
-  const handleIconUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const { data } = await api.post("/upload/image", fd);
-      const url = data?.url ?? data?.responsive?.thumb ?? "";
-      if (url) setFormData((p) => ({ ...p, iconUrl: url }));
-      toast.success("Logo yüklendi");
-    } catch (err) {
-      toast.error(err?.response?.data?.message ?? "Logo yüklenemedi");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   // Filtreler
   const [searchName, setSearchName] = useState("");
@@ -144,10 +125,10 @@ export default function ManageExamTypes() {
   const openDialog = (exam = null) => {
     if (exam) {
       setEditingExam(exam);
-      setFormData({ name: exam.name, description: exam.description || "", active: exam.active ?? true, iconUrl: exam.metadata?.iconUrl ?? "" });
+      setFormData({ name: exam.name, description: exam.description || "", active: exam.active ?? true, icon: exam.metadata?.icon ?? "" });
     } else {
       setEditingExam(null);
-      setFormData({ name: "", description: "", active: true, iconUrl: "" });
+      setFormData({ name: "", description: "", active: true, icon: "" });
     }
     setShowDialog(true);
   };
@@ -155,7 +136,7 @@ export default function ManageExamTypes() {
   const closeDialog = () => {
     setShowDialog(false);
     setEditingExam(null);
-    setFormData({ name: "", description: "", active: true, iconUrl: "" });
+    setFormData({ name: "", description: "", active: true, icon: "" });
   };
 
   const handleSubmit = () => {
@@ -296,9 +277,12 @@ export default function ManageExamTypes() {
                 <div key={exam.id} className="flex items-center justify-between p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center overflow-hidden">
-                      {exam.metadata?.iconUrl
-                        ? <img src={exam.metadata.iconUrl} alt="" className="w-full h-full object-cover" />
-                        : <Award className="w-6 h-6 text-indigo-600" />}
+                      {(() => {
+                        const Ico = getExamTypeIcon(exam.metadata?.icon);
+                        if (exam.metadata?.icon) return <Ico className="w-6 h-6 text-indigo-600" />;
+                        if (exam.metadata?.iconUrl) return <img src={exam.metadata.iconUrl} alt="" className="w-full h-full object-cover" />;
+                        return <Award className="w-6 h-6 text-indigo-600" />;
+                      })()}
                     </div>
                     <div>
                       <h3 className="font-semibold text-slate-900">{exam.name}</h3>
@@ -364,36 +348,29 @@ export default function ManageExamTypes() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Logo / İkon</Label>
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-indigo-50 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
-                  {formData.iconUrl
-                    ? <img src={formData.iconUrl} alt="" className="w-full h-full object-cover" />
-                    : <Award className="w-6 h-6 text-indigo-400" />}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <input id="examtype-icon" type="file" accept="image/*" className="hidden" onChange={handleIconUpload} />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={uploading}
-                    onClick={() => document.getElementById("examtype-icon")?.click()}
-                  >
-                    {uploading ? "Yükleniyor..." : formData.iconUrl ? "Logoyu Değiştir" : "Logo Yükle"}
-                  </Button>
-                  {formData.iconUrl && (
-                    <Button
+              <Label>Logo</Label>
+              <p className="text-xs text-slate-500">Havuzdan konuya uygun bir çizgi logo seçin.</p>
+              <div className="grid grid-cols-6 gap-2 max-h-44 overflow-y-auto p-1 rounded-lg border border-slate-200">
+                {EXAM_TYPE_ICONS.map(({ key, Icon, label }) => {
+                  const selected = formData.icon === key;
+                  return (
+                    <button
+                      key={key}
                       type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-rose-600 h-7"
-                      onClick={() => setFormData((p) => ({ ...p, iconUrl: "" }))}
+                      title={label}
+                      aria-label={label}
+                      aria-pressed={selected}
+                      onClick={() => setFormData((p) => ({ ...p, icon: selected ? "" : key }))}
+                      className={`flex items-center justify-center h-10 rounded-lg border transition-colors ${
+                        selected
+                          ? "border-indigo-500 bg-indigo-50 text-indigo-600 ring-2 ring-indigo-200"
+                          : "border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                      }`}
                     >
-                      Kaldır
-                    </Button>
-                  )}
-                </div>
+                      <Icon className="w-5 h-5" aria-hidden="true" />
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="space-y-2">

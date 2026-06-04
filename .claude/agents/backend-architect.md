@@ -277,6 +277,8 @@ async update(@Param('id') id: string, @Body() dto: Dto, @Req() req: any) {
 
 **Failure path'leri de logla:** Login fail, refund reject, permission denied gibi durumlar `AUTH_LOGIN_FAIL`, `REFUND_REJECTED`, vb. AuditAction ile yazılır. "Olmadı" olayı kadar "oldu" olayı önemli.
 
+**Best-effort audit `catch`'i sessiz yutma:** Audit yazımı akışı bloke etmemeli, ama `catch {}` / `.catch(() => {})` ile sessizce yutulmamalı. Her best-effort audit (ve yan-etki: stats enqueue, risk recompute) catch'i `logger.warn('<domain>.<action>.audit_failed', { error: err?.message, entityId, actorId })` ile loglanır — audit DB bozulursa görünür olsun. Doğru referans: `ModerateTextContentUseCase`.
+
 **Controller actorId kaçağı (sık görülen logging gap):**
 
 `@Roles('EDUCATOR' | 'ADMIN')` korumalı endpoint'te `actorId`'i unuttuğunda iki şey kırılır:

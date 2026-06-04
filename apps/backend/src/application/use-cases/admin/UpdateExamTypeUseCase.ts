@@ -3,6 +3,7 @@ import { IExamTypeRepository } from '../../../domain/interfaces/IExamTypeReposit
 import { IAuditLogRepository } from '../../../domain/interfaces/IAuditLogRepository';
 import { EXAM_TYPE_REPO } from '../../constants';
 import { slugify } from '../../utils/slugify';
+import { logger } from '../../../infrastructure/logger/logger';
 
 /**
  * Sınav türünü günceller. Slug çakışması kontrolü yapılır (kendi ID'si hariç).
@@ -19,8 +20,20 @@ export class UpdateExamTypeUseCase {
     const existing = await this.repo.findById(id);
     if (!existing) return null;
 
-    const slug = input.slug?.trim() ? slugify(input.slug) : input.name ? slugify(input.name) : undefined;
-    if (slug) {
+    // Slug yalnızca açıkça verildiğinde ya da ad GERÇEKTEN değiştiğinde yeniden üretilir.
+    // Aksi halde (örn. yalnızca logo/açıklama/aktiflik güncellemesi) mevcut slug korunur.
+    // Böylece adı başka bir kayıtla aynı slug'a normalize olan türlerde ("KPSS - Eğitim
+    // Bilimleri" vs "KPSS Eğitim Bilimleri" → ikisi de "kpss-egitim-bilimleri") sahte 409 olmaz.
+    const existingSlug = (existing as any).slug as string | undefined;
+    const existingName = (existing as any).name as string | undefined;
+    let slug: string | undefined;
+    if (input.slug?.trim()) {
+      slug = slugify(input.slug);
+    } else if (input.name?.trim() && input.name.trim() !== existingName) {
+      slug = slugify(input.name);
+    }
+
+    if (slug && slug !== existingSlug) {
       const bySlug = await this.repo.findBySlug(slug);
       if (bySlug && bySlug.id !== id) {
         const err: any = new Error('EXAMTYPE_SLUG_EXISTS');
@@ -28,6 +41,9 @@ export class UpdateExamTypeUseCase {
         err.code = 'EXAMTYPE_SLUG_EXISTS';
         throw err;
       }
+    } else {
+      // Slug değişmiyor → tekrar yazma, çakışma kontrolü yapma.
+      slug = undefined;
     }
 
     // metadata verildiyse mevcut metadata ile birleştir — iconUrl güncellemesi
@@ -47,8 +63,13 @@ export class UpdateExamTypeUseCase {
     if (updated && this.auditRepo) {
       try {
         await this.auditRepo.create({ action: 'EXAMTYPE_UPDATED', entityType: 'EXAM_TYPE', entityId: id, actorId: actorId ?? null, metadata: {} });
-      } catch {
-        /* swallow */
+      } catch (err: any) {
+        // Audit best-effort — akışı bloke etmez, ama başarısız yazımı görünür kıl.
+        logger.warn('examtype.update.audit_failed', {
+          error: err?.message,
+          examTypeId: id,
+          actorId: actorId ?? null,
+        });
       }
     }
     return updated;

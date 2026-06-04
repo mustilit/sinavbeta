@@ -1,145 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="66" failures="0" errors="0" time="12.737">
-  <testsuite name="EducatorActiveGuard" errors="0" failures="0" skipped="0" timestamp="2026-05-30T21:29:49" time="5.57" tests="10">
-    <testcase classname="EducatorActiveGuard user yoksa no-op (true) — JwtAuthGuard ya 401 fırlattı ya public endpoint" name="EducatorActiveGuard user yoksa no-op (true) — JwtAuthGuard ya 401 fırlattı ya public endpoint" time="0.076">
+<testsuites name="jest tests" tests="33" failures="0" errors="0" time="12.779">
+  <testsuite name="DeleteExamTypeUseCase" errors="0" failures="0" skipped="0" timestamp="2026-06-04T09:10:59" time="3.889" tests="5">
+    <testcase classname="DeleteExamTypeUseCase sınav türü bulunamazsa NOT_FOUND fırlatır" name="DeleteExamTypeUseCase sınav türü bulunamazsa NOT_FOUND fırlatır" time="0.037">
     </testcase>
-    <testcase classname="EducatorActiveGuard role !== EDUCATOR ise SQL atmaz, true döner" name="EducatorActiveGuard role !== EDUCATOR ise SQL atmaz, true döner" time="0.004">
+    <testcase classname="DeleteExamTypeUseCase alt konular varsa CONFLICT fırlatır" name="DeleteExamTypeUseCase alt konular varsa CONFLICT fırlatır" time="0.001">
     </testcase>
-    <testcase classname="EducatorActiveGuard ADMIN no-op" name="EducatorActiveGuard ADMIN no-op" time="0.002">
+    <testcase classname="DeleteExamTypeUseCase başarı: { deleted: true } döner" name="DeleteExamTypeUseCase başarı: { deleted: true } döner" time="0.001">
     </testcase>
-    <testcase classname="EducatorActiveGuard EDUCATOR + ACTIVE → true" name="EducatorActiveGuard EDUCATOR + ACTIVE → true" time="0.01">
+    <testcase classname="DeleteExamTypeUseCase başarı: audit log EXAMTYPE_DELETED action ile yazılır" name="DeleteExamTypeUseCase başarı: audit log EXAMTYPE_DELETED action ile yazılır" time="0.003">
     </testcase>
-    <testcase classname="EducatorActiveGuard EDUCATOR + REJECTED → ForbiddenException" name="EducatorActiveGuard EDUCATOR + REJECTED → ForbiddenException" time="0.066">
-    </testcase>
-    <testcase classname="EducatorActiveGuard EDUCATOR + REJECTED response shape: code=EDUCATOR_REJECTED + Türkçe mesaj" name="EducatorActiveGuard EDUCATOR + REJECTED response shape: code=EDUCATOR_REJECTED + Türkçe mesaj" time="0.003">
-    </testcase>
-    <testcase classname="EducatorActiveGuard EDUCATOR + SUSPENDED → ForbiddenException(EDUCATOR_SUSPENDED)" name="EducatorActiveGuard EDUCATOR + SUSPENDED → ForbiddenException(EDUCATOR_SUSPENDED)" time="0.008">
-    </testcase>
-    <testcase classname="EducatorActiveGuard EDUCATOR + PENDING_EDUCATOR_APPROVAL → true (henüz onay bekliyor, içerik kısıtı yok)" name="EducatorActiveGuard EDUCATOR + PENDING_EDUCATOR_APPROVAL → true (henüz onay bekliyor, içerik kısıtı yok)" time="0.003">
-    </testcase>
-    <testcase classname="EducatorActiveGuard request-scoped cache: aynı request içinde ikinci çağrıda tekrar SQL atmaz" name="EducatorActiveGuard request-scoped cache: aynı request içinde ikinci çağrıda tekrar SQL atmaz" time="0.016">
-    </testcase>
-    <testcase classname="EducatorActiveGuard role lowercase gelse de EDUCATOR olarak normalize edilir" name="EducatorActiveGuard role lowercase gelse de EDUCATOR olarak normalize edilir" time="0.003">
+    <testcase classname="DeleteExamTypeUseCase audit log hatası fırlatmaz (best-effort)" name="DeleteExamTypeUseCase audit log hatası fırlatmaz (best-effort)" time="0.003">
     </testcase>
   </testsuite>
-  <testsuite name="PrismaUserRepository" errors="0" failures="0" skipped="0" timestamp="2026-05-30T21:29:55" time="0.75" tests="18">
-    <testcase classname="PrismaUserRepository findByEmail email kayıtlıysa kullanıcıyı döner" name="PrismaUserRepository findByEmail email kayıtlıysa kullanıcıyı döner" time="0.005">
+  <testsuite name="PrismaExamTypeRepository" errors="0" failures="0" skipped="0" timestamp="2026-06-04T09:10:59" time="3.895" tests="9">
+    <testcase classname="PrismaExamTypeRepository list tüm sınav türlerini listeler" name="PrismaExamTypeRepository list tüm sınav türlerini listeler" time="0.025">
     </testcase>
-    <testcase classname="PrismaUserRepository findByEmail email bulunamazsa null döner (boş array)" name="PrismaUserRepository findByEmail email bulunamazsa null döner (boş array)" time="0.014">
+    <testcase classname="PrismaExamTypeRepository list activeOnly=true filtresiyle sadece aktif türleri listeler" name="PrismaExamTypeRepository list activeOnly=true filtresiyle sadece aktif türleri listeler" time="0.005">
     </testcase>
-    <testcase classname="PrismaUserRepository findByEmail emaili lowercase&apos;e normalize ederek sorgular" name="PrismaUserRepository findByEmail emaili lowercase&apos;e normalize ederek sorgular" time="0.002">
+    <testcase classname="PrismaExamTypeRepository findById sınav türü bulunduğunda döner" name="PrismaExamTypeRepository findById sınav türü bulunduğunda döner" time="0.002">
     </testcase>
-    <testcase classname="PrismaUserRepository findByEmail REJECTED status kullanıcıyı sorunsuz döndürür (enum bypass)" name="PrismaUserRepository findByEmail REJECTED status kullanıcıyı sorunsuz döndürür (enum bypass)" time="0.002">
+    <testcase classname="PrismaExamTypeRepository findById bulunamazsa null döner" name="PrismaExamTypeRepository findById bulunamazsa null döner" time="0.002">
     </testcase>
-    <testcase classname="PrismaUserRepository findByUsername username kayıtlıysa kullanıcıyı döner" name="PrismaUserRepository findByUsername username kayıtlıysa kullanıcıyı döner" time="0.003">
+    <testcase classname="PrismaExamTypeRepository create yeni sınav türü oluşturur" name="PrismaExamTypeRepository create yeni sınav türü oluşturur" time="0.002">
     </testcase>
-    <testcase classname="PrismaUserRepository findByUsername bulunamazsa null döner" name="PrismaUserRepository findByUsername bulunamazsa null döner" time="0.001">
+    <testcase classname="PrismaExamTypeRepository update mevcut tür güncellenir" name="PrismaExamTypeRepository update mevcut tür güncellenir" time="0.001">
     </testcase>
-    <testcase classname="PrismaUserRepository findById kullanıcı bulunduğunda domain nesnesini döner" name="PrismaUserRepository findById kullanıcı bulunduğunda domain nesnesini döner" time="0.003">
+    <testcase classname="PrismaExamTypeRepository update id bulunamazsa null döner" name="PrismaExamTypeRepository update id bulunamazsa null döner" time="0.001">
     </testcase>
-    <testcase classname="PrismaUserRepository findById kullanıcı bulunamadığında null döner" name="PrismaUserRepository findById kullanıcı bulunamadığında null döner" time="0.003">
+    <testcase classname="PrismaExamTypeRepository delete bağlı topic yoksa siler ve true döner" name="PrismaExamTypeRepository delete bağlı topic yoksa siler ve true döner" time="0.002">
     </testcase>
-    <testcase classname="PrismaUserRepository updateLastLoginAt lastLoginAt güncelleme sorgusunu çağırır" name="PrismaUserRepository updateLastLoginAt lastLoginAt güncelleme sorgusunu çağırır" time="0.004">
-    </testcase>
-    <testcase classname="PrismaUserRepository updateEducatorStatus INACTIVE durumunu SUSPENDED&apos;a çevirir" name="PrismaUserRepository updateEducatorStatus INACTIVE durumunu SUSPENDED&apos;a çevirir" time="0.002">
-    </testcase>
-    <testcase classname="PrismaUserRepository updateEducatorStatus kullanıcı bulunamazsa null döner" name="PrismaUserRepository updateEducatorStatus kullanıcı bulunamazsa null döner" time="0.001">
-    </testcase>
-    <testcase classname="PrismaUserRepository updateEducatorProfile boş metadata için sadece findById sonucu döner (no-op)" name="PrismaUserRepository updateEducatorProfile boş metadata için sadece findById sonucu döner (no-op)" time="0.003">
-    </testcase>
-    <testcase classname="PrismaUserRepository updateEducatorProfile mevcut metadata + yeni alanları merge edip yazar" name="PrismaUserRepository updateEducatorProfile mevcut metadata + yeni alanları merge edip yazar" time="0.035">
-    </testcase>
-    <testcase classname="PrismaUserRepository updateEducatorProfile kullanıcı bulunamazsa null döner" name="PrismaUserRepository updateEducatorProfile kullanıcı bulunamazsa null döner" time="0.008">
-    </testcase>
-    <testcase classname="PrismaUserRepository updateEducatorProfile REJECTED kullanıcıda da çalışır (enum bypass)" name="PrismaUserRepository updateEducatorProfile REJECTED kullanıcıda da çalışır (enum bypass)" time="0.001">
-    </testcase>
-    <testcase classname="PrismaUserRepository listInactiveUsersWithOpenAttempts gün eşiğini geçen IN_PROGRESS denemeleri döner" name="PrismaUserRepository listInactiveUsersWithOpenAttempts gün eşiğini geçen IN_PROGRESS denemeleri döner" time="0.003">
-    </testcase>
-    <testcase classname="PrismaUserRepository list filtre olmadan kullanıcıları listeler" name="PrismaUserRepository list filtre olmadan kullanıcıları listeler" time="0.001">
-    </testcase>
-    <testcase classname="PrismaUserRepository list REJECTED kullanıcılar da liste sonuçlarına dahil edilir" name="PrismaUserRepository list REJECTED kullanıcılar da liste sonuçlarına dahil edilir" time="0.005">
+    <testcase classname="PrismaExamTypeRepository delete bağlı topic varsa silmez ve false döner" name="PrismaExamTypeRepository delete bağlı topic varsa silmez ve false döner" time="0.002">
     </testcase>
   </testsuite>
-  <testsuite name="LoginUseCase" errors="0" failures="0" skipped="0" timestamp="2026-05-30T21:29:56" time="1.124" tests="11">
-    <testcase classname="LoginUseCase girdi doğrulama boş email → INVALID_CREDENTIALS" name="LoginUseCase girdi doğrulama boş email → INVALID_CREDENTIALS" time="0.084">
+  <testsuite name="UpdateExamTypeUseCase" errors="0" failures="0" skipped="0" timestamp="2026-06-04T09:11:03" time="0.747" tests="6">
+    <testcase classname="UpdateExamTypeUseCase sınav türü bulunamazsa null döner" name="UpdateExamTypeUseCase sınav türü bulunamazsa null döner" time="0.011">
     </testcase>
-    <testcase classname="LoginUseCase girdi doğrulama boş şifre → INVALID_CREDENTIALS" name="LoginUseCase girdi doğrulama boş şifre → INVALID_CREDENTIALS" time="0.005">
+    <testcase classname="UpdateExamTypeUseCase slug başka bir kayda aitse EXAMTYPE_SLUG_EXISTS fırlatır" name="UpdateExamTypeUseCase slug başka bir kayda aitse EXAMTYPE_SLUG_EXISTS fırlatır" time="0.009">
     </testcase>
-    <testcase classname="LoginUseCase girdi doğrulama email lowercase + trim normalize edilir" name="LoginUseCase girdi doğrulama email lowercase + trim normalize edilir" time="0.006">
+    <testcase classname="UpdateExamTypeUseCase slug kendi ID&apos;siyse çakışma sayılmaz" name="UpdateExamTypeUseCase slug kendi ID&apos;siyse çakışma sayılmaz" time="0.002">
     </testcase>
-    <testcase classname="LoginUseCase kimlik hatası kullanıcı bulunamazsa INVALID_CREDENTIALS" name="LoginUseCase kimlik hatası kullanıcı bulunamazsa INVALID_CREDENTIALS" time="0.016">
+    <testcase classname="UpdateExamTypeUseCase başarı: repo.update çağrılır" name="UpdateExamTypeUseCase başarı: repo.update çağrılır" time="0.01">
     </testcase>
-    <testcase classname="LoginUseCase kimlik hatası şifre yanlışsa INVALID_CREDENTIALS" name="LoginUseCase kimlik hatası şifre yanlışsa INVALID_CREDENTIALS" time="0.004">
+    <testcase classname="UpdateExamTypeUseCase audit log EXAMTYPE_UPDATED action ile yazılır" name="UpdateExamTypeUseCase audit log EXAMTYPE_UPDATED action ile yazılır" time="0.004">
     </testcase>
-    <testcase classname="LoginUseCase hesap durumu SUSPENDED hesap → ACCOUNT_SUSPENDED" name="LoginUseCase hesap durumu SUSPENDED hesap → ACCOUNT_SUSPENDED" time="0.002">
-    </testcase>
-    <testcase classname="LoginUseCase hesap durumu REJECTED kullanıcı login akışını sorunsuz tamamlar (B9 — enum bypass)" name="LoginUseCase hesap durumu REJECTED kullanıcı login akışını sorunsuz tamamlar (B9 — enum bypass)" time="0.005">
-    </testcase>
-    <testcase classname="LoginUseCase başarılı giriş token + sessionId üretir, raw SQL UPDATE çalıştırır" name="LoginUseCase başarılı giriş token + sessionId üretir, raw SQL UPDATE çalıştırır" time="0.004">
-    </testcase>
-    <testcase classname="LoginUseCase başarılı giriş user objesi response içinde dönmeli" name="LoginUseCase başarılı giriş user objesi response içinde dönmeli" time="0.003">
-    </testcase>
-    <testcase classname="LoginUseCase 2FA gate sistem 2FA açık + user 2FA açık → pendingMfaToken döner (sessionId YAZILMAZ)" name="LoginUseCase 2FA gate sistem 2FA açık + user 2FA açık → pendingMfaToken döner (sessionId YAZILMAZ)" time="0.013">
-    </testcase>
-    <testcase classname="LoginUseCase 2FA gate sistem 2FA açık ama user 2FA kapalı → normal akış" name="LoginUseCase 2FA gate sistem 2FA açık ama user 2FA kapalı → normal akış" time="0.003">
+    <testcase classname="UpdateExamTypeUseCase slug verilmezse name&apos;den türetilir" name="UpdateExamTypeUseCase slug verilmezse name&apos;den türetilir" time="0.002">
     </testcase>
   </testsuite>
-  <testsuite name="AuthController.me()" errors="0" failures="0" skipped="0" timestamp="2026-05-30T21:29:49" time="9.931" tests="19">
-    <testcase classname="AuthController.me() yetki JWT sub yoksa 401" name="AuthController.me() yetki JWT sub yoksa 401" time="0.164">
+  <testsuite name="CreateExamTypeUseCase" errors="0" failures="0" skipped="0" timestamp="2026-06-04T09:11:03" time="1.309" tests="7">
+    <testcase classname="CreateExamTypeUseCase aynı slug zaten varsa EXAMTYPE_SLUG_EXISTS fırlatır" name="CreateExamTypeUseCase aynı slug zaten varsa EXAMTYPE_SLUG_EXISTS fırlatır" time="0.019">
     </testcase>
-    <testcase classname="AuthController.me() yetki kullanıcı DB&apos;de yoksa 404" name="AuthController.me() yetki kullanıcı DB&apos;de yoksa 404" time="0.004">
+    <testcase classname="CreateExamTypeUseCase slug verilmezse isimden üretilir" name="CreateExamTypeUseCase slug verilmezse isimden üretilir" time="0.003">
     </testcase>
-    <testcase classname="AuthController.me() temel response id + email + username + role + status döner" name="AuthController.me() temel response id + email + username + role + status döner" time="0.004">
+    <testcase classname="CreateExamTypeUseCase Türkçe karakterler normalize edilir" name="CreateExamTypeUseCase Türkçe karakterler normalize edilir" time="0.008">
     </testcase>
-    <testcase classname="AuthController.me() temel response createdAt + educatorApprovedAt geçer" name="AuthController.me() temel response createdAt + educatorApprovedAt geçer" time="0.016">
+    <testcase classname="CreateExamTypeUseCase active varsayılan true olarak ayarlanır" name="CreateExamTypeUseCase active varsayılan true olarak ayarlanır" time="0.007">
     </testcase>
-    <testcase classname="AuthController.me() full_name çözümlemesi (B9) firstName + lastName birleştirilir" name="AuthController.me() full_name çözümlemesi (B9) firstName + lastName birleştirilir" time="0.007">
+    <testcase classname="CreateExamTypeUseCase active false geçilirse false saklanır" name="CreateExamTypeUseCase active false geçilirse false saklanır" time="0.002">
     </testcase>
-    <testcase classname="AuthController.me() full_name çözümlemesi (B9) firstName/lastName boşsa username fallback" name="AuthController.me() full_name çözümlemesi (B9) firstName/lastName boşsa username fallback" time="0.003">
+    <testcase classname="CreateExamTypeUseCase başarı: audit log EXAMTYPE_CREATED action ile yazılır" name="CreateExamTypeUseCase başarı: audit log EXAMTYPE_CREATED action ile yazılır" time="0.002">
     </testcase>
-    <testcase classname="AuthController.me() metadata flatten + alias map (B9) metadata.cv_url → user.cv_url" name="AuthController.me() metadata flatten + alias map (B9) metadata.cv_url → user.cv_url" time="0.009">
-    </testcase>
-    <testcase classname="AuthController.me() metadata flatten + alias map (B9) metadata.specialized_exam_types → user.specialized_exam_types (array)" name="AuthController.me() metadata flatten + alias map (B9) metadata.specialized_exam_types → user.specialized_exam_types (array)" time="0.002">
-    </testcase>
-    <testcase classname="AuthController.me() metadata flatten + alias map (B9) specialized_exam_types yoksa boş array fallback" name="AuthController.me() metadata flatten + alias map (B9) specialized_exam_types yoksa boş array fallback" time="0.001">
-    </testcase>
-    <testcase classname="AuthController.me() metadata flatten + alias map (B9) metadata.education_info → hem education hem education_info" name="AuthController.me() metadata flatten + alias map (B9) metadata.education_info → hem education hem education_info" time="0.003">
-    </testcase>
-    <testcase classname="AuthController.me() metadata flatten + alias map (B9) metadata.website_url → hem website hem website_url alias" name="AuthController.me() metadata flatten + alias map (B9) metadata.website_url → hem website hem website_url alias" time="0.002">
-    </testcase>
-    <testcase classname="AuthController.me() metadata flatten + alias map (B9) metadata.linkedin_url → hem linkedin hem linkedin_url alias" name="AuthController.me() metadata flatten + alias map (B9) metadata.linkedin_url → hem linkedin hem linkedin_url alias" time="0.002">
-    </testcase>
-    <testcase classname="AuthController.me() metadata flatten + alias map (B9) bio kolondan gelir; yoksa metadata.bio fallback" name="AuthController.me() metadata flatten + alias map (B9) bio kolondan gelir; yoksa metadata.bio fallback" time="0.002">
-    </testcase>
-    <testcase classname="AuthController.me() metadata flatten + alias map (B9) ham metadata da response&apos;ta dursun (fallback için)" name="AuthController.me() metadata flatten + alias map (B9) ham metadata da response&apos;ta dursun (fallback için)" time="0.001">
-    </testcase>
-    <testcase classname="AuthController.me() REJECTED + onay aşaması bilgisi REJECTED kullanıcı → rejectionReason + educator_status=rejected" name="AuthController.me() REJECTED + onay aşaması bilgisi REJECTED kullanıcı → rejectionReason + educator_status=rejected" time="0.003">
-    </testcase>
-    <testcase classname="AuthController.me() REJECTED + onay aşaması bilgisi PENDING_EDUCATOR_APPROVAL → educator_status=pending" name="AuthController.me() REJECTED + onay aşaması bilgisi PENDING_EDUCATOR_APPROVAL → educator_status=pending" time="0.047">
-    </testcase>
-    <testcase classname="AuthController.me() REJECTED + onay aşaması bilgisi ACTIVE + educatorApprovedAt → educator_status=approved" name="AuthController.me() REJECTED + onay aşaması bilgisi ACTIVE + educatorApprovedAt → educator_status=approved" time="0.003">
-    </testcase>
-    <testcase classname="AuthController.me() WORKER izinleri WORKER kullanıcı workerPages ile döner" name="AuthController.me() WORKER izinleri WORKER kullanıcı workerPages ile döner" time="0.003">
-    </testcase>
-    <testcase classname="AuthController.me() WORKER izinleri WORKER ama izin kaydı yoksa boş array" name="AuthController.me() WORKER izinleri WORKER ama izin kaydı yoksa boş array" time="0.002">
+    <testcase classname="CreateExamTypeUseCase audit log hatası fırlatmaz (best-effort)" name="CreateExamTypeUseCase audit log hatası fırlatmaz (best-effort)" time="0.013">
     </testcase>
   </testsuite>
-  <testsuite name="EducatorsController.resubmitApplication()" errors="0" failures="0" skipped="0" timestamp="2026-05-30T21:29:49" time="9.975" tests="8">
-    <testcase classname="EducatorsController.resubmitApplication() REJECTED kullanıcı (mutlu yol) status PENDING_EDUCATOR_APPROVAL döner" name="EducatorsController.resubmitApplication() REJECTED kullanıcı (mutlu yol) status PENDING_EDUCATOR_APPROVAL döner" time="0.036">
+  <testsuite name="AdminExamTypesController" errors="0" failures="0" skipped="0" timestamp="2026-06-04T09:10:59" time="7.712" tests="6">
+    <testcase classname="AdminExamTypesController list varsayılan olarak activeOnly=true ile listeler" name="AdminExamTypesController list varsayılan olarak activeOnly=true ile listeler" time="0.04">
     </testcase>
-    <testcase classname="EducatorsController.resubmitApplication() REJECTED kullanıcı (mutlu yol) $executeRaw ile UPDATE çağrılır (rejectionReason + rejectedAt temizlenir)" name="EducatorsController.resubmitApplication() REJECTED kullanıcı (mutlu yol) $executeRaw ile UPDATE çağrılır (rejectionReason + rejectedAt temizlenir)" time="0.004">
+    <testcase classname="AdminExamTypesController list activeOnly=false ile tüm sınav türleri listelenir" name="AdminExamTypesController list activeOnly=false ile tüm sınav türleri listelenir" time="0.002">
     </testcase>
-    <testcase classname="EducatorsController.resubmitApplication() REJECTED kullanıcı (mutlu yol) EDUCATOR_RESUBMITTED audit log yazılır" name="EducatorsController.resubmitApplication() REJECTED kullanıcı (mutlu yol) EDUCATOR_RESUBMITTED audit log yazılır" time="0.007">
+    <testcase classname="AdminExamTypesController list activeOnly başka değer ise true kullanılır" name="AdminExamTypesController list activeOnly başka değer ise true kullanılır" time="0.002">
     </testcase>
-    <testcase classname="EducatorsController.resubmitApplication() REJECTED kullanıcı (mutlu yol) audit log fail olursa endpoint yine başarılı (best-effort)" name="EducatorsController.resubmitApplication() REJECTED kullanıcı (mutlu yol) audit log fail olursa endpoint yine başarılı (best-effort)" time="0.005">
+    <testcase classname="AdminExamTypesController create actorId ve DTO ile sınav türü oluşturur" name="AdminExamTypesController create actorId ve DTO ile sınav türü oluşturur" time="0.004">
     </testcase>
-    <testcase classname="EducatorsController.resubmitApplication() REJECTED olmayan kullanıcı (idempotent no-op) ACTIVE → NO_CHANGE, UPDATE atılmaz" name="EducatorsController.resubmitApplication() REJECTED olmayan kullanıcı (idempotent no-op) ACTIVE → NO_CHANGE, UPDATE atılmaz" time="0.022">
+    <testcase classname="AdminExamTypesController update sınav türü günceller" name="AdminExamTypesController update sınav türü günceller" time="0.005">
     </testcase>
-    <testcase classname="EducatorsController.resubmitApplication() REJECTED olmayan kullanıcı (idempotent no-op) PENDING_EDUCATOR_APPROVAL → NO_CHANGE (zaten incelemede)" name="EducatorsController.resubmitApplication() REJECTED olmayan kullanıcı (idempotent no-op) PENDING_EDUCATOR_APPROVAL → NO_CHANGE (zaten incelemede)" time="0.002">
-    </testcase>
-    <testcase classname="EducatorsController.resubmitApplication() REJECTED olmayan kullanıcı (idempotent no-op) SUSPENDED → NO_CHANGE (askıya alma resubmit ile geri alınamaz)" name="EducatorsController.resubmitApplication() REJECTED olmayan kullanıcı (idempotent no-op) SUSPENDED → NO_CHANGE (askıya alma resubmit ile geri alınamaz)" time="0.002">
-    </testcase>
-    <testcase classname="EducatorsController.resubmitApplication() hata yolları user DB&apos;de yoksa USER_NOT_FOUND fırlatır" name="EducatorsController.resubmitApplication() hata yolları user DB&apos;de yoksa USER_NOT_FOUND fırlatır" time="0.166">
+    <testcase classname="AdminExamTypesController delete sınav türü siler" name="AdminExamTypesController delete sınav türü siler" time="0.001">
     </testcase>
   </testsuite>
 </testsuites>

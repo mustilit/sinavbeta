@@ -20,7 +20,6 @@ import {
   TrendingUp,
   Users,
   BookOpen,
-  Award,
   ArrowRight,
   CheckCircle,
   Star,
@@ -32,6 +31,7 @@ import {
   Play,
   Eye,
 } from "lucide-react";
+import { getExamTypeIcon } from "@/lib/examTypeIcons";
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -237,6 +237,7 @@ function ExamTypesCarousel({ examTypes, examTypeIds, isPersonalized, t }) {
               gizli kalır flex container içinde */}
           {examTypes.map((exam) => {
             const isPreferred = isPersonalized && examTypeIds.includes(exam.id);
+            const ExamIcon = getExamTypeIcon(exam.metadata?.icon);
             return (
               <Link
                 key={exam.id}
@@ -255,7 +256,7 @@ function ExamTypesCarousel({ examTypes, examTypeIds, isPersonalized, t }) {
                       : "rgba(0,0,205,0.07)",
                   }}
                 >
-                  <Award className="w-6 h-6" style={{ color: "#0000CD" }} />
+                  <ExamIcon className="w-6 h-6" style={{ color: "#0000CD" }} />
                 </div>
                 {/* exam.name user-generated — çevrilmez */}
                 <p className="mt-3 font-semibold text-slate-800 text-sm truncate">

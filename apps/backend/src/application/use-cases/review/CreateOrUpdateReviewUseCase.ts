@@ -3,6 +3,7 @@ import { IPurchaseRepository } from '../../../domain/interfaces/IPurchaseReposit
 import { IAttemptRepository } from '../../../domain/interfaces/IAttemptRepository';
 import { IAuditLogRepository } from '../../../domain/interfaces/IAuditLogRepository';
 import { BadRequestException } from '@nestjs/common';
+import { logger } from '../../../infrastructure/logger/logger';
 import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
 
 /**
@@ -113,14 +114,27 @@ export class CreateOrUpdateReviewUseCase {
         actorId: candidateId,
         metadata: { packageId, testRating, educatorRating },
       } as any);
-    } catch {}
+    } catch (err: any) {
+      // Audit best-effort — akışı bloke etmez, ama başarısız yazımı görünür kıl.
+      logger.warn('review.upsert.audit_failed', {
+        error: err?.message,
+        reviewId: created.id,
+        candidateId,
+        packageId,
+      });
+    }
 
     // Stats refresh — best-effort
     try {
       const { QueueService } = require('../../../infrastructure/queue/queue.service');
       const qs = new QueueService();
       await qs.enqueueJob('stats-queue', 'refresh', { packageId });
-    } catch {}
+    } catch (err: any) {
+      logger.warn('review.upsert.stats_enqueue_failed', {
+        error: err?.message,
+        packageId,
+      });
+    }
 
     return created;
   }

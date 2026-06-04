@@ -358,6 +358,12 @@ async update(@Body() dto: Dto, @Req() req: any) {
 4. Failure path'lerde de log yaz (`AUTH_LOGIN_FAIL` gibi). "Olmadı" olayını görmek "oldu" kadar önemlidir.
 5. `entityId` zorunlu — kimliği bilinmeyen olaylarda `'unknown'` veya request id geç. Boş bırakma.
 6. AuditLogger DI verilmezse fallback `logger.info/warn` ile structured log yaz — test ve dev ortamında audit DB hazır olmayabilir.
+7. **Best-effort audit yazımının `catch`'i ASLA sessiz yutmaz.** `try { auditRepo.create(...) } catch {}`
+   veya `.catch(() => {})` yasak — audit DB bozulursa uyumluluk/forensic kaydı izsiz kaybolur ve
+   kimse fark etmez. Her best-effort audit (ve yan-etki: stats enqueue, risk recompute) catch'i
+   `logger.warn('<domain>.<action>.audit_failed', { error: err?.message, entityId, actorId })`
+   ile olayı görünür kılar. Akış yine bloke edilmez — sadece sessizlik kırılır.
+   Referans doğru pattern: `ModerateTextContentUseCase` (persist hatası → `logger.warn`).
 
 **Anti-pattern'lar (PR review'da reject):**
 
@@ -365,6 +371,10 @@ async update(@Body() dto: Dto, @Req() req: any) {
 - Audit `await` ediliyor (use case bloke olur, audit DB down ise endpoint patlatır).
 - `before` snapshot atlanmış (sadece `after` audit'e gidiyor).
 - E-posta/JWT/şifre `metadata`'ya direkt yazılmış.
+- **Best-effort audit/yan-etki `catch`'i sessiz yutuyor** (`catch {}`, `catch { /* swallow */ }`,
+  `.catch(() => {})`) — `logger.warn(... 'audit_failed', { error })` zorunlu. Özellikle güvenlik
+  olaylarında (`DEVICE_QUOTA_EXCEEDED`, `SUSPICIOUS_RATE_LIMIT`) sessiz yutma → kötüye kullanım
+  sinyali kaybolur.
 - **`nest/modules/<x>/<x>.service.ts` veya `nest/modules/<x>/<x>-provider.service.ts` gibi
   servis/provider katmanında doğrudan `prisma.<model>.update/create` çağırılıyor ama audit log
   yok.** Use case değil diye muafiyet yok: insert/update yapılıyorsa audit log zorunludur.
@@ -480,6 +490,7 @@ CI'da haftalık `workflow_dispatch` ile çalıştırılabilir.
 - [ ] Controller `auditContextFromRequest(req)` ile ctx oluşturup geçiyor mu?
 - [ ] AuditLogger DI verilmediğinde fallback structured logger çağrısı var mı?
 - [ ] PII (password, JWT, kart, recovery code) audit metadata'ya sızmıyor mu?
+- [ ] Best-effort audit `catch`'i `logger.warn(...'audit_failed')` ile loglanıyor mu (sessiz `catch {}` yok)?
 - [ ] `AuditAction` enum'da uygun bir değer mevcut mu? Yoksa schema migration?
 - [ ] `AuditAction` enum'da değer YOK ama insert/update yapıyorsa → en azından
       `logger.info('<domain>.<entity>.updated', { entityId, actorId, changedFields })`

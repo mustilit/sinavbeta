@@ -6,7 +6,8 @@ import { entities } from "@/api/dalClient";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, BookOpen, GraduationCap } from "lucide-react";
+import { Search, BookOpen } from "lucide-react";
+import { getExamTypeIcon } from "@/lib/examTypeIcons";
 
 export default function ExamTypes() {
   const { t } = useTranslation(["pages"]);
@@ -76,7 +77,9 @@ export default function ExamTypes() {
         <>
           <p className="text-sm text-slate-500 mb-6">{filteredExamTypes.length} sınav türü bulundu</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredExamTypes.map((examType) => (
+            {filteredExamTypes.map((examType) => {
+              const ExamIcon = getExamTypeIcon(examType.icon);
+              return (
               <Link
                 key={examType.id}
                 to={createPageUrl("Explore") + `?exam_type=${examType.id}`}
@@ -84,9 +87,9 @@ export default function ExamTypes() {
               >
                 <div className="flex flex-col items-center text-center">
                   <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-violet-100 rounded-2xl flex items-center justify-center mb-4 overflow-hidden group-hover:scale-110 transition-transform">
-                    {examType.iconUrl
+                    {examType.iconUrl && !examType.icon
                       ? <img src={examType.iconUrl} alt="" className="w-full h-full object-cover" />
-                      : <GraduationCap className="w-8 h-8 text-indigo-600" />}
+                      : <ExamIcon className="w-8 h-8 text-indigo-600" />}
                   </div>
                   <h3 className="font-semibold text-lg text-slate-900 group-hover:text-indigo-600 transition-colors mb-2">
                     {examType.name}
@@ -102,7 +105,8 @@ export default function ExamTypes() {
                   </Badge>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

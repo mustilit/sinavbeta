@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaPurchaseRepository } from '../../../infrastructure/repositories/PrismaPurchaseRepository';
+import { logger } from '../../../infrastructure/logger/logger';
 import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
 
 /**
@@ -123,8 +124,14 @@ export class RateEducatorUseCase {
           metadata: { educatorId, educatorRating: rating } as any,
         },
       });
-    } catch {
-      /* audit best-effort */
+    } catch (err: any) {
+      // Audit best-effort — akışı bloke etmez, ama başarısız yazımı görünür kıl.
+      logger.warn('review.educator_rating.audit_failed', {
+        error: err?.message,
+        reviewId: row.id,
+        candidateId,
+        educatorId,
+      });
     }
 
     return { id: row.id, rating: row.educatorRating ?? null, comment: row.comment ?? null };

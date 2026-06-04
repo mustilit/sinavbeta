@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { PrismaAuditLogRepository } from '../../../infrastructure/repositories/PrismaAuditLogRepository';
+import { logger } from '../../../infrastructure/logger/logger';
 
 /**
  * Aynı cihaz/IP'den bir oturuma izin verilen maksimum katılım. "Kapatma
@@ -106,7 +107,8 @@ export class JoinLiveSessionUseCase {
 
   /**
    * Kapatma saldırısı kotası aşıldığında audit log yazar (best-effort).
-   * Hata yutulur — loglama başarısız olsa bile katılım reddi etkilenmez.
+   * Audit yazımı başarısız olsa bile katılım reddi etkilenmez; ancak hata artık
+   * sessizce yutulmaz — `logger.warn('live.device_quota.audit_failed')` ile görünür kılınır.
    * Admin DLQ "errors" görünümünde (admin/dlq?action=DEVICE_QUOTA_EXCEEDED) izlenebilir.
    */
   private async logQuotaExceeded(
@@ -126,11 +128,24 @@ export class JoinLiveSessionUseCase {
           actorId: userId,
           metadata: { ip, joinCode, sameIpCount, max: MAX_JOINS_PER_IP },
         })
-        .catch(() => {
-          // audit hatasını yut — asıl akışı maskeleme
+        .catch((err: any) => {
+          // audit yazımı başarısız — asıl reddi maskeleme, ama güvenlik olayını
+          // görünür kıl. Sessiz yutma → kötüye kullanım sinyali izsiz kaybolur.
+          logger.warn('live.device_quota.audit_failed', {
+            error: err?.message,
+            userId,
+            sessionId,
+            joinCode,
+            sameIpCount,
+          });
         });
-    } catch {
-      // ignore audit errors
+    } catch (err: any) {
+      // Repository başlatma/beklenmeyen hata — best-effort, ama loglanır.
+      logger.warn('live.device_quota.audit_failed', {
+        error: err?.message,
+        userId,
+        sessionId,
+      });
     }
   }
 }

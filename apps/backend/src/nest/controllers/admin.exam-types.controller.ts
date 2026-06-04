@@ -47,7 +47,13 @@ export class AdminExamTypesController {
         slug: body.slug,
         description: body.description,
         active: body.active,
-        metadata: body.iconUrl !== undefined ? { iconUrl: body.iconUrl } : undefined,
+        metadata:
+          body.icon !== undefined || body.iconUrl !== undefined
+            ? {
+                ...(body.icon !== undefined ? { icon: body.icon } : {}),
+                ...(body.iconUrl !== undefined ? { iconUrl: body.iconUrl } : {}),
+              }
+            : undefined,
       },
       actorId,
     );
@@ -69,7 +75,13 @@ export class AdminExamTypesController {
         slug: body.slug,
         description: body.description,
         active: body.active,
-        metadata: body.iconUrl !== undefined ? { iconUrl: body.iconUrl } : undefined,
+        metadata:
+          body.icon !== undefined || body.iconUrl !== undefined
+            ? {
+                ...(body.icon !== undefined ? { icon: body.icon } : {}),
+                ...(body.iconUrl !== undefined ? { iconUrl: body.iconUrl } : {}),
+              }
+            : undefined,
       },
       actorId,
     );
