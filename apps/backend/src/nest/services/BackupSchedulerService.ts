@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, Optional } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { validateCronExpression } from 'cron';
@@ -29,7 +29,9 @@ export class BackupSchedulerService implements OnModuleInit {
 
   constructor(
     private readonly registry: SchedulerRegistry,
-    private readonly backupService: BackupService = new BackupService(),
+    // BackupService DI'a kayıtlı değil; manuel default instantiation ile sağlanır.
+    // @Optional() olmadan Nest paramtype'ı görüp container'da arar ve patlar.
+    @Optional() private readonly backupService: BackupService = new BackupService(),
   ) {}
 
   async onModuleInit() {

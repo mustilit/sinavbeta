@@ -1,4 +1,4 @@
-import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, HttpException, HttpStatus, Optional } from '@nestjs/common';
 import { Public } from '../decorators/public.decorator';
 import { InternalOnly } from '../decorators/internal-only.decorator';
 import { prisma } from '../../infrastructure/database/prisma';
@@ -16,7 +16,11 @@ import { getRedisUrl, isRedisDisabled } from '../../config/redis';
  */
 @Controller()
 export class HealthController {
-  constructor(private readonly reportingRepo: ReportingTestRepository = new ReportingTestRepository()) {}
+  // ReportingTestRepository DI'a kayıtlı değil; manuel default instantiation ile
+  // sağlanır. @Optional() olmadan Nest paramtype'ı container'da arar ve boot'ta patlar.
+  constructor(
+    @Optional() private readonly reportingRepo: ReportingTestRepository = new ReportingTestRepository(),
+  ) {}
 
   @Public()
   @Get('health')

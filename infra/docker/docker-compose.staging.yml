@@ -1,0 +1,20 @@
+services:
+  frontend:
+    # nginx container içinde 5173'te dinliyor (default.conf.template `listen 5173`),
+    # host:80 → container:5173. Yanlış 80:80 mapping'i nginx'e hiç ulaşmıyordu.
+    ports:
+      - "80:5173"
+  backend:
+    # config/redis.ts guard'ı: host "redis" ise DOCKER=1 zorunlu (compose içi koşum sinyali).
+    environment:
+      DOCKER: "1"
+  worker:
+    env_file:
+      - ../../.env
+    environment:
+      DOCKER: "1"
+  dlq-worker:
+    env_file:
+      - ../../.env
+    environment:
+      DOCKER: "1"

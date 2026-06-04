@@ -35,24 +35,11 @@ server {
         font/ttf
         font/otf;
 
-    # Brotli — Sprint 11 itibarıyla AKTİF (Dockerfile'da nginx-mod-http-brotli ile).
-    # Modern browser'lar gzip yerine Brotli accept eder; %15-25 daha küçük payload.
-    # brotli_static on: build sırasında üretilmiş .br dosyalarını (Brotli-static)
-    # otomatik servis eder. Yoksa runtime'da brotli on dynamic sıkıştırma yapar.
-    brotli on;
-    brotli_comp_level 5;
-    brotli_static on;
-    brotli_types
-        text/plain
-        text/css
-        text/javascript
-        application/javascript
-        application/json
-        application/xml
-        application/manifest+json
-        image/svg+xml
-        font/ttf
-        font/otf;
+    # Brotli — GEÇİCİ DEVRE DIŞI. nginx-mod-http-brotli (Alpine edge community)
+    # base nginx sürümüyle ABI uyumsuzluğu verdiği için frontend.Dockerfile load_module
+    # config'lerini kaldırıyor. Direktifler yüklü olmayan modülü çağırınca nginx
+    # "unknown directive brotli" ile boot edemiyordu. Sıkıştırma gzip ile yapılıyor
+    # (yukarıda gzip on/gzip_static yeterli). Modül sürümü pinlenince geri açılacak.
 
     # ── Güvenlik başlıkları ───────────────────────────────────────────────
     # CSP Report-Only — production'da gerçek violation toplanır, akış kırılmaz.

@@ -10,7 +10,7 @@
 FROM node:20-slim AS builder
 WORKDIR /usr/src/app
 COPY apps/frontend/package*.json ./
-RUN npm ci --include=dev --no-audit --no-fund
+RUN npm ci --include=dev --legacy-peer-deps --no-audit --no-fund
 COPY apps/frontend/ ./
 # API URL build anında bundle içine gömülür.
 ARG VITE_API_URL=http://localhost:3000
@@ -31,7 +31,7 @@ RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repo
          > /etc/nginx/modules-enabled/00-brotli-filter.conf \
     && echo 'load_module /usr/lib/nginx/modules/ngx_http_brotli_static_module.so;' \
          > /etc/nginx/modules-enabled/00-brotli-static.conf \
-    && sed -i '1i include /etc/nginx/modules-enabled/*.conf;' /etc/nginx/nginx.conf
+    && rm -f /etc/nginx/modules-enabled/00-brotli-*.conf
 
 # Build çıktısını nginx default root'una kopyala
 COPY --from=builder /usr/src/app/dist /usr/share/nginx/html

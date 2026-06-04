@@ -43,6 +43,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       PORT: ${PORT:-3000}
       CLIENT_URL: ${CLIENT_URL}
+      REDIS_URL: ${REDIS_URL:-"redis://redis:6379"}
       REDIS_DISABLED: "0"
       CRON_DISABLED: "0"
       TRUST_PROXY: ${TRUST_PROXY:-"1"}
@@ -93,12 +94,15 @@ services:
       # CSP Report-Only — nginx envsubst ile başlığa render edilir. Boş bırakılırsa
       # sadece 'self' geçerli; harici sağlayıcı varsa virgülle değil boşlukla
       # ayrılmış host listesi: "https://api.iyzipay.com https://maps.googleapis.com"
-      CSP_CONNECT_SRC: ${CSP_CONNECT_SRC:-""}
-      CSP_SCRIPT_SRC: ${CSP_SCRIPT_SRC:-""}
-      CSP_IMG_SRC: ${CSP_IMG_SRC:-""}
-      CSP_MEDIA_SRC: ${CSP_MEDIA_SRC:-""}
-      CSP_STYLE_SRC: ${CSP_STYLE_SRC:-""}
-      CSP_REPORT_ENDPOINT: ${CSP_REPORT_ENDPOINT:-"/csp-report"}
+      # NOT: compose'da `:-""` default'u BOŞ değil literal iki-tırnak (") üretir;
+      # nginx envsubst bunu CSP başlığına basınca dıştaki tırnağı kırar
+      # ("unexpected \""). Boş default için tırnaksız `:-` kullanılır.
+      CSP_CONNECT_SRC: ${CSP_CONNECT_SRC:-}
+      CSP_SCRIPT_SRC: ${CSP_SCRIPT_SRC:-}
+      CSP_IMG_SRC: ${CSP_IMG_SRC:-}
+      CSP_MEDIA_SRC: ${CSP_MEDIA_SRC:-}
+      CSP_STYLE_SRC: ${CSP_STYLE_SRC:-}
+      CSP_REPORT_ENDPOINT: ${CSP_REPORT_ENDPOINT:-/csp-report}
     restart: unless-stopped
 
 volumes:

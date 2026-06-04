@@ -1,5 +1,5 @@
 # ---- Stage 1: Builder ----
-FROM node:18-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -57,7 +57,7 @@ COPY package*.json ./
 # Install all deps (including dev) for build
 RUN --mount=type=cache,target=/root/.npm \
   unset HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy || true; \
-  if [ -f package-lock.json ]; then npm ci --include=dev --prefer-online --no-progress; else npm install; fi
+  if [ -f package-lock.json ]; then npm ci --include=dev --legacy-peer-deps --prefer-online --no-progress; else npm install; fi
 
 COPY prisma ./prisma
 COPY . .
@@ -69,7 +69,7 @@ RUN set -eux; \
   done
 
 # ---- Stage 2: Runtime ----
-FROM node:18-slim
+FROM node:22-slim
 
 WORKDIR /usr/src/app
 
@@ -109,13 +109,15 @@ RUN npx prisma generate
 
 # Copy compiled application and start script
 COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/src/application/services/content-safety/prompts ./dist/application/services/content-safety/prompts
+COPY --from=builder /usr/src/app/src/infrastructure/email/templates ./dist/infrastructure/email/templates
 COPY docker/app/start.sh ./start.sh
 RUN chmod +x ./start.sh
 
 ENV NODE_ENV=production
 
 # Non-root user for better security
-RUN useradd -m appuser
+RUN useradd -m appuser && mkdir -p /usr/src/app/uploads && chown -R appuser:appuser /usr/src/app/uploads
 USER appuser
 
 EXPOSE 3000
