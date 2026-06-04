@@ -82,6 +82,19 @@ server {
         try_files $uri =404;
     }
 
+    # ── API reverse proxy ─────────────────────────────────────────────────
+    # /api/ prefix backend container'ına yönlendirilir; trailing slash ile
+    # prefix strip edilir (/api/site/info → backend /site/info). Backend
+    # global prefix kullanmadığı için strip zorunlu. Eklemeli değişiklik:
+    # frontend bundle veya backend kodu dokunulmaz.
+    location /api/ {
+        proxy_pass http://backend:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
     }
