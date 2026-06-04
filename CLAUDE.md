@@ -325,3 +325,14 @@ Her satın alma türünde indirim kodu girişi tam-akış: backend doğrulama + 
 @.claude/skills/security-hardening/SKILL.md     <!-- AES-256-GCM secret encryption + audit log + KVKK + secret rotation -->
 @.claude/skills/observability/SKILL.md          <!-- SLO + circuit breaker + graceful shutdown + Prometheus -->
 @.claude/skills/react-component/SKILL.md        <!-- ResponsiveImage + PWA + lazy + dark mode -->
+@.claude/skills/prisma-schema/SKILL.md          <!-- model ekleme + composite index + select discipline + seed -->
+@.claude/skills/migration-planner/SKILL.md      <!-- tehlikeli şema değişikliği → aşamalı güvenli migration -->
+@.claude/skills/nestjs-module/SKILL.md          <!-- Controller/Service/DTO/Guard/Interceptor iskeleti -->
+@.claude/skills/api-contract/SKILL.md           <!-- frontend ↔ backend endpoint kontratı + dalClient -->
+@.claude/skills/form-mutation/SKILL.md          <!-- TanStack Query mutation + cache invalidation -->
+@.claude/skills/purchase-flow/SKILL.md          <!-- TestPackage satın alma uçtan uca akış -->
+@.claude/skills/backward-compatibility/SKILL.md <!-- additive değişiklik + eski yapıyı bozmama disiplini -->
+@.claude/skills/tdd-workflow/SKILL.md           <!-- kırmızı/yeşil/refactor + test piramidi + AAA -->
+@.claude/skills/coverage-discipline/SKILL.md    <!-- coverage threshold + Codecov + mutation testing -->
+@.claude/skills/release-engineering/SKILL.md    <!-- Dependabot + commitlint + CHANGELOG + DORA -->
+@.claude/skills/test-all/SKILL.md               <!-- tüm test paketini izole + loglu çalıştırma -->
