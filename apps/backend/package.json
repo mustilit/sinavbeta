@@ -4,7 +4,7 @@
   "description": "Dal - Kod İnceleme ve Öneriler",
   "main": "dist/index.js",
   "scripts": {
-    "build": "prisma generate && tsc",
+    "build": "prisma generate && tsc && node scripts/copy-assets.cjs",
     "start": "node dist/nest/main.js",
     "start:dev": "set REDIS_DISABLED=1&& set NODE_ENV=development&& npx tsx watch src/index.ts",
     "start:ci": "NODE_ENV=test PORT=3001 node dist/nest/main.js",

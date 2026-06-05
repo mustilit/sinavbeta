@@ -14,18 +14,21 @@ DB_HOST=$(echo "$DB_HOST_PORT" | cut -d: -f1)
 DB_PORT=$(echo "$DB_HOST_PORT" | cut -d: -f2)
 
 echo "Waiting for database to be ready on ${DB_HOST}:****..."
-for i in 1 2 3 4 5; do
-  if pg_isready -h "$DB_HOST" -p "$DB_PORT" -U postgres >/dev/null 2>&1; then
-    echo "Database is ready."
-    break
-  fi
-  if [ "$i" -eq 5 ]; then
-    echo "Database not ready after 5 attempts. Exiting."
+# İlk deploy'da postgres initdb 60-90sn sürebilir; 24x5s = 2dk bekle ki
+# backend crash-loop'a girmesin (depends_on service_healthy zaten gate'liyor
+# ama bypass edilirse bu tampon devreye girer).
+ATTEMPT=0
+MAX_ATTEMPTS=24
+until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U postgres >/dev/null 2>&1; do
+  ATTEMPT=$((ATTEMPT + 1))
+  if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
+    echo "Database not ready after ${MAX_ATTEMPTS} attempts. Exiting."
     exit 1
   fi
-  echo "Database not ready yet (attempt $i/5), retrying in 5s..."
+  echo "Database not ready yet (attempt ${ATTEMPT}/${MAX_ATTEMPTS}), retrying in 5s..."
   sleep 5
 done
+echo "Database is ready."
 
 echo "Running migrations (with retry)..."
 for i in 1 2 3 4 5; do
