@@ -136,7 +136,7 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
   });
 
   test('ModerationQueue — inceleme kuyruğu', async ({ page, makeAxeBuilder }) => {
-    await page.goto('/yonetim/moderasyon/kuyruk');
+    await page.goto('/ModerationQueue');
     await page.waitForLoadState('networkidle');
 
     const results = await makeAxeBuilder({ page }).analyze();
@@ -145,8 +145,7 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
   });
 
   test('RiskyEducators — riskli eğiticiler listesi', async ({ page, makeAxeBuilder }) => {
-    // URL'de Türkçe karakter — encode edilmiş haliyle git
-    await page.goto('/yonetim/moderasyon/e%C4%9Fiticiler');
+    await page.goto('/RiskyEducators');
     await page.waitForLoadState('networkidle');
 
     const results = await makeAxeBuilder({ page }).analyze();
@@ -155,7 +154,7 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
   });
 
   test('BlockedTerms — yasak kelimeler listesi', async ({ page, makeAxeBuilder }) => {
-    await page.goto('/yonetim/moderasyon/kelime-listesi');
+    await page.goto('/BlockedTerms');
     await page.waitForLoadState('networkidle');
 
     const results = await makeAxeBuilder({ page }).analyze();
@@ -164,7 +163,7 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
   });
 
   test('ModerationSettings — moderasyon ayarları formu', async ({ page, makeAxeBuilder }) => {
-    await page.goto('/yonetim/moderasyon/ayarlar');
+    await page.goto('/ModerationSettings');
     await expect(
       page.getByRole('heading', { name: /moderasyon ayarları/i }),
     ).toBeVisible({ timeout: 8000 });
@@ -179,7 +178,7 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
     makeAxeBuilder,
   }) => {
     // Önce riskli eğitici listesine git
-    await page.goto('/yonetim/moderasyon/e%C4%9Fiticiler');
+    await page.goto('/RiskyEducators');
     await page.waitForLoadState('networkidle');
 
     // Tabloda "Detayı Gör" linki varsa tıkla; yoksa hata durumu da a11y açısından doğru olmalı
@@ -204,7 +203,7 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
   });
 
   test('ModerationQueue — karar modali açıkken a11y', async ({ page, makeAxeBuilder }) => {
-    await page.goto('/yonetim/moderasyon/kuyruk');
+    await page.goto('/ModerationQueue');
     await page.waitForLoadState('networkidle');
 
     // Kuyrukta kayıt varsa "Temiz" butonuna bas, modali aç
@@ -218,7 +217,10 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
     }
 
     await temizBtn.click();
-    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+    // NOT: Çerez onay banner'ı da role="dialog" taşır — modalı başlığıyla kapsa
+    // ki getByRole('dialog') consent banner'a denk gelip ambiguity üretmesin.
+    const decisionDialog = page.getByRole('dialog', { name: /temiz/i });
+    await expect(decisionDialog).toBeVisible({ timeout: 5000 });
 
     // Modal açıkken axe taraması
     const results = await makeAxeBuilder({ page }).analyze();
@@ -227,16 +229,18 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
 
     // Modal Escape ile kapanıyor mu? (klavye erişilebilirliği)
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3000 });
+    await expect(decisionDialog).not.toBeVisible({ timeout: 3000 });
   });
 
   test('BlockedTerms — yeni kelime modali açıkken a11y', async ({ page, makeAxeBuilder }) => {
-    await page.goto('/yonetim/moderasyon/kelime-listesi');
+    await page.goto('/BlockedTerms');
     await page.waitForLoadState('networkidle');
 
     // "+ Yeni Kelime" butonuna tıkla
     await page.getByRole('button', { name: /yeni kelime/i }).click();
-    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+    // Çerez onay banner'ı da role="dialog" — modalı başlığıyla kapsa (ambiguity önle).
+    const termDialog = page.getByRole('dialog', { name: /yeni yasak kelime/i });
+    await expect(termDialog).toBeVisible({ timeout: 5000 });
 
     const results = await makeAxeBuilder({ page }).analyze();
     reportViolations(results.violations);
@@ -244,7 +248,7 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
 
     // Escape ile kapat
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3000 });
+    await expect(termDialog).not.toBeVisible({ timeout: 3000 });
   });
 });
 
@@ -254,7 +258,7 @@ test.describe('a11y — admin moderasyon sayfaları (WCAG 2.1 AA)', () => {
 test.describe('a11y — educator moderasyon sayfası (WCAG 2.1 AA)', () => {
   test('MyModerationStatus — içerik durumum', async ({ page, makeAxeBuilder }) => {
     await loginAsEducator(page);
-    await page.goto('/egitici/icerik-durumu');
+    await page.goto('/MyModerationStatus');
     await page.waitForLoadState('networkidle');
 
     const results = await makeAxeBuilder({ page }).analyze();

@@ -380,7 +380,7 @@ export default function ModerationSettings() {
               <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase">
                 Varsayılan Değerler
               </p>
-              <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+              <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
                 Askıya Alma: 80% | Yasaklama: 95%
               </p>
             </div>

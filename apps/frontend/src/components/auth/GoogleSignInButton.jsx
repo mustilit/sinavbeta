@@ -73,7 +73,7 @@ export default function GoogleSignInButton({ role, text = "signin_with", safeFro
     // Yapılandırma eksik — buton gösterilmez, dev'de admin paneline yönlendiren ipucu
     if (import.meta.env.DEV) {
       return (
-        <p className="text-xs text-slate-400 text-center">
+        <p className="text-xs text-slate-600 text-center">
           Google girişi yapılandırılmamış — admin panelinden Client ID giriniz.
         </p>
       );

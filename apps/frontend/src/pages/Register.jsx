@@ -355,7 +355,7 @@ export default function Register() {
                   >
                     <Icon className={`w-5 h-5 mb-2 ${active ? 'text-indigo-600' : 'text-slate-400'}`} aria-hidden="true" />
                     <p className="font-medium text-sm text-slate-900">{label}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                    <p className="text-xs text-slate-600 mt-0.5">{desc}</p>
                   </button>
                 );
               })}

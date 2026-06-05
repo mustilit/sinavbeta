@@ -264,7 +264,7 @@ function ExamTypesCarousel({ examTypes, examTypeIds, isPersonalized, t }) {
                 </p>
                 {exam.description && (
                   /* exam.description user-generated — çevrilmez */
-                  <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-snug">
+                  <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-snug">
                     {exam.description}
                   </p>
                 )}
@@ -577,7 +577,7 @@ export default function Home() {
               ))}
             </div>
           ) : packages.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">
+            <div className="text-center py-16 text-slate-600">
               <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>{t("pages:home.empty.noPackages")}</p>
             </div>
@@ -613,7 +613,7 @@ export default function Home() {
               ))}
             </div>
           ) : educators.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">
+            <div className="text-center py-16 text-slate-600">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>{t("pages:home.empty.noEducators")}</p>
             </div>

@@ -73,6 +73,12 @@ i18n
     defaultNS: 'common',
     ns: ['common', 'auth', 'pages', 'onboarding'],
     supportedLngs: SUPPORTED_LANGUAGES.map((l) => l.code),
+    // Bölge kodlu diller (örn. navigator 'tr-TR') taban dile ('tr') eşlensin.
+    // Olmadan: 'tr-TR' supportedLngs'te tam eşleşmediği için elenir, detection
+    // htmlTag='en'e düşer → Türkçe tarayıcı İngilizce UI görür (ve a11y Login
+    // testi "Giriş Yap" başlığını bulamaz).
+    nonExplicitSupportedLngs: true,
+    load: 'languageOnly',
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       lookupLocalStorage: 'i18nextLng',

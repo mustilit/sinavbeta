@@ -20,7 +20,7 @@ export default function PageNotFound() {
       <div className="max-w-md w-full">
         <div className="text-center space-y-6">
           <div className="space-y-2">
-            <h1 className="text-7xl font-light text-slate-300">404</h1>
+            <h1 className="text-7xl font-light text-slate-500">404</h1>
             <div className="h-0.5 w-16 bg-slate-200 mx-auto"></div>
           </div>
 
