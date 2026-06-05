@@ -16,10 +16,12 @@ export class SeedService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     try {
-      if (process.env.NODE_ENV === 'production') {
-        console.log('Seed skipped: production environment');
-        return;
-      }
+      // NOT: Aşağıdaki blok ESSENTIAL (zorunlu) idempotent seed'lerdir —
+      // tenant, adminSettings, komisyon geçmişi ve YASAL SÖZLEŞMELER. Bunlar
+      // demo verisi DEĞİL; uygulamanın çalışması için gereklidir (kayıt/satın
+      // alma akışları aktif sözleşme arar, boşsa CONTRACT_NOT_FOUND verir).
+      // Bu yüzden production'da da çalışır. Yalnızca demo kullanıcı/test verisi
+      // (seedDemoUsersAndData + ensureTestQuestions) production'da atlanır.
 
       // Ensure default tenant exists
       const tenantId = getDefaultTenantId();
@@ -64,6 +66,12 @@ export class SeedService implements OnApplicationBootstrap {
       // paneli runtime'da yeni version yayımlayabilir; bu seed sadece "boş veritabanı"
       // veya "ilk kurulum" için güvence (versiyon 1).
       await this.seedLegalContracts();
+
+      // Buradan itibaren DEMO verisi — yalnızca production dışı ortamlarda.
+      if (process.env.NODE_ENV === 'production') {
+        console.log('Seed: demo users/test data skipped (production)');
+        return;
+      }
 
       await this.seedDemoUsersAndData();
       await this.ensureTestQuestions();
