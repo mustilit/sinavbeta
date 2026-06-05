@@ -5,6 +5,11 @@ jest.mock('../../src/infrastructure/database/prisma', () => ({
     userPreference: {
       findUnique: jest.fn(async () => null),
     },
+    // Eğitici puanı (educatorRating) + toplam satış doğrudan prisma'dan okunur.
+    review: {
+      aggregate: jest.fn(async () => ({ _avg: { educatorRating: null }, _count: { _all: 0 } })),
+    },
+    $queryRaw: jest.fn(async () => [{ cnt: 0 }]),
   },
 }));
 

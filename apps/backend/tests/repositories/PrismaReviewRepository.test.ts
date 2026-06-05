@@ -124,7 +124,7 @@ describe('PrismaReviewRepository', () => {
       // Arrange
       mock.review.aggregate.mockResolvedValueOnce({
         _avg: { testRating: 4.2 },
-        _count: { _all: 10 },
+        _count: { testRating: 10 },
       });
 
       // Act
@@ -138,7 +138,7 @@ describe('PrismaReviewRepository', () => {
     it('review yoksa avg null ve count 0 döner', async () => {
       mock.review.aggregate.mockResolvedValueOnce({
         _avg: { testRating: null },
-        _count: { _all: 0 },
+        _count: { testRating: 0 },
       });
       const result = await repo.getAggregateForPackage('empty-pkg');
       expect(result.avg).toBeNull();

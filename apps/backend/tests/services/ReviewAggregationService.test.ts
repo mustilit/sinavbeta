@@ -59,7 +59,7 @@ describe('ReviewAggregationService', () => {
         { id: 'test-2', packageId: 'pkg-1' },
       ]);
       mock.review.groupBy.mockResolvedValueOnce([
-        { packageId: 'pkg-1', _avg: { testRating: 4.5 }, _count: { _all: 10 } },
+        { packageId: 'pkg-1', _avg: { testRating: 4.5 }, _count: { testRating: 10 } },
       ]);
 
       // Act
@@ -92,8 +92,8 @@ describe('ReviewAggregationService', () => {
         { id: 'test-2', packageId: 'pkg-2' },
       ]);
       mock.review.groupBy.mockResolvedValueOnce([
-        { packageId: 'pkg-1', _avg: { testRating: 4.0 }, _count: { _all: 5 } },
-        { packageId: 'pkg-2', _avg: { testRating: 3.0 }, _count: { _all: 2 } },
+        { packageId: 'pkg-1', _avg: { testRating: 4.0 }, _count: { testRating: 5 } },
+        { packageId: 'pkg-2', _avg: { testRating: 3.0 }, _count: { testRating: 2 } },
       ]);
 
       // Act

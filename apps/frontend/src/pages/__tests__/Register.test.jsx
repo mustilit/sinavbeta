@@ -18,8 +18,15 @@ vi.mock('@/api/dalClient', () => ({
   auth: {
     register: vi.fn(),
     registerEducator: vi.fn(),
+    // Wizard step 1 → uygunluk kontrolü (fail-open ama mock'layıp gürültüyü önle).
+    checkAvailability: vi.fn().mockResolvedValue({ emailAvailable: true, usernameAvailable: true }),
   },
-  entities: {},
+  // Eğitici step 2 uzmanlık listesi: entities.ExamType.filter ile gelir.
+  entities: {
+    ExamType: {
+      filter: vi.fn().mockResolvedValue([{ id: 'et-1', name: 'YKS', is_active: true }]),
+    },
+  },
   contracts: {
     getActive: vi.fn().mockImplementation((type) =>
       Promise.resolve({
@@ -32,6 +39,11 @@ vi.mock('@/api/dalClient', () => ({
       }),
     ),
   },
+}));
+
+// Eğitici step 2 CV yükleme: api.post('/upload/image') → { data: { url } }.
+vi.mock('@/lib/api/apiClient', () => ({
+  default: { post: vi.fn().mockResolvedValue({ data: { url: 'http://test/cv.pdf' } }) },
 }));
 
 // react-markdown ESM — jsdom'da basit pass-through mock yeterli
@@ -87,8 +99,13 @@ function renderRegister(search = '') {
 function fillAndOpenDialog({ email = 'test@example.com', username = 'testuser', password = 'pass123' } = {}) {
   fireEvent.change(screen.getByLabelText(/e-posta/i), { target: { value: email } });
   fireEvent.change(screen.getByLabelText(/kullanıcı adı/i), { target: { value: username } });
-  fireEvent.change(screen.getByLabelText(/şifre/i), { target: { value: password } });
-  fireEvent.submit(screen.getByRole('button', { name: /kayıt ol/i }).closest('form'));
+  // İki şifre alanı var: "Şifre" + "Şifre tekrarı" — exact label ile ayırt et,
+  // ikisini de doldur (aksi halde "Şifreler eşleşmiyor" hatası popup'ı açmaz).
+  fireEvent.change(screen.getByLabelText('Şifre'), { target: { value: password } });
+  fireEvent.change(screen.getByLabelText('Şifre tekrarı'), { target: { value: password } });
+  // Wizard step 1 submit butonu artık "İleri" (aday → doğrudan sözleşme adımı).
+  // NOT: /ileri/i regex'i Türkçe noktalı "İ"yi (U+0130) eşleştiremez — i-flag'siz literal kullan.
+  fireEvent.submit(screen.getByRole('button', { name: /İleri/ }).closest('form'));
 }
 
 /** Popup'ta iki sözleşme checkbox'ını işaretle + "Onayla ve Kaydı Tamamla"ya bas. */
@@ -115,7 +132,9 @@ describe('Register sayfası', () => {
     renderRegister();
     expect(screen.getByLabelText(/e-posta/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/kullanıcı adı/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/şifre/i)).toBeInTheDocument();
+    // "Şifre" + "Şifre tekrarı" iki ayrı alan — exact label ile doğrula.
+    expect(screen.getByLabelText('Şifre')).toBeInTheDocument();
+    expect(screen.getByLabelText('Şifre tekrarı')).toBeInTheDocument();
   });
 
   it('educator rolü seçildiğinde ad ve soyad alanları görünür', () => {
@@ -140,9 +159,9 @@ describe('Register sayfası', () => {
     expect(screen.getByLabelText(/^soyad$/i)).toBeInTheDocument();
   });
 
-  it('"Kayıt Ol" butonu başlangıçta aktiftir (onay popup\'ta alınır)', () => {
+  it('step 1 "İleri" butonu başlangıçta aktiftir (sözleşme onayı 3. adımda alınır)', () => {
     renderRegister();
-    const btn = screen.getByRole('button', { name: /kayıt ol/i });
+    const btn = screen.getByRole('button', { name: /İleri/ });
     expect(btn).toBeInTheDocument();
     expect(btn).not.toBeDisabled();
   });
@@ -188,7 +207,27 @@ describe('Register sayfası', () => {
 
     fireEvent.change(screen.getByLabelText(/^ad$/i), { target: { value: 'Ahmet' } });
     fireEvent.change(screen.getByLabelText(/^soyad$/i), { target: { value: 'Yılmaz' } });
+    // Step 1 → İleri (eğitici akışında step 2'ye geçer, sözleşme adımına değil).
     fillAndOpenDialog({ email: 'edu@example.com', username: 'eduuser', password: 'pass123' });
+
+    // Step 2: CV yükleme (zorunlu) + en az bir uzmanlık seçimi (zorunlu).
+    const specCheckbox = await screen.findByRole('checkbox', { name: 'YKS' });
+    const fileInput = document.getElementById('wizard-cv-upload');
+    fireEvent.change(fileInput, {
+      target: { files: [new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' })] },
+    });
+    // CV yüklenince setCvUrl tetiklenir — link görünene kadar bekle.
+    await screen.findByText(/cv yüklendi/i);
+    fireEvent.click(specCheckbox);
+
+    // Step 2 → İleri → sözleşme adımı (step 3).
+    fireEvent.submit(screen.getByRole('button', { name: /İleri/ }).closest('form'));
+    // Step 3 tam render olana kadar bekle: step-2 YKS checkbox'ı DOM'dan kalkmalı,
+    // yoksa acceptInDialog'un findAllByRole('checkbox')'ı erkenden onu yakalar (yarış).
+    await screen.findByText(/sözleşmeleri onayla/i);
+    await waitFor(() =>
+      expect(screen.queryByRole('checkbox', { name: 'YKS' })).not.toBeInTheDocument(),
+    );
     await acceptInDialog();
 
     await waitFor(() => {

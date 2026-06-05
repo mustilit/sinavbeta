@@ -143,8 +143,9 @@ describe('LiveSessionsController', () => {
   describe('pay', () => {
     it('oturum için ödeme yapar', async () => {
       const req = { user: { id: 'edu-1' } };
-      const result = await controller.pay('ls-1', req as any);
-      expect(mockPayUC.execute).toHaveBeenCalledWith('ls-1', 'edu-1');
+      // Controller imzası: pay(id, body, req) — body.promoCode opsiyonel
+      const result = await controller.pay('ls-1', {}, req as any);
+      expect(mockPayUC.execute).toHaveBeenCalledWith('ls-1', 'edu-1', undefined);
       expect(result).toHaveProperty('paidAt');
     });
   });
@@ -194,7 +195,8 @@ describe('LiveSessionsController', () => {
     it('katılım kodu ile oturuma katılır (büyük harf)', async () => {
       const req = { user: { id: 'cand-1' } };
       const result = await controller.join('abc123', req as any);
-      expect(mockJoinUC.execute).toHaveBeenCalledWith('ABC123', 'cand-1');
+      // Controller join'e 3. arg olarak { ip } geçer (kapatma saldırısı limiti).
+      expect(mockJoinUC.execute).toHaveBeenCalledWith('ABC123', 'cand-1', { ip: null });
       expect(result).toHaveProperty('joined', true);
     });
   });

@@ -17,6 +17,10 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     commissionRateHistory: { findMany: jest.fn().mockResolvedValue([]) },
     $queryRawUnsafe: jest.fn().mockResolvedValue([]),
   },
+  // dbRouter.prismaRead() bu modülden isReplicaEnabled'i çağırır; replica
+  // kapalıyken primary (mock prisma) döner.
+  isReplicaEnabled: () => false,
+  prismaReplica: undefined,
 }));
 
 import { GetCommissionReportUseCase } from '../../../src/application/use-cases/report/GetCommissionReportUseCase';

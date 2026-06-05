@@ -13,6 +13,10 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     $queryRawUnsafe: jest.fn(),
   },
+  // dbRouter.prismaRead() bu modülden isReplicaEnabled'i çağırır; replica
+  // kapalıyken primary (mock prisma) döner.
+  isReplicaEnabled: () => false,
+  prismaReplica: undefined,
 }));
 
 import { GetCandidateReportUseCase } from '../../../src/application/use-cases/report/GetCandidateReportUseCase';

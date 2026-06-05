@@ -132,18 +132,23 @@ describe('EducatorDashboard sayfası', () => {
     });
   });
 
-  it('onboarding tamamlanmamışsa EducatorOnboarding\'e yönlendirir', async () => {
-    // Arrange
+  it('onboarding tamamlanmamış olsa bile EducatorOnboarding\'e yönlendirmez', async () => {
+    // Yeni tasarım: eğiticiler kayıt wizard'ından geldiği için onboarding adımı
+    // tamamlanmış sayılır; otomatik /EducatorOnboarding yönlendirmesi devre dışı
+    // bırakıldı (EducatorDashboard.jsx içindeki useEffect yorumlandı). Legacy URL
+    // hâlâ erişilebilir ama dashboard kullanıcıyı oraya itmez.
     const { auth } = await import('@/api/dalClient');
     auth.educatorOnboardingStatus.mockResolvedValue({ complete: false });
 
     // Act
     renderEducatorDashboard();
 
-    // Assert
+    // Assert — dashboard render olur, EducatorOnboarding'e yönlendirme yapılmaz.
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/EducatorOnboarding', { replace: true });
+      expect(document.body.firstChild).toBeTruthy();
     });
+    const onboardingCall = mockNavigate.mock.calls.find((c) => c[0] === '/EducatorOnboarding');
+    expect(onboardingCall).toBeUndefined();
   });
 
   it('onboarding tamamsa yönlendirme yapılmaz', async () => {

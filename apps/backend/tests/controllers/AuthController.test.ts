@@ -12,6 +12,8 @@ jest.mock('../../src/infrastructure/database/prisma', () => ({
   prisma: {
     workerPermission: { findUnique: jest.fn().mockResolvedValue(null) },
     user: { findUnique: jest.fn() },
+    // me() rejection + profil detaylarını raw SQL ile çeker.
+    $queryRaw: jest.fn().mockResolvedValue([]),
   },
 }));
 
@@ -35,9 +37,12 @@ function buildController(overrides: Partial<any> = {}) {
   };
   const forgotPwdUC = overrides.forgotPasswordUC ?? { execute: jest.fn().mockResolvedValue(undefined) };
   const resetPwdUC = overrides.resetPasswordUC ?? { execute: jest.fn().mockResolvedValue(undefined) };
+  const changePwdUC = overrides.changePasswordUC ?? { execute: jest.fn().mockResolvedValue(undefined) };
   const googleAuthUC = overrides.googleAuthUC ?? { execute: jest.fn() };
   const verifyDeviceUC = overrides.verifyDeviceUC ?? { execute: jest.fn().mockResolvedValue({ ok: true }) };
 
+  // Controller constructor sırası: register, registerEducator, login, userRepo,
+  // forgotPassword, resetPassword, changePassword, googleAuth, verifyDevice
   return new AuthController(
     registerUC as any,
     registerEducatorUC as any,
@@ -45,6 +50,7 @@ function buildController(overrides: Partial<any> = {}) {
     userRepo as any,
     forgotPwdUC as any,
     resetPwdUC as any,
+    changePwdUC as any,
     googleAuthUC as any,
     verifyDeviceUC as any,
   );

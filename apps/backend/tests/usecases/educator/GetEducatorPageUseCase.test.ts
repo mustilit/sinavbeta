@@ -11,6 +11,19 @@
  * - ReviewAggregationService çağrılır
  */
 
+// Use case happy-path'te require('.../prisma') ile prisma.review.aggregate ve
+// $queryRaw (eğitici puanı + toplam satış) çağırır. Repo'lar enjekte edilse de
+// bu iki çağrı doğrudan prisma'ya gider → mock'lanmazsa gerçek DB'ye bağlanmaya
+// çalışır (PrismaClientInitializationError).
+jest.mock('../../../src/infrastructure/database/prisma', () => ({
+  prisma: {
+    review: {
+      aggregate: jest.fn(async () => ({ _avg: { educatorRating: null }, _count: { _all: 0 } })),
+    },
+    $queryRaw: jest.fn(async () => [{ cnt: 0 }]),
+  },
+}));
+
 import { GetEducatorPageUseCase } from '../../../src/application/use-cases/educator/GetEducatorPageUseCase';
 
 function makeUsersRepo(educator: any) {
