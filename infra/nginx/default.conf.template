@@ -136,6 +136,15 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # ── CSP ihlal raporları ───────────────────────────────────────────────
+    # CSP Report-Only `report-uri /csp-report`'a POST eder. Henüz bir toplama
+    # backend'i yok; SPA fallback'e düşünce POST → 405 (konsol gürültüsü).
+    # Raporu sessizce yut (204). İleride toplamak istersek backend'e proxy'lenir.
+    location = /csp-report {
+        access_log off;
+        return 204;
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
     }

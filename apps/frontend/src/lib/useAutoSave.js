@@ -199,30 +199,16 @@ export function useAutoSave(draftKey, getFormData, {
     const flushNow = () => {
       const data = getFormRef.current?.();
       if (data == null) return;
-      // Lokal kayıt (her zaman senkron)
+      // Senkron lokal yedek — sekme kapanırken garantili (localStorage). Sunucu
+      // draft'ı zaten düzenleme sırasında debounce'lu PUT ile kaydediliyor ve
+      // loadDraft() açılışta lokali de okuduğundan aynı cihazda iş kaybı olmaz.
+      //
+      // NOT: Burada eskiden sunucuya `navigator.sendBeacon` ile POST /api/drafts
+      // atılıyordu; ama (a) backend draft endpoint'i yalnız PUT kabul ediyor →
+      // 404 ve (b) token yanlış localStorage anahtarından ('jwt_token') okunuyordu
+      // → her zaman boş. Yani HİÇ çalışmadı, sadece konsolda 404 gürültüsü üretti.
+      // Kaldırıldı; lokal flush yeterli güvenceyi sağlıyor.
       saveLocal(data);
-
-      // Sunucuya beacon — async fetch'ten farklı olarak tarayıcı bunu
-      // garantili gönderir, sekme kapansa bile.
-      if (serverKey && navigator.sendBeacon) {
-        try {
-          // Token'i URL parametresi olarak gönder (header'lar beacon'da çalışmaz).
-          // Backend bunu fallback olarak kabul edecek şekilde güncellenmeli;
-          // şimdilik standart endpoint'e gönder, hata olursa sessiz geç.
-          const token = localStorage.getItem('jwt_token') || '';
-          const url = `/api/drafts/${encodeURIComponent(serverKey)}?t=${encodeURIComponent(token)}`;
-          const body = new Blob(
-            [JSON.stringify({ payload: data })],
-            { type: 'application/json' },
-          );
-          // sendBeacon POST yapar; backend PUT bekliyor olsa da Express bu
-          // ikisine de aynı use-case'e map'lendiğinde sorun çıkmaz. Eğer
-          // sadece PUT kabul ediyorsa beacon başarısız olur; lokal yedek var.
-          navigator.sendBeacon(url, body);
-        } catch {
-          /* sessiz */
-        }
-      }
     };
 
     const onBeforeUnload = () => { flushNow(); };
@@ -239,7 +225,7 @@ export function useAutoSave(draftKey, getFormData, {
       window.removeEventListener('pagehide', onPageHide);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [saveLocal, serverKey, enabled]);
+  }, [saveLocal, enabled]);
 
   return {
     /** Anlık kayıt (lokal + opsiyonel sunucu) */

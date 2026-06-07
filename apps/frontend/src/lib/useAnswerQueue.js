@@ -140,43 +140,23 @@ export function useAnswerQueue(attemptId) {
   // backend bunu fallback olarak kabul edebilir; etmezse en azından
   // localStorage kuyruğu kalır, sonraki açılışta flush olur.
 
+  // Eski hali navigator.sendBeacon ile POST /api/attempts/:id/answers?t=<token>
+  // atıyordu; token yanlış localStorage anahtarından ('jwt_token') okunduğu için
+  // HER ZAMAN boştu → backend 401/404, hiç çalışmadı, sadece konsol gürültüsü
+  // üretti. Kaldırıldı. Yerine working flush() best-effort çağrılır (apiClient
+  // proper auth header'ı ekler, gürültüsüz). Cevap kalıcılığı zaten: (1) her
+  // cevapta anlık POST, (2) localStorage kuyruğu, (3) `online` event, (4) mount
+  // flush ile güvencede — beacon zaten hiçbir zaman bu zincire katkı yapmıyordu.
   useEffect(() => {
     if (!attemptId) return;
-
-    const beaconFlush = () => {
-      try {
-        const raw = localStorage.getItem(queueKey(attemptId));
-        if (!raw) return;
-        const q = JSON.parse(raw);
-        if (!Array.isArray(q) || q.length === 0) return;
-        const token = localStorage.getItem('jwt_token') || '';
-        if (!navigator.sendBeacon) return;
-        for (const item of q) {
-          const url = `/api/attempts/${attemptId}/answers?t=${encodeURIComponent(token)}`;
-          const body = new Blob(
-            [JSON.stringify({ questionId: item.questionId, optionId: item.optionId ?? undefined })],
-            { type: 'application/json' },
-          );
-          navigator.sendBeacon(url, body);
-        }
-      } catch { /* sessiz */ }
-    };
-
-    const onBeforeUnload = () => { beaconFlush(); };
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') beaconFlush();
-    };
-    const onPageHide = () => { beaconFlush(); };
-
-    window.addEventListener('beforeunload', onBeforeUnload);
-    window.addEventListener('pagehide', onPageHide);
-    document.addEventListener('visibilitychange', onVisibilityChange);
+    const onHidden = () => { if (document.visibilityState === 'hidden') flush(); };
+    document.addEventListener('visibilitychange', onHidden);
+    window.addEventListener('pagehide', flush);
     return () => {
-      window.removeEventListener('beforeunload', onBeforeUnload);
-      window.removeEventListener('pagehide', onPageHide);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.removeEventListener('visibilitychange', onHidden);
+      window.removeEventListener('pagehide', flush);
     };
-  }, [attemptId]);
+  }, [attemptId, flush]);
 
   // ─── Mount: sayımı senkronize et, online ise hemen flush et ─────────────
 
@@ -184,7 +164,7 @@ export function useAnswerQueue(attemptId) {
     syncCount();
     // Önceki oturumdan kalan bekleyen cevapları temizle
     if (navigator.onLine) flush();
-  }, [attemptId]); // eslint-disable-line -- intentionally omitting flush/syncCount from deps
+  }, [attemptId]);  
 
   // ─── Test bitince kuyruğu tamamen temizle ───────────────────────────────
 
