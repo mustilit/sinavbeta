@@ -13,6 +13,9 @@ build/
 # Loglar
 *.log
 npm-debug.log*
+
+# Yerel test/migration koşum çıktıları (test-all skill + manuel backup'lar)
+test-runs/
 yarn-debug.log*
 yarn-error.log*
 

@@ -261,7 +261,10 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
             useFactory: () => {
               // Dev: THROTTLE_DISABLED=1 veya NODE_ENV=development → gevşek limit
               const isDev = process.env.NODE_ENV === 'development';
-              const limit = isDev ? 500 : 60;
+              // Kullanıcı/IP başına limit (key için bkz. CustomThrottlerGuard).
+              // SPA bir sayfada onlarca API çağrısı yaptığından kullanıcı başına
+              // 120/dk makul bir burst toleransı sağlar.
+              const limit = isDev ? 500 : Number(process.env.THROTTLE_LIMIT ?? '120') || 120;
               const throttlers = [{ ttl: seconds(THROTTLE_TTL_SECONDS), limit }];
 
               if (process.env.REDIS_DISABLED === '1') {

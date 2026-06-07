@@ -9,6 +9,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
+import { Public } from '../decorators/public.decorator';
 import type { Request } from 'express';
 import { join } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
@@ -116,7 +117,12 @@ export class UploadController {
       throw new BadRequestException('Görsel işlenemedi — dosya bozuk veya desteklenmiyor');
     }
 
-    const baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3000}`;
+    // Görsel URL'leri GÖRECELİ kaydedilir (`/uploads/...`), mutlak değil.
+    // Sebep: host/IP/domain DB kaydına gömülürse değişimde tüm görseller kırılır
+    // (178.105.231.185 olayı, 2026-06-07). Göreceli yol prod'da nginx `/uploads/`
+    // proxy'si, dev'de Vite `/upload` proxy'si, CDN'de `cdnUrl()` (VITE_CDN_BASE_URL)
+    // ile çözülür. Host bağımsızdır.
+    const baseUrl = '';
     const urls = buildImageUrls(processed, baseUrl);
 
     return {
@@ -173,6 +179,46 @@ export class UploadController {
   )
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async uploadDocument(@UploadedFile() file: any) {
+    return this.storePdf(file);
+  }
+
+  /**
+   * Kayıt (eğitici onboarding) sırasında CV yükleme — PUBLIC.
+   *
+   * Neden public: kullanıcı henüz kayıt OLMADAN CV yüklemek zorunda (step 2),
+   * yani JWT'si yok. Auth'lu `/upload/document`'a giderse 401 alır ve frontend
+   * apiClient global 401 handler'ı kullanıcıyı Login'e fırlatır (yaşanan bug).
+   *
+   * Güvenlik: `/upload/document` ile AYNI doğrulamalar — PDF magic byte + 5MB +
+   * opsiyonel ClamAV + crypto random filename. Prod'da global throttler rate
+   * limit uygular. Görsel pipeline'ından geçmez (Sharp yok).
+   */
+  @Public()
+  @Post('registration-cv')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_SIZE_BYTES },
+      fileFilter: (_req: Request, file: Express.Multer.File, cb: (err: Error | null, accept: boolean) => void) => {
+        if (file.mimetype !== 'application/pdf') {
+          return cb(new BadRequestException('Sadece PDF dosyası yüklenebilir'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async uploadRegistrationCv(@UploadedFile() file: any) {
+    return this.storePdf(file);
+  }
+
+  /**
+   * Ortak PDF doğrulama + diske yazma. `uploadDocument` (auth) ve
+   * `uploadRegistrationCv` (public) tarafından paylaşılır.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async storePdf(file: any): Promise<{ url: string; filename: string; size: number }> {
     if (!file) throw new BadRequestException('Dosya bulunamadı');
     if (!file.buffer || !Buffer.isBuffer(file.buffer)) {
       throw new BadRequestException('Dosya içeriği okunamadı');
@@ -206,7 +252,7 @@ export class UploadController {
       throw new BadRequestException('Dosya kaydedilemedi');
     }
 
-    const baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3000}`;
-    return { url: `${baseUrl}/uploads/${filename}`, filename, size: file.size };
+    // Göreceli URL — bkz. uploadImage'deki açıklama (host bağımsızlık).
+    return { url: `/uploads/${filename}`, filename, size: file.size };
   }
 }

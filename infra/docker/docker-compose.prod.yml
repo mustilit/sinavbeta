@@ -28,10 +28,13 @@ services:
       context: ../../apps/backend
       dockerfile: ../../infra/docker/backend.Dockerfile
       args:
-        HTTP_PROXY: ${HTTP_PROXY:-""}
-        HTTPS_PROXY: ${HTTPS_PROXY:-""}
-        NO_PROXY: ${NO_PROXY:-"localhost,127.0.0.1,postgres,redis"}
-        NPM_REGISTRY: ${NPM_REGISTRY:-"https://registry.npmjs.org"}
+        # NOT: compose interpolation default'unda `:-"x"` literal tırnak üretir;
+        # `environment:` değerlerinde bu container env'ini bozar (CSP/REDIS bkz.).
+        # Tutarlılık için tüm default'lar tırnaksız.
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,postgres,redis}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,10 +46,22 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       PORT: ${PORT:-3000}
       CLIENT_URL: ${CLIENT_URL}
-      REDIS_URL: ${REDIS_URL:-"redis://redis:6379"}
+      # Upload URL'leri (CV/avatar) bu origin ile üretilir. Verilmezse kod
+      # http://localhost:3000'e düşer → admin yüklenen CV'yi göremez.
+      BACKEND_URL: ${BACKEND_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       REDIS_DISABLED: "0"
       CRON_DISABLED: "0"
-      TRUST_PROXY: ${TRUST_PROXY:-"1"}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+      # config/redis.ts guard'ı: redis host'u "redis" ise DOCKER=1 zorunlu. Compose
+      # ile çalışan HER ortamda (staging + canlı) geçerli; override'a değil prod
+      # compose'a konur ki tek başına `docker compose -f prod.yml up` çalışsın.
+      DOCKER: "1"
+    # Yüklenen dosyalar (CV/kapak/avatar) named volume'da KALICI tutulur.
+    # Aksi halde her backend recreate/deploy container-local uploads'ı siler
+    # → kullanıcı yüklediği görseller kaybolur (üretimde yaşandı, 2026-06-07).
+    volumes:
+      - uploads_data:/usr/src/app/uploads
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ready || exit 1"]
@@ -61,9 +76,14 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    # Worker DATABASE_URL + e-posta sağlayıcı secret'larına ihtiyaç duyar; backend
+    # gibi açık liste yerine tüm .env enjekte edilir (DB'siz worker çöker).
+    env_file:
+      - ../../.env
     environment:
       NODE_ENV: production
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DOCKER: "1"
     restart: unless-stopped
 
   dlq-worker:
@@ -72,10 +92,13 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    env_file:
+      - ../../.env
     environment:
       NODE_ENV: production
-      REDIS_URL: "redis://redis:6379"
-      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-""}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DOCKER: "1"
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
     restart: unless-stopped
 
   frontend:
@@ -86,11 +109,16 @@ services:
       context: ../..
       dockerfile: infra/docker/frontend.Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-"http://backend:3000"}
+        VITE_API_URL: ${VITE_API_URL:-http://backend:3000}
     depends_on:
       - backend
+    # nginx container içinde 5173'te dinler (default.conf.template); host:80 →
+    # container:5173. Canlı sunucuda ters proxy/farklı host portu için
+    # FRONTEND_HTTP_PORT ile override edilebilir.
+    ports:
+      - "${FRONTEND_HTTP_PORT:-80}:5173"
     environment:
-      VITE_API_URL: ${VITE_API_URL:-"http://backend:3000"}
+      VITE_API_URL: ${VITE_API_URL:-http://backend:3000}
       # CSP Report-Only — nginx envsubst ile başlığa render edilir. Boş bırakılırsa
       # sadece 'self' geçerli; harici sağlayıcı varsa virgülle değil boşlukla
       # ayrılmış host listesi: "https://api.iyzipay.com https://maps.googleapis.com"
@@ -107,4 +135,5 @@ services:
 
 volumes:
   db_data:
+  uploads_data:
 

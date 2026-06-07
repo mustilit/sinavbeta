@@ -93,9 +93,30 @@ export class SeedService implements OnApplicationBootstrap {
    * Production'da bu metinler **avukat onaylı** versiyonla değiştirilmelidir.
    */
   private async seedLegalContracts() {
-    // Yasal şablonların metin yolu — repo'da apps/backend'in 4 üst dizini (proje kökü)
-    const repoRoot = join(__dirname, '..', '..', '..', '..', '..');
-    const legalDir = join(repoRoot, 'docs', 'legal');
+    // Yasal md'lerin yeri ortama göre değişir:
+    //  - PROD image: docs/ image'a kopyalanmaz; bunun yerine `src/legal/*.md`
+    //    bundle edilir → copy-assets `dist/legal/*.md`'e taşır. __dirname
+    //    (dist/nest/bootstrap | src/nest/bootstrap) → '../../legal' her ikisinde doğru.
+    //  - DEV (tsx, repo kökünden): docs/legal de geçerli.
+    // Birden fazla aday dizin denenir; ilk var olan kullanılır. Bulunamazsa fallback.
+    const legalDirs = [
+      join(__dirname, '..', '..', 'legal'), // bundled: src/legal | dist/legal
+      join(process.cwd(), 'docs', 'legal'),
+      join(__dirname, '..', '..', '..', '..', '..', 'docs', 'legal'),
+    ];
+    const readLegal = (file: string): string | null => {
+      for (const dir of legalDirs) {
+        const p = join(dir, file);
+        if (existsSync(p)) {
+          try {
+            return readFileSync(p, 'utf8');
+          } catch {
+            /* sıradaki adaya geç */
+          }
+        }
+      }
+      return null;
+    };
 
     const contracts = [
       {
@@ -126,13 +147,7 @@ export class SeedService implements OnApplicationBootstrap {
 
     let upsertedCount = 0;
     for (const c of contracts) {
-      const filePath = join(legalDir, c.file);
-      let content: string;
-      try {
-        content = existsSync(filePath) ? readFileSync(filePath, 'utf8') : c.fallback;
-      } catch {
-        content = c.fallback;
-      }
+      const content = readLegal(c.file) ?? c.fallback;
       try {
         await this.prisma.contract.upsert({
           where: { type_version: { type: c.type, version: 1 } },

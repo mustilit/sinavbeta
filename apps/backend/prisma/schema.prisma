@@ -411,6 +411,15 @@ model PendingRegistration {
   userAgent                 String?
   tenantId                  String?
 
+  // Eğitici kayıt akışı alanları (RegisterEducatorUseCase). Repository raw SQL
+  // ile yazar; migration 20260605210000 ile DB'ye eklendi.
+  cvUrl                     String?
+  specializations           String[]
+  educationInfo             String?
+  bio                       String?
+  linkedinUrl               String?
+  websiteUrl                String?
+
   createdAt DateTime @default(now())
 
   @@index([verificationTokenExpiresAt])

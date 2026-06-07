@@ -19,11 +19,12 @@ const UNTRUSTED_RATIO = 0.2; // header'sız isteklere normal limit'in %20'si
 export class CustomThrottlerGuard extends ThrottlerGuard {
   protected override generateKey(context: ExecutionContext, _tracker: string): string {
     const req = context.switchToHttp().getRequest();
-    const tenant = req.tenant as { id?: string } | undefined;
-    if (tenant?.id) {
-      return `tenant:${tenant.id}`;
-    }
-    // prefer authenticated user id when available
+    // RATE LIMIT KİMLİĞİ KULLANICI/IP BAZLI OLMALI — tenant bazlı DEĞİL.
+    // Uygulama tek "default" tenant ile çalıştığından, tenant:id ile anahtarlamak
+    // TÜM kullanıcıları (eğitici + aday + anonim) tek bir 120/dk bucket'ına
+    // sıkıştırır → SPA'nın sayfa başına onlarca çağrısı ortak limiti anında
+    // doldurur, herkes "ilk denemede" 429 alır (üretimde yaşandı, 2026-06-07).
+    // Önce authenticated user, sonra IP ile anahtarla; tenant'ı key olarak kullanma.
     const userId = req.user?.id;
     if (userId) return `user:${userId}`;
     // support X-Forwarded-For header for proxied clients

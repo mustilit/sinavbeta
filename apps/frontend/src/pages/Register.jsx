@@ -239,7 +239,9 @@ export default function Register() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await api.post('/upload/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      // PUBLIC + PDF endpoint: kayıt sırasında kullanıcının JWT'si yok. /upload/image
+      // hem auth ister (401 → Login'e fırlatır) hem de yalnız görsel kabul eder.
+      const res = await api.post('/upload/registration-cv', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       const url = res.data?.url || res.data?.fileUrl || res.data?.file_url;
       if (!url) throw new Error('URL alınamadı');
       setCvUrl(url);

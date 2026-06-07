@@ -1,20 +1,10 @@
-services:
-  frontend:
-    # nginx container içinde 5173'te dinliyor (default.conf.template `listen 5173`),
-    # host:80 → container:5173. Yanlış 80:80 mapping'i nginx'e hiç ulaşmıyordu.
-    ports:
-      - "80:5173"
-  backend:
-    # config/redis.ts guard'ı: host "redis" ise DOCKER=1 zorunlu (compose içi koşum sinyali).
-    environment:
-      DOCKER: "1"
-  worker:
-    env_file:
-      - ../../.env
-    environment:
-      DOCKER: "1"
-  dlq-worker:
-    env_file:
-      - ../../.env
-    environment:
-      DOCKER: "1"
+# Staging override.
+#
+# Not: docker-compose.prod.yml artık TEK BAŞINA deploy edilebilir — DOCKER=1,
+# worker/dlq env_file, frontend port (80:5173) ve tüm tırnaksız default'lar
+# prod compose'a taşındı. Bu yüzden burada artık zorunlu bir override YOK.
+#
+# Bu dosya yalnızca staging'e ÖZGÜ farklar için ayrılmıştır (örn. staging'de
+# farklı bir host portu istenirse: `FRONTEND_HTTP_PORT` env veya aşağıya
+# frontend.ports override'ı). Şu an ek fark olmadığından boş bırakıldı.
+services: {}

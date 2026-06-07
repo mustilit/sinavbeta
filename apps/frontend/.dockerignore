@@ -10,3 +10,15 @@ dist
 .gitignore
 .cursor
 *.md
+# Runtime/test artifacts + tool home-junk (build context'e girmemeli; bazilari
+# root sahipli olup context transfer'ini kirar — orn. chromium'un .pki dizini)
+.pki
+.cache
+.config
+.mozilla
+.local
+.npm
+playwright-report
+test-results
+.lighthouseci
+e2e
