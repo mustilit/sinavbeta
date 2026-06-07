@@ -103,6 +103,26 @@ services:
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
     restart: unless-stopped
 
+  # E-posta trafiği (3 kademe) worker'ı — email-critical/notify/bulk kuyruklarını
+  # tüketir. EmailService TÜM mailleri (kayıt doğrulama, şifre sıfırlama, makbuz...)
+  # EmailQueueProducer ile bu kuyruklara yazar. Bu service çalışmazsa mailler
+  # `email-critical`'da QUEUED birikir, hiç gönderilmez (yaşandı: 2026-06-07 kayıt
+  # doğrulama maili gelmedi). `worker` (email-queue) AYRI/legacy bir consumer'dır.
+  email-traffic-worker:
+    image: dal-backend:prod
+    command: npm run start:email-traffic-worker
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Mail gönderimi için sağlayıcı secret'ları (EMAIL_SECRETS_KEY) + DB gerekir.
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: production
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DOCKER: "1"
+    restart: unless-stopped
+
   frontend:
     build:
       # Context repo köküne çekildi — Dockerfile'ın hem apps/frontend kaynak
