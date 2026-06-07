@@ -74,6 +74,29 @@ describe('GetEducatorPageUseCase', () => {
     expect(result.educator.bio).toBe('Biyografi');
   });
 
+  it('bio metadata.bio\'dan okunur (kanonik saklama — kolon boşken)', async () => {
+    // Gerçek dünya: UpdateEducatorProfileUseCase tanıtım metnini metadata.bio'ya yazar,
+    // bio kolonu boş kalır. Public profil metadata'dan okumalı (yoksa "tanıtım yok" görünür).
+    const educator = makeEducator({ bio: '', metadata: { bio: 'Metadata tanıtım metni' } });
+    const uc = new GetEducatorPageUseCase(makeUsersRepo(educator) as any, makeExamsRepo() as any, makeStatsRepo() as any, makeReviewAgg() as any, makePrefsRepo() as any);
+    const result = await uc.execute('edu-1');
+    expect(result.educator.bio).toBe('Metadata tanıtım metni');
+  });
+
+  it('metadata.bio kolon bio\'dan önceliklidir', async () => {
+    const educator = makeEducator({ bio: 'Eski kolon bio', metadata: { bio: 'Güncel metadata bio' } });
+    const uc = new GetEducatorPageUseCase(makeUsersRepo(educator) as any, makeExamsRepo() as any, makeStatsRepo() as any, makeReviewAgg() as any, makePrefsRepo() as any);
+    const result = await uc.execute('edu-1');
+    expect(result.educator.bio).toBe('Güncel metadata bio');
+  });
+
+  it('ne metadata.bio ne kolon varsa null döner', async () => {
+    const educator = makeEducator({ bio: undefined, metadata: {} });
+    const uc = new GetEducatorPageUseCase(makeUsersRepo(educator) as any, makeExamsRepo() as any, makeStatsRepo() as any, makeReviewAgg() as any, makePrefsRepo() as any);
+    const result = await uc.execute('edu-1');
+    expect(result.educator.bio).toBeNull();
+  });
+
   it('test yoksa items boş döner', async () => {
     const uc = new GetEducatorPageUseCase(makeUsersRepo(makeEducator()) as any, makeExamsRepo([], 0) as any, makeStatsRepo() as any, makeReviewAgg() as any, makePrefsRepo() as any);
     const result = await uc.execute('edu-1');

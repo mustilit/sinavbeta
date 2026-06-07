@@ -81,7 +81,10 @@ export class GetEducatorPageUseCase {
     }));
 
     return {
-      educator: { id: educator.id, displayName: educator.username, bio: educator.bio ?? null, avatarUrl, isApproved: educator.status === 'ACTIVE' },
+      // Bio (tanıtım metni) kanonik olarak metadata.bio'da saklanır
+      // (UpdateEducatorProfileUseCase whitelist'i metadata'ya yazar; bio kolonu
+      // legacy/boş). Public profil bunu metadata'dan okumalı — yoksa kolona düş.
+      educator: { id: educator.id, displayName: educator.username, bio: (((educator.metadata as Record<string, unknown> | undefined)?.bio as string | undefined) ?? educator.bio) ?? null, avatarUrl, isApproved: educator.status === 'ACTIVE' },
       stats: { ratingAvg: ratingData.ratingAvg, ratingCount: ratingData.ratingCount, totalPublishedTests: total, totalPurchases },
       tests: { items, meta: { page, limit, total } },
     };
