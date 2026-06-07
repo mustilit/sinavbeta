@@ -13,6 +13,18 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # ── Docker DNS resolver (backend redeploy 502 koruması) ────────────────
+    # /api ve /uploads proxy_pass'lerinde DEĞİŞKEN ($backend_origin) kullanıyoruz;
+    # bu nginx'i backend hostname'ini HER istekte yeniden çözmeye zorlar. Aksi
+    # halde nginx backend IP'sini başlangıçta tek sefer cache'ler ve backend
+    # container recreate edilince (her redeploy'da IP değişir) eski IP'ye gidip
+    # 502 verir (frontend restart gerekene kadar). 127.0.0.11 Docker'ın gömülü
+    # DNS'i; valid=10s ile en geç 10 saniyede yeni IP'yi alır. NGINX_ENVSUBST
+    # filtresi yalnızca CSP_* değişkenlerini interpole eder; $backend_origin ve
+    # $request_uri literal kalır.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $backend_origin "http://backend:3000";
+
     # ── Upload boyut limiti ───────────────────────────────────────────────
     # Frontend kapak/CV/avatar yüklemesine 5MB izin veriyor; nginx default'u
     # 1MB olduğu için >1MB görseller backend'e ulaşmadan 413 ile reddediliyordu
@@ -95,7 +107,9 @@ server {
     # halde /uploads/x.png isteğini yakalayıp SPA root'unda arar → 404.
     # `^~` ile nginx bu prefix eşleşince regex location'ları atlar, backend'e proxy'ler.
     location ^~ /uploads/ {
-        proxy_pass http://backend:3000/uploads/;
+        # Değişkenli proxy_pass → her istekte yeniden çöz (backend redeploy 502 fix).
+        # $request_uri tam yolu taşır (/uploads/x.png) — strip yok, uploads/→uploads/.
+        proxy_pass $backend_origin$request_uri;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -110,7 +124,12 @@ server {
     # global prefix kullanmadığı için strip zorunlu. Eklemeli değişiklik:
     # frontend bundle veya backend kodu dokunulmaz.
     location /api/ {
-        proxy_pass http://backend:3000/;
+        # Değişkenli proxy_pass → her istekte yeniden çöz (backend redeploy 502 fix).
+        # Backend global prefix kullanmıyor → /api/ strip edilir: /api/site/info → /site/info.
+        # rewrite ... break + URI'siz proxy_pass = literal `http://backend:3000/` strip'iyle
+        # aynı davranış; query string rewrite tarafından korunur.
+        rewrite ^/api/(.*)$ /$1 break;
+        proxy_pass $backend_origin;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
