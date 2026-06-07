@@ -24,6 +24,14 @@ services:
 
   backend:
     image: dal-backend:prod
+    # ⚠️ GEÇİCİ STOPGAP (DNS) — DOMAIN DNS AKTİF OLUNCA KALDIR.
+    # smtp.sinavsalonu.com public DNS'te NXDOMAIN (domain NS'leri henüz İsimtescil
+    # dnsenable.com'a delege/propagate olmadı; site de bu yüzden IP ile çalışıyor).
+    # İsimtescil'in kendi DNS'i smtp.sinavsalonu.com → 93.89.226.86 diyor ve SMTP+AUTH
+    # bu IP'de doğrulandı. Hostname'i IP'ye sabitleyip cert SNI'ı koruyoruz ki mail
+    # gitsin. Domain yayılınca bu satırlar kaldırılmalı (IP değişebilir).
+    extra_hosts:
+      - "smtp.sinavsalonu.com:93.89.226.86"
     build:
       context: ../../apps/backend
       dockerfile: ../../infra/docker/backend.Dockerfile
@@ -75,6 +83,8 @@ services:
   worker:
     image: dal-backend:prod
     command: npm run start:worker
+    extra_hosts:                                  # GEÇİCİ — bkz. backend; DNS aktif olunca kaldır
+      - "smtp.sinavsalonu.com:93.89.226.86"
     depends_on:
       redis:
         condition: service_healthy
@@ -91,6 +101,8 @@ services:
   dlq-worker:
     image: dal-backend:prod
     command: npm run start:dlq
+    extra_hosts:                                  # GEÇİCİ — bkz. backend; DNS aktif olunca kaldır
+      - "smtp.sinavsalonu.com:93.89.226.86"
     depends_on:
       redis:
         condition: service_healthy
@@ -111,6 +123,8 @@ services:
   email-traffic-worker:
     image: dal-backend:prod
     command: npm run start:email-traffic-worker
+    extra_hosts:                                  # GEÇİCİ — bkz. backend; DNS aktif olunca kaldır
+      - "smtp.sinavsalonu.com:93.89.226.86"
     depends_on:
       redis:
         condition: service_healthy
