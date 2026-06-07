@@ -7,6 +7,7 @@
 import React from 'react';
 import * as Sentry from '@sentry/react';
 import { withTranslation } from 'react-i18next';
+import { isChunkLoadError, reloadOnceForChunkError } from '@/lib/chunkReload';
 
 const isProd = import.meta.env?.PROD ?? false;
 
@@ -21,6 +22,13 @@ class ErrorBoundaryImpl extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Lazy-route chunk yükleme hatası (deploy sonrası eski hash / geçici ağ) →
+    // tek-sefer otomatik reload ile kurtar. vite:preloadError yakalamazsa (veya
+    // hata React.lazy üzerinden buraya düşerse) bu backstop devreye girer.
+    if (isChunkLoadError(error) && reloadOnceForChunkError()) {
+      return; // reload tetiklendi — gerisini raporlamaya gerek yok
+    }
+
     // Sentry'ye gönder (DSN yoksa sessizce atlanır)
     Sentry.captureException(error, { extra: errorInfo });
 
