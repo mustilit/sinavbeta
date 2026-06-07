@@ -181,28 +181,23 @@ export class AuthController {
     @Query('email') email?: string,
     @Query('username') username?: string,
   ) {
+    // Availability YALNIZ doğrulanmış kullanıcıya (users tablosu) bakar. Bekleyen
+    // (doğrulanmamış) kayıt "alınmış" SAYILMAZ: RegisterUseCase ve
+    // RegisterEducatorUseCase aynı email/username için eski pending'i siler ve
+    // yeniden gönderir (deleteByEmail/deleteByUsername → create). Pending'i de
+    // engelleseydik, doğrulama maili ULAŞMAYAN kullanıcı bir daha kayıt olamazdı
+    // ("Bu e-posta adresi zaten kayıtlı" kilidi — 2026-06-07 olayı).
     const result = { emailAvailable: true, usernameAvailable: true };
-    const pendingRepo = new PrismaPendingRegistrationRepository();
 
     const e = (email || '').trim().toLowerCase();
     if (e) {
       const existingUser = await this.userRepo.findByEmail(e);
-      if (existingUser) {
-        result.emailAvailable = false;
-      } else {
-        const existingPending = await pendingRepo.findByEmail(e);
-        if (existingPending) result.emailAvailable = false;
-      }
+      if (existingUser) result.emailAvailable = false;
     }
     const u = (username || '').trim();
     if (u) {
       const existingUser = await this.userRepo.findByUsername(u);
-      if (existingUser) {
-        result.usernameAvailable = false;
-      } else {
-        const existingPending = await pendingRepo.findByUsername(u);
-        if (existingPending) result.usernameAvailable = false;
-      }
+      if (existingUser) result.usernameAvailable = false;
     }
     return result;
   }

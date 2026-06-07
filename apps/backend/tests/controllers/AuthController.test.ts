@@ -57,6 +57,36 @@ function buildController(overrides: Partial<any> = {}) {
 }
 
 describe('AuthController', () => {
+  // --- checkAvailability (kayıt wizard step-1) ---
+  describe('checkAvailability', () => {
+    it('doğrulanmış kullanıcı varsa email + username "alınmış" döner', async () => {
+      const userRepo = {
+        findById: jest.fn(),
+        findByEmail: jest.fn().mockResolvedValue({ id: 'u-1' }),
+        findByUsername: jest.fn().mockResolvedValue({ id: 'u-1' }),
+      };
+      const controller = buildController({ userRepo });
+      const res = await controller.checkAvailability('taken@x.com', 'takenuser');
+      expect(res).toEqual({ emailAvailable: false, usernameAvailable: false });
+    });
+
+    it('users tablosunda yoksa MÜSAİT döner — bekleyen/doğrulanmamış kayıt ENGELLEMEZ', async () => {
+      // Regresyon: doğrulama maili ulaşmayan kullanıcı pending kayıt yüzünden
+      // bir daha kayıt olamıyordu ("Bu e-posta adresi zaten kayıtlı" kilidi, 2026-06-07).
+      // RegisterUseCase pending'i zaten siler+yeniden gönderir; availability yalnız
+      // users'a bakmalı.
+      const userRepo = {
+        findById: jest.fn(),
+        findByEmail: jest.fn().mockResolvedValue(null),
+        findByUsername: jest.fn().mockResolvedValue(null),
+      };
+      const controller = buildController({ userRepo });
+      const res = await controller.checkAvailability('pending@x.com', 'pendinguser');
+      expect(res).toEqual({ emailAvailable: true, usernameAvailable: true });
+      expect(userRepo.findByEmail).toHaveBeenCalledWith('pending@x.com');
+    });
+  });
+
   // --- login ---
 
   describe('login', () => {
