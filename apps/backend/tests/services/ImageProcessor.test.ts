@@ -294,6 +294,30 @@ describe('buildImageUrls', () => {
     expect(urls.height).toBe(1500);
   });
 
+  // Regresyon guard'ı — 178.105.231.185 olayı (2026-06-07): upload akışı host'u
+  // (BACKEND_URL) URL'e gömüyordu, host/domain değişince DB kayıtları kırıldı.
+  // Boş base verilince TÜM URL'ler GÖRECELİ (/uploads/...) olmalı, hiç host içermemeli.
+  it('boş base ile host-bağımsız GÖRECELİ URL üretir (mutlak http yok)', async () => {
+    const buf = await makeJpeg();
+    const result = await processImage(buf, {
+      outputDir,
+      baseSlug: 'relgen',
+      detected: JPEG,
+    });
+
+    const urls = buildImageUrls(result, '');
+
+    expect(urls.original).toBe('/uploads/relgen.jpg');
+    expect(urls.thumb).toBe('/uploads/relgen-thumb.webp');
+    expect(urls.srcsetWebp).toContain('/uploads/relgen-320w.webp 320w');
+    expect(urls.srcsetAvif).toContain('/uploads/relgen-320w.avif 320w');
+
+    // Hiçbir alanda scheme+host olmamalı — aksi halde host'a bağımlı kayıt.
+    for (const value of [urls.original, urls.thumb, urls.srcset, urls.srcsetWebp, urls.srcsetAvif]) {
+      expect(value ?? '').not.toMatch(/https?:\/\//);
+    }
+  });
+
   it('GIF için thumb null, srcsetWebp ve srcsetAvif boş', async () => {
     const tinyGif = Buffer.from([
       0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
