@@ -46,9 +46,6 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       PORT: ${PORT:-3000}
       CLIENT_URL: ${CLIENT_URL}
-      # Upload URL'leri (CV/avatar) bu origin ile üretilir. Verilmezse kod
-      # http://localhost:3000'e düşer → admin yüklenen CV'yi göremez.
-      BACKEND_URL: ${BACKEND_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       REDIS_DISABLED: "0"
       CRON_DISABLED: "0"

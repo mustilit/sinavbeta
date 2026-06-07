@@ -255,7 +255,6 @@ JWT_EXPIRES_IN=604800
 
 CLIENT_URL=https://<your-domain.com>
 FRONTEND_URL=https://<your-domain.com>
-BACKEND_URL=https://<your-domain.com>
 
 # CSP — başlangıçta report-only, sonra enforce
 CSP_ENABLED=true
