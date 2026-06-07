@@ -44,6 +44,11 @@ services:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
+      # E-posta sağlayıcı secret'ları (SMTP şifresi/API key) AES-256-GCM ile bu
+      # anahtarla şifrelenir. Backend "Yeni Sağlayıcı Ekle"de şifreyi encrypt eder;
+      # tanımsızsa encryptSecret() fırlatır → "Oluşturulamadı". Worker zaten env_file
+      # ile alıyordu; backend explicit allow-list'inde eksikti (eklendi).
+      EMAIL_SECRETS_KEY: ${EMAIL_SECRETS_KEY}
       PORT: ${PORT:-3000}
       CLIENT_URL: ${CLIENT_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
