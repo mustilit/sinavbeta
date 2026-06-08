@@ -21,7 +21,16 @@ export class SendEmailVerificationUseCase {
     userId?: string;
     appBaseUrl?: string;
   }): Promise<{ token: string; expiresAt: Date }> {
-    const appBaseUrl = (input.appBaseUrl ?? process.env.APP_BASE_URL ?? 'http://localhost:5174').replace(/\/+$/, '');
+    // Doğrulama linki tabanı: APP_BASE_URL set değilse CLIENT_URL/FRONTEND_URL'e
+    // düş (prod'da bunlar set). Aksi halde link http://localhost:5174'e gidip
+    // kullanıcıda ölü adres oluyordu (doğrulama butonu sonuç vermiyordu).
+    const appBaseUrl = (
+      input.appBaseUrl ??
+      process.env.APP_BASE_URL ??
+      process.env.CLIENT_URL ??
+      process.env.FRONTEND_URL ??
+      'http://localhost:5174'
+    ).replace(/\/+$/, '');
 
     if (input.pendingRegistrationId) {
       return this.sendForPending(input.pendingRegistrationId, appBaseUrl);
