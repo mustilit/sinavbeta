@@ -236,6 +236,19 @@ export function useTestProctoring({
     };
   }, [enabled, exitLimit, report]);
 
+  // Proctoring kapanınca (test bitti / review / süre doldu → enabled=false) tarayıcı
+  // fullscreen'inden ÇIK. Aksi halde sonuç ekranı ve sonraki NORMAL sayfalar
+  // "widescreen" (tam ekran) kalıyordu. Bu effect yukarıdaki proctoring effect'inden
+  // SONRA tanımlı: enabled true→false geçişinde önce onun cleanup'ı fullscreenchange
+  // listener'ını kaldırır, sonra burada exit edilir → exit bir FULLSCREEN_EXIT
+  // ihlali olarak SAYILMAZ.
+  useEffect(() => {
+    if (enabled) return;
+    if (typeof document !== 'undefined' && document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => { /* tarayıcı reddetti — sessiz */ });
+    }
+  }, [enabled]);
+
   return {
     /** Toplam tab switch + fullscreen exit sayısı */
     exitCount,
