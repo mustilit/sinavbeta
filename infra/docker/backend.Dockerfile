@@ -117,7 +117,10 @@ RUN chmod +x ./start.sh
 ENV NODE_ENV=production
 
 # Non-root user for better security
-RUN useradd -m appuser && mkdir -p /usr/src/app/uploads && chown -R appuser:appuser /usr/src/app/uploads
+# /backups: pg_dump çıktısının yazıldığı dizin. appuser yazabilsin diye image'da
+# oluşturulup chown edilir; named volume ilk mount'ta bu sahipliği devralır
+# (aksi halde root-owned mount'a appuser yazamaz → mkdir/yazma EACCES).
+RUN useradd -m appuser && mkdir -p /usr/src/app/uploads /backups && chown -R appuser:appuser /usr/src/app/uploads /backups
 USER appuser
 
 EXPOSE 3000

@@ -75,6 +75,10 @@ services:
     # → kullanıcı yüklediği görseller kaybolur (üretimde yaşandı, 2026-06-07).
     volumes:
       - uploads_data:/usr/src/app/uploads
+      # DB yedekleri (pg_dump → gzip) KALICI volume'da. Aksi halde her backend
+      # recreate'te container-local yedekler silinir. AdminSettings.backupTargetDir
+      # = /backups olmalı (admin paneli "Hedef dizin").
+      - backups_data:/backups
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ready || exit 1"]
@@ -175,4 +179,5 @@ services:
 volumes:
   db_data:
   uploads_data:
+  backups_data:
 

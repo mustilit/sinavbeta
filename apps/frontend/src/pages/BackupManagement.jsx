@@ -393,7 +393,7 @@ export default function BackupManagement() {
                 type="text"
                 value={resolvedDir}
                 onChange={(e) => { markTouched(); setFormDir(e.target.value); }}
-                placeholder="/var/backups/sinav-salonu"
+                placeholder="/backups"
                 className={cn(
                   'w-full rounded-lg border px-3 py-2 text-sm font-mono',
                   'bg-white dark:bg-gray-800 text-slate-900 dark:text-gray-100',
