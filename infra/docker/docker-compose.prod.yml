@@ -57,6 +57,9 @@ services:
       # tanımsızsa encryptSecret() fırlatır → "Oluşturulamadı". Worker zaten env_file
       # ile alıyordu; backend explicit allow-list'inde eksikti (eklendi).
       EMAIL_SECRETS_KEY: ${EMAIL_SECRETS_KEY}
+      # Rate limit (varsayılan AÇIK = "0"). Yük testi için .env'de geçici "1" yapılır,
+      # test sonrası geri "0". Üretimde her zaman 0 kalmalı.
+      THROTTLE_DISABLED: ${THROTTLE_DISABLED:-0}
       PORT: ${PORT:-3000}
       CLIENT_URL: ${CLIENT_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
