@@ -35,7 +35,8 @@ export class SiteController {
   @Public()
   @ApiOkResponse({ description: 'Active exam types for homepage' })
   async getExamTypes() {
-    return this.listExamTypes.execute(true);
+    // Ana sayfa: en popüler (türe ait paket + satın alma sayısı) türler önce.
+    return this.listExamTypes.execute(true, true);
   }
 
   @Get('featured-educators')

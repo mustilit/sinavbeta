@@ -449,8 +449,18 @@ export default function Home() {
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0" style={{ backgroundColor: "#0000CD" }} />
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1920')] bg-cover bg-center opacity-10" />
+        {/* Marka indigo gradient — kendi içinde (dış bağımlılık YOK). Önceden desen
+            dış Unsplash görselinden geliyordu; anonim/dış kullanıcıda yüklenmeyince
+            düz #0000CD kalıp renk mora kayıyor + desen kayboluyordu. */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #4f46e5 0%, #4338ca 55%, #3730a3 100%)" }} />
+        {/* Desen — inline SVG (her kullanıcıda görünür; ağ/CSP'ye bağlı değil) */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='1.5' fill='%23ffffff'/%3E%3C/svg%3E\")",
+            backgroundSize: "32px 32px",
+          }}
+        />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
           <div className="max-w-3xl">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
