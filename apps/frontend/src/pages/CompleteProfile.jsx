@@ -69,7 +69,8 @@ export default function CompleteProfile() {
       return;
     }
     if (user.phone && user.city) {
-      navigate(createPageUrl("Explore"));
+      // Profili zaten tamam olan aday bu sayfaya düşerse ana sayfaya gönder.
+      navigate(createPageUrl("Home"), { replace: true });
       return;
     }
     setFormData({
@@ -168,11 +169,13 @@ export default function CompleteProfile() {
       
       toast.success("Profiliniz tamamlandı");
       
-      // Eğer eğitici ise EducatorSettings'e, değilse SelectExamTypes'a yönlendir
+      // Eğitici → EducatorSettings. Aday → telefon+şehir alındıktan sonra doğrudan
+      // ANA SAYFA (SelectExamTypes onboarding'i zorunlu değil; ilgi alanı sonra
+      // seçilebilir). replace: true → geri tuşu fullscreen onboarding'e dönmesin.
       if (role === 'educator') {
         navigate(createPageUrl("EducatorSettings"));
       } else {
-        navigate(createPageUrl("SelectExamTypes"));
+        navigate(createPageUrl("Home"), { replace: true });
       }
     } catch (error) {
       toast.error("Profil güncellenemedi");
