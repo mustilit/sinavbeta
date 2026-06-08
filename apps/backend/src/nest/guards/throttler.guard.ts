@@ -1,5 +1,13 @@
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { ThrottlerGuard, ThrottlerLimitDetail } from '@nestjs/throttler';
+import { JwtService } from '../../infrastructure/services/JwtService';
+
+// Throttler global APP_GUARD'dır ve route-level auth guard'dan ÖNCE çalışır →
+// req.user henüz set DEĞİLDİR. Bu yüzden rate-limit key'i IP'ye düşüyordu; aynı
+// NAT IP'si arkasındaki (okul/dershane lab) onlarca aday tek 120/dk bucket'ını
+// paylaşıp 429 alıyordu (yük testinde doğrulandı, 2026-06-08). Çözüm: throttler
+// Authorization token'ını KENDİSİ doğrulayıp userId çıkarsın → per-user key.
+const jwtService = new JwtService();
 
 /**
  * Custom rate limiter — tenant/user/IP bazlı key + frontend kimliği bazlı
@@ -25,7 +33,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     // sıkıştırır → SPA'nın sayfa başına onlarca çağrısı ortak limiti anında
     // doldurur, herkes "ilk denemede" 429 alır (üretimde yaşandı, 2026-06-07).
     // Önce authenticated user, sonra IP ile anahtarla; tenant'ı key olarak kullanma.
-    const userId = req.user?.id;
+    const userId = req.user?.id ?? this.userIdFromToken(req);
     if (userId) return `user:${userId}`;
     // support X-Forwarded-For header for proxied clients
     const xff = req.headers?.['x-forwarded-for'];
@@ -39,6 +47,25 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     const clientApp = (req.headers?.['x-client-app'] as string) ?? '';
     const trusted = clientApp.startsWith(CLIENT_APP_PREFIX);
     return trusted ? `ip:${ip}` : `ip:untrusted:${ip}`;
+  }
+
+  /**
+   * Authorization: Bearer <jwt> header'ını DOĞRULAYIP userId döner. Geçersiz/eksik/
+   * süresi dolmuş token → null (IP fallback). İmza doğrulanır (verify); sadece
+   * decode etseydik saldırgan sahte userId ile limit kaçırabilirdi. Rate-limit
+   * yolunda olduğu için hata YUTULUR — auth kararı route guard'ın işi.
+   */
+  private userIdFromToken(req: { headers?: Record<string, unknown> }): string | null {
+    const raw = req.headers?.['authorization'] ?? req.headers?.['Authorization'];
+    const header = Array.isArray(raw) ? raw[0] : (raw as string | undefined);
+    if (!header || typeof header !== 'string' || !header.startsWith('Bearer ')) return null;
+    const token = header.slice(7).trim();
+    if (!token) return null;
+    try {
+      return jwtService.verify(token)?.sub ?? null;
+    } catch {
+      return null;
+    }
   }
 
   /**
