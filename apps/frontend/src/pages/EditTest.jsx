@@ -688,23 +688,27 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
           ))}
         </div>
 
-        {/* Alt aksiyonlar: Soru Ekle + DOCX (liste altında — kullanıcı en altta ekler) */}
-        <div className="border-t pt-4 mt-3 flex flex-wrap items-center gap-2">
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={() => {
-            if (test.questions.length >= maxQuestionsPerTest) {
-              toast.error(t("pages:testForm.testCard.maxQuestionsReached", { max: maxQuestionsPerTest }));
-              return;
-            }
-            const nq = emptyQuestion();
-            setAutoOpenKey(nq._k);
-            onTestUpdate({ ...test, questions: [...test.questions, nq] });
-          }}>
+        {/* Alt aksiyonlar: Soru Ekle (Test Ekle ile aynı dashed tasarım) + DOCX (ikincil) */}
+        <div className="border-t pt-4 mt-3 space-y-2">
+          <Button variant="outline"
+            className="w-full border-2 border-dashed border-slate-300 text-slate-600 hover:border-indigo-400 hover:bg-indigo-50/50 hover:text-indigo-700"
+            onClick={() => {
+              if (test.questions.length >= maxQuestionsPerTest) {
+                toast.error(t("pages:testForm.testCard.maxQuestionsReached", { max: maxQuestionsPerTest }));
+                return;
+              }
+              const nq = emptyQuestion();
+              setAutoOpenKey(nq._k);
+              onTestUpdate({ ...test, questions: [...test.questions, nq] });
+            }}>
             <Plus className="w-4 h-4 mr-1" />{t("pages:testForm.testCard.addQuestion")}
           </Button>
-          <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowDOCXDialog(true)} disabled={docxLoading}>
-            <Upload className="w-4 h-4" />
-            {docxLoading ? t("pages:testForm.createPage.docx.loading") : t("pages:testForm.createPage.docx.button")}
-          </Button>
+          <div className="flex justify-center">
+            <Button size="sm" variant="ghost" className="gap-2 text-slate-500 hover:text-slate-700" onClick={() => setShowDOCXDialog(true)} disabled={docxLoading}>
+              <Upload className="w-4 h-4" />
+              {docxLoading ? t("pages:testForm.createPage.docx.loading") : t("pages:testForm.createPage.docx.button")}
+            </Button>
+          </div>
         </div>
 
         <Dialog open={showDOCXDialog} onOpenChange={setShowDOCXDialog}>
