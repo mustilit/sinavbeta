@@ -14,29 +14,48 @@
  */
 export const LETTERS = ["A", "B", "C", "D", "E"];
 
-/** Düz metin satır dizisinden soru listesi üret (DOCX fallback + PDF ortak). */
+// Ayraç olarak ")", ".", "-" hepsi kabul edilir (1. / 1- / 1) ve A) / a- / a. ...).
+const QUESTION_RE = /^(\d{1,3})\s*[).\-]\s*(.+)$/;                 // "1- 144..." | "1. ..." | "1) ..."
+const QUESTION_SORU_RE = /^soru\s*[:.)\-]\s*(.+)$/i;              // "Soru: ..."
+const OPTION_RE = /^([A-Ea-e])\s*[).\-]\s*(.+)$/;                 // "a- 12" | "A) 12" | "a. 12"
+const ANSWER_RE = /^(?:\*\s*|cevap\s*[:.)\-]?\s*)([A-Ea-e])\b/i;  // "Cevap: a" | "Cevap A" | "*A"
+
+/**
+ * Düz metin satır dizisinden soru listesi üret (DOCX fallback + PDF ortak).
+ * Esnek format: soru "1." / "1-" / "1)" / "Soru:"; şık "A)" / "a-" / "a.";
+ * doğru cevap "Cevap: a" / "Cevap A" / "*A". Harf büyük/küçük fark etmez.
+ */
 export function buildQuestionsFromLines(lines, makeEmpty) {
   const questions = [];
   let current = null;
-  for (const line of lines) {
-    if (/^(soru:|\d+\s*\.)/i.test(line)) {
+  for (const raw of lines) {
+    const line = (raw || "").trim();
+    if (!line) continue;
+
+    const ans = line.match(ANSWER_RE);
+    const opt = line.match(OPTION_RE);
+    const q = line.match(QUESTION_RE);
+    const qSoru = line.match(QUESTION_SORU_RE);
+
+    if (ans && current) {
+      // Önce cevap satırı: "Cevap" da harfle başladığı için şık/sorudan ÖNCE bakılır.
+      const idx = LETTERS.indexOf(ans[1].toUpperCase());
+      if (idx >= 0) {
+        current.options = current.options.map((o, i) => ({ ...o, isCorrect: i === idx }));
+      }
+    } else if (opt && current) {
+      const idx = LETTERS.indexOf(opt[1].toUpperCase());
+      if (idx >= 0 && idx < current.options.length) {
+        current.options[idx].content = opt[2].trim();
+      }
+    } else if (q) {
       if (current) questions.push(current);
       current = makeEmpty();
-      current.content = line.replace(/^(soru:|\d+\s*\.\s*)/i, "").trim();
-    } else if (current && /^([A-E])\s*\)\s*(.+)/.test(line)) {
-      const m = line.match(/^([A-E])\s*\)\s*(.+)/);
-      const idx = LETTERS.indexOf(m[1]);
-      if (idx >= 0 && idx < current.options.length) {
-        current.options[idx].content = m[2].trim();
-      }
-    } else if (current && /^\*|cevap:/i.test(line)) {
-      const m = line.match(/^[*]*\s*([A-E])/i);
-      if (m) {
-        const idx = LETTERS.indexOf(m[1].toUpperCase());
-        if (idx >= 0) {
-          current.options = current.options.map((o, i) => ({ ...o, isCorrect: i === idx }));
-        }
-      }
+      current.content = q[2].trim();
+    } else if (qSoru) {
+      if (current) questions.push(current);
+      current = makeEmpty();
+      current.content = qSoru[1].trim();
     }
   }
   if (current) questions.push(current);
