@@ -27,6 +27,7 @@ import {
 import { Link } from "react-router-dom";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 import { useServiceStatus } from "@/lib/useServiceStatus";
+import { parseDocxToQuestions, parsePdfToQuestions } from "@/lib/importQuestions";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import { useShouldShowTour, useCompleteTour, TOUR_KEYS } from "@/lib/useOnboarding";
 import { EDUCATOR_CREATE_STEPS } from "@/components/onboarding/tourSteps";
@@ -673,110 +674,35 @@ function QuestionItem({ questionIndex, question, topicList, onUpdate, onDelete, 
 // ─── Test kartı (Adım 2'de) ─────────────────────────────────────────────────
 function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestDelete, error, onErrorClear, totalTests, isExpanded, onToggleExpand, validationAttempted }) {
   const { t } = useTranslation(["pages"]);
-  const [showDOCXDialog, setShowDOCXDialog] = useState(false);
-  const [docxLoading, setDocxLoading] = useState(false);
+  const [importType, setImportType] = useState(null); // 'docx' | 'pdf' | null
+  const [importLoading, setImportLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { maxQuestionsPerTest = 100 } = useServiceStatus();
   // "+ Soru Ekle" tıklanınca yeni eklenen sorunun _k'sini tutar; QuestionItem
   // mount olunca dialog'u otomatik açar.
   const [autoOpenKey, setAutoOpenKey] = useState(null);
 
-  // DOCX'ten soru içeri aktarma — iki format desteklenir:
-  //   1) Düz metin: "1. Soru..." / "A) Seçenek..." / "Cevap: A" veya "*A"
-  //   2) Word otomatik numaralama: nested <ol><li> (mammoth bunu üretir)
-  //      İlk seviye <li> = soru, içindeki <ol><li> = şıklar
-  const handleDOCXImport = async (file) => {
-    setDocxLoading(true);
+  // DOCX/PDF içe aktarma — parçalama mantığı lib/importQuestions'ta (ikisinde de aynı).
+  //   DOCX: yapısal <ol><li> → yoksa düz-metin satır parser'ı.
+  //   PDF: metin satırları → aynı düz-metin parser'ı.
+  // Desteklenen düz metin: "1. Soru" / "A) Şık" / "*A" veya "Cevap: A".
+  const runImport = async (file, type) => {
+    setImportLoading(true);
     try {
-      const mammoth = await import("mammoth");
-      const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.convertToHtml({ arrayBuffer });
-      const html = result.value;
-
-      const div = document.createElement("div");
-      div.innerHTML = html;
-      const questions = [];
-
-      // 1) Yapısal parser: top-level <ol>/<ul> içindeki her <li> bir soru
-      const topLists = Array.from(div.children).filter((el) => el.tagName === "OL" || el.tagName === "UL");
-      for (const list of topLists) {
-        const questionItems = Array.from(list.children).filter((el) => el.tagName === "LI");
-        for (const qLi of questionItems) {
-          const subList = Array.from(qLi.children).find((el) => el.tagName === "OL" || el.tagName === "UL");
-          let qText;
-          if (subList) {
-            const clone = qLi.cloneNode(true);
-            clone.querySelectorAll("ol, ul").forEach((n) => n.remove());
-            qText = clone.textContent.trim();
-          } else {
-            qText = qLi.textContent.trim();
-          }
-          if (!qText) continue;
-
-          const q = emptyQuestion();
-          q.content = qText;
-          if (subList) {
-            const optionItems = Array.from(subList.children).filter((el) => el.tagName === "LI");
-            optionItems.slice(0, q.options.length).forEach((optLi, i) => {
-              q.options[i].content = optLi.textContent.trim();
-            });
-          }
-          questions.push(q);
-        }
-      }
-
-      // 2) Yapısal parser sonuç vermediyse düz metin fallback
-      if (questions.length === 0) {
-        const lines = Array.from(div.querySelectorAll("p, li"))
-          .map((el) => el.textContent.trim())
-          .filter((t) => t.length > 0);
-
-        let currentQuestion = null;
-        for (const line of lines) {
-          if (/^(soru:|\d+\s*\.)/i.test(line)) {
-            if (currentQuestion) questions.push(currentQuestion);
-            currentQuestion = emptyQuestion();
-            currentQuestion.content = line.replace(/^(soru:|\d+\s*\.\s*)/i, "").trim();
-          } else if (currentQuestion && /^([A-E])\s*\)\s*(.+)/.test(line)) {
-            const match = line.match(/^([A-E])\s*\)\s*(.+)/);
-            const idx = LETTERS.indexOf(match[1]);
-            if (idx >= 0 && idx < currentQuestion.options.length) {
-              currentQuestion.options[idx].content = match[2].trim();
-            }
-          } else if (currentQuestion && /^\*|cevap:/i.test(line)) {
-            const match = line.match(/^[\*]*\s*([A-E])/i);
-            if (match) {
-              const idx = LETTERS.indexOf(match[1].toUpperCase());
-              if (idx >= 0) {
-                currentQuestion.options = currentQuestion.options.map((o, i) => ({
-                  ...o,
-                  isCorrect: i === idx,
-                }));
-              }
-            }
-          }
-        }
-        if (currentQuestion) questions.push(currentQuestion);
-      }
-
+      const questions = type === "pdf"
+        ? await parsePdfToQuestions(file, emptyQuestion)
+        : await parseDocxToQuestions(file, emptyQuestion);
       if (questions.length === 0) {
         toast.error(t("pages:testForm.createPage.docx.parseError"));
       } else {
-        onTestUpdate({
-          ...test,
-          questions: [...test.questions, ...questions],
-        });
+        onTestUpdate({ ...test, questions: [...test.questions, ...questions] });
         toast.success(t("pages:testForm.createPage.docx.added", { count: questions.length }));
       }
     } catch (err) {
-      if (err.message?.includes("mammoth")) {
-        toast.error(t("pages:testForm.createPage.docx.mammothMissing"));
-      } else {
-        toast.error(t("pages:testForm.createPage.docx.importError", { msg: err?.message || t("pages:testForm.createPage.docx.unknownError") }));
-      }
+      toast.error(t("pages:testForm.createPage.docx.importError", { msg: err?.message || t("pages:testForm.createPage.docx.unknownError") }));
     } finally {
-      setDocxLoading(false);
-      setShowDOCXDialog(false);
+      setImportLoading(false);
+      setImportType(null);
     }
   };
 
@@ -1006,16 +932,20 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
             }}>
             <Plus className="w-4 h-4 mr-1" />{t("pages:testForm.testCard.addQuestion")}
           </Button>
-          <div className="flex justify-center">
-            <Button size="sm" variant="ghost" className="gap-2 text-slate-500 hover:text-slate-700" onClick={() => setShowDOCXDialog(true)} disabled={docxLoading}>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button size="sm" variant="ghost" className="gap-2 text-slate-500 hover:text-slate-700" onClick={() => setImportType("docx")} disabled={importLoading}>
               <Upload className="w-4 h-4" />
-              {docxLoading ? t("pages:testForm.createPage.docx.loading") : t("pages:testForm.createPage.docx.button")}
+              {importLoading && importType === "docx" ? t("pages:testForm.createPage.docx.loading") : t("pages:testForm.createPage.docx.button")}
+            </Button>
+            <Button size="sm" variant="ghost" className="gap-2 text-slate-500 hover:text-slate-700" onClick={() => setImportType("pdf")} disabled={importLoading}>
+              <Upload className="w-4 h-4" />
+              {importLoading && importType === "pdf" ? t("pages:testForm.createPage.docx.loading") : t("pages:testForm.createPage.docx.pdfButton")}
             </Button>
           </div>
         </div>
 
-        {/* DOCX dialog */}
-        <Dialog open={showDOCXDialog} onOpenChange={setShowDOCXDialog}>
+        {/* DOCX/PDF içe aktarma dialog'u (aynı parçalama mantığı) */}
+        <Dialog open={!!importType} onOpenChange={(o) => { if (!o) setImportType(null); }}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>{t("pages:testForm.createPage.docx.dialogTitle")}</DialogTitle>
@@ -1030,14 +960,14 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
                   <span className="text-sm font-medium text-slate-600">{t("pages:testForm.createPage.docx.selectFile")}</span>
                   <input
                     type="file"
-                    accept=".docx"
+                    accept={importType === "pdf" ? ".pdf" : ".docx"}
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) handleDOCXImport(file);
+                      if (file) runImport(file, importType);
                       e.target.value = "";
                     }}
-                    disabled={docxLoading}
+                    disabled={importLoading}
                   />
                 </label>
               </div>

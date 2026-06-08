@@ -40,6 +40,12 @@ COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY infra/nginx/default.conf.template /etc/nginx/templates/default.conf.template
 
+# pdfjs worker ESM (.mjs) — default mime.types'ta .mjs eşlemesi yok → yanlış MIME
+# (text/plain) ile module worker/script tarayıcıda bloklanır. application/javascript
+# satırına mjs ekle. grep ile doğrula: sed tutmazsa build kırılsın (sessiz regresyon yok).
+RUN sed -i 's#application/javascript[[:space:]]\{1,\}js;#application/javascript js mjs;#' /etc/nginx/mime.types \
+    && grep -q 'js mjs;' /etc/nginx/mime.types
+
 # nginx official entrypoint /docker-entrypoint.d/20-envsubst-on-templates.sh ile
 # /etc/nginx/templates/*.template'i /etc/nginx/conf.d/'ye envsubst eder.
 # Filter listesi olmadan nginx'in run-time değişkenleri ($uri, $request_uri) de
