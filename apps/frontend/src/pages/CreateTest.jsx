@@ -871,7 +871,9 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
               {t("pages:testForm.testCard.completedSuffix", { count: filledQuestions.length })}
             </p>
           </div>
-          <div className="space-y-2">
+          {/* 10'dan fazla soruda liste sabit yükseklikte scroll olur (sayfa uzamasın;
+              aynı anda ~10 soru görünür). 10 ve altında normal akış. */}
+          <div className={`space-y-2 ${test.questions.length > 10 ? "max-h-[640px] overflow-y-auto pr-1" : ""}`}>
             {test.questions.map((q, qIdx) => (
               <QuestionItem
                 key={q._k}

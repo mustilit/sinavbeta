@@ -600,7 +600,9 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
             <span className="text-slate-400 font-normal">{t("pages:testForm.testCard.completedSuffix", { count: completedCount })}</span>
           </p>
         </div>
-        <div className="space-y-2">
+        {/* 10'dan fazla soruda liste sabit yükseklikte scroll olur (sayfa uzamasın;
+            aynı anda ~10 soru görünür). 10 ve altında normal akış. */}
+        <div className={`space-y-2 ${test.questions.length > 10 ? "max-h-[640px] overflow-y-auto pr-1" : ""}`}>
           {test.questions.map((q, qi) => (
             <QuestionItem key={q._k} questionIndex={qi} question={q} topicList={topicList}
               validationAttempted={validationAttempted}
