@@ -63,9 +63,9 @@ export class SiteController {
     const row = await this.prisma.adminSettings.findFirst({ where: { id: 1 } });
     // minPackagePriceCents / maxDiscountPercent Prisma client'ta olmayabilir; raw okuma güvenli yol
     const raw = await (this.prisma as any).$queryRaw<
-      { minPackagePriceCents: number; maxDiscountPercent: number; googleClientId: string | null }[]
+      { minPackagePriceCents: number; maxDiscountPercent: number; googleClientId: string | null; maxTestsPerPackage: number | null }[]
     >`
-      SELECT "minPackagePriceCents", "maxDiscountPercent", "googleClientId" FROM admin_settings WHERE id = 1
+      SELECT "minPackagePriceCents", "maxDiscountPercent", "googleClientId", "maxTestsPerPackage" FROM admin_settings WHERE id = 1
     `;
     // googleClientId: DB önce — yoksa env fallback
     const dbGci = raw[0]?.googleClientId ?? null;
@@ -79,6 +79,7 @@ export class SiteController {
       adPurchasesEnabled:     (row as any)?.adPurchasesEnabled         ?? true,
       minPackagePriceCents:   raw[0]?.minPackagePriceCents             ?? 100,
       maxDiscountPercent:     raw[0]?.maxDiscountPercent               ?? 50,
+      maxTestsPerPackage:     raw[0]?.maxTestsPerPackage               ?? 10,
       googleClientId:         effectiveGci,
       googleSignInEnabled:    !!effectiveGci,
     };

@@ -457,6 +457,7 @@
       "subtitleEdit": "Vorhandene Fragen bearbeiten oder neue hinzufügen",
       "subtitleCreate": "Erstellen Sie Ihren ersten Test und fügen Sie Fragen hinzu",
       "addTest": "Test hinzufügen",
+      "maxTestsReached": "Ein Paket kann höchstens {{max}} Tests enthalten.",
       "validateAtLeastOne": "Mindestens ein abgeschlossener Test und eine Frage erforderlich"
     },
     "preview": {

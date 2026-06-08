@@ -1049,7 +1049,7 @@ export default function CreateTest() {
   const { t } = useTranslation(["pages"]);
   const { user }     = useAuth();
   const navigate     = useAppNavigate();
-  const { packageCreationEnabled, minPackagePriceCents = 100 } = useServiceStatus();
+  const { packageCreationEnabled, minPackagePriceCents = 100, maxTestsPerPackage = 10 } = useServiceStatus();
   const minPriceTL = minPackagePriceCents / 100;
   const showCreateTour = useShouldShowTour(TOUR_KEYS.EDUCATOR_CREATE);
   const completeTour   = useCompleteTour();
@@ -1502,6 +1502,10 @@ export default function CreateTest() {
             </div>
             <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700"
               onClick={() => {
+                if (tests.length >= maxTestsPerPackage) {
+                  toast.error(t("pages:testForm.testsStep.maxTestsReached", { max: maxTestsPerPackage }));
+                  return;
+                }
                 const newT = emptyTest();
                 setTests([...tests, newT]);
                 setExpandedTestKey(newT._k);

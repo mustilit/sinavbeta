@@ -457,6 +457,7 @@
       "subtitleEdit": "Edit existing questions or add new ones",
       "subtitleCreate": "Create your first test and add questions",
       "addTest": "Add Test",
+      "maxTestsReached": "A package can have at most {{max}} tests.",
       "validateAtLeastOne": "At least one completed test and question is required"
     },
     "preview": {

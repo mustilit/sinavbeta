@@ -15,6 +15,8 @@ const DEFAULTS = {
   adPurchasesEnabled: true,
   // Minimum paket fiyatı (kuruş) — varsayılan 1 ₺
   minPackagePriceCents: 100,
+  // Paket başına en fazla test (admin ayarı) — varsayılan 10
+  maxTestsPerPackage: 10,
 };
 
 export function useServiceStatus() {

@@ -735,7 +735,7 @@ export default function EditTest() {
   const navigate   = useAppNavigate();
   const urlParams  = new URLSearchParams(window.location.search);
   const packageId  = urlParams.get("id");
-  const { minPackagePriceCents = 100 } = useServiceStatus();
+  const { minPackagePriceCents = 100, maxTestsPerPackage = 10 } = useServiceStatus();
   const minPriceTL = minPackagePriceCents / 100;
 
   const { user } = useAuth();
@@ -1119,6 +1119,10 @@ export default function EditTest() {
               <p className="text-sm text-slate-500 mt-1">{t("pages:testForm.testsStep.subtitleEdit")}</p>
             </div>
             <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={() => {
+              if (tests.length >= maxTestsPerPackage) {
+                toast.error(t("pages:testForm.testsStep.maxTestsReached", { max: maxTestsPerPackage }));
+                return;
+              }
               const newT = emptyTest();
               setTests([...tests, newT]);
               setExpandedTestKey(newT._k);

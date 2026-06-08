@@ -457,6 +457,7 @@
       "subtitleEdit": "编辑现有题目或添加新题目",
       "subtitleCreate": "创建您的第一个测试并添加题目",
       "addTest": "添加测试",
+      "maxTestsReached": "一个套餐最多可包含 {{max}} 个测试。",
       "validateAtLeastOne": "至少需要一个已完成的测试和题目"
     },
     "preview": {

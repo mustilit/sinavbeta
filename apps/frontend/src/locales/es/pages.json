@@ -460,6 +460,7 @@
       "subtitleEdit": "Edita preguntas existentes o añade nuevas",
       "subtitleCreate": "Crea tu primer examen y añade preguntas",
       "addTest": "Añadir examen",
+      "maxTestsReached": "Un paquete puede tener como máximo {{max}} exámenes.",
       "validateAtLeastOne": "Se requiere al menos un examen y pregunta completos"
     },
     "preview": {

@@ -457,6 +457,7 @@
       "subtitleEdit": "Mevcut soruları düzenleyin veya yeni ekleyin",
       "subtitleCreate": "İlk testinizi oluşturun ve sorularını ekleyin",
       "addTest": "Test Ekle",
+      "maxTestsReached": "Pakete en fazla {{max}} test eklenebilir.",
       "validateAtLeastOne": "En az bir tamamlanmış test ve soru gerekli"
     },
     "preview": {
