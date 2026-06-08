@@ -277,7 +277,7 @@ export default function EducatorProfile() {
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <Badge className="bg-slate-100 text-slate-700 border-0">
                 <BookOpen className="w-3.5 h-3.5 mr-1.5" />
-                {stats.totalPublishedTests ?? tests.length} test
+                {stats.totalPublishedTests ?? tests.length} paket
               </Badge>
               {/* Eğitici puanı (Review.educatorRating ortalaması) — yalnızca varsa göster.
                   Puan yoksa rozet hiç render edilmez; test puanından türetilmez. */}

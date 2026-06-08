@@ -23,21 +23,44 @@ export class GetEducatorPageUseCase {
     const prefs = await this.prefsRepo.findByUserId(educatorId);
     const avatarUrl: string | null = (prefs?.preferences as any)?.profile_image_url ?? null;
 
-    // sortBy: dışarıdan 'PRICE' veya 'NEWEST' gelir; içeride kolon adına eşlenir
-    const { items: tests, total } = await this.examsRepo.listPublishedByEducator({ educatorId, examTypeId: opts?.examTypeId, page, limit, sortBy: opts?.sortBy === 'PRICE' ? 'price' : opts?.sortBy === 'NEWEST' ? 'publishedAt' : 'publishedAt', order: opts?.sortDir ?? 'desc' });
+    // Pazaryeri birimi TestPackage'dır — eğitici profili tekil testleri DEĞİL,
+    // yayındaki PAKETLERİ listeler (bir pakette N test olsa da TEK kart). Kart
+    // alanları popular-packages ile tutarlı: paket fiyatı, paketteki TOPLAM soru,
+    // paket bazlı puan (reviews.packageId). examTypeId paketin ilk testinden türetilir
+    // (test_packages'ta examTypeId kolonu yok). Frontend examTypeId/sort'u client'ta
+    // uygular (limit=50 ile tüm liste gelir) — server filtre/sort minimal tutulur.
+    const { prisma } = require('../../../infrastructure/database/prisma');
+    const offset = (page - 1) * limit;
+    const sortCol = opts?.sortBy === 'PRICE' ? 'tp."priceCents"' : 'tp."publishedAt"';
+    const sortDir = String(opts?.sortDir ?? 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-    const testIds = tests.map((t: { id: string }) => t.id);
-    // Stats tablosu: eğer test istatistikleri önceden hesaplanmışsa buradan alınır
-    const statsRows = await this.statsRepo.findManyByTestIds(testIds);
-    const statsMap: Record<string, { ratingAvg?: number; ratingCount?: number; testId?: string }> = {};
-    for (const s of statsRows) statsMap[s.testId] = s;
-
-    let eduAgg: Record<string, { avg?: number; count?: number }> = {};
-    // İstatistiği bulunmayan testler için canlı agregat hesapla
-    const missingIds = testIds.filter((id: string) => !statsMap[id]);
-    if (missingIds.length) {
-      eduAgg = await this.reviewAgg.getAggregatesForTestIds(testIds);
-    }
+    const pkgRows: any[] = await prisma.$queryRawUnsafe(
+      `
+      SELECT
+        tp.id, tp.title, tp."educatorId", tp."priceCents",
+        COALESCE(tp.currency, 'TRY') AS currency,
+        (SELECT t2."examTypeId" FROM exam_tests t2
+           WHERE t2."packageId" = tp.id AND t2."deletedAt" IS NULL AND t2."examTypeId" IS NOT NULL
+           ORDER BY t2."createdAt" ASC LIMIT 1) AS "examTypeId",
+        COALESCE((SELECT COUNT(q.id) FROM exam_questions q
+           JOIN exam_tests t3 ON t3.id = q."testId"
+           WHERE t3."packageId" = tp.id AND t3."deletedAt" IS NULL), 0)::int AS "questionCount",
+        AVG(r."testRating")::float AS "ratingAvg",
+        COUNT(r.id)::int AS "ratingCount"
+      FROM test_packages tp
+      LEFT JOIN reviews r ON r."packageId" = tp.id AND r."testRating" IS NOT NULL
+      WHERE tp."educatorId" = $1 AND tp."publishedAt" IS NOT NULL
+      GROUP BY tp.id
+      ORDER BY ${sortCol} ${sortDir} NULLS LAST, tp.id DESC
+      LIMIT $2 OFFSET $3
+      `,
+      educatorId, limit, offset,
+    );
+    const totalRows: Array<{ cnt: number }> = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS cnt FROM test_packages
+      WHERE "educatorId" = ${educatorId} AND "publishedAt" IS NOT NULL
+    `;
+    const total = Number(totalRows?.[0]?.cnt ?? 0);
 
     // Eğitici puanı SADECE Review.educatorRating'den hesaplanır — test puanından (testRating)
     // TÜRETİLMEZ. educatorRating: adayın eğiticiye verdiği ayrı puan. Hiç educatorRating yoksa
@@ -67,17 +90,17 @@ export class GetEducatorPageUseCase {
       totalPurchases = Number(rows?.[0]?.cnt ?? 0);
     }
 
-    const items = tests.map((t: any) => ({
-      id: t.id,
-      title: t.title,
-      educatorId: t.educatorId,
-      examTypeId: t.examTypeId ?? null,
-      priceCents: t.priceCents ?? null,
-      currency: t.currency ?? 'TRY',
-      isTimed: t.isTimed,
-      questionCount: t.questionCount ?? 0,
-      ratingAvg: statsMap[t.id]?.ratingAvg ?? (eduAgg as any)[t.id]?.avg ?? null,
-      ratingCount: statsMap[t.id]?.ratingCount ?? (eduAgg as any)[t.id]?.count ?? 0,
+    const items = pkgRows.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      educatorId: r.educatorId,
+      examTypeId: r.examTypeId ?? null,
+      priceCents: r.priceCents ?? null,
+      currency: r.currency ?? 'TRY',
+      isTimed: false,
+      questionCount: Number(r.questionCount ?? 0),
+      ratingAvg: r.ratingAvg != null ? Number(r.ratingAvg) : null,
+      ratingCount: Number(r.ratingCount ?? 0),
     }));
 
     return {
