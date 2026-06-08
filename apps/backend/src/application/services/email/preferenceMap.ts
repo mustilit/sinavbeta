@@ -41,6 +41,7 @@ export const PREFERENCE_MAP: Record<string, keyof EmailPreferences | null> = {
   'live-session-invite': 'liveSessionInvites',
   'refund-status-update': 'refundUpdates',
   'refund-rejected': 'refundUpdates',
+  'inactive-reminder': 'productUpdates', // pasif kullanıcı hatırlatması — opt-out edilebilir
   // BULK
   'weekly-digest': 'weeklyDigest',
   'campaign-announcement': 'marketing',

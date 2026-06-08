@@ -31,9 +31,44 @@ export class ResolveRefundRequestUseCase {
       await this.auditRepo.create({ action: decision === 'APPROVED' ? 'REFUND_APPROVED' as any : 'REFUND_REJECTED' as any, entityType: 'RefundRequest', entityId: refundId, actorId: adminId, metadata: { decision } });
     } catch {}
 
-    // Onaylanan iadelerde adaya bildirim e-postası gönderilir (ödeme entegrasyonu mock'tur)
-    if (decision === 'APPROVED' && this.queueService) {
-      await this.queueService.enqueueEmail({ to: updated.candidateId, subject: 'Refund approved', body: `Refund for purchase ${updated.purchaseId} approved`, meta: { type: 'PAYMENT_REFUND', refundId } });
+    // Onaylanan iade → adaya bildirim e-postası ADMIN sağlayıcısı üzerinden gönderilir
+    // (EmailService → dispatcher/kill-switch → kuyruk → DB'deki aktif provider).
+    // Legacy queueService.enqueueEmail (MockEmailProvider) KULLANILMAZ — gerçekte
+    // iletmiyordu. Best-effort: e-posta hatası iade akışını ASLA bozmaz.
+    if (decision === 'APPROVED') {
+      try {
+        const { prisma } = require('../../../infrastructure/database/prisma');
+        const { getEmailService } = require('../../services/email/EmailService');
+        const candidate = await prisma.user.findUnique({
+          where: { id: updated.candidateId },
+          select: { email: true, username: true, tenantId: true, role: true },
+        });
+        if (candidate?.email) {
+          const purchase = await prisma.purchase.findUnique({
+            where: { id: updated.purchaseId },
+            select: { amountCents: true, currency: true, packageId: true },
+          });
+          let packageTitle = 'Paket';
+          if (purchase?.packageId) {
+            const pkg = await prisma.testPackage.findUnique({ where: { id: purchase.packageId }, select: { title: true } });
+            packageTitle = pkg?.title ?? packageTitle;
+          }
+          await getEmailService().send({
+            tenantId: candidate.tenantId,
+            templateKey: 'refund-confirmation',
+            to: { userId: updated.candidateId, email: candidate.email, role: candidate.role },
+            data: {
+              user: { username: candidate.username },
+              package: { title: packageTitle },
+              amount: purchase ? `${((purchase.amountCents ?? 0) / 100).toFixed(2)} ${purchase.currency ?? 'TRY'}` : '',
+              purchaseId: updated.purchaseId,
+            },
+            bypassPreferences: true, // CRITICAL — iade onayı kullanıcı tercihinden bağımsız
+          });
+        }
+      } catch {
+        // best-effort — iade tamamlandı; e-posta gönderilemese de akış sürer
+      }
     }
 
     return updated;

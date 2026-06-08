@@ -28,13 +28,37 @@ export class SendMonthlyInactiveReminderUseCase {
     for (const r of rows) {
       byUser.set(r.userId, (byUser.get(r.userId) ?? []).concat(r.attemptId));
     }
+    // Alıcıların e-posta/tenant bilgisi (tek sorgu). Legacy queueService.enqueueEmail
+    // (MockEmailProvider) yerine ADMIN sağlayıcısı: EmailService → DB provider.
+    const { prisma } = require('../../../infrastructure/database/prisma');
+    const { getEmailService } = require('../../services/email/EmailService');
+    const userIds = Array.from(byUser.keys());
+    const recipientUsers = userIds.length
+      ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, email: true, username: true, tenantId: true, role: true } })
+      : [];
+    const userById = new Map<string, any>(recipientUsers.map((u: any) => [u.id, u]));
+    const emailService = getEmailService();
+    const appBaseUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || '';
+
     let enqueued = 0;
     for (const [userId, attempts] of byUser.entries()) {
-      // E-posta tercihi kapalı olan kullanıcılar atlanır
+      // Bildirim tercihi kapalı olanlar atlanır (NOTIFY kuyruğu EmailDispatcher'da
+      // ayrıca emailPreferences.productUpdates tercihini de kontrol eder).
       const pref = await this.prefRepo.findByUserId(userId);
       if (!pref || !pref.emailEnabled) continue;
-      await this.queueService.enqueueEmail({ to: userId, subject: 'Reminder: unfinished tests', body: `You have ${attempts.length} unfinished attempts.`, meta: { type: 'INACTIVE_REMINDER' } });
-      enqueued++;
+      const u = userById.get(userId);
+      if (!u?.email) continue;
+      try {
+        await emailService.send({
+          tenantId: u.tenantId,
+          templateKey: 'inactive-reminder',
+          to: { userId: u.id, email: u.email, role: u.role },
+          data: { user: { username: u.username }, attemptCount: attempts.length, url: appBaseUrl ? `${appBaseUrl}/MyTests` : '' },
+        });
+        enqueued++;
+      } catch {
+        // best-effort — tek kullanıcıdaki hata döngüyü durdurmaz
+      }
     }
 
     // Toplu gönderim sonucu audit log'a yazılır

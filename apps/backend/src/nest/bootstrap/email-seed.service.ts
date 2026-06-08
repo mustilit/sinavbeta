@@ -31,6 +31,7 @@ const TEMPLATES: SeedTemplate[] = [
   { key: 'backup-failure-alert', subject: 'Yedekleme başarısız — Sınav Salonu', htmlPath: 'backup-failure-alert.hbs', defaultQueue: 'CRITICAL', description: 'DB yedekleme hatası uyarısı' },
   { key: 'test-template', subject: 'Test E-posta — Sınav Salonu', htmlPath: 'test-template.hbs', textPath: 'test-template.txt', defaultQueue: 'CRITICAL', description: 'Sağlayıcı doğrulama maili' },
   { key: 'profile-change-otp', subject: 'Profil değişikliği için doğrulama kodu — Sınav Salonu', htmlPath: 'profile-change-otp.hbs', defaultQueue: 'CRITICAL', description: 'Telefon/Website/LinkedIn değişikliğinde 6 haneli OTP' },
+  { key: 'inactive-reminder', subject: 'Yarım kalan testleriniz var — Sınav Salonu', htmlPath: 'inactive-reminder.hbs', defaultQueue: 'NOTIFY', description: 'Aylık pasif kullanıcı hatırlatması (yarım kalan testler)' },
 ];
 
 /**

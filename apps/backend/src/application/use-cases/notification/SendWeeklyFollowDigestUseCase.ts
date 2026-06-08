@@ -52,13 +52,44 @@ export class SendWeeklyFollowDigestUseCase {
       for (const u of followers) recipients.add(u);
     }
 
+    // Digest şablonu için yeni testler (eğitici adıyla). Legacy queueService.enqueueEmail
+    // (MockEmailProvider) yerine ADMIN sağlayıcısı: EmailService → DB provider.
+    const educatorIds = Array.from(new Set(tests.map((t) => t.educatorId).filter(Boolean))) as string[];
+    const educators = educatorIds.length
+      ? await prisma.user.findMany({ where: { id: { in: educatorIds } }, select: { id: true, username: true } })
+      : [];
+    const educatorName = new Map(educators.map((e) => [e.id, e.username]));
+    const newPackages = tests.map((t) => ({ title: t.title, educator: educatorName.get(t.educatorId ?? '') ?? '' }));
+
+    // Alıcıların e-posta/tenant bilgisi (tek sorgu)
+    const recipientUsers = await prisma.user.findMany({
+      where: { id: { in: Array.from(recipients) } },
+      select: { id: true, email: true, username: true, tenantId: true, role: true },
+    });
+    const userById = new Map(recipientUsers.map((u) => [u.id, u]));
+
+    const { getEmailService } = require('../../services/email/EmailService');
+    const emailService = getEmailService();
+
     let enqueued = 0;
     for (const userId of recipients) {
-      // E-posta tercihi kapalı olan kullanıcılar atlanır
+      // Bildirim tercihi kapalı olanlar atlanır. (BULK kuyruğu EmailDispatcher'da ayrıca
+      // emailPreferences.weeklyDigest tercihini de kontrol eder; bypass EDİLMEZ.)
       const pref = await this.prefRepo.findByUserId(userId);
       if (!pref || !pref.emailEnabled) continue;
-      await this.queueService.enqueueEmail({ to: userId, subject: 'Weekly digest', body: `New tests published: ${tests.length}`, meta: { type: 'WEEKLY_DIGEST' } });
-      enqueued++;
+      const u = userById.get(userId);
+      if (!u?.email) continue;
+      try {
+        await emailService.send({
+          tenantId: u.tenantId,
+          templateKey: 'weekly-digest',
+          to: { userId: u.id, email: u.email, role: u.role },
+          data: { user: { username: u.username }, newPackages, campaigns: [] },
+        });
+        enqueued++;
+      } catch {
+        // best-effort — tek kullanıcıdaki hata digest döngüsünü durdurmaz
+      }
     }
 
     // Toplu gönderim sonucu audit log'a yazılır
