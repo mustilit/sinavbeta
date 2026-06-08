@@ -399,6 +399,7 @@
       "questionCountStat": "{{count}} 道题",
       "completedSuffix": "(已完成 {{count}} 道)",
       "addQuestion": "添加题目",
+      "maxQuestionsReached": "一个测试最多可包含 {{max}} 道题目。",
       "indexLabel": "测试 {{index}}",
       "completedShort": "已完成 {{count}}",
       "collapseAria": "收起此测试"

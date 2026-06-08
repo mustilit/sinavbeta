@@ -399,6 +399,7 @@
       "questionCountStat": "{{count}} soru",
       "completedSuffix": "({{count}} tamamlanmış)",
       "addQuestion": "Soru Ekle",
+      "maxQuestionsReached": "Bir teste en fazla {{max}} soru eklenebilir.",
       "indexLabel": "Test {{index}}",
       "completedShort": "{{count}} tamamlandı",
       "collapseAria": "Bu testi kapat"

@@ -676,6 +676,7 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
   const [showDOCXDialog, setShowDOCXDialog] = useState(false);
   const [docxLoading, setDocxLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { maxQuestionsPerTest = 100 } = useServiceStatus();
   // "+ Soru Ekle" tıklanınca yeni eklenen sorunun _k'sini tutar; QuestionItem
   // mount olunca dialog'u otomatik açar.
   const [autoOpenKey, setAutoOpenKey] = useState(null);
@@ -937,23 +938,12 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
       <CardContent className="space-y-4">
         {/* Sorular accordionu */}
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <p className="text-sm font-semibold text-slate-700">
               {t("pages:testForm.testCard.questionCountStat", { count: test.questions.length })}
               {' '}
               {t("pages:testForm.testCard.completedSuffix", { count: filledQuestions.length })}
             </p>
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700"
-              onClick={() => {
-                const nq = emptyQuestion();
-                setAutoOpenKey(nq._k);
-                onTestUpdate({
-                  ...test,
-                  questions: [...test.questions, nq],
-                });
-              }}>
-              <Plus className="w-4 h-4 mr-1" />{t("pages:testForm.testCard.addQuestion")}
-            </Button>
           </div>
           <div className="space-y-2">
             {test.questions.map((q, qIdx) => (
@@ -1001,8 +991,20 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
           </div>
         </div>
 
-        {/* DOCX import */}
-        <div className="border-t pt-4">
+        {/* Alt aksiyonlar: Soru Ekle + DOCX (liste altında — kullanıcı en altta ekler) */}
+        <div className="border-t pt-4 flex flex-wrap items-center gap-2">
+          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => {
+              if (test.questions.length >= maxQuestionsPerTest) {
+                toast.error(t("pages:testForm.testCard.maxQuestionsReached", { max: maxQuestionsPerTest }));
+                return;
+              }
+              const nq = emptyQuestion();
+              setAutoOpenKey(nq._k);
+              onTestUpdate({ ...test, questions: [...test.questions, nq] });
+            }}>
+            <Plus className="w-4 h-4 mr-1" />{t("pages:testForm.testCard.addQuestion")}
+          </Button>
           <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowDOCXDialog(true)} disabled={docxLoading}>
             <Upload className="w-4 h-4" />
             {docxLoading ? t("pages:testForm.createPage.docx.loading") : t("pages:testForm.createPage.docx.button")}
@@ -1495,23 +1497,9 @@ export default function CreateTest() {
       {/* ── ADIM 2: Testler ──────────────────────────────────────── */}
       {step === 2 && (
         <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">{t("pages:testForm.testsStep.title")}</h2>
-              <p className="text-sm text-slate-500 mt-1">{t("pages:testForm.testsStep.subtitleCreate")}</p>
-            </div>
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700"
-              onClick={() => {
-                if (tests.length >= maxTestsPerPackage) {
-                  toast.error(t("pages:testForm.testsStep.maxTestsReached", { max: maxTestsPerPackage }));
-                  return;
-                }
-                const newT = emptyTest();
-                setTests([...tests, newT]);
-                setExpandedTestKey(newT._k);
-              }}>
-              <Plus className="w-4 h-4 mr-1" />{t("pages:testForm.testsStep.addTest")}
-            </Button>
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">{t("pages:testForm.testsStep.title")}</h2>
+            <p className="text-sm text-slate-500 mt-1">{t("pages:testForm.testsStep.subtitleCreate")}</p>
           </div>
 
           {tests.map((test, tIdx) => (
@@ -1547,6 +1535,21 @@ export default function CreateTest() {
               </CardContent>
             </Card>
           )}
+
+          {/* Test Ekle — liste ALTINDA (uzayan listede kullanıcı en altta ekler) */}
+          <Button variant="outline"
+            className="w-full border-2 border-dashed border-slate-300 text-slate-600 hover:border-indigo-400 hover:bg-indigo-50/50 hover:text-indigo-700"
+            onClick={() => {
+              if (tests.length >= maxTestsPerPackage) {
+                toast.error(t("pages:testForm.testsStep.maxTestsReached", { max: maxTestsPerPackage }));
+                return;
+              }
+              const newT = emptyTest();
+              setTests([...tests, newT]);
+              setExpandedTestKey(newT._k);
+            }}>
+            <Plus className="w-4 h-4 mr-1" />{t("pages:testForm.testsStep.addTest")}
+          </Button>
 
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(1)}>{t("pages:testForm.nav.back")}</Button>

@@ -399,6 +399,7 @@
       "questionCountStat": "{{count}} Fragen",
       "completedSuffix": "({{count}} abgeschlossen)",
       "addQuestion": "Frage hinzufügen",
+      "maxQuestionsReached": "Ein Test kann höchstens {{max}} Fragen enthalten.",
       "indexLabel": "Test {{index}}",
       "completedShort": "{{count}} abgeschlossen",
       "collapseAria": "Diesen Test einklappen"

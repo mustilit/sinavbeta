@@ -17,6 +17,8 @@ const DEFAULTS = {
   minPackagePriceCents: 100,
   // Paket başına en fazla test (admin ayarı) — varsayılan 10
   maxTestsPerPackage: 10,
+  // Test başına en fazla soru (admin ayarı) — varsayılan 100
+  maxQuestionsPerTest: 100,
 };
 
 export function useServiceStatus() {

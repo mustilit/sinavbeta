@@ -402,6 +402,7 @@
       "questionCountStat": "{{count}} preguntas",
       "completedSuffix": "({{count}} completadas)",
       "addQuestion": "Añadir pregunta",
+      "maxQuestionsReached": "Un examen puede tener como máximo {{max}} preguntas.",
       "indexLabel": "Examen {{index}}",
       "completedShort": "{{count}} completadas",
       "collapseAria": "Contraer este examen"

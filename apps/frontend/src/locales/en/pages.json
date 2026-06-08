@@ -399,6 +399,7 @@
       "questionCountStat": "{{count}} questions",
       "completedSuffix": "({{count}} completed)",
       "addQuestion": "Add Question",
+      "maxQuestionsReached": "A test can have at most {{max}} questions.",
       "indexLabel": "Test {{index}}",
       "completedShort": "{{count}} completed",
       "collapseAria": "Collapse this test"
