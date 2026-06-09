@@ -79,8 +79,10 @@ export class NotifyNewDeviceLoginUseCase {
         },
       });
 
-      // Frontend URL'leri — env'den ya da varsayılan
-      const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:5174').replace(/\/$/, '');
+      // Frontend URL tabanı: FRONTEND_URL yoksa CLIENT_URL'e düş (backend container'ında
+      // explicit env listesinde FRONTEND_URL eksikti → link localhost:5174'e gidip
+      // cihaz-doğrula/şifre-sıfırla linkleri ölü adres oluyordu).
+      const baseUrl = (process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5174').replace(/\/$/, '');
       const verifyUrl = `${baseUrl}/DeviceVerify?token=${encodeURIComponent(trustToken)}`;
       const resetUrl = `${baseUrl}/ForgotPassword?email=${encodeURIComponent(input.userEmail)}`;
 

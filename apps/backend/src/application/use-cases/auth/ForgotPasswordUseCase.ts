@@ -21,7 +21,7 @@ export class ForgotPasswordUseCase {
 
     await this.userRepo.setPasswordResetToken(user.id, token, expiresAt);
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
     const resetUrl = `${frontendUrl}?page=ResetPassword&token=${token}`;
 
     if (this.sendEmail) {

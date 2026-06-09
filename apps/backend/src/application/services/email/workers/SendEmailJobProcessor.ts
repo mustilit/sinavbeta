@@ -254,7 +254,7 @@ export class SendEmailJobProcessor {
         data: { emailUnsubscribeToken: token },
       });
     }
-    const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontend = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
     return `${frontend}/unsubscribe?token=${encodeURIComponent(token)}`;
   }
 }

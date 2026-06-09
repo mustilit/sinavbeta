@@ -62,6 +62,9 @@ services:
       THROTTLE_DISABLED: ${THROTTLE_DISABLED:-0}
       PORT: ${PORT:-3000}
       CLIENT_URL: ${CLIENT_URL}
+      # E-posta linklerinin tabanı (cihaz doğrula, şifre sıfırla, doğrulama).
+      # Explicit env listesinde eksikti → linkler localhost:5174'e gidiyordu.
+      FRONTEND_URL: ${FRONTEND_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       REDIS_DISABLED: "0"
       CRON_DISABLED: "0"
