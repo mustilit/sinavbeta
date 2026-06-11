@@ -194,11 +194,14 @@ export function useTestProctoring({
   // ─── Fullscreen + Visibility ────────────────────────────────────────────
 
   const tryEnterFullscreen = useCallback(() => {
-    const el = containerRef?.current || document.documentElement;
+    // Tüm sayfayı (documentElement) tam ekran yap — container (max-w-4xl) tam ekran
+    // yapılınca tarayıcı dar kutuyu ortalayıp çevresini SİYAH backdrop ile dolduruyordu.
+    // documentElement → uygulamanın açık zemini ekranı doldurur, içerik ortalı kalır.
+    const el = document.documentElement;
     if (!document.fullscreenElement && el.requestFullscreen) {
       el.requestFullscreen().catch(() => { /* kullanıcı izin vermedi */ });
     }
-  }, [containerRef]);
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
