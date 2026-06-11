@@ -151,7 +151,7 @@
     "attempts": {
       "item": "Round {{n}}",
       "counts": "{{correct}} correct, {{empty}} blank, {{wrong}} wrong",
-      "pastReview": "Review previous rounds",
+      "pastReview": "Review attempts",
       "title": "Attempt Report",
       "reviewHint": "Tap an attempt to view its solutions.",
       "empty": "No completed attempts for this test."

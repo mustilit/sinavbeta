@@ -151,7 +151,7 @@
     "attempts": {
       "item": "Ronda {{n}}",
       "counts": "{{correct}} correctas, {{empty}} en blanco, {{wrong}} incorrectas",
-      "pastReview": "Revisar rondas anteriores",
+      "pastReview": "Revisar intentos",
       "title": "Informe de intentos",
       "reviewHint": "Toca un intento para ver sus soluciones.",
       "empty": "No hay intentos completados para este test."

@@ -561,12 +561,7 @@ export default function TestDetail() {
                          })}
                         </p>
                       </div>
-                      {isCompleted ? (
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          <span className="text-xs">{t("pages:testCard.review")}</span>
-                        </div>
-                      ) : isInProgress ? (
+                      {isCompleted ? null : isInProgress ? (
                         <div className="flex items-center gap-1">
                           <Play className="w-4 h-4" />
                           <span className="text-xs">{t("pages:testCard.continue")}</span>
@@ -588,10 +583,11 @@ export default function TestDetail() {
                     <div key={testItem.id} className="flex items-stretch gap-2">
                       <div className="flex-1 min-w-0">
                         {isCompleted ? (
+                          // Bitmiş test → gri durum göstergesi (tıklanamaz). İnceleme sağdaki ikonda.
                           <Button
                             style={buttonStyle}
-                            onClick={() => setReportTest({ item: testItem, st })}
-                            className="w-full justify-between h-auto py-3 hover:opacity-90 text-white border-2 border-white shadow-sm"
+                            tabIndex={-1}
+                            className="w-full justify-between h-auto py-3 text-white border-2 border-white shadow-sm pointer-events-none"
                           >
                             {buttonInner}
                           </Button>
@@ -606,16 +602,17 @@ export default function TestDetail() {
                           </Link>
                         )}
                       </div>
-                      {/* Sağ sabit yuva — geçmiş incele butonu ya da boş alan */}
+                      {/* Sağ sabit yuva — incele ikonu (çerçevesiz) ya da boş alan.
+                          İncelenecek deneme olan her test (bitmiş veya geçmiş turlu) için dolu. */}
                       <div className="w-12 flex-shrink-0 flex">
-                        {!isCompleted && hasPastAttempts && (
+                        {hasPastAttempts && (
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => setReportTest({ item: testItem, st })}
                             title={t("pages:testDetail.attempts.pastReview")}
                             aria-label={t("pages:testDetail.attempts.pastReview")}
-                            className="w-full h-auto px-0 border-2 border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-700"
+                            className="w-full h-auto px-0 text-slate-500 hover:text-indigo-700 hover:bg-indigo-50"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>

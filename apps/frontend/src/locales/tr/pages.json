@@ -151,7 +151,7 @@
     "attempts": {
       "item": "{{n}}. Tur",
       "counts": "Doğru {{correct}}, boş {{empty}}, yanlış {{wrong}}",
-      "pastReview": "Önceki turları incele",
+      "pastReview": "Denemeleri incele",
       "title": "Deneme Raporu",
       "reviewHint": "Çözümlerini görmek için bir denemeye dokunun.",
       "empty": "Bu test için tamamlanmış deneme bulunamadı."
