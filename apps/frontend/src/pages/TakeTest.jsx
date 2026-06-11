@@ -1050,7 +1050,7 @@ export default function TakeTest() {
   return (
     <div
       ref={proctorContainerRef}
-      className="max-w-4xl mx-auto"
+      className="max-w-4xl lg:max-w-6xl mx-auto"
       // CSS tarafı UX engelleri — devtools'tan stil silinebilir; bu yüzden
       // event handler'lar (useTestProctoring) gerçek savunma
       style={
@@ -1324,9 +1324,12 @@ export default function TakeTest() {
           </div>
         </div>
 
+        {/* Web geniş ekran: görsel solda, metin+şıklar sağda (2 kolon). mediaUrl yoksa
+            grid uygulanmaz → tek sütun (eski davranış; mobil/tablet değişmez). */}
+        <div className={currentQuestion?.mediaUrl ? "lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-8 lg:items-start" : ""}>
         {/* Soru görseli — eğitici görsel-only soru girebilir, bu durumda metin boş kalır */}
         {currentQuestion?.mediaUrl && (
-          <div className="mb-6 flex justify-center">
+          <div className="mb-6 flex justify-center lg:mb-0 lg:sticky lg:top-4">
             <ZoomableImage
               src={currentQuestion.mediaUrl}
               alt="Soru görseli"
@@ -1336,6 +1339,7 @@ export default function TakeTest() {
           </div>
         )}
 
+        <div className="lg:min-w-0">
         {currentQuestion?.question_text && (
           <p className="text-slate-700 text-lg mb-8 leading-relaxed">
             {currentQuestion.question_text}
@@ -1436,6 +1440,8 @@ export default function TakeTest() {
           })}
         </div>
         )}
+        </div>
+        </div>
       </div>
 
       {/* Soru navigasyon paneli — sağ sütun */}
