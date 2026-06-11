@@ -150,7 +150,7 @@
     "attempts": {
       "item": "Versuch {{n}}: {{score}}",
       "title": "Versuchsbericht",
-      "reviewCta": "Lösungen ansehen",
+      "reviewHint": "Tippen Sie auf einen Versuch, um dessen Lösungen anzuzeigen.",
       "empty": "Keine abgeschlossenen Versuche für diesen Test."
     },
     "backToTests": "Zurück zu Tests",

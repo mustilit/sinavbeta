@@ -150,7 +150,7 @@
     "attempts": {
       "item": "{{n}}. deneme: {{score}}",
       "title": "Deneme Raporu",
-      "reviewCta": "Çözümleri İncele",
+      "reviewHint": "Çözümlerini görmek için bir denemeye dokunun.",
       "empty": "Bu test için tamamlanmış deneme bulunamadı."
     },
     "backToTests": "Testlere Dön",

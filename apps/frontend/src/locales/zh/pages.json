@@ -150,7 +150,7 @@
     "attempts": {
       "item": "第 {{n}} 次：{{score}}",
       "title": "作答报告",
-      "reviewCta": "查看解析",
+      "reviewHint": "点按某次作答以查看其解析。",
       "empty": "该测验暂无已完成的作答。"
     },
     "backToTests": "返回测试列表",

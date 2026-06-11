@@ -150,7 +150,7 @@
     "attempts": {
       "item": "Intento {{n}}: {{score}}",
       "title": "Informe de intentos",
-      "reviewCta": "Revisar soluciones",
+      "reviewHint": "Toca un intento para ver sus soluciones.",
       "empty": "No hay intentos completados para este test."
     },
     "backToTests": "Volver a los exámenes",

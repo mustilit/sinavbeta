@@ -150,7 +150,7 @@
     "attempts": {
       "item": "Attempt {{n}}: {{score}}",
       "title": "Attempt Report",
-      "reviewCta": "Review Solutions",
+      "reviewHint": "Tap an attempt to view its solutions.",
       "empty": "No completed attempts for this test."
     },
     "backToTests": "Back to tests",

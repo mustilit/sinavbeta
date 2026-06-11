@@ -621,35 +621,31 @@ export default function TestDetail() {
                     <div className="space-y-2 mt-1">
                       {(reportTest?.st?.attempts || []).length > 0 ? (
                         (reportTest?.st?.attempts || []).map((a) => (
-                          <div
+                          // Her satır → O DENEMENİN çözümleri (attemptId ile review).
+                          <Link
                             key={a.attemptId}
-                            className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            to={reportTest ? createPageUrl("TakeTest") + `?id=${reportTest.item.id}&review=true&attemptId=${a.attemptId}` : "#"}
+                            onClick={() => setReportTest(null)}
+                            className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-sm hover:border-indigo-400 hover:bg-indigo-50/50 transition-colors group min-h-12"
                           >
-                            <span className="font-medium text-slate-700">
+                            <span className="font-medium text-slate-700 group-hover:text-indigo-700">
                               {t("pages:testDetail.attempts.item", { n: a.attemptNumber, score: a.score ?? 0 })}
                             </span>
-                            {a.submittedAt && (
-                              <span className="text-xs text-slate-400">
-                                {new Date(a.submittedAt).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
+                            <span className="flex items-center gap-2">
+                              {a.submittedAt && (
+                                <span className="text-xs text-slate-400">
+                                  {new Date(a.submittedAt).toLocaleDateString()}
+                                </span>
+                              )}
+                              <Eye className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+                            </span>
+                          </Link>
                         ))
                       ) : (
                         <p className="text-sm text-slate-500">{t("pages:testDetail.attempts.empty")}</p>
                       )}
                     </div>
-                    <div className="flex justify-end mt-3">
-                      <Link
-                        to={reportTest ? createPageUrl("TakeTest") + `?id=${reportTest.item.id}&review=true` : "#"}
-                        onClick={() => setReportTest(null)}
-                      >
-                        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                          <Eye className="w-4 h-4 mr-1.5" />
-                          {t("pages:testDetail.attempts.reviewCta")}
-                        </Button>
-                      </Link>
-                    </div>
+                    <p className="text-xs text-slate-400 mt-2">{t("pages:testDetail.attempts.reviewHint")}</p>
                   </DialogContent>
                 </Dialog>
 
