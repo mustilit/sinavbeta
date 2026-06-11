@@ -148,8 +148,10 @@
       "error": "Sıfırlama başarısız oldu. Lütfen tekrar deneyin."
     },
     "attempts": {
-      "previous": "Önceki denemeler:",
-      "item": "{{n}}. deneme: {{score}}"
+      "item": "{{n}}. deneme: {{score}}",
+      "title": "Deneme Raporu",
+      "reviewCta": "Çözümleri İncele",
+      "empty": "Bu test için tamamlanmış deneme bulunamadı."
     },
     "backToTests": "Testlere Dön",
     "errorLoading": "Test yüklenemedi",

@@ -148,8 +148,10 @@
       "error": "Error al reiniciar. Inténtalo de nuevo."
     },
     "attempts": {
-      "previous": "Intentos anteriores:",
-      "item": "Intento {{n}}: {{score}}"
+      "item": "Intento {{n}}: {{score}}",
+      "title": "Informe de intentos",
+      "reviewCta": "Revisar soluciones",
+      "empty": "No hay intentos completados para este test."
     },
     "backToTests": "Volver a los exámenes",
     "errorLoading": "No se pudo cargar el examen",

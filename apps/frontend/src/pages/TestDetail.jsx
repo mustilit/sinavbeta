@@ -58,6 +58,7 @@ export default function TestDetail() {
   const REVIEWS_PER_PAGE = 10;
   const [reviewPage, setReviewPage] = useState(1);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [reportTest, setReportTest] = useState(null);
 
   const { data: purchases = [] } = useQuery({
     queryKey: ["purchases", user?.id, testId],
@@ -538,51 +539,61 @@ export default function TestDetail() {
                   if (isCompleted) buttonStyle = { backgroundColor: '#64748b' };
                   else if (isInProgress) buttonStyle = { backgroundColor: '#f59e0b' };
 
+                  const buttonInner = (
+                    <>
+                      <div className="text-left">
+                        {/* testItem.title user-generated — çevrilmez */}
+                        <p className="font-medium">{testItem.title}</p>
+                        <p className="text-xs opacity-90 mt-0.5">
+                         {t("pages:testDetail.purchase.testMeta", {
+                           questions: testQuestionsCount,
+                           minutes: testItem.duration_minutes || 60,
+                         })}
+                        </p>
+                      </div>
+                      {isCompleted ? (
+                        <div className="flex items-center gap-1">
+                          <Eye className="w-4 h-4" />
+                          <span className="text-xs">{t("pages:testCard.review")}</span>
+                        </div>
+                      ) : isInProgress ? (
+                        <div className="flex items-center gap-1">
+                          <Play className="w-4 h-4" />
+                          <span className="text-xs">{t("pages:testCard.continue")}</span>
+                        </div>
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )}
+                    </>
+                  );
+
+                  // Tamamlanmış test → "İncele" doğrudan götürmez; önce deneme
+                  // raporu popup'ı açılır (kıyas + tarih), oradan "Çözümleri İncele".
+                  if (isCompleted) {
+                    return (
+                      <Button
+                        key={testItem.id}
+                        style={buttonStyle}
+                        onClick={() => setReportTest({ item: testItem, st })}
+                        className="w-full justify-between h-auto py-3 hover:opacity-90 text-white"
+                      >
+                        {buttonInner}
+                      </Button>
+                    );
+                  }
+
                   return (
-                    <div key={testItem.id} className="space-y-1">
                     <Link
-                      to={createPageUrl("TakeTest") + `?id=${testItem.id}${isCompleted ? '&review=true' : ''}`}
+                      key={testItem.id}
+                      to={createPageUrl("TakeTest") + `?id=${testItem.id}`}
                     >
                       <Button
                         style={buttonStyle}
                         className="w-full justify-between h-auto py-3 hover:opacity-90 text-white"
                       >
-                        <div className="text-left">
-                          {/* testItem.title user-generated — çevrilmez */}
-                          <p className="font-medium">{testItem.title}</p>
-                          <p className="text-xs opacity-90 mt-0.5">
-                           {t("pages:testDetail.purchase.testMeta", {
-                             questions: testQuestionsCount,
-                             minutes: testItem.duration_minutes || 60,
-                           })}
-                          </p>
-                        </div>
-                        {isCompleted ? (
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            <span className="text-xs">{t("pages:testCard.review")}</span>
-                          </div>
-                        ) : isInProgress ? (
-                          <div className="flex items-center gap-1">
-                            <Play className="w-4 h-4" />
-                            <span className="text-xs">{t("pages:testCard.continue")}</span>
-                          </div>
-                        ) : (
-                          <Play className="w-4 h-4" />
-                        )}
+                        {buttonInner}
                       </Button>
                     </Link>
-                    {st && Array.isArray(st.attempts) && st.attempts.length > 1 && (
-                      <div className="px-1 text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                        <span className="font-medium text-slate-600">{t("pages:testDetail.attempts.previous")}</span>
-                        {st.attempts.map((a) => (
-                          <span key={a.attemptId}>
-                            {t("pages:testDetail.attempts.item", { n: a.attemptNumber, score: a.score ?? 0 })}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    </div>
                   );
                 })}
 
@@ -595,6 +606,48 @@ export default function TestDetail() {
                   <RotateCcw className="w-4 h-4" />
                   {t("pages:testDetail.reset.button")}
                 </button>
+
+                <Dialog open={!!reportTest} onOpenChange={(o) => !o && setReportTest(null)}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>{t("pages:testDetail.attempts.title")}</DialogTitle>
+                      {/* test başlığı user-generated — çevrilmez */}
+                      <DialogDescription>{reportTest?.item?.title}</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 mt-1">
+                      {(reportTest?.st?.attempts || []).length > 0 ? (
+                        (reportTest?.st?.attempts || []).map((a) => (
+                          <div
+                            key={a.attemptId}
+                            className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                          >
+                            <span className="font-medium text-slate-700">
+                              {t("pages:testDetail.attempts.item", { n: a.attemptNumber, score: a.score ?? 0 })}
+                            </span>
+                            {a.submittedAt && (
+                              <span className="text-xs text-slate-400">
+                                {new Date(a.submittedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-slate-500">{t("pages:testDetail.attempts.empty")}</p>
+                      )}
+                    </div>
+                    <div className="flex justify-end mt-3">
+                      <Link
+                        to={reportTest ? createPageUrl("TakeTest") + `?id=${reportTest.item.id}&review=true` : "#"}
+                        onClick={() => setReportTest(null)}
+                      >
+                        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                          <Eye className="w-4 h-4 mr-1.5" />
+                          {t("pages:testDetail.attempts.reviewCta")}
+                        </Button>
+                      </Link>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
                   <DialogContent className="max-w-md">

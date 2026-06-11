@@ -148,8 +148,10 @@
       "error": "Zurücksetzen fehlgeschlagen. Bitte erneut versuchen."
     },
     "attempts": {
-      "previous": "Frühere Versuche:",
-      "item": "Versuch {{n}}: {{score}}"
+      "item": "Versuch {{n}}: {{score}}",
+      "title": "Versuchsbericht",
+      "reviewCta": "Lösungen ansehen",
+      "empty": "Keine abgeschlossenen Versuche für diesen Test."
     },
     "backToTests": "Zurück zu Tests",
     "errorLoading": "Test konnte nicht geladen werden",

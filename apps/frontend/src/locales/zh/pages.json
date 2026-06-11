@@ -148,8 +148,10 @@
       "error": "重置失败，请重试。"
     },
     "attempts": {
-      "previous": "之前的作答：",
-      "item": "第 {{n}} 次：{{score}}"
+      "item": "第 {{n}} 次：{{score}}",
+      "title": "作答报告",
+      "reviewCta": "查看解析",
+      "empty": "该测验暂无已完成的作答。"
     },
     "backToTests": "返回测试列表",
     "errorLoading": "无法加载测试",

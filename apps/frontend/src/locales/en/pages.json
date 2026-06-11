@@ -148,8 +148,10 @@
       "error": "Reset failed. Please try again."
     },
     "attempts": {
-      "previous": "Previous attempts:",
-      "item": "Attempt {{n}}: {{score}}"
+      "item": "Attempt {{n}}: {{score}}",
+      "title": "Attempt Report",
+      "reviewCta": "Review Solutions",
+      "empty": "No completed attempts for this test."
     },
     "backToTests": "Back to tests",
     "errorLoading": "Could not load test",
