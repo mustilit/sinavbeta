@@ -24,6 +24,16 @@ export default function Contact() {
       toast.error(t("pages:contact.toasts.missingFields"));
       return;
     }
+    // E-posta format kontrolü (regex)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      toast.error(t("pages:contact.toasts.invalidEmail"));
+      return;
+    }
+    // Mesaj en az 12 karakter olmalı (anlamlı içerik)
+    if (formData.message.trim().length < 12) {
+      toast.error(t("pages:contact.toasts.messageTooShort"));
+      return;
+    }
     setLoading(true);
     // Simulated submission
     setTimeout(() => {
@@ -101,6 +111,7 @@ export default function Contact() {
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     required
+                    minLength={12}
                   />
                 </div>
                 <Button

@@ -333,7 +333,11 @@ export default function LiveSessionHost() {
           {/* Options — TakeTest stilinde; istatistik açıkken sağa yaslı yüzde.
               Tur 2'de aynı sıradaki Tur 1 yüzdesi de gösterilir (karşılaştırma). */}
           {q && (() => {
-            const showStats = (isActive || isEnded) && state.showStats && Array.isArray(stats);
+            // ENDED (eğitici inceleme): şık dağılımı toggle'dan BAĞIMSIZ her zaman gösterilir
+            // — backend stats'ı eğiticiye showStats kapalı olsa da gönderir; oturum bitince
+            // eğitici her soruda kaç kişi hangi şıkkı işaretledi görür (doğru şık yeşil).
+            // ACTIVE'de toggle adaylar için geçerliliğini korur.
+            const showStats = Array.isArray(stats) && (isEnded || (isActive && state.showStats));
             const isRound2 = state.roundNumber === 2;
             // optionId → { count, pct } eşlemesi (Tur 2 / mevcut tur)
             const statByOpt = new Map();

@@ -27,6 +27,7 @@ import {
   Save,
   LogOut,
   Rocket,
+  FastForward,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -1276,6 +1277,30 @@ export default function TakeTest() {
                 ) : (
                   <><Lightbulb className="w-4 h-4 mr-1" />Çözümü Gör</>
                 )}
+              </Button>
+            )}
+            {/* Çözüm modu toggle — çözerken Normal/Seri arasında geçiş.
+                Normal: soruları kendin ilerletirsin. Seri: cevapta sonraki boş soruya geçer. */}
+            {!isReviewMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const next = testMode === 'serial' ? 'normal' : 'serial';
+                  setTestMode(next);
+                  try { localStorage.setItem('testMode_default', next); } catch { /* sessiz */ }
+                  toast.success(
+                    next === 'serial'
+                      ? 'Seri mod açık — cevap verince sonraki soruya geçilir'
+                      : 'Normal mod — soruları kendin ilerletirsin',
+                  );
+                }}
+                className={cn(testMode === 'serial' ? "text-indigo-600 bg-indigo-50" : "text-slate-400")}
+                aria-label={testMode === 'serial' ? 'Seri mod açık, normale geç' : 'Normal mod, seri moda geç'}
+                title="Çözüm modu: Normal / Seri"
+              >
+                <FastForward className="w-4 h-4 mr-1" />
+                {testMode === 'serial' ? 'Seri' : 'Normal'}
               </Button>
             )}
             {/* Kalem — her modda görünür */}

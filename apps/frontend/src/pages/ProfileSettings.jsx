@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { entities, auth } from "@/api/dalClient";
+import { passwordPolicyError } from "@/lib/passwordPolicy";
 import { useAuth } from "@/lib/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -205,11 +206,12 @@ export default function ProfileSettings() {
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [showPasswords, setShowPasswords] = useState(false);
 
-  const newPwTooShort = passwordForm.newPassword.length > 0 && passwordForm.newPassword.length < 8;
+  // Şifre politikası: 8+ karakter, büyük/küçük harf ve rakam (passwordPolicyError).
+  const newPwTooShort = passwordForm.newPassword.length > 0 && !!passwordPolicyError(passwordForm.newPassword);
   const pwMismatch = passwordForm.confirmPassword.length > 0 && passwordForm.newPassword !== passwordForm.confirmPassword;
   const canSubmitPassword =
     passwordForm.currentPassword.length > 0 &&
-    passwordForm.newPassword.length >= 8 &&
+    !passwordPolicyError(passwordForm.newPassword) &&
     passwordForm.newPassword === passwordForm.confirmPassword;
 
   const changePasswordMutation = useMutation({
@@ -231,7 +233,7 @@ export default function ProfileSettings() {
 
   const handleChangePassword = (e) => {
     e.preventDefault();
-    if (passwordForm.newPassword.length < 8) {
+    if (passwordPolicyError(passwordForm.newPassword)) {
       toast.error(t("pages:profileSettings.security.minLength"));
       return;
     }

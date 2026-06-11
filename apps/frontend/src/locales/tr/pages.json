@@ -1209,6 +1209,8 @@
     "addressBody": "Sınav Salonu Eğitim Teknolojileri A.Ş.\nMaslak Mahallesi, Büyükdere Caddesi\nNo: 123, Sarıyer\nİstanbul, Türkiye",
     "toasts": {
       "missingFields": "Lütfen tüm zorunlu alanları doldurun",
+      "invalidEmail": "Geçerli bir e-posta adresi girin",
+      "messageTooShort": "Mesaj en az 12 karakter olmalı",
       "sent": "Mesajınız başarıyla gönderildi! En kısa sürede size dönüş yapacağız."
     }
   },
@@ -1672,7 +1674,7 @@
       "currentPassword": "Mevcut Şifre",
       "newPassword": "Yeni Şifre",
       "confirmPassword": "Yeni Şifre (Tekrar)",
-      "minLength": "Yeni şifre en az 8 karakter olmalı",
+      "minLength": "Şifre en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermelidir.",
       "mismatch": "Şifreler eşleşmiyor",
       "showPasswords": "Şifreleri göster",
       "hidePasswords": "Şifreleri gizle",

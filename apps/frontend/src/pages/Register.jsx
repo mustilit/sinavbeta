@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { auth, entities, contracts } from '@/api/dalClient';
 import api from '@/lib/api/apiClient';
+import { passwordPolicyError, PASSWORD_HINT } from '@/lib/passwordPolicy';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -151,8 +152,9 @@ export default function Register() {
       setError(t('auth:errors.passwordMismatch', { defaultValue: 'Şifreler eşleşmiyor.' }));
       return;
     }
-    if (password.length < 6) {
-      setError(t('auth:errors.passwordWeak', { defaultValue: 'Şifre en az 6 karakter olmalı.' }));
+    const pwErr = passwordPolicyError(password);
+    if (pwErr) {
+      setError(pwErr);
       return;
     }
     if (isEducator && (!firstName.trim() || !lastName.trim())) {
@@ -445,9 +447,11 @@ export default function Register() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="w-full"
+                aria-describedby="reg-password-hint"
               />
+              <p id="reg-password-hint" className="text-xs text-slate-400 mt-1">{PASSWORD_HINT}</p>
             </div>
 
             <div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import api from '@/lib/api/apiClient';
+import { passwordPolicyError, PASSWORD_HINT } from '@/lib/passwordPolicy';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -48,9 +49,10 @@ export default function ResetPassword() {
     e.preventDefault();
     setError(null);
 
-    // Backend ile aynı minimum uzunluk kuralı (ResetPasswordUseCase: 8 karakter)
-    if (newPassword.length < 8) {
-      setError('Şifre en az 8 karakter olmalıdır.');
+    // Backend ile aynı şifre politikası (assertPasswordPolicy).
+    const pwErr = passwordPolicyError(newPassword);
+    if (pwErr) {
+      setError(pwErr);
       return;
     }
 
@@ -108,8 +110,11 @@ export default function ResetPassword() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
+              minLength={8}
               className="w-full"
+              aria-describedby="reset-pw-hint"
             />
+            <p id="reset-pw-hint" className="text-xs text-slate-400 mt-1">{PASSWORD_HINT}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Şifre Tekrarı</label>

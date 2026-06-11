@@ -9,6 +9,7 @@ import { JwtService } from '../../../infrastructure/services/JwtService';
 import { AppError } from '../../errors/AppError';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { getDefaultTenantId } from '../../../common/tenant';
+import { assertPasswordPolicy } from './passwordPolicy';
 
 /**
  * FR-E-01: Eğitici kaydı — pending-first akış.
@@ -105,6 +106,9 @@ export class RegisterEducatorUseCase {
     if (existingByUsername) {
       throw new AppError('USERNAME_ALREADY_TAKEN', 'Bu kullanıcı adı zaten alınmış', 400);
     }
+
+    // Ortak şifre politikası: 8+ karakter, büyük/küçük harf ve rakam zorunlu.
+    assertPasswordPolicy(dto.password);
 
     const passwordHash = await this.passwordService.hash(dto.password);
 

@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { IUserRepository } from '../../../domain/interfaces/IUserRepository';
 import { PasswordService } from '../../../infrastructure/services/PasswordService';
 import { AppError } from '../../errors/AppError';
+import { assertPasswordPolicy } from './passwordPolicy';
 
 /**
  * Oturum açmış kullanıcının mevcut şifresini doğrulayıp yeni şifre atar.
@@ -27,10 +28,8 @@ export class ChangePasswordUseCase {
     if (!currentPassword || !newPassword) {
       throw new AppError('INVALID_INPUT', 'Mevcut ve yeni şifre zorunludur', 400);
     }
-    // Minimum güvenlik politikası — ResetPasswordUseCase ile aynı eşik
-    if (newPassword.length < 8) {
-      throw new AppError('PASSWORD_TOO_SHORT', 'Yeni şifre en az 8 karakter olmalı', 400);
-    }
+    // Ortak şifre politikası: 8+ karakter, büyük/küçük harf ve rakam zorunlu.
+    assertPasswordPolicy(newPassword);
 
     const user = await this.userRepo.findById(userId);
     if (!user) {

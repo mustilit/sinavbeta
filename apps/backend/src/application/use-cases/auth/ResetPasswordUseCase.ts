@@ -1,6 +1,7 @@
 import { IUserRepository } from '../../../domain/interfaces/IUserRepository';
 import { PasswordService } from '../../../infrastructure/services/PasswordService';
 import { AppError } from '../../errors/AppError';
+import { assertPasswordPolicy } from './passwordPolicy';
 
 /**
  * Parola sıfırlama e-postasındaki token ile yeni parola atar.
@@ -14,10 +15,11 @@ export class ResetPasswordUseCase {
   ) {}
 
   async execute(token: string, newPassword: string): Promise<void> {
-    // Şifre en az 8 karakter olmalı — minimum güvenlik politikası
-    if (!token || !newPassword || newPassword.length < 8) {
-      throw new AppError('INVALID_INPUT', 'Geçersiz token veya şifre çok kısa (en az 8 karakter)', 400);
+    if (!token || !newPassword) {
+      throw new AppError('INVALID_INPUT', 'Geçersiz token veya şifre', 400);
     }
+    // Ortak şifre politikası: 8+ karakter, büyük/küçük harf ve rakam zorunlu.
+    assertPasswordPolicy(newPassword);
 
     const user = await this.userRepo.findByPasswordResetToken(token);
     if (!user) throw new AppError('INVALID_TOKEN', 'Geçersiz veya süresi dolmuş bağlantı', 400);

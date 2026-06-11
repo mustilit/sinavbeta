@@ -1209,6 +1209,8 @@
     "addressBody": "Sınav Salonu Eğitim Teknolojileri A.Ş.\nMaslak Mahallesi, Büyükdere Caddesi\nNo: 123, Sarıyer\nİstanbul, Türkiye",
     "toasts": {
       "missingFields": "Please fill in all required fields",
+      "invalidEmail": "Please enter a valid email address",
+      "messageTooShort": "Message must be at least 12 characters",
       "sent": "Your message was sent successfully! We will get back to you shortly."
     }
   },
@@ -1672,7 +1674,7 @@
       "currentPassword": "Current Password",
       "newPassword": "New Password",
       "confirmPassword": "New Password (Repeat)",
-      "minLength": "New password must be at least 8 characters",
+      "minLength": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter and a digit.",
       "mismatch": "Passwords do not match",
       "showPasswords": "Show passwords",
       "hidePasswords": "Hide passwords",

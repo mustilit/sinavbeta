@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { auth } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
 import { useAppNavigate } from "@/lib/navigation";
@@ -175,7 +175,7 @@ export default function VerifyEmail() {
               </h1>
               <p className="text-sm text-slate-600">
                 {emailFromQuery
-                  ? t("auth:verifyEmail.checkInboxDescWithEmail", { email: emailFromQuery })
+                  ? <Trans i18nKey="auth:verifyEmail.checkInboxDescWithEmail" values={{ email: emailFromQuery }} />
                   : t("auth:verifyEmail.checkInboxDesc")}
               </p>
               <p className="text-xs text-slate-500">{t("auth:verifyEmail.checkSpam")}</p>
