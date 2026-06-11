@@ -1,9 +1,10 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { LiveActor, resolveLiveParticipant } from './resolveLiveParticipant';
 
 export class SubmitLiveAnswerUseCase {
-  async execute(sessionId: string, userId: string, questionId: string, optionId: string) {
+  async execute(sessionId: string, actor: LiveActor, questionId: string, optionId: string) {
     const session = await prisma.liveSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new AppError('SESSION_NOT_FOUND', 'Session not found', 404);
     if (session.status !== 'ACTIVE')
@@ -19,9 +20,7 @@ export class SubmitLiveAnswerUseCase {
     if (!option || option.questionId !== questionId)
       throw new AppError('OPTION_NOT_FOUND', 'Option not found', 404);
 
-    const participant = await prisma.liveParticipant.findUnique({
-      where: { sessionId_userId: { sessionId, userId } },
-    });
+    const participant = await resolveLiveParticipant(sessionId, actor);
     if (!participant)
       throw new ForbiddenException({ code: 'NOT_JOINED', message: 'You have not joined this session' });
 

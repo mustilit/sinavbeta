@@ -1265,6 +1265,11 @@ export const adminAdPackages = {
   },
 };
 
+/** Misafir token'ı varsa X-Live-Guest-Token header config'i döner (yoksa undefined). */
+function guestHeaderCfg(guestToken) {
+  return guestToken ? { headers: { 'X-Live-Guest-Token': guestToken } } : undefined;
+}
+
 /** LiveSession işlemleri */
 export const liveSessions = {
   create: async (body) => {
@@ -1320,24 +1325,27 @@ export const liveSessions = {
     const { data } = await api.get(`/live-sessions/${id}/comparison`);
     return data;
   },
-  getState: async (id) => {
-    const { data } = await api.get(`/live-sessions/${id}/state`);
+  // guestToken: login'siz (misafir) katılımcı kimliği. Verilirse X-Live-Guest-Token
+  // header'ı eklenir; kayıtlı kullanıcıda null → JWT kullanılır.
+  getState: async (id, guestToken) => {
+    const { data } = await api.get(`/live-sessions/${id}/state`, guestHeaderCfg(guestToken));
     return data;
   },
   getByCode: async (code) => {
     const { data } = await api.get(`/live-sessions/code/${code}`);
     return data;
   },
-  join: async (code) => {
-    const { data } = await api.post(`/live-sessions/join/${code}`);
+  // displayName: misafir adı (login'siz katılımda). Kayıtlı kullanıcıda undefined.
+  join: async (code, displayName) => {
+    const { data } = await api.post(`/live-sessions/join/${code}`, displayName ? { displayName } : {});
     return data;
   },
-  ping: async (id) => {
-    const { data } = await api.post(`/live-sessions/${id}/ping`);
+  ping: async (id, guestToken) => {
+    const { data } = await api.post(`/live-sessions/${id}/ping`, {}, guestHeaderCfg(guestToken));
     return data;
   },
-  submitAnswer: async (id, questionId, optionId) => {
-    const { data } = await api.post(`/live-sessions/${id}/answer`, { questionId, optionId });
+  submitAnswer: async (id, questionId, optionId, guestToken) => {
+    const { data } = await api.post(`/live-sessions/${id}/answer`, { questionId, optionId }, guestHeaderCfg(guestToken));
     return data;
   },
 };

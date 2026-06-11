@@ -32,8 +32,9 @@ export class GetLiveSessionComparisonUseCase {
       const correctCount = p.answers.filter((a) => a.option?.isCorrect === true).length;
       return {
         userId: p.userId,
-        username: p.user.username,
-        email: p.user.email,
+        // Misafir katılımcıda user null → displayName göster.
+        username: p.user?.username ?? p.displayName ?? 'Misafir',
+        email: p.user?.email ?? null,
         correctCount,
         totalAnswered: p.answers.length,
         totalQuestions: session.questions.length,

@@ -187,11 +187,11 @@ export async function apiRequest(path, opts = {}) {
  * @param {{ retry?: number; timeout?: number; signal?: AbortSignal }} [opts]
  */
 export async function apiGet(path, opts = {}) {
-  const { retry = RETRY_GET_MAX, timeout, signal } = opts;
+  const { retry = RETRY_GET_MAX, timeout, signal, headers } = opts;
   let lastErr;
   for (let i = 0; i <= retry; i++) {
     try {
-      return await apiRequest(path, { method: 'GET', timeout, signal });
+      return await apiRequest(path, { method: 'GET', timeout, signal, headers });
     } catch (e) {
       lastErr = e;
       if (i < retry && e?.code !== 'UNAUTHORIZED' && e?.code !== 'FORBIDDEN') {

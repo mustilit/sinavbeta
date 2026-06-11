@@ -1360,7 +1360,13 @@ model LiveOption {
 model LiveParticipant {
   id         String   @id @default(uuid())
   sessionId  String
-  userId     String
+  // Login'siz (misafir) katılımda null. Kayıtlı kullanıcı katılımında dolu.
+  userId     String?
+  // Misafir görünen adı (login'siz katılımda zorunlu girilir). Kayıtlı kullanıcıda null.
+  displayName String?
+  // Misafir kimlik token'ı — login'siz katılımcının sonraki isteklerini (state/ping/answer)
+  // doğrular. Kayıtlı kullanıcıda null (JWT kullanılır).
+  guestToken String?  @unique @map("guest_token")
   joinedAt   DateTime @default(now())
   lastSeenAt DateTime @default(now())
   // Kapatma saldırısı koruması: katılım anındaki IP. Aynı cihaz/IP'den oturuma
@@ -1369,7 +1375,7 @@ model LiveParticipant {
   joinIp     String?  @map("join_ip")
 
   session LiveSession  @relation(fields: [sessionId], references: [id])
-  user    User         @relation("UserLiveParticipations", fields: [userId], references: [id])
+  user    User?        @relation("UserLiveParticipations", fields: [userId], references: [id])
   answers LiveAnswer[]
 
   @@unique([sessionId, userId])

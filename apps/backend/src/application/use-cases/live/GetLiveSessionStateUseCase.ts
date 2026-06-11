@@ -1,8 +1,12 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { LiveActor, resolveLiveParticipant } from './resolveLiveParticipant';
 
 export class GetLiveSessionStateUseCase {
-  async execute(sessionId: string, requesterId?: string) {
+  async execute(sessionId: string, actor?: LiveActor) {
+    // requesterId = kayıtlı kullanıcı id'si (eğitici tespiti + round1 lookup için).
+    // Misafirde null; katılımcı çözümü guestToken ile resolveLiveParticipant'ta yapılır.
+    const requesterId = actor?.userId ?? null;
     const session = await prisma.liveSession.findUnique({
       where: { id: sessionId },
       include: {
@@ -76,10 +80,9 @@ export class GetLiveSessionStateUseCase {
     let myAnswer: string | null = null;
     let myResults: any = null;
 
-    if (requesterId && !isEducator) {
-      const participant = await prisma.liveParticipant.findUnique({
-        where: { sessionId_userId: { sessionId, userId: requesterId } },
-      });
+    if (!isEducator) {
+      // Kayıtlı kullanıcı (userId) veya misafir (guestToken) katılımcısını çöz.
+      const participant = await resolveLiveParticipant(sessionId, actor);
       if (participant) {
         if (currentQ) {
           const ans = await prisma.liveAnswer.findUnique({
@@ -109,7 +112,7 @@ export class GetLiveSessionStateUseCase {
           };
           myResults = await buildResults(session.questions, participant.id, session);
           myResults.round1Results = null;
-          if (session.roundNumber === 2 && session.parent) {
+          if (session.roundNumber === 2 && session.parent && requesterId) {
             const r1p = await prisma.liveParticipant.findUnique({
               where: { sessionId_userId: { sessionId: session.parent.id, userId: requesterId } },
             });

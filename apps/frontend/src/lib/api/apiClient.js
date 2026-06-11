@@ -76,7 +76,7 @@ const api = {
         ? '?' + new URLSearchParams(params).toString()
         : '';
       const fullPath = path + search;
-      const data = await http.apiGet(fullPath, { signal: config.signal });
+      const data = await http.apiGet(fullPath, { signal: config.signal, headers: config.headers });
       return wrap(data);
     } catch (e) {
       throw toAxiosError(e);
@@ -84,7 +84,7 @@ const api = {
   },
   async post(path, body, config = {}) {
     try {
-      const data = await http.apiPost(path, body ?? config.data, { signal: config.signal });
+      const data = await http.apiPost(path, body ?? config.data, { signal: config.signal, headers: config.headers });
       return wrap(data);
     } catch (e) {
       throw toAxiosError(e);

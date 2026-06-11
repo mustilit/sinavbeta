@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Zap, Users, Loader2, LogIn, TrendingUp, TrendingDown, Minus, ZoomIn, X as XIcon, ShieldAlert } from "lucide-react";
+import { CheckCircle2, Zap, Users, Loader2, TrendingUp, TrendingDown, Minus, ZoomIn, X as XIcon, ShieldAlert } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -60,25 +60,46 @@ export default function LiveSessionJoin() {
   const [lightboxUrl, setLightboxUrl] = useState(null);
   // Katılım engeli ekranı: SESSION_FULL (kontenjan dolu) / DEVICE_QUOTA_EXCEEDED (cihaz kotası)
   const [blocked, setBlocked] = useState(null);
+  // Misafir (login'siz) katılım: görünen ad + oturuma özel kimlik token'ı.
+  const [guestName, setGuestName] = useState("");
+  const [guestToken, setGuestToken] = useState(null);
+
+  // Misafir oturum sürdürme: sayfa yenilenirse aynı kodun saklı token'ıyla devam et
+  // (yeni katılımcı oluşturup mükerrer kayıt/sayım yapmamak için).
+  useEffect(() => {
+    if (user) return;
+    const code = (searchParams.get("code") ?? "").toUpperCase();
+    if (!code) return;
+    try {
+      const raw = localStorage.getItem("liveGuest:" + code);
+      if (raw) {
+        const g = JSON.parse(raw);
+        if (g?.sessionId && g?.token) { setSessionId(g.sessionId); setGuestToken(g.token); }
+      }
+    } catch { /* yoksay */ }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // İstemci kimliği: kayıtlı kullanıcı JWT'si VEYA misafir token'ı.
+  const hasIdentity = !!user || !!guestToken;
 
   // Poll session state while joined
   const { data: state, isLoading: stateLoading } = useQuery({
     queryKey: ["liveJoinState", sessionId],
-    queryFn: () => liveApi.getState(sessionId),
-    enabled: !!sessionId && !!user,
+    queryFn: () => liveApi.getState(sessionId, guestToken),
+    enabled: !!sessionId && hasIdentity,
     refetchInterval: 2000,
   });
 
   // Heartbeat — ping every 15s so educator can see active count
   useEffect(() => {
-    if (!sessionId || !user || state?.status === "ENDED") return;
+    if (!sessionId || !hasIdentity || state?.status === "ENDED") return;
     // Ping immediately on join
-    liveApi.ping(sessionId).catch(() => {});
+    liveApi.ping(sessionId, guestToken).catch(() => {});
     const interval = setInterval(() => {
-      liveApi.ping(sessionId).catch(() => {});
+      liveApi.ping(sessionId, guestToken).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
-  }, [sessionId, user, state?.status]);
+  }, [sessionId, hasIdentity, guestToken, state?.status]);
 
   // Reset answer when question changes
   const currentQuestionId = state?.currentQuestion?.id;
@@ -92,9 +113,19 @@ export default function LiveSessionJoin() {
   }, [currentQuestionId, lastQuestionId, myAnswer]);
 
   const joinMutation = useMutation({
-    mutationFn: () => liveApi.join(codeInput.trim().toUpperCase()),
+    mutationFn: () => liveApi.join(codeInput.trim().toUpperCase(), user ? undefined : guestName.trim()),
     onSuccess: (data) => {
       setSessionId(data.sessionId);
+      // Misafir ise dönen token'ı sakla (sonraki istekler + sayfa yenileme sürdürme).
+      if (data.participantToken) {
+        setGuestToken(data.participantToken);
+        try {
+          localStorage.setItem(
+            "liveGuest:" + codeInput.trim().toUpperCase(),
+            JSON.stringify({ sessionId: data.sessionId, token: data.participantToken }),
+          );
+        } catch { /* yoksay */ }
+      }
       toast.success("Oturuma katıldınız!");
     },
     onError: (e) => {
@@ -115,7 +146,7 @@ export default function LiveSessionJoin() {
 
   const answerMutation = useMutation({
     mutationFn: ({ questionId, optionId }) =>
-      liveApi.submitAnswer(sessionId, questionId, optionId),
+      liveApi.submitAnswer(sessionId, questionId, optionId, guestToken),
     onSuccess: (_, vars) => {
       setSubmittedOptionId(vars.optionId);
       queryClient.invalidateQueries({ queryKey: ["liveJoinState", sessionId] });
@@ -129,21 +160,8 @@ export default function LiveSessionJoin() {
     answerMutation.mutate({ questionId: state.currentQuestion.id, optionId });
   };
 
-  // ── Not logged in ──
-  if (!user) {
-    return (
-      <div className="max-w-md mx-auto text-center py-20">
-        <Zap className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Canlı Teste Katıl</h2>
-        <p className="text-slate-500 mb-6">Katılmak için giriş yapmanız gerekiyor</p>
-        <Link to={createPageUrl("Login")}>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2">
-            <LogIn className="w-4 h-4" /> Giriş Yap
-          </Button>
-        </Link>
-      </div>
-    );
-  }
+  // NOT: Login zorunluluğu kaldırıldı — misafir (login'siz) katılım link/karekod ile
+  // mümkün. Kod giriş formunda ad alanı istenir; kayıtlı kullanıcılar JWT ile katılır.
 
   // ── Katılım engellendi: kontenjan dolu (SESSION_FULL) ya da aynı cihazdan kota
   //    aşımı (DEVICE_QUOTA_EXCEEDED). Aday henüz katılmadı → normal Layout (sidebar)
@@ -194,22 +212,45 @@ export default function LiveSessionJoin() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+          {/* Misafir (login'siz) katılım → ad zorunlu. Kayıtlı kullanıcıda gösterilmez. */}
+          {!user && (
+            <Input
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value.slice(0, 60))}
+              placeholder="Adınız"
+              aria-label="Adınız"
+              className="h-12 text-base"
+            />
+          )}
           <Input
             value={codeInput}
             onChange={(e) => setCodeInput(e.target.value.toUpperCase().slice(0, 6))}
             placeholder="ABCD12"
             className="text-center text-3xl font-black tracking-[0.3em] h-16 uppercase"
-            onKeyDown={(e) => e.key === "Enter" && codeInput.length === 6 && joinMutation.mutate()}
+            onKeyDown={(e) =>
+              e.key === "Enter" &&
+              codeInput.length >= 4 &&
+              (user || guestName.trim().length >= 2) &&
+              joinMutation.mutate()
+            }
           />
           <Button
             className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 text-base gap-2"
             onClick={() => joinMutation.mutate()}
-            disabled={codeInput.length < 4 || joinMutation.isPending}
+            disabled={codeInput.length < 4 || (!user && guestName.trim().length < 2) || joinMutation.isPending}
           >
             {joinMutation.isPending
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Katılınıyor...</>
               : "Katıl"}
           </Button>
+          {!user && (
+            <p className="text-center text-xs text-slate-400">
+              Hesabınız varsa{" "}
+              <Link to={createPageUrl("Login")} className="text-indigo-600 hover:underline">
+                giriş yapın
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     );

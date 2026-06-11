@@ -68,7 +68,8 @@ export const PAGE_ROLES = {
   LiveSessionHost: [ROLES.EDUCATOR],
 
   // Canlı test: Aday oturuma katılır
-  LiveSessionJoin: [ROLES.CANDIDATE],
+  // Login'siz (misafir) katılım — link/karekod ile. Kayıtlı kullanıcı da JWT ile katılır.
+  LiveSessionJoin: [ROLES.PUBLIC],
 
   // AdminAdReport: Reklam satın alım raporu — yalnızca admin
   AdminAdReport: [ROLES.ADMIN],

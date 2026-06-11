@@ -39,6 +39,11 @@ import { DeleteLiveSessionTierUseCase } from '../../application/use-cases/live/D
 import { GetLiveSessionByCodeUseCase } from '../../application/use-cases/live/GetLiveSessionByCodeUseCase';
 import { CreateRound2LiveSessionUseCase } from '../../application/use-cases/live/CreateRound2LiveSessionUseCase';
 import { GetLiveSessionComparisonUseCase } from '../../application/use-cases/live/GetLiveSessionComparisonUseCase';
+import * as jwt from 'jsonwebtoken';
+
+// Katılımcı endpoint'leri @Public — JWT guard çalışmaz, req.user dolmaz. Misafir (login'siz)
+// katılımı desteklemek için Authorization header'ı OPSİYONEL olarak burada çözülür.
+const JWT_SECRET = process.env.JWT_SECRET || 'dal-secret-change-in-production';
 
 @Controller('live-sessions')
 @ApiTags('LiveSessions')
@@ -230,35 +235,62 @@ export class LiveSessionsController {
   }
 
   // Participant endpoints
+  // Hepsi @Public — login'siz (misafir) katılım için. Kimlik resolveActor ile çözülür:
+  //   - Authorization: Bearer <jwt>  → kayıtlı kullanıcı (userId)
+  //   - X-Live-Guest-Token: <token>  → misafir (join'de verilen token)
+
+  /**
+   * İstekten katılımcı kimliğini çözer. JWT geçerliyse userId, yoksa/geçersizse
+   * guest token'a düşer. İkisi de yoksa boş — use-case NOT_JOINED döner.
+   */
+  private resolveActor(req: any): { userId?: string; guestToken?: string } {
+    const guestToken = (req?.headers?.['x-live-guest-token'] as string)?.trim() || undefined;
+    let userId: string | undefined;
+    const auth = req?.headers?.['authorization'];
+    if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
+      try {
+        const payload = jwt.verify(auth.slice(7), JWT_SECRET) as { sub?: string };
+        userId = payload?.sub;
+      } catch {
+        // Geçersiz/expired token → misafir gibi davran (guest token varsa o kullanılır).
+      }
+    }
+    return { userId, guestToken };
+  }
 
   @Get(':id/state')
-  @Roles('CANDIDATE', 'EDUCATOR', 'ADMIN', 'WORKER')
+  @Public()
   @ApiOkResponse({ description: 'Oturum durumu (polling)' })
   @ApiErrorResponses()
   async state(@Param('id') id: string, @Req() req: any) {
-    return this.stateUC.execute(id, req.user.id);
+    return this.stateUC.execute(id, this.resolveActor(req));
   }
 
   @Post('join/:code')
-  @Roles('CANDIDATE')
-  @ApiOkResponse({ description: 'Oturuma katil' })
+  @Public()
+  @ApiOkResponse({ description: 'Oturuma katil (kayıtlı kullanıcı veya misafir)' })
   @ApiErrorResponses()
-  async join(@Param('code') code: string, @Req() req: any) {
-    // IP — kapatma saldırısı limiti için (aynı cihazdan max katılım).
+  async join(@Param('code') code: string, @Body() body: { displayName?: string } | undefined, @Req() req: any) {
+    // IP — kapatma saldırısı / kota limiti için (aynı cihazdan max katılım).
     const ip = req?.ip ?? req?.headers?.['x-forwarded-for'] ?? null;
-    return this.joinUC.execute(code.toUpperCase(), req.user.id, { ip: Array.isArray(ip) ? ip[0] : ip });
+    const { userId } = this.resolveActor(req);
+    return this.joinUC.execute(code.toUpperCase(), {
+      userId,
+      displayName: body?.displayName ?? null,
+      ip: Array.isArray(ip) ? ip[0] : ip,
+    });
   }
 
   @Post(':id/ping')
-  @Roles('CANDIDATE')
+  @Public()
   @ApiOkResponse({ description: 'Katilimci heartbeat' })
   @ApiErrorResponses()
   async ping(@Param('id') id: string, @Req() req: any) {
-    return this.pingUC.execute(id, req.user.id);
+    return this.pingUC.execute(id, this.resolveActor(req));
   }
 
   @Post(':id/answer')
-  @Roles('CANDIDATE')
+  @Public()
   @ApiOkResponse({ description: 'Cevap gonder' })
   @ApiErrorResponses()
   async answer(
@@ -266,7 +298,7 @@ export class LiveSessionsController {
     @Body() body: { questionId: string; optionId: string },
     @Req() req: any,
   ) {
-    return this.answerUC.execute(id, req.user.id, body.questionId, body.optionId);
+    return this.answerUC.execute(id, this.resolveActor(req), body.questionId, body.optionId);
   }
 
   // Public lookup
