@@ -148,7 +148,7 @@
       "error": "Reset failed. Please try again."
     },
     "attempts": {
-      "item": "Attempt {{n}}: {{score}}",
+      "item": "Round {{n}}",
       "title": "Attempt Report",
       "reviewHint": "Tap an attempt to view its solutions.",
       "empty": "No completed attempts for this test."

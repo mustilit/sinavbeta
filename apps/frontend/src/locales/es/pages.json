@@ -148,7 +148,7 @@
       "error": "Error al reiniciar. Inténtalo de nuevo."
     },
     "attempts": {
-      "item": "Intento {{n}}: {{score}}",
+      "item": "Ronda {{n}}",
       "title": "Informe de intentos",
       "reviewHint": "Toca un intento para ver sus soluciones.",
       "empty": "No hay intentos completados para este test."

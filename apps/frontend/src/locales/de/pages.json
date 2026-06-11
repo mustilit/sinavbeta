@@ -148,7 +148,7 @@
       "error": "Zurücksetzen fehlgeschlagen. Bitte erneut versuchen."
     },
     "attempts": {
-      "item": "Versuch {{n}}: {{score}}",
+      "item": "Runde {{n}}",
       "title": "Versuchsbericht",
       "reviewHint": "Tippen Sie auf einen Versuch, um dessen Lösungen anzuzeigen.",
       "empty": "Keine abgeschlossenen Versuche für diesen Test."

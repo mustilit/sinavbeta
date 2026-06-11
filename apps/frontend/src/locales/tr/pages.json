@@ -148,7 +148,7 @@
       "error": "Sıfırlama başarısız oldu. Lütfen tekrar deneyin."
     },
     "attempts": {
-      "item": "{{n}}. deneme: {{score}}",
+      "item": "{{n}}. Tur",
       "title": "Deneme Raporu",
       "reviewHint": "Çözümlerini görmek için bir denemeye dokunun.",
       "empty": "Bu test için tamamlanmış deneme bulunamadı."
