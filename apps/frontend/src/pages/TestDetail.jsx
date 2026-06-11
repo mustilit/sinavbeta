@@ -158,6 +158,10 @@ export default function TestDetail() {
       queryClient.invalidateQueries({ queryKey: ["attemptState", testId] });
       queryClient.invalidateQueries({ queryKey: ["allTestResults"] });
       queryClient.invalidateQueries({ queryKey: ["allTestProgress"] });
+      // Home "Devam Et" + satın alma türevli listeler reset'i hemen yansıtsın
+      // (aksi halde paket hard-refresh'e kadar listede kalıyordu).
+      queryClient.invalidateQueries({ queryKey: ["home-owned-packages"] });
+      queryClient.invalidateQueries({ queryKey: ["purchases"] });
       setResetConfirmOpen(false);
     },
     onError: () => {
