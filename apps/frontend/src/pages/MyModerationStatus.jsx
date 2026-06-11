@@ -177,7 +177,7 @@ function MyModerationStatus() {
             </div>
 
             {/* İstatistikler */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-50 dark:bg-gray-800/50 rounded-lg p-4">
                 <p className="text-xs font-medium text-slate-600 dark:text-gray-400 mb-1">{t("pages:myModerationStatus.risk.openViolations")}</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-gray-50">{riskScore.openViolations || 0}</p>
@@ -322,7 +322,7 @@ function LoadingSkeleton() {
         <CardContent className="space-y-4">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-2 w-full" />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Skeleton className="h-20" />
             <Skeleton className="h-20" />
             <Skeleton className="h-20" />

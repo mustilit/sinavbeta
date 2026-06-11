@@ -185,6 +185,7 @@ export default function ManageContracts() {
                   <p className="text-sm text-slate-400 mt-1">"Yeni Versiyon" ile ilk metni oluşturun.</p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200 text-sm text-slate-600">
                     <tr>
@@ -239,6 +240,7 @@ export default function ManageContracts() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </TabsContent>

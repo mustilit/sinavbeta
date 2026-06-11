@@ -350,7 +350,7 @@ export default function ManageExamTypes() {
             <div className="space-y-2">
               <Label>Logo</Label>
               <p className="text-xs text-slate-500">Havuzdan konuya uygun bir çizgi logo seçin.</p>
-              <div className="grid grid-cols-6 gap-2 max-h-44 overflow-y-auto p-1 rounded-lg border border-slate-200">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-44 overflow-y-auto p-1 rounded-lg border border-slate-200">
                 {EXAM_TYPE_ICONS.map(({ key, Icon, label }) => {
                   const selected = formData.icon === key;
                   return (

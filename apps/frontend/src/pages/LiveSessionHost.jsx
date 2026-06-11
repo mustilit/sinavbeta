@@ -53,7 +53,7 @@ function ComparisonPanel({ sessionId }) {
       </p>
 
       {/* Overall */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
         <div className="bg-blue-50 rounded-xl p-3 text-center">
           <p className="text-xs text-blue-600 mb-1">{t("pages:liveHost.comparison.round1Avg")}</p>
           <p className="text-2xl font-black text-blue-700">%{r1Avg}</p>

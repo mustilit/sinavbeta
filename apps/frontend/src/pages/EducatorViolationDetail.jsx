@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   CATEGORY_LABELS_TR,
@@ -19,7 +18,7 @@ import {
 import { adminModeration } from '@/api/dalClient';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { AlertTriangle, ArrowLeft, Star, Zap, Lock, Ban } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Zap, Lock, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 
 function ActionModal({ isOpen, onClose, onSubmit, actionType, isPending }) {
@@ -349,7 +348,7 @@ export default function EducatorViolationDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div>
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Toplam İhlal

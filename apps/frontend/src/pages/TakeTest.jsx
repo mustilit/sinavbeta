@@ -852,7 +852,7 @@ export default function TakeTest() {
             </p>
           )}
 
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="bg-emerald-50 rounded-xl p-4">
               <p className="text-2xl font-bold text-emerald-600">{correctCount}</p>
               <p className="text-sm text-emerald-700">Doğru</p>

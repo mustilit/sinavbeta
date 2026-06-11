@@ -137,6 +137,7 @@ export function PromoCodesPanel() {
             <p className="text-sm text-slate-400 mt-1">"Yeni Kod" ile ilk kodu oluşturun.</p>
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200 text-sm text-slate-600">
               <tr>
@@ -208,6 +209,7 @@ export function PromoCodesPanel() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
