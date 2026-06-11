@@ -561,14 +561,9 @@ export default function TestDetail() {
                          })}
                         </p>
                       </div>
-                      {isCompleted ? null : isInProgress ? (
-                        <div className="flex items-center gap-1">
-                          <Play className="w-4 h-4" />
-                          <span className="text-xs">{t("pages:testCard.continue")}</span>
-                        </div>
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )}
+                      {/* Bitmiş: gri (ikon yok). Başla/Devam: sadece play — renk (mavi/turuncu)
+                          durumu anlatır, ayrıca metin gerekmez. */}
+                      {isCompleted ? null : <Play className="w-4 h-4" />}
                     </>
                   );
 
