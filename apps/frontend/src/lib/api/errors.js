@@ -56,6 +56,7 @@ export function toSafeMessage(err, opts = {}) {
       'UNAUTHORIZED', 'FORBIDDEN', 'NOT_FOUND', 'BAD_REQUEST',
       'TOO_MANY_REQUESTS', 'CAPTCHA_REQUIRED', 'CAPTCHA_INVALID',
       'INTERNAL_ERROR', 'ERR_NETWORK', 'TIMEOUT',
+      'DEVICE_VERIFICATION_REQUIRED', 'ACCOUNT_SUSPENDED',
     ];
     if (knownCodes.includes(code)) return safeMessage(code);
     return message || safeMessage('INTERNAL_ERROR');

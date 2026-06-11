@@ -154,6 +154,8 @@
   "apiErrors": {
     "UNAUTHORIZED": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
     "FORBIDDEN": "Du hast keine Berechtigung für diese Aktion.",
+    "DEVICE_VERIFICATION_REQUIRED": "Neues Gerät erkannt. Bestätigen Sie dieses Gerät über den per E-Mail gesendeten Link und melden Sie sich erneut an.",
+    "ACCOUNT_SUSPENDED": "Ihr Konto wurde gesperrt.",
     "NOT_FOUND": "Die angeforderte Ressource wurde nicht gefunden.",
     "BAD_REQUEST": "Ungültige Anfrage.",
     "TOO_MANY_REQUESTS": "Zu viele Versuche. Versuche es in 60 Sekunden erneut.",

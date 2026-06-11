@@ -154,6 +154,8 @@
   "apiErrors": {
     "UNAUTHORIZED": "Oturum süreniz doldu. Lütfen tekrar giriş yapın.",
     "FORBIDDEN": "Bu işlem için yetkiniz yok.",
+    "DEVICE_VERIFICATION_REQUIRED": "Yeni cihaz algılandı. E-postanıza gönderilen bağlantı ile cihazı onaylayın, ardından tekrar giriş yapın.",
+    "ACCOUNT_SUSPENDED": "Hesabınız askıya alınmış.",
     "NOT_FOUND": "İstenen kaynak bulunamadı.",
     "BAD_REQUEST": "Geçersiz istek.",
     "TOO_MANY_REQUESTS": "Çok fazla deneme yapıldı. 60 saniye sonra tekrar deneyin.",

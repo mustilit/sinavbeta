@@ -94,6 +94,35 @@ export class LoginUseCase {
       throw new Error('ACCOUNT_SUSPENDED');
     }
 
+    // ── Cihaz güvenliği ─────────────────────────────────────────────────────
+    // ADMIN/WORKER: güvenilmeyen (yeni veya henüz onaylanmamış) cihazdan giriş, cihaz
+    // e-posta linkiyle onaylanana dek ENGELLENİR. CANDIDATE/EDUCATOR: yalnızca yeni cihaz
+    // uyarı maili gönderilir, giriş serbest. Bu blok 2FA dalından ÖNCE çalışır → 2FA açık
+    // olsa bile admin önce cihazı onaylamadan pendingMfaToken dahi alamaz.
+    if (this.notifyDevice) {
+      const requireTrust = user.role === 'ADMIN' || user.role === 'WORKER';
+      let device: { requiresVerification: boolean } | undefined;
+      try {
+        device = await this.notifyDevice.execute({
+          userId: user.id,
+          userEmail: user.email,
+          username: user.username,
+          userRole: user.role as 'CANDIDATE' | 'EDUCATOR' | 'ADMIN' | 'WORKER',
+          userAgent: ctx?.userAgent,
+          ip: ctx?.ip,
+          requireTrust,
+        });
+      } catch {
+        // Değerlendirme hatası → fail-soft (login DB zaten çalıştı). Admin'i geçici
+        // hatada kilitlememek için bloklamayız.
+        device = undefined;
+      }
+      if (requireTrust && device?.requiresVerification) {
+        this.logLoginFail(ctx, user.id, email, 'device_verification_required');
+        throw new Error('DEVICE_VERIFICATION_REQUIRED');
+      }
+    }
+
     // 2FA gate — önce sistem geneli flag kontrol edilir (admin kapatmışsa bypass)
     // $queryRaw: Prisma client sürümünden bağımsız çalışır; yeni alanlar için generate gerekmez
     const adminRows = await prisma.$queryRaw`
@@ -149,21 +178,8 @@ export class LoginUseCase {
 
     this.logLoginSuccess(ctx, user.id, email);
 
-    // Yeni cihaz tespiti — best-effort, login akışını kesmez (await edilir ama hata yutulur)
-    if (this.notifyDevice) {
-      try {
-        await this.notifyDevice.execute({
-          userId: user.id,
-          userEmail: user.email,
-          username: user.username,
-          userRole: user.role as 'CANDIDATE' | 'EDUCATOR' | 'ADMIN' | 'WORKER',
-          userAgent: ctx?.userAgent,
-          ip: ctx?.ip,
-        });
-      } catch {
-        // sessizce yut — login zaten başarılı
-      }
-    }
+    // (Cihaz tespiti/bildirim ve admin/worker doğrulama kapısı yukarıda — 2FA dalından
+    //  ÖNCE — çalıştırıldı; burada tekrar çağrılmaz.)
 
     return {
       user: {

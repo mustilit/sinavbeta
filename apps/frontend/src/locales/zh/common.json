@@ -154,6 +154,8 @@
   "apiErrors": {
     "UNAUTHORIZED": "你的会话已过期。请重新登录。",
     "FORBIDDEN": "你无权执行此操作。",
+    "DEVICE_VERIFICATION_REQUIRED": "检测到新设备。请通过发送到您邮箱的链接确认此设备，然后重新登录。",
+    "ACCOUNT_SUSPENDED": "您的账户已被暂停。",
     "NOT_FOUND": "找不到请求的资源。",
     "BAD_REQUEST": "请求无效。",
     "TOO_MANY_REQUESTS": "尝试次数过多。请在 60 秒后重试。",

@@ -516,6 +516,23 @@ export class AuthController {
       if (err?.message === 'INVALID_CREDENTIALS') {
         throw new HttpException({ error: 'E-posta veya şifre hatalı.' }, HttpStatus.UNAUTHORIZED);
       }
+      if (err?.message === 'DEVICE_VERIFICATION_REQUIRED') {
+        // ADMIN/WORKER yeni/güvenilmeyen cihazdan giriş — e-posta ile cihaz onayı zorunlu.
+        throw new HttpException(
+          {
+            code: 'DEVICE_VERIFICATION_REQUIRED',
+            message:
+              'Yeni cihaz algılandı. E-postanıza gönderilen bağlantı ile cihazı onaylayın, ardından tekrar giriş yapın.',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      if (err?.message === 'ACCOUNT_SUSPENDED') {
+        throw new HttpException(
+          { code: 'ACCOUNT_SUSPENDED', message: 'Hesabınız askıya alınmış.' },
+          HttpStatus.FORBIDDEN,
+        );
+      }
       throw new HttpException(
         { error: err?.message || 'Giriş sırasında hata oluştu' },
         HttpStatus.INTERNAL_SERVER_ERROR,

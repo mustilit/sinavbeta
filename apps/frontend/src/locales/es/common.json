@@ -154,6 +154,8 @@
   "apiErrors": {
     "UNAUTHORIZED": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.",
     "FORBIDDEN": "No tienes permiso para esta acción.",
+    "DEVICE_VERIFICATION_REQUIRED": "Nuevo dispositivo detectado. Aprueba este dispositivo con el enlace enviado a tu correo y vuelve a iniciar sesión.",
+    "ACCOUNT_SUSPENDED": "Tu cuenta ha sido suspendida.",
     "NOT_FOUND": "No se encontró el recurso solicitado.",
     "BAD_REQUEST": "Solicitud inválida.",
     "TOO_MANY_REQUESTS": "Demasiados intentos. Intenta de nuevo en 60 segundos.",
