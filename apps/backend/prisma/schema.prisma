@@ -560,6 +560,9 @@ model TestAttempt {
   id          String        @id @default(uuid())
   testId      String
   candidateId String
+  // Çok-denemeli: aynı (test,aday) için 1..N deneme. Her "tekrar çöz" yeni satır
+  // (attemptNumber = mevcut max + 1). Eski denemeler korunur (history + kıyas).
+  attemptNumber Int         @default(1)
   startedAt   DateTime      @default(now())
   completedAt DateTime?
   submittedAt DateTime?
@@ -590,7 +593,7 @@ model TestAttempt {
   objections    Objection[]
   anomalyEvents AttemptAnomalyEvent[]
 
-  @@unique([testId, candidateId])
+  @@unique([testId, candidateId, attemptNumber])
   @@index([candidateId])
   @@index([testId])
   @@map("test_attempts")
