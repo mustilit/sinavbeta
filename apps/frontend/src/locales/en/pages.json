@@ -140,6 +140,7 @@
   "testDetail": {
     "reset": {
       "button": "Re-take Package",
+      "disabledHint": "Solve at least one test before resetting.",
       "confirmTitle": "Re-take the package?",
       "confirmDesc": "Any open (unfinished) attempts will be saved as-is and closed, and all tests will be reset for a new round. Your previous attempts are not deleted; they remain visible in the comparison.",
       "confirmCta": "Yes, Re-take",

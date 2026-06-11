@@ -151,6 +151,10 @@ export default function TestDetail() {
     enabled: isPurchased && !!user?.id && !!testId,
   });
   const stateByTest = new Map(((attemptStateData?.tests) || []).map((s) => [s.testId, s]));
+  // Bu turda başlanmış/çözülmüş test yoksa "Paketi Yeniden Çöz" anlamsız (boş kayıt) — pasif.
+  const hasResettableActivity = ((attemptStateData?.tests) || []).some(
+    (s) => s.state === "IN_PROGRESS" || s.state === "COMPLETED",
+  );
 
   // Paket-seviyesi "Yeniden Çöz": açık denemeleri finalize eder + tüm testleri sıfırlar.
   const resetMutation = useMutation({
@@ -607,7 +611,9 @@ export default function TestDetail() {
                 <button
                   type="button"
                   onClick={() => setResetConfirmOpen(true)}
-                  className="w-full rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-indigo-400 hover:bg-indigo-50/50 hover:text-indigo-700 py-3 flex items-center justify-center gap-2 text-sm font-medium min-h-12"
+                  disabled={!hasResettableActivity}
+                  title={!hasResettableActivity ? t("pages:testDetail.reset.disabledHint") : undefined}
+                  className="w-full rounded-xl border-2 border-dashed border-slate-300 text-slate-600 py-3 flex items-center justify-center gap-2 text-sm font-medium min-h-12 enabled:hover:border-indigo-400 enabled:hover:bg-indigo-50/50 enabled:hover:text-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <RotateCcw className="w-4 h-4" />
                   {t("pages:testDetail.reset.button")}

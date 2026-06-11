@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Inject, Logger, Param, Patch, Post, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, Inject, Logger, Param, Patch, Post, Req } from '@nestjs/common';
 import { Roles } from '../decorators/roles.decorator';
 import type { PrismaClient } from '@prisma/client';
 import { StartTestAttemptUseCase } from '../../application/use-cases/attempt/StartTestAttemptUseCase';
@@ -222,25 +222,39 @@ export class AttemptsController {
     const tests = await this.prisma.examTest.findMany({ where: { packageId, deletedAt: null } as any, select: { id: true } });
     const testIds = tests.map((t) => t.id);
 
-    let finalized = 0;
-    if (testIds.length) {
-      const open = await this.prisma.testAttempt.findMany({
-        where: { testId: { in: testIds }, candidateId: userId, status: { in: ['IN_PROGRESS', 'PAUSED'] } } as any,
-        select: { id: true },
+    // Bu turda (son reset'ten sonra başlamış) hiç deneme yoksa sıfırlanacak bir şey
+    // yoktur — boş bir attemptsResetAt kaydı yazmayı engelle ("sıfır paket boş kayıt").
+    const existingReset = (purchase as any).attemptsResetAt ? new Date((purchase as any).attemptsResetAt) : null;
+    const allAttempts = testIds.length
+      ? await this.prisma.testAttempt.findMany({
+          where: { testId: { in: testIds }, candidateId: userId } as any,
+          select: { id: true, status: true, startedAt: true } as any,
+        })
+      : [];
+    const inCurrentRound = (a: any) =>
+      !existingReset || (a.startedAt && new Date(a.startedAt).getTime() > existingReset.getTime());
+    const currentRound = (allAttempts as any[]).filter(inCurrentRound);
+    if (currentRound.length === 0) {
+      throw new BadRequestException({
+        code: 'NOTHING_TO_RESET',
+        message: 'Bu turda başlanmış veya çözülmüş test yok; sıfırlanacak bir şey yok.',
       });
-      for (const a of open) {
+    }
+
+    let finalized = 0;
+    const open = currentRound.filter((a) => a.status === 'IN_PROGRESS' || a.status === 'PAUSED');
+    for (const a of open) {
+      try {
+        await this.submitAttemptUC.execute(a.id, undefined, userId);
+        finalized++;
+      } catch {
         try {
-          await this.submitAttemptUC.execute(a.id, undefined, userId);
+          await this.prisma.testAttempt.update({
+            where: { id: a.id },
+            data: { status: 'SUBMITTED', submittedAt: new Date(), finishedAt: new Date() } as any,
+          });
           finalized++;
-        } catch {
-          try {
-            await this.prisma.testAttempt.update({
-              where: { id: a.id },
-              data: { status: 'SUBMITTED', submittedAt: new Date(), finishedAt: new Date() } as any,
-            });
-            finalized++;
-          } catch { /* best-effort finalize */ }
-        }
+        } catch { /* best-effort finalize */ }
       }
     }
 

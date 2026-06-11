@@ -140,6 +140,7 @@
   "testDetail": {
     "reset": {
       "button": "Rehacer el paquete",
+      "disabledHint": "Resuelve al menos un test antes de reiniciar.",
       "confirmTitle": "¿Rehacer el paquete?",
       "confirmDesc": "Los intentos abiertos (sin terminar) se guardarán tal cual y se cerrarán, y todos los tests se reiniciarán para una nueva ronda. Tus intentos anteriores no se eliminan; siguen visibles en la comparación.",
       "confirmCta": "Sí, rehacer",

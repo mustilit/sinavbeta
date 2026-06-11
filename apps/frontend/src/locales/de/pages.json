@@ -140,6 +140,7 @@
   "testDetail": {
     "reset": {
       "button": "Paket erneut bearbeiten",
+      "disabledHint": "Lösen Sie mindestens einen Test, bevor Sie zurücksetzen.",
       "confirmTitle": "Paket erneut bearbeiten?",
       "confirmDesc": "Offene (unfertige) Versuche werden unverändert gespeichert und geschlossen, und alle Tests werden für eine neue Runde zurückgesetzt. Ihre früheren Versuche werden nicht gelöscht; sie bleiben im Vergleich sichtbar.",
       "confirmCta": "Ja, erneut bearbeiten",

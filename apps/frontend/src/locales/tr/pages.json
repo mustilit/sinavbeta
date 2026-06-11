@@ -140,6 +140,7 @@
   "testDetail": {
     "reset": {
       "button": "Paketi Yeniden Çöz",
+      "disabledHint": "Sıfırlamak için önce en az bir test çözmelisiniz.",
       "confirmTitle": "Paketi yeniden çöz?",
       "confirmDesc": "Paketteki açık (yarım kalmış) denemeler olduğu gibi kaydedilip kapatılır ve tüm testler yeni bir tur için sıfırlanır. Eski denemeleriniz silinmez; kıyaslamada görünmeye devam eder.",
       "confirmCta": "Evet, Yeniden Çöz",

@@ -140,6 +140,7 @@
   "testDetail": {
     "reset": {
       "button": "重新作答此套餐",
+      "disabledHint": "重置前请至少作答一个测验。",
       "confirmTitle": "重新作答此套餐？",
       "confirmDesc": "所有未完成的作答将按现状保存并关闭，套餐内所有测验将为新一轮重置。您之前的作答不会被删除，仍会显示在对比中。",
       "confirmCta": "是的，重新作答",
