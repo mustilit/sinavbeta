@@ -1164,7 +1164,7 @@ export default function TakeTest() {
         onManualExit={saveAndExit}
       />
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 flex items-center justify-between flex-wrap gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 flex items-center justify-between flex-wrap gap-4 sticky top-0 z-30 shadow-sm lg:static lg:shadow-none">
         {/* Sol: eylem butonları */}
         <div className="flex items-center gap-3 flex-wrap">
           {isReviewMode ? (
@@ -1616,7 +1616,7 @@ export default function TakeTest() {
         </DialogContent>
       </Dialog>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between sticky bottom-0 z-30 shadow-md lg:static lg:shadow-none">
         <Button
           variant="ghost"
           onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
