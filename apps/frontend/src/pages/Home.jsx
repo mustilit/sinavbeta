@@ -369,23 +369,32 @@ export default function Home() {
         if (p.payment_status && !["PAID", "COMPLETED", "ACTIVE"].includes(String(p.payment_status).toUpperCase())) continue;
         const id = p.package_id ?? p.test_package_id;
         if (!id) continue;
-        const submitted = !!(p.attempt?.submittedAt || p.attempt?.status === "SUBMITTED");
+        // Paketteki TÜM testlerin attempt'larından durum çıkar. p.attempt (tekil)
+        // paket alımlarında null gelir; bu yüzden p.attempts[] kullanılır.
+        // "Paketi yeniden çöz" açık denemeleri finalize ettiğinden, reset + hiç
+        // başlamadı durumunda IN_PROGRESS kalmaz → hasInProgress=false → "Devam Et"
+        // yerine İncele (completed) gösterilir.
+        const atts = Array.isArray(p.attempts) ? p.attempts : (p.attempt ? [p.attempt] : []);
+        const hasInProgress = atts.some((a) => a && (a.status === "IN_PROGRESS" || a.status === "PAUSED"));
+        const hasCompleted = atts.some((a) => a && (a.status === "SUBMITTED" || a.status === "TIMEOUT"));
         const prev = grouped.get(id);
         if (!prev) {
           grouped.set(id, {
             id,
             title: p.package?.title ?? p.test_package_title ?? fallbackTitle,
             educatorUsername: p.package?.educatorUsername ?? p.test?.educator?.username ?? null,
-            total: 1,
-            done: submitted ? 1 : 0,
+            hasInProgress,
+            hasCompleted,
           });
         } else {
-          prev.total += 1;
-          if (submitted) prev.done += 1;
+          prev.hasInProgress = prev.hasInProgress || hasInProgress;
+          prev.hasCompleted = prev.hasCompleted || hasCompleted;
         }
       }
       return Array.from(grouped.values())
-        .map((p) => ({ ...p, isCompleted: p.total > 0 && p.done >= p.total }))
+        // Aktif deneme varsa → Devam Et (Play). Aktif yok ama tamamlanmış varsa →
+        // İncele (Eye). İkisi de yoksa (hiç başlanmamış) → Play (başla).
+        .map((p) => ({ ...p, isCompleted: !p.hasInProgress && p.hasCompleted }))
         .sort((a, b) => Number(a.isCompleted) - Number(b.isCompleted));
     },
     enabled: isCandidate && !!user,

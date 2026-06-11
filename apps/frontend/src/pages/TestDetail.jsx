@@ -575,7 +575,7 @@ export default function TestDetail() {
                         key={testItem.id}
                         style={buttonStyle}
                         onClick={() => setReportTest({ item: testItem, st })}
-                        className="w-full justify-between h-auto py-3 hover:opacity-90 text-white"
+                        className="w-full justify-between h-auto py-3 hover:opacity-90 text-white border-2 border-white shadow-sm"
                       >
                         {buttonInner}
                       </Button>
@@ -589,7 +589,7 @@ export default function TestDetail() {
                     >
                       <Button
                         style={buttonStyle}
-                        className="w-full justify-between h-auto py-3 hover:opacity-90 text-white"
+                        className="w-full justify-between h-auto py-3 hover:opacity-90 text-white border-2 border-white shadow-sm"
                       >
                         {buttonInner}
                       </Button>

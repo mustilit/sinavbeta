@@ -43,6 +43,8 @@ export function useTestProctoring({
   const [exitCount, setExitCount] = useState(0);
   // Son rapor edilen event'ler için throttling
   const lastReportRef = useRef({});
+  // Programatik fullscreen çıkışı (proctoring kapandı / unmount) ihlal SAYILMAZ.
+  const suppressFsExitRef = useRef(false);
   // Callback ref — useCallback bağımlılığı sıfırlamasın
   const onLimitRef = useRef(onViolationLimit);
   useEffect(() => { onLimitRef.current = onViolationLimit; }, [onViolationLimit]);
@@ -221,7 +223,14 @@ export function useTestProctoring({
       if (document.visibilityState === 'hidden') bumpExit('tab');
     };
     const onFullscreenChange = () => {
-      if (!document.fullscreenElement) bumpExit('fullscreen');
+      if (!document.fullscreenElement) {
+        // Programatik çıkış (proctoring kapandı / sayfadan ayrıldı) ihlal sayılmaz.
+        if (suppressFsExitRef.current) {
+          suppressFsExitRef.current = false;
+          return;
+        }
+        bumpExit('fullscreen');
+      }
     };
     const onBlur = () => {
       // Pencere odağı kayboldu (alt+tab vb.) — visibility ile çakışabilir,
@@ -248,9 +257,23 @@ export function useTestProctoring({
   useEffect(() => {
     if (enabled) return;
     if (typeof document !== 'undefined' && document.fullscreenElement && document.exitFullscreen) {
-      document.exitFullscreen().catch(() => { /* tarayıcı reddetti — sessiz */ });
+      suppressFsExitRef.current = true;
+      document.exitFullscreen().catch(() => { suppressFsExitRef.current = false; });
     }
   }, [enabled]);
+
+  // Bileşen unmount olurken (aday TakeTest'ten tamamen ayrılırken) fullscreen'i
+  // bırak. Yukarıdaki effect yalnız enabled değişiminde çalışır; doğrudan
+  // navigasyonda (geri/çık/başka teste git) enabled true iken unmount olursa
+  // fullscreen sonraki normal sayfaya taşınıyordu. Boş bağımlılık → yalnız unmount.
+  useEffect(() => {
+    return () => {
+      if (typeof document !== 'undefined' && document.fullscreenElement && document.exitFullscreen) {
+        suppressFsExitRef.current = true;
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, []);
 
   return {
     /** Toplam tab switch + fullscreen exit sayısı */
