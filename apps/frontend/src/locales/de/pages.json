@@ -138,6 +138,19 @@
     "countFound_other": "{{count}} Tests gefunden"
   },
   "testDetail": {
+    "reset": {
+      "button": "Paket erneut bearbeiten",
+      "confirmTitle": "Paket erneut bearbeiten?",
+      "confirmDesc": "Offene (unfertige) Versuche werden unverändert gespeichert und geschlossen, und alle Tests werden für eine neue Runde zurückgesetzt. Ihre früheren Versuche werden nicht gelöscht; sie bleiben im Vergleich sichtbar.",
+      "confirmCta": "Ja, erneut bearbeiten",
+      "cancel": "Abbrechen",
+      "done": "Paket zurückgesetzt. Sie können die Tests erneut bearbeiten.",
+      "error": "Zurücksetzen fehlgeschlagen. Bitte erneut versuchen."
+    },
+    "attempts": {
+      "previous": "Frühere Versuche:",
+      "item": "Versuch {{n}}: {{score}}"
+    },
     "backToTests": "Zurück zu Tests",
     "errorLoading": "Test konnte nicht geladen werden",
     "errorLoadingDesc": "Server nicht erreichbar. Bitte Seite neu laden.",

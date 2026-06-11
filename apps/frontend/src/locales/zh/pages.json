@@ -138,6 +138,19 @@
     "countFound_other": "找到 {{count}} 个测试"
   },
   "testDetail": {
+    "reset": {
+      "button": "重新作答此套餐",
+      "confirmTitle": "重新作答此套餐？",
+      "confirmDesc": "所有未完成的作答将按现状保存并关闭，套餐内所有测验将为新一轮重置。您之前的作答不会被删除，仍会显示在对比中。",
+      "confirmCta": "是的，重新作答",
+      "cancel": "取消",
+      "done": "套餐已重置。您可以重新作答测验。",
+      "error": "重置失败，请重试。"
+    },
+    "attempts": {
+      "previous": "之前的作答：",
+      "item": "第 {{n}} 次：{{score}}"
+    },
     "backToTests": "返回测试列表",
     "errorLoading": "无法加载测试",
     "errorLoadingDesc": "服务器无响应。请刷新页面。",

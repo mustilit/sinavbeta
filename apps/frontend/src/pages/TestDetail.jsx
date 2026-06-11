@@ -25,7 +25,8 @@ import {
   Play,
   Eye,
   Bell,
-  BellOff
+  BellOff,
+  RotateCcw
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAppNavigate, useLoginRedirect } from "@/lib/navigation";
@@ -56,6 +57,7 @@ export default function TestDetail() {
   // Reviews listesi paging — sayfa başına 10 yorum (1-bazlı)
   const REVIEWS_PER_PAGE = 10;
   const [reviewPage, setReviewPage] = useState(1);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const { data: purchases = [] } = useQuery({
     queryKey: ["purchases", user?.id, testId],
@@ -137,6 +139,30 @@ export default function TestDetail() {
   // SUBMITTED attempt kontrolünü yapar ve değilse hata döner).
   // void allTestResults — query referansını koru, ileride başka yerde kullanılabilir
   void allTestResults;
+
+  // Çok-denemeli durum: her test için Başla/Devam/İncele + kıyas (toplam skor).
+  // Backend "bu tur" mantığını uygular (Purchase.attemptsResetAt sonrası başlayanlar).
+  const { data: attemptStateData } = useQuery({
+    queryKey: ["attemptState", testId, user?.id],
+    queryFn: () => api.get(`/packages/${testId}/attempt-state`).then((r) => r?.data ?? r),
+    enabled: isPurchased && !!user?.id && !!testId,
+  });
+  const stateByTest = new Map(((attemptStateData?.tests) || []).map((s) => [s.testId, s]));
+
+  // Paket-seviyesi "Yeniden Çöz": açık denemeleri finalize eder + tüm testleri sıfırlar.
+  const resetMutation = useMutation({
+    mutationFn: () => api.post(`/packages/${testId}/reset-attempts`),
+    onSuccess: () => {
+      toast.success(t("pages:testDetail.reset.done"));
+      queryClient.invalidateQueries({ queryKey: ["attemptState", testId] });
+      queryClient.invalidateQueries({ queryKey: ["allTestResults"] });
+      queryClient.invalidateQueries({ queryKey: ["allTestProgress"] });
+      setResetConfirmOpen(false);
+    },
+    onError: () => {
+      toast.error(t("pages:testDetail.reset.error"));
+    },
+  });
 
   // Aday paket için kendi review'u (yeni model: tek kayıt)
   const { data: myPackageReview } = useQuery({
@@ -502,16 +528,19 @@ export default function TestDetail() {
                   const testResult = allTestResults.find(r => r.test_id === testItem.id);
                   const testProgress = allTestProgress.find(p => p.test_id === testItem.id);
 
-                  const isCompleted = !!testResult;
-                  const isInProgress = !!testProgress;
+                  // Çok-denemeli: backend "bu tur" durumunu verir; yoksa eski mantığa düş.
+                  const st = stateByTest.get(testItem.id);
+                  const state = st?.state || (testResult ? 'COMPLETED' : testProgress ? 'IN_PROGRESS' : 'NEW');
+                  const isCompleted = state === 'COMPLETED';
+                  const isInProgress = state === 'IN_PROGRESS';
 
                   let buttonStyle = { backgroundColor: '#0000CD' };
                   if (isCompleted) buttonStyle = { backgroundColor: '#64748b' };
                   else if (isInProgress) buttonStyle = { backgroundColor: '#f59e0b' };
 
                   return (
+                    <div key={testItem.id} className="space-y-1">
                     <Link
-                      key={testItem.id}
                       to={createPageUrl("TakeTest") + `?id=${testItem.id}${isCompleted ? '&review=true' : ''}`}
                     >
                       <Button
@@ -543,8 +572,54 @@ export default function TestDetail() {
                         )}
                       </Button>
                     </Link>
+                    {st && Array.isArray(st.attempts) && st.attempts.length > 1 && (
+                      <div className="px-1 text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                        <span className="font-medium text-slate-600">{t("pages:testDetail.attempts.previous")}</span>
+                        {st.attempts.map((a) => (
+                          <span key={a.attemptId}>
+                            {t("pages:testDetail.attempts.item", { n: a.attemptNumber, score: a.score ?? 0 })}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    </div>
                   );
                 })}
+
+                {/* "11. test gibi" — test listesinin altında paket-seviyesi yeniden çöz */}
+                <button
+                  type="button"
+                  onClick={() => setResetConfirmOpen(true)}
+                  className="w-full rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-indigo-400 hover:bg-indigo-50/50 hover:text-indigo-700 py-3 flex items-center justify-center gap-2 text-sm font-medium min-h-12"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  {t("pages:testDetail.reset.button")}
+                </button>
+
+                <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>{t("pages:testDetail.reset.confirmTitle")}</DialogTitle>
+                      <DialogDescription>{t("pages:testDetail.reset.confirmDesc")}</DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setResetConfirmOpen(false)}
+                        disabled={resetMutation.isPending}
+                      >
+                        {t("pages:testDetail.reset.cancel")}
+                      </Button>
+                      <Button
+                        className="bg-rose-600 hover:bg-rose-700 text-white"
+                        onClick={() => resetMutation.mutate()}
+                        disabled={resetMutation.isPending}
+                      >
+                        {resetMutation.isPending ? "…" : t("pages:testDetail.reset.confirmCta")}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             ) : (
               !purchasesEnabled ? (

@@ -138,6 +138,19 @@
     "countFound_other": "{{count}} test bulundu"
   },
   "testDetail": {
+    "reset": {
+      "button": "Paketi Yeniden Çöz",
+      "confirmTitle": "Paketi yeniden çöz?",
+      "confirmDesc": "Paketteki açık (yarım kalmış) denemeler olduğu gibi kaydedilip kapatılır ve tüm testler yeni bir tur için sıfırlanır. Eski denemeleriniz silinmez; kıyaslamada görünmeye devam eder.",
+      "confirmCta": "Evet, Yeniden Çöz",
+      "cancel": "İptal",
+      "done": "Paket sıfırlandı. Testleri yeniden çözebilirsiniz.",
+      "error": "Sıfırlama başarısız oldu. Lütfen tekrar deneyin."
+    },
+    "attempts": {
+      "previous": "Önceki denemeler:",
+      "item": "{{n}}. deneme: {{score}}"
+    },
     "backToTests": "Testlere Dön",
     "errorLoading": "Test yüklenemedi",
     "errorLoadingDesc": "Sunucuya ulaşılamadı, lütfen sayfayı yenileyin.",

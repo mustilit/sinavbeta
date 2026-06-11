@@ -138,6 +138,19 @@
     "countFound_other": "{{count}} tests found"
   },
   "testDetail": {
+    "reset": {
+      "button": "Re-take Package",
+      "confirmTitle": "Re-take the package?",
+      "confirmDesc": "Any open (unfinished) attempts will be saved as-is and closed, and all tests will be reset for a new round. Your previous attempts are not deleted; they remain visible in the comparison.",
+      "confirmCta": "Yes, Re-take",
+      "cancel": "Cancel",
+      "done": "Package reset. You can re-take the tests.",
+      "error": "Reset failed. Please try again."
+    },
+    "attempts": {
+      "previous": "Previous attempts:",
+      "item": "Attempt {{n}}: {{score}}"
+    },
     "backToTests": "Back to tests",
     "errorLoading": "Could not load test",
     "errorLoadingDesc": "Server unreachable. Please refresh the page.",

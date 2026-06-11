@@ -138,6 +138,19 @@
     "countFound_other": "{{count}} exámenes encontrados"
   },
   "testDetail": {
+    "reset": {
+      "button": "Rehacer el paquete",
+      "confirmTitle": "¿Rehacer el paquete?",
+      "confirmDesc": "Los intentos abiertos (sin terminar) se guardarán tal cual y se cerrarán, y todos los tests se reiniciarán para una nueva ronda. Tus intentos anteriores no se eliminan; siguen visibles en la comparación.",
+      "confirmCta": "Sí, rehacer",
+      "cancel": "Cancelar",
+      "done": "Paquete reiniciado. Puedes rehacer los tests.",
+      "error": "Error al reiniciar. Inténtalo de nuevo."
+    },
+    "attempts": {
+      "previous": "Intentos anteriores:",
+      "item": "Intento {{n}}: {{score}}"
+    },
     "backToTests": "Volver a los exámenes",
     "errorLoading": "No se pudo cargar el examen",
     "errorLoadingDesc": "El servidor no responde. Por favor, recarga la página.",
