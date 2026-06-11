@@ -640,6 +640,10 @@ model Purchase {
   refundedAt     DateTime?
   expiredAt      DateTime?
   deletedAt      DateTime?
+  // Çok-denemeli "paketi yeniden çöz": aday bu (paket) için sıfırlama yaptığında now()
+  // yazılır. Bu tarihten ÖNCE başlamış denemeler "geçmiş tur" sayılır → UI'da test
+  // "Başla"ya döner, yeni Start yeni deneme açar. Eski denemeler korunur (kıyas/history).
+  attemptsResetAt DateTime?
 
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id])

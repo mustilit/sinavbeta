@@ -49,11 +49,19 @@ export class StartTestAttemptUseCase {
       throw new ForbiddenException({ code: 'NO_PURCHASE', message: 'User has no purchase for this test' });
     }
 
+    // Çok-denemeli: EN SON denemeyi al (attemptNumber desc). "Paketi yeniden çöz"
+    // (Purchase.attemptsResetAt) sonrası başlamış deneme "bu tur" sayılır.
     const existing = await prismaRetry(() =>
       this.prisma.testAttempt.findFirst({
         where: { testId, candidateId: userId },
+        orderBy: { attemptNumber: 'desc' } as any,
       }),
     );
+    const resetAt = (activePurchase as any)?.attemptsResetAt
+      ? new Date((activePurchase as any).attemptsResetAt)
+      : null;
+    const isCurrentRound = (a: any) =>
+      !resetAt || (a?.startedAt && new Date(a.startedAt).getTime() > resetAt.getTime());
 
     const isTimed = (test as any).isTimed ?? false;
     // Zamansız testler için 24 saat varsayılan; zamanlı testlerde duration zorunlu
@@ -106,76 +114,67 @@ export class StartTestAttemptUseCase {
 
     const now = new Date();
 
-    if (!existing) {
-      const created = await this.prisma.testAttempt.create({
-        data: {
-          testId,
-          candidateId: userId,
-          status: 'IN_PROGRESS',
-          startedAt: now,
-          lastResumedAt: now,
-          remainingSec: durationSec,
-          questionsSnapshot: snapshotQuestions as any,
-        } as any,
-      });
+    const status = (existing as any)?.status;
+    const isActiveCurrent = !!existing &&
+      (status === 'IN_PROGRESS' || status === 'PAUSED') && isCurrentRound(existing);
+    const finishedCurrent = !!existing &&
+      (status === 'SUBMITTED' || status === 'TIMEOUT') && isCurrentRound(existing);
 
-      return {
-        attemptId: created.id,
-        remainingSec: (created as any).remainingSec ?? durationSec,
-      };
+    // Bu testi BU TURDA zaten tamamladıysa tekrar başlatma yok — önce "Paketi yeniden
+    // çöz" ile sıfırlanmalı (paket-seviyesi reset). UI bu durumda "İncele" gösterir.
+    if (finishedCurrent) {
+      throw new BadRequestException({
+        code: 'ATTEMPT_ALREADY_FINISHED',
+        message: 'Bu testi bu turda tamamladınız. Tekrar çözmek için paketi yeniden başlatın.',
+      });
     }
 
-    if ((existing as any).status === 'PAUSED') {
-      // Legacy bug: bazı eski attempt'lar remainingSec=null ile oluşmuştu
-      // (PurchaseUseCase yanlış pre-create yapıyordu). Resume sırasında
-      // null görürsek test duration'ını backfill ederiz.
+    // Bu turda aktif deneme varsa DEVAM ettir (PAUSED → resume; IN_PROGRESS → backfill).
+    if (isActiveCurrent) {
       const existingRemaining = (existing as any).remainingSec;
-      const updated = await this.prisma.testAttempt.update({
-        where: { id: existing.id },
-        data: {
-          status: 'IN_PROGRESS',
-          lastResumedAt: now,
-          ...(existingRemaining == null && { remainingSec: durationSec }),
-        } as any,
-      });
-
-      return {
-        attemptId: updated.id,
-        remainingSec: (updated as any).remainingSec ?? durationSec,
-      };
-    }
-
-    // Eğer zaten IN_PROGRESS ise kalan süreyi döndür; null/eksik alanları backfill et
-    if ((existing as any).status === 'IN_PROGRESS') {
-      const existingRemaining = (existing as any).remainingSec;
+      if (status === 'PAUSED') {
+        const updated = await this.prisma.testAttempt.update({
+          where: { id: existing.id },
+          data: {
+            status: 'IN_PROGRESS',
+            lastResumedAt: now,
+            ...(existingRemaining == null && { remainingSec: durationSec }),
+          } as any,
+        });
+        return { attemptId: updated.id, remainingSec: (updated as any).remainingSec ?? durationSec };
+      }
+      // IN_PROGRESS — legacy null alanları backfill et
       const existingLastResumed = (existing as any).lastResumedAt;
-      // Legacy: PurchaseUseCase satın alma anında IN_PROGRESS attempt oluşturuyordu
-      // ama remainingSec/lastResumedAt set etmiyordu. Şimdi düzelt — pause matematiği
-      // doğru çalışsın diye.
       if (existingRemaining == null || existingLastResumed == null) {
         const fixed = await this.prisma.testAttempt.update({
           where: { id: existing.id },
           data: {
             ...(existingRemaining == null && { remainingSec: durationSec }),
             ...(existingLastResumed == null && { lastResumedAt: now }),
-            ...(existingLastResumed == null && { startedAt: now }), // gerçek başlangıç
+            ...(existingLastResumed == null && { startedAt: now }),
           } as any,
         });
-        return {
-          attemptId: fixed.id,
-          remainingSec: (fixed as any).remainingSec ?? durationSec,
-        };
+        return { attemptId: fixed.id, remainingSec: (fixed as any).remainingSec ?? durationSec };
       }
-      return {
-        attemptId: existing.id,
-        remainingSec: existingRemaining,
-      };
+      return { attemptId: existing.id, remainingSec: existingRemaining };
     }
 
-    throw new BadRequestException({
-      code: 'ATTEMPT_ALREADY_FINISHED',
-      message: 'Attempt already finished or expired',
+    // Aksi halde YENİ deneme: ilk kez, VEYA reset sonrası yeni tur, VEYA önceki turdan
+    // finalize edilmemiş eski deneme var → bir sonraki attemptNumber ile başlat.
+    const nextNumber = ((existing as any)?.attemptNumber ?? 0) + 1;
+    const created = await this.prisma.testAttempt.create({
+      data: {
+        testId,
+        candidateId: userId,
+        attemptNumber: nextNumber,
+        status: 'IN_PROGRESS',
+        startedAt: now,
+        lastResumedAt: now,
+        remainingSec: durationSec,
+        questionsSnapshot: snapshotQuestions as any,
+      } as any,
     });
+    return { attemptId: created.id, remainingSec: (created as any).remainingSec ?? durationSec };
   }
 }
 

@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Inject, Logger, Param, Patch, Post, Req } from '@nestjs/common';
 import { Roles } from '../decorators/roles.decorator';
 import type { PrismaClient } from '@prisma/client';
 import { StartTestAttemptUseCase } from '../../application/use-cases/attempt/StartTestAttemptUseCase';
@@ -39,6 +39,7 @@ export class AttemptsController {
   private readonly anomalyUC: LogAttemptAnomalyUseCase;
   private readonly getSolutionUC: GetQuestionSolutionUseCase;
   private readonly prisma: PrismaClient;
+  private readonly logger = new Logger(AttemptsController.name);
 
   constructor(@Inject(PrismaService) prismaService: PrismaService) {
     this.prisma = prismaService.client;
@@ -201,6 +202,106 @@ export class AttemptsController {
   ) {
     const userId = (req as any).user?.id;
     return this.anomalyUC.execute(attemptId, userId, body?.type, body?.payload);
+  }
+
+  /**
+   * "Paketi Yeniden Çöz" — aday paketteki TÜM testleri yeni bir tur olarak sıfırlar.
+   * Açık (IN_PROGRESS/PAUSED) denemeler olduğu gibi finalize edilir (cevaplar/history
+   * korunur), Purchase.attemptsResetAt = now yazılır. Bundan sonra Start her test için
+   * YENİ deneme açar (attemptNumber+1). 'Aynı anda aktiflik yok' garantisi.
+   */
+  @Post('packages/:id/reset-attempts')
+  @Roles('CANDIDATE')
+  async resetPackageAttempts(@Param('id') packageId: string, @Req() req: any) {
+    const userId = (req as any).user?.id;
+    if (!userId) throw new ForbiddenException({ message: 'UNAUTHENTICATED' });
+
+    const purchase = await this.prisma.purchase.findFirst({ where: { packageId, candidateId: userId } as any });
+    if (!purchase) throw new ForbiddenException({ code: 'NO_PURCHASE', message: 'Bu paket için satın alma kaydınız yok' });
+
+    const tests = await this.prisma.examTest.findMany({ where: { packageId, deletedAt: null } as any, select: { id: true } });
+    const testIds = tests.map((t) => t.id);
+
+    let finalized = 0;
+    if (testIds.length) {
+      const open = await this.prisma.testAttempt.findMany({
+        where: { testId: { in: testIds }, candidateId: userId, status: { in: ['IN_PROGRESS', 'PAUSED'] } } as any,
+        select: { id: true },
+      });
+      for (const a of open) {
+        try {
+          await this.submitAttemptUC.execute(a.id, undefined, userId);
+          finalized++;
+        } catch {
+          try {
+            await this.prisma.testAttempt.update({
+              where: { id: a.id },
+              data: { status: 'SUBMITTED', submittedAt: new Date(), finishedAt: new Date() } as any,
+            });
+            finalized++;
+          } catch { /* best-effort finalize */ }
+        }
+      }
+    }
+
+    const now = new Date();
+    await this.prisma.purchase.update({ where: { id: purchase.id }, data: { attemptsResetAt: now } as any });
+    this.logger.log(`attempt.package_reset packageId=${packageId} candidate=${userId} finalized=${finalized} tests=${testIds.length}`);
+
+    return { ok: true, resetAt: now, finalized };
+  }
+
+  /**
+   * Paket deneme durumu (aday) — UI için: her test Başla(NEW)/Devam(IN_PROGRESS)/
+   * İncele(COMPLETED) + kıyas için tamamlanmış denemelerin toplam skor özetleri.
+   * resetAt'tan önce başlamış denemeler "geçmiş tur" → state NEW olur.
+   */
+  @Get('packages/:id/attempt-state')
+  @Roles('CANDIDATE')
+  async packageAttemptState(@Param('id') packageId: string, @Req() req: any) {
+    const userId = (req as any).user?.id;
+    if (!userId) throw new ForbiddenException({ message: 'UNAUTHENTICATED' });
+
+    const purchase = await this.prisma.purchase.findFirst({
+      where: { packageId, candidateId: userId } as any,
+      select: { attemptsResetAt: true } as any,
+    });
+    const resetAt = (purchase as any)?.attemptsResetAt ? new Date((purchase as any).attemptsResetAt) : null;
+
+    const tests = await this.prisma.examTest.findMany({ where: { packageId, deletedAt: null } as any, select: { id: true } });
+    const testIds = tests.map((t) => t.id);
+    const attempts = testIds.length
+      ? await this.prisma.testAttempt.findMany({
+          where: { testId: { in: testIds }, candidateId: userId } as any,
+          select: { id: true, testId: true, attemptNumber: true, status: true, score: true, startedAt: true, submittedAt: true } as any,
+          orderBy: [{ testId: 'asc' }, { attemptNumber: 'asc' }] as any,
+        })
+      : [];
+
+    const byTest = new Map<string, any[]>();
+    for (const a of attempts as any[]) {
+      const arr = byTest.get(a.testId) ?? [];
+      arr.push(a);
+      byTest.set(a.testId, arr);
+    }
+    const isCurrent = (a: any) => !resetAt || (a.startedAt && new Date(a.startedAt).getTime() > resetAt.getTime());
+
+    const result = tests.map((t) => {
+      const list = byTest.get(t.id) ?? [];
+      const latest = list.length ? list[list.length - 1] : null;
+      let state = 'NEW';
+      let currentAttemptId: string | null = null;
+      if (latest && isCurrent(latest)) {
+        if (latest.status === 'IN_PROGRESS' || latest.status === 'PAUSED') { state = 'IN_PROGRESS'; currentAttemptId = latest.id; }
+        else if (latest.status === 'SUBMITTED' || latest.status === 'TIMEOUT') { state = 'COMPLETED'; currentAttemptId = latest.id; }
+      }
+      const attemptsSummary = list
+        .filter((a) => a.status === 'SUBMITTED' || a.status === 'TIMEOUT')
+        .map((a) => ({ attemptId: a.id, attemptNumber: a.attemptNumber, score: a.score, submittedAt: a.submittedAt }));
+      return { testId: t.id, state, currentAttemptId, attempts: attemptsSummary };
+    });
+
+    return { resetAt, tests: result };
   }
 }
 

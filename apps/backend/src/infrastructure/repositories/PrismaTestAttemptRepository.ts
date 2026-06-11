@@ -7,10 +7,10 @@ import { prisma } from '../database/prisma';
  */
 export class PrismaTestAttemptRepository implements ITestAttemptRepository {
   async findByTestAndCandidate(testId: string, candidateId: string): Promise<TestAttempt | null> {
-    const attempt = await prisma.testAttempt.findUnique({
-      where: {
-        testId_candidateId: { testId, candidateId },
-      },
+    // Çok-denemeli: en son denemeyi döndür (attemptNumber desc).
+    const attempt = await prisma.testAttempt.findFirst({
+      where: { testId, candidateId },
+      orderBy: { attemptNumber: 'desc' } as any,
     });
     return attempt ? this.toDomain(attempt) : null;
   }
