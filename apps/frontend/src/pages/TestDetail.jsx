@@ -579,48 +579,48 @@ export default function TestDetail() {
 
                   // Tamamlanmış test → "İncele" doğrudan götürmez; önce deneme
                   // raporu popup'ı açılır (kıyas + tarih), oradan "Çözümleri İncele".
-                  if (isCompleted) {
-                    return (
-                      <Button
-                        key={testItem.id}
-                        style={buttonStyle}
-                        onClick={() => setReportTest({ item: testItem, st })}
-                        className="w-full justify-between h-auto py-3 hover:opacity-90 text-white border-2 border-white shadow-sm"
-                      >
-                        {buttonInner}
-                      </Button>
-                    );
-                  }
-
-                  // NEW/IN_PROGRESS: ana buton Başla/Devam. Geçmiş tur(lar) varsa yanına
-                  // "geçmiş incele" butonu — bu turda tamamlanmasa bile önceki turların
-                  // raporu/çözümü açılabilsin (reset sonrası 1. tur incelemesi).
+                  // Tutarlı düzen: SOL ana buton (Başla/Devam/İncele) hep flex-1,
+                  // SAĞ sabit genişlikte 'incele' yuvası. Yuva yalnızca NEW/IN_PROGRESS
+                  // testin geçmiş turu varsa dolu; aksi halde (COMPLETED ya da geçmişsiz)
+                  // boş kalır → buton boyutu duruma göre değişmez.
                   const hasPastAttempts = Array.isArray(st?.attempts) && st.attempts.length > 0;
                   return (
                     <div key={testItem.id} className="flex items-stretch gap-2">
-                      <Link
-                        to={createPageUrl("TakeTest") + `?id=${testItem.id}`}
-                        className="flex-1 min-w-0"
-                      >
-                        <Button
-                          style={buttonStyle}
-                          className="w-full justify-between h-auto py-3 hover:opacity-90 text-white border-2 border-white shadow-sm"
-                        >
-                          {buttonInner}
-                        </Button>
-                      </Link>
-                      {hasPastAttempts && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setReportTest({ item: testItem, st })}
-                          title={t("pages:testDetail.attempts.pastReview")}
-                          aria-label={t("pages:testDetail.attempts.pastReview")}
-                          className="flex-shrink-0 h-auto px-3 border-2 border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-700"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        {isCompleted ? (
+                          <Button
+                            style={buttonStyle}
+                            onClick={() => setReportTest({ item: testItem, st })}
+                            className="w-full justify-between h-auto py-3 hover:opacity-90 text-white border-2 border-white shadow-sm"
+                          >
+                            {buttonInner}
+                          </Button>
+                        ) : (
+                          <Link to={createPageUrl("TakeTest") + `?id=${testItem.id}`} className="block">
+                            <Button
+                              style={buttonStyle}
+                              className="w-full justify-between h-auto py-3 hover:opacity-90 text-white border-2 border-white shadow-sm"
+                            >
+                              {buttonInner}
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
+                      {/* Sağ sabit yuva — geçmiş incele butonu ya da boş alan */}
+                      <div className="w-12 flex-shrink-0 flex">
+                        {!isCompleted && hasPastAttempts && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setReportTest({ item: testItem, st })}
+                            title={t("pages:testDetail.attempts.pastReview")}
+                            aria-label={t("pages:testDetail.attempts.pastReview")}
+                            className="w-full h-auto px-0 border-2 border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-700"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
