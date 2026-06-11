@@ -371,12 +371,19 @@ export default function Home() {
         if (!id) continue;
         // Paketteki TÜM testlerin attempt'larından durum çıkar. p.attempt (tekil)
         // paket alımlarında null gelir; bu yüzden p.attempts[] kullanılır.
-        // "Paketi yeniden çöz" açık denemeleri finalize ettiğinden, reset + hiç
-        // başlamadı durumunda IN_PROGRESS kalmaz → hasInProgress=false → "Devam Et"
-        // yerine İncele (completed) gösterilir.
+        // "BU TUR" mantığı: attemptsResetAt sonrası başlamış denemeler bu tura aittir.
+        // Reset + hiç başlamadı durumunda bu turda ne IN_PROGRESS ne SUBMITTED kalır →
+        // paket "Devam Et" listesinden ÇIKARILIR (ne devam ne incele).
         const atts = Array.isArray(p.attempts) ? p.attempts : (p.attempt ? [p.attempt] : []);
-        const hasInProgress = atts.some((a) => a && (a.status === "IN_PROGRESS" || a.status === "PAUSED"));
-        const hasCompleted = atts.some((a) => a && (a.status === "SUBMITTED" || a.status === "TIMEOUT"));
+        const resetAt = p.attemptsResetAt ? new Date(p.attemptsResetAt).getTime() : null;
+        const inCurrentRound = (a) =>
+          !resetAt || (a?.startedAt && new Date(a.startedAt).getTime() > resetAt);
+        const hasInProgress = atts.some(
+          (a) => a && (a.status === "IN_PROGRESS" || a.status === "PAUSED") && inCurrentRound(a),
+        );
+        const hasCompleted = atts.some(
+          (a) => a && (a.status === "SUBMITTED" || a.status === "TIMEOUT") && inCurrentRound(a),
+        );
         const prev = grouped.get(id);
         if (!prev) {
           grouped.set(id, {
@@ -392,8 +399,11 @@ export default function Home() {
         }
       }
       return Array.from(grouped.values())
-        // Aktif deneme varsa → Devam Et (Play). Aktif yok ama tamamlanmış varsa →
-        // İncele (Eye). İkisi de yoksa (hiç başlanmamış) → Play (başla).
+        // "Devam Et" yalnızca bu turda etkinliği olan paketleri gösterir:
+        //  - aktif deneme → Devam Et (Play)
+        //  - aktif yok ama tamamlanmış → İncele (Eye)
+        // Bu turda hiçbir şey yoksa (hiç başlanmamış VEYA reset+başlanmamış) listeden çıkar.
+        .filter((p) => p.hasInProgress || p.hasCompleted)
         .map((p) => ({ ...p, isCompleted: !p.hasInProgress && p.hasCompleted }))
         .sort((a, b) => Number(a.isCompleted) - Number(b.isCompleted));
     },

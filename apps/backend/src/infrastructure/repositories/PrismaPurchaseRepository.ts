@@ -73,6 +73,9 @@ export class PrismaPurchaseRepository implements IPurchaseRepository {
 
     const attempts = await prisma.testAttempt.findMany({
       where: { candidateId },
+      // Çok-denemeli: attemptNumber ASC → aynı test için EN SON deneme Map'te en son
+      // yazılır (kazanır). Sırasız bırakılırsa hangi turun tutulacağı belirsizdi.
+      orderBy: [{ attemptNumber: 'asc' }] as any,
       select: {
         id: true,
         testId: true,
@@ -119,6 +122,9 @@ export class PrismaPurchaseRepository implements IPurchaseRepository {
         createdAt: p.createdAt,
         amountCents: p.amountCents ?? null,
         paymentStatus: p.status ?? null,
+        // "Paketi yeniden çöz" işareti — bu tarihten önce başlamış denemeler "geçmiş tur".
+        // Home "Devam Et" + diğer tüketiciler bu turu hesaplamak için kullanır.
+        attemptsResetAt: p.attemptsResetAt ?? null,
         test: p.test ?? null,
         package: p.package ?? null,
         attempt,

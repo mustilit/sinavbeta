@@ -394,6 +394,8 @@ export const entities = {
           // Paketteki tüm testlerin attempt'ları (backend p.attempts) — TakeTest
           // ve TestProgress için doğru attempt'ı bulmaya yarar
           attempts: Array.isArray(p.attempts) ? p.attempts : (p.attempt ? [p.attempt] : []),
+          // "Paketi yeniden çöz" zaman damgası — Home "Devam Et" bu turu hesaplar
+          attemptsResetAt: p.attemptsResetAt ?? null,
           payment_status: p.paymentStatus,
           test_package_snapshot: snapshot,
           // ProfileSettings ve diğer sayfalar için düzleştirilmiş alanlar
