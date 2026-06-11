@@ -149,6 +149,7 @@
     },
     "attempts": {
       "item": "Runde {{n}}",
+      "counts": "{{correct}} richtig, {{empty}} leer, {{wrong}} falsch",
       "title": "Versuchsbericht",
       "reviewHint": "Tippen Sie auf einen Versuch, um dessen Lösungen anzuzeigen.",
       "empty": "Keine abgeschlossenen Versuche für diesen Test."

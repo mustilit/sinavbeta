@@ -268,12 +268,12 @@ export class AttemptsController {
     });
     const resetAt = (purchase as any)?.attemptsResetAt ? new Date((purchase as any).attemptsResetAt) : null;
 
-    const tests = await this.prisma.examTest.findMany({ where: { packageId, deletedAt: null } as any, select: { id: true } });
+    const tests = await this.prisma.examTest.findMany({ where: { packageId, deletedAt: null } as any, select: { id: true, _count: { select: { questions: true } } } as any });
     const testIds = tests.map((t) => t.id);
     const attempts = testIds.length
       ? await this.prisma.testAttempt.findMany({
           where: { testId: { in: testIds }, candidateId: userId } as any,
-          select: { id: true, testId: true, attemptNumber: true, status: true, score: true, startedAt: true, submittedAt: true } as any,
+          select: { id: true, testId: true, attemptNumber: true, status: true, score: true, startedAt: true, submittedAt: true, answers: { select: { isCorrect: true, selectedOptionId: true } } } as any,
           orderBy: [{ testId: 'asc' }, { attemptNumber: 'asc' }] as any,
         })
       : [];
@@ -286,7 +286,7 @@ export class AttemptsController {
     }
     const isCurrent = (a: any) => !resetAt || (a.startedAt && new Date(a.startedAt).getTime() > resetAt.getTime());
 
-    const result = tests.map((t) => {
+    const result = (tests as any[]).map((t: any) => {
       const list = byTest.get(t.id) ?? [];
       const latest = list.length ? list[list.length - 1] : null;
       let state = 'NEW';
@@ -295,9 +295,16 @@ export class AttemptsController {
         if (latest.status === 'IN_PROGRESS' || latest.status === 'PAUSED') { state = 'IN_PROGRESS'; currentAttemptId = latest.id; }
         else if (latest.status === 'SUBMITTED' || latest.status === 'TIMEOUT') { state = 'COMPLETED'; currentAttemptId = latest.id; }
       }
+      const totalQ = (t as any)._count?.questions ?? 0;
       const attemptsSummary = list
         .filter((a) => a.status === 'SUBMITTED' || a.status === 'TIMEOUT')
-        .map((a) => ({ attemptId: a.id, attemptNumber: a.attemptNumber, score: a.score, submittedAt: a.submittedAt }));
+        .map((a) => {
+          const ans = (a.answers ?? []) as Array<{ isCorrect: boolean | null; selectedOptionId: string | null }>;
+          const correct = ans.filter((x) => x.isCorrect === true).length;
+          const wrong = ans.filter((x) => x.isCorrect === false && x.selectedOptionId != null).length;
+          const empty = Math.max(0, totalQ - correct - wrong);
+          return { attemptId: a.id, attemptNumber: a.attemptNumber, score: a.score, submittedAt: a.submittedAt, correct, wrong, empty, total: totalQ };
+        });
       return { testId: t.id, state, currentAttemptId, attempts: attemptsSummary };
     });
 

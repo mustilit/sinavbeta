@@ -26,7 +26,9 @@ import {
   Eye,
   Bell,
   BellOff,
-  RotateCcw
+  RotateCcw,
+  XCircle,
+  Minus
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAppNavigate, useLoginRedirect } from "@/lib/navigation";
@@ -628,12 +630,33 @@ export default function TestDetail() {
                             onClick={() => setReportTest(null)}
                             className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-sm hover:border-indigo-400 hover:bg-indigo-50/50 transition-colors group min-h-12"
                           >
-                            <span className="font-medium text-slate-700 group-hover:text-indigo-700">
-                              {t("pages:testDetail.attempts.item", { n: a.attemptNumber, score: a.score ?? 0 })}
+                            <span className="flex items-center gap-3 min-w-0">
+                              <span className="font-medium text-slate-700 group-hover:text-indigo-700 whitespace-nowrap">
+                                {t("pages:testDetail.attempts.item", { n: a.attemptNumber })}
+                              </span>
+                              {/* Doğru / Boş / Yanlış — "Cevaplarım" gösterimi */}
+                              <span
+                                className="flex items-center gap-2 text-xs font-medium"
+                                aria-label={t("pages:testDetail.attempts.counts", {
+                                  correct: a.correct ?? 0,
+                                  empty: a.empty ?? 0,
+                                  wrong: a.wrong ?? 0,
+                                })}
+                              >
+                                <span className="inline-flex items-center gap-0.5 text-emerald-600" aria-hidden="true">
+                                  <CheckCircle className="w-3.5 h-3.5" />{a.correct ?? 0}
+                                </span>
+                                <span className="inline-flex items-center gap-0.5 text-slate-400" aria-hidden="true">
+                                  <Minus className="w-3.5 h-3.5" />{a.empty ?? 0}
+                                </span>
+                                <span className="inline-flex items-center gap-0.5 text-rose-500" aria-hidden="true">
+                                  <XCircle className="w-3.5 h-3.5" />{a.wrong ?? 0}
+                                </span>
+                              </span>
                             </span>
-                            <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-2 flex-shrink-0">
                               {a.submittedAt && (
-                                <span className="text-xs text-slate-400">
+                                <span className="text-xs text-slate-400 hidden sm:inline">
                                   {new Date(a.submittedAt).toLocaleDateString()}
                                 </span>
                               )}

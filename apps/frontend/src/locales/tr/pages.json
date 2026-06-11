@@ -149,6 +149,7 @@
     },
     "attempts": {
       "item": "{{n}}. Tur",
+      "counts": "Doğru {{correct}}, boş {{empty}}, yanlış {{wrong}}",
       "title": "Deneme Raporu",
       "reviewHint": "Çözümlerini görmek için bir denemeye dokunun.",
       "empty": "Bu test için tamamlanmış deneme bulunamadı."

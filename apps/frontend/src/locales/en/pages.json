@@ -149,6 +149,7 @@
     },
     "attempts": {
       "item": "Round {{n}}",
+      "counts": "{{correct}} correct, {{empty}} blank, {{wrong}} wrong",
       "title": "Attempt Report",
       "reviewHint": "Tap an attempt to view its solutions.",
       "empty": "No completed attempts for this test."

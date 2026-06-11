@@ -149,6 +149,7 @@
     },
     "attempts": {
       "item": "第 {{n}} 轮",
+      "counts": "正确 {{correct}}，空白 {{empty}}，错误 {{wrong}}",
       "title": "作答报告",
       "reviewHint": "点按某次作答以查看其解析。",
       "empty": "该测验暂无已完成的作答。"
