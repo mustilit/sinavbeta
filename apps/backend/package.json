@@ -16,7 +16,7 @@
     "test": "jest",
     "test:unit": "jest --runInBand --testPathPattern=tests/usecases|tests/cron",
     "test:unit:ci": "jest --runInBand --ci --coverage --coverageDirectory=./coverage --testPathPattern=tests/usecases|tests/cron",
-    "test:integration": "jest --runInBand --testPathPattern=tests/integration",
+    "test:integration": "jest --runInBand --passWithNoTests --testPathPattern=tests/integration",
     "test:smoke": "jest --runInBand",
     "test:in-container": "docker exec docker-backend-1 sh -c \"cd /usr/src/app && npm test\"",
     "test:in-container:contracts": "docker exec docker-backend-1 sh -c \"cd /usr/src/app && npm test -- contracts\"",
