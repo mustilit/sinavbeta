@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SensitiveProfileOtpDialog from "@/components/settings/SensitiveProfileOtpDialog";
 import { toast } from "sonner";
-import { User, Save, Phone, Globe, Linkedin, Undo2, Clock, CheckCircle2, XCircle, ShoppingBag, Filter, GraduationCap, AlertCircle, MessageSquare, Camera, Lock, KeyRound, Eye, EyeOff } from "lucide-react";
+import { User, Save, Phone, Globe, Linkedin, Undo2, Clock, CheckCircle2, XCircle, ShoppingBag, Filter, GraduationCap, AlertCircle, MessageSquare, Camera, Lock, KeyRound, Eye, EyeOff, Monitor } from "lucide-react";
 import RefundRequestModal from "@/components/refund/RefundRequestModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -242,6 +242,30 @@ export default function ProfileSettings() {
       return;
     }
     changePasswordMutation.mutate();
+  };
+
+  // ── Onaylı cihazlar (Güvenlik) ──
+  const { data: devices = [] } = useQuery({
+    queryKey: ["myDevices"],
+    queryFn: () => auth.listDevices(),
+  });
+  const revokeDeviceMutation = useMutation({
+    mutationFn: (deviceId) => auth.revokeDevice(deviceId),
+    onSuccess: () => {
+      toast.success(t("pages:profileSettings.security.devices.revoked"));
+      queryClient.invalidateQueries({ queryKey: ["myDevices"] });
+    },
+    onError: () => toast.error(t("pages:profileSettings.security.devices.revokeFailed")),
+  });
+  // userAgent'tan okunabilir cihaz etiketi (tarayıcı · işletim sistemi).
+  const deviceLabel = (ua) => {
+    if (!ua) return t("pages:profileSettings.security.devices.unknown");
+    const browser = /edg/i.test(ua) ? "Edge" : /chrome/i.test(ua) ? "Chrome"
+      : /firefox/i.test(ua) ? "Firefox" : /safari/i.test(ua) ? "Safari" : "Tarayıcı";
+    const os = /windows/i.test(ua) ? "Windows" : /android/i.test(ua) ? "Android"
+      : /iphone|ipad|ios/i.test(ua) ? "iOS" : /mac/i.test(ua) ? "macOS"
+      : /linux/i.test(ua) ? "Linux" : "";
+    return os ? `${browser} · ${os}` : browser;
   };
 
   // OTP dialog başarılı olduğunda çağrılır — initial state'i taze formData'ya çek
@@ -796,6 +820,49 @@ export default function ProfileSettings() {
                   : t("pages:profileSettings.security.submit")}
               </Button>
             </form>
+
+            {/* Onaylı cihazlar — listele + onayı kaldır (işlem geçmişi DB'de, ekranda değil) */}
+            <div className="mt-10 max-w-md">
+              <h3 className="text-base font-semibold text-slate-900 mb-1">
+                {t("pages:profileSettings.security.devices.title")}
+              </h3>
+              <p className="text-sm text-slate-500 mb-4">
+                {t("pages:profileSettings.security.devices.desc")}
+              </p>
+              {devices.length === 0 ? (
+                <p className="text-sm text-slate-400">{t("pages:profileSettings.security.devices.empty")}</p>
+              ) : (
+                <ul className="space-y-3">
+                  {devices.map((d) => (
+                    <li key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                          <Monitor className="w-4 h-4 text-slate-500" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-800 truncate">{deviceLabel(d.userAgent)}</p>
+                          <p className="text-xs text-slate-400 truncate">
+                            {d.ip ? `${d.ip} · ` : ""}
+                            {t("pages:profileSettings.security.devices.lastSeen", {
+                              date: new Date(d.lastSeenAt).toLocaleDateString(),
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-shrink-0 text-rose-600 border-rose-200 hover:bg-rose-50"
+                        onClick={() => revokeDeviceMutation.mutate(d.id)}
+                        disabled={revokeDeviceMutation.isPending}
+                      >
+                        {t("pages:profileSettings.security.devices.revoke")}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

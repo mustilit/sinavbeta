@@ -1669,6 +1669,16 @@
       "appealFailed": "İtiraz gönderilemedi"
     },
     "security": {
+      "devices": {
+        "title": "Onaylı Cihazlar",
+        "desc": "Hesabına giriş için onayladığın cihazlar. Tanımadığın bir cihazın onayını kaldır.",
+        "empty": "Onaylı cihaz yok.",
+        "revoke": "Onayı Kaldır",
+        "revoked": "Cihaz onayı kaldırıldı",
+        "revokeFailed": "İşlem başarısız, tekrar deneyin",
+        "lastSeen": "Son görülme: {{date}}",
+        "unknown": "Bilinmeyen cihaz"
+      },
       "title": "Şifre Değiştir",
       "description": "Hesabının şifresini güncelle. Devam etmek için mevcut şifreni doğrulaman gerekir.",
       "currentPassword": "Mevcut Şifre",

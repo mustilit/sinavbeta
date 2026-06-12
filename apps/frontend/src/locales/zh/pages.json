@@ -1669,6 +1669,16 @@
       "appealFailed": "申诉提交失败"
     },
     "security": {
+      "devices": {
+        "title": "已批准的设备",
+        "desc": "你已批准用于登录账户的设备。撤销任何你不认识的设备。",
+        "empty": "没有已批准的设备。",
+        "revoke": "撤销",
+        "revoked": "已撤销设备批准",
+        "revokeFailed": "操作失败，请重试",
+        "lastSeen": "最近活跃：{{date}}",
+        "unknown": "未知设备"
+      },
       "title": "修改密码",
       "description": "更新您的账户密码。您需要验证当前密码才能继续。",
       "currentPassword": "当前密码",

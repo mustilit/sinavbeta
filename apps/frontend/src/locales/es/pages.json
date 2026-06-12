@@ -1672,6 +1672,16 @@
       "appealFailed": "No se pudo enviar la apelación"
     },
     "security": {
+      "devices": {
+        "title": "Dispositivos aprobados",
+        "desc": "Dispositivos que aprobaste para iniciar sesión. Revoca cualquiera que no reconozcas.",
+        "empty": "No hay dispositivos aprobados.",
+        "revoke": "Revocar",
+        "revoked": "Aprobación del dispositivo revocada",
+        "revokeFailed": "La acción falló, inténtalo de nuevo",
+        "lastSeen": "Última vez: {{date}}",
+        "unknown": "Dispositivo desconocido"
+      },
       "title": "Cambiar contraseña",
       "description": "Actualiza la contraseña de tu cuenta. Debes verificar tu contraseña actual para continuar.",
       "currentPassword": "Contraseña actual",

@@ -1669,6 +1669,16 @@
       "appealFailed": "Appeal could not be submitted"
     },
     "security": {
+      "devices": {
+        "title": "Approved Devices",
+        "desc": "Devices you've approved to sign in to your account. Revoke any device you don't recognize.",
+        "empty": "No approved devices.",
+        "revoke": "Revoke",
+        "revoked": "Device approval revoked",
+        "revokeFailed": "Action failed, please try again",
+        "lastSeen": "Last seen: {{date}}",
+        "unknown": "Unknown device"
+      },
       "title": "Change Password",
       "description": "Update your account password. You must verify your current password to continue.",
       "currentPassword": "Current Password",

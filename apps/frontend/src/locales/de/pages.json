@@ -1669,6 +1669,16 @@
       "appealFailed": "Einspruch konnte nicht gesendet werden"
     },
     "security": {
+      "devices": {
+        "title": "Genehmigte Geräte",
+        "desc": "Geräte, die du zum Anmelden freigegeben hast. Entziehe die Freigabe für unbekannte Geräte.",
+        "empty": "Keine genehmigten Geräte.",
+        "revoke": "Freigabe entziehen",
+        "revoked": "Gerätefreigabe entzogen",
+        "revokeFailed": "Aktion fehlgeschlagen, bitte erneut versuchen",
+        "lastSeen": "Zuletzt gesehen: {{date}}",
+        "unknown": "Unbekanntes Gerät"
+      },
       "title": "Passwort ändern",
       "description": "Aktualisiere dein Kontopasswort. Du musst dein aktuelles Passwort bestätigen, um fortzufahren.",
       "currentPassword": "Aktuelles Passwort",

@@ -114,6 +114,8 @@ enum AuditAction {
   SUSPICIOUS_RATE_LIMIT
   // Canlı oturum kapatma saldırısı koruması — aynı cihaz/IP kotası aşımı (JoinLiveSessionUseCase)
   DEVICE_QUOTA_EXCEEDED
+  // Kullanıcı güvenlik ayarlarından bir cihazın onayını (trusted) kaldırdı
+  DEVICE_TRUST_REVOKED
   AUTH_MFA_ENABLED
   AUTH_MFA_DISABLED
   AUTH_MFA_RECOVERY_USED

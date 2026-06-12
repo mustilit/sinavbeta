@@ -44,6 +44,7 @@ import { AdPackagesController } from './controllers/ad-packages.controller';
 import { MeRefundsController } from './controllers/me.refunds.controller';
 import { MeObjectionsController } from './controllers/me.objections.controller';
 import { MePurchasesController } from './controllers/me.purchases.controller';
+import { MeDevicesController } from './controllers/me.devices.controller';
 import { MePreferencesController } from './controllers/me.preferences.controller';
 import { AdminUsersController } from './controllers/admin.users.controller';
 import { SeedService } from './bootstrap/seed.service';
@@ -319,7 +320,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     ContractsModule,
     ContentSafetyModule,
   ],
-  controllers: [RootController, HealthController, NotificationsController, AdminDlqController, TestsPerformanceController, HomeController, SiteController, ReviewsController, EducatorsController, FollowsController, CspReportController, AdminExamTypesController, AdminTopicsController, AdminEducatorsController, AdminUsersController, ObjectionsController, EducatorObjectionsController, AdminObjectionsController, AdminRefundsController, AdminSettingsController, AdminSiteSettingsController, AdminContractsController, AdminAuditController, AdminAdPackagesController, AdPackagesController, MeRefundsController, MeObjectionsController, MePurchasesController, AdminDiscountCodesController, MePreferencesController, MetricsController, AdminCandidatesController, AdminEducatorReportController, AdminCommissionController, AdminAdReportController, MePerformanceController, MeHeartbeatController, AdminWorkersController, PackagesController, UploadController, AttemptsController, EducatorRefundsController, AdminStatsController, LiveSessionsController,
+  controllers: [RootController, HealthController, NotificationsController, AdminDlqController, TestsPerformanceController, HomeController, SiteController, ReviewsController, EducatorsController, FollowsController, CspReportController, AdminExamTypesController, AdminTopicsController, AdminEducatorsController, AdminUsersController, ObjectionsController, EducatorObjectionsController, AdminObjectionsController, AdminRefundsController, AdminSettingsController, AdminSiteSettingsController, AdminContractsController, AdminAuditController, AdminAdPackagesController, AdPackagesController, MeRefundsController, MeObjectionsController, MePurchasesController, MeDevicesController, AdminDiscountCodesController, MePreferencesController, MetricsController, AdminCandidatesController, AdminEducatorReportController, AdminCommissionController, AdminAdReportController, MePerformanceController, MeHeartbeatController, AdminWorkersController, PackagesController, UploadController, AttemptsController, EducatorRefundsController, AdminStatsController, LiveSessionsController,
     // Aşama 6 — wire-up: yeni controller'lar
     WebhookController,
     BillingController,

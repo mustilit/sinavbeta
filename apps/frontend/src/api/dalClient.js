@@ -149,6 +149,15 @@ export const auth = {
     const { data } = await api.post('/auth/change-password', { currentPassword, newPassword });
     return data;
   },
+  // Onaylı cihazlar (Profil > Güvenlik): listele + onayı kaldır.
+  async listDevices() {
+    const { data } = await api.get('/me/devices');
+    return Array.isArray(data) ? data : [];
+  },
+  async revokeDevice(deviceId) {
+    const { data } = await api.delete(`/me/devices/${deviceId}`);
+    return data;
+  },
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('dal_auth');
