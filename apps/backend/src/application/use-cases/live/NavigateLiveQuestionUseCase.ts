@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { invalidateLiveStateCache } from './GetLiveSessionStateUseCase';
 
 export class NavigateLiveQuestionUseCase {
   async execute(sessionId: string, educatorId: string, direction: 'next' | 'prev') {
@@ -19,7 +20,7 @@ export class NavigateLiveQuestionUseCase {
     const total = session._count.questions;
     let nextIdx = session.currentQuestionIdx + (direction === 'next' ? 1 : -1);
     nextIdx = Math.max(0, Math.min(total - 1, nextIdx));
-    return prisma.liveSession.update({
+    const navigated = await prisma.liveSession.update({
       where: { id: sessionId },
       data: {
         currentQuestionIdx: nextIdx,
@@ -28,5 +29,7 @@ export class NavigateLiveQuestionUseCase {
         ...(session.status === 'ACTIVE' ? { showStats: false } : {}),
       },
     });
+    await invalidateLiveStateCache(sessionId);
+    return navigated;
   }
 }

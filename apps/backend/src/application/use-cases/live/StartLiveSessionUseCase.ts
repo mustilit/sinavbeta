@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { invalidateLiveStateCache } from './GetLiveSessionStateUseCase';
 
 /**
  * Canlı oturumu DRAFT → ACTIVE'ye geçirir.
@@ -43,9 +44,11 @@ export class StartLiveSessionUseCase {
       });
     }
 
-    return prisma.liveSession.update({
+    const started = await prisma.liveSession.update({
       where: { id: sessionId },
       data: { status: 'ACTIVE', startedAt: new Date(), currentQuestionIdx: 0 },
     });
+    await invalidateLiveStateCache(sessionId);
+    return started;
   }
 }

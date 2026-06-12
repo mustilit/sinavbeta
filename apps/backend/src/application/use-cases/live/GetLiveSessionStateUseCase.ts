@@ -1,27 +1,48 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { LiveActor, resolveLiveParticipant } from './resolveLiveParticipant';
+import { RedisCache } from '../../../infrastructure/cache/RedisCache';
+
+// Hot-path: /state polling. Ağır "session + tüm sorular/seçenekler + parent" sorgusu
+// her poll'da tekrar çekiliyordu (1000 katılımcı = 500 rps × ağır join → CPU darboğazı).
+// Kısa TTL'li Redis cache ile aynı saniyedeki tüm eşzamanlı poll'lar TEK DB sorgusu
+// paylaşır. isCorrect ifşası ve myAnswer per-request hesaplandığı için cache güvenli.
+let _stateCache: RedisCache | null = null;
+function stateCache(): RedisCache {
+  return (_stateCache ??= new RedisCache());
+}
+const SESSION_CACHE_TTL_SECONDS = 1; // navigasyon en fazla ~1s gecikir; yük büyük oranda düşer
 
 export class GetLiveSessionStateUseCase {
   async execute(sessionId: string, actor?: LiveActor) {
     // requesterId = kayıtlı kullanıcı id'si (eğitici tespiti + round1 lookup için).
     // Misafirde null; katılımcı çözümü guestToken ile resolveLiveParticipant'ta yapılır.
     const requesterId = actor?.userId ?? null;
-    const session = await prisma.liveSession.findUnique({
-      where: { id: sessionId },
-      include: {
-        tier: true,
-        questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } },
-        _count: { select: { participants: true } },
-        rounds: { select: { id: true, joinCode: true, status: true, roundNumber: true } },
-        parent: {
-          select: {
-            id: true,
-            questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } },
+
+    const cacheKey = `live:state:session:${sessionId}`;
+    // best-effort cache okuma; Redis yoksa/hata olursa DB'ye düşülür.
+    let session: any = null;
+    try { session = await stateCache().get<any>(cacheKey); } catch { /* DB fallback */ }
+    if (!session) {
+      session = await prisma.liveSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          tier: true,
+          questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } },
+          _count: { select: { participants: true } },
+          rounds: { select: { id: true, joinCode: true, status: true, roundNumber: true } },
+          parent: {
+            select: {
+              id: true,
+              questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } },
+            },
           },
         },
-      },
-    });
+      });
+      if (session) {
+        try { await stateCache().set(cacheKey, session, SESSION_CACHE_TTL_SECONDS); } catch { /* best-effort */ }
+      }
+    }
     if (!session) throw new AppError('SESSION_NOT_FOUND', 'Live session not found', 404);
     const isEducator = requesterId === session.educatorId;
     const activeThreshold = new Date(Date.now() - 30_000);
@@ -43,7 +64,7 @@ export class GetLiveSessionStateUseCase {
       });
       const countMap = new Map(answers.map((a) => [a.optionId, a._count.optionId]));
       stats = {
-        [currentQ.id]: currentQ.options.map((o) => ({
+        [currentQ.id]: currentQ.options.map((o: any) => ({
           optionId: o.id,
           content: o.content,
           count: countMap.get(o.id) ?? 0,
@@ -53,7 +74,7 @@ export class GetLiveSessionStateUseCase {
 
       // Tur 2'de aynı sıradaki Tur 1 sorusunun istatistikleri (varsa)
       if (session.roundNumber === 2 && session.parent) {
-        const r1Q = session.parent.questions.find((q) => q.order === currentQ.order);
+        const r1Q = session.parent.questions.find((q: any) => q.order === currentQ.order);
         if (r1Q) {
           const r1Answers = await prisma.liveAnswer.groupBy({
             by: ['optionId'],
@@ -64,7 +85,7 @@ export class GetLiveSessionStateUseCase {
           const r1Total = r1Answers.reduce((s, a) => s + a._count.optionId, 0);
           // Tur 1 ve Tur 2 option'larını order ile eşle; frontend için Tur 2'nin option id'siyle key'le
           parentStats = {
-            [currentQ.id]: currentQ.options.map((r2Opt, idx) => {
+            [currentQ.id]: currentQ.options.map((r2Opt: any, idx: number) => {
               const r1Opt = r1Q.options[idx];
               return {
                 optionId: r2Opt.id,
@@ -94,10 +115,10 @@ export class GetLiveSessionStateUseCase {
           const buildResults = async (qs: typeof session.questions, partId: string, sess: { id: string }) => {
             const allAnswers = await prisma.liveAnswer.findMany({ where: { participantId: partId, sessionId: sess.id } });
             const answerMap = new Map(allAnswers.map((a) => [a.questionId, a.optionId]));
-            const items = qs.map((q) => {
+            const items = qs.map((q: any) => {
               const chosenOptionId = answerMap.get(q.id) ?? null;
-              const chosenOption = chosenOptionId ? q.options.find((o) => o.id === chosenOptionId) : null;
-              const correctOption = q.options.find((o) => o.isCorrect)!;
+              const chosenOption = chosenOptionId ? q.options.find((o: any) => o.id === chosenOptionId) : null;
+              const correctOption = q.options.find((o: any) => o.isCorrect)!;
               return {
                 questionId: q.id,
                 questionContent: q.content,
@@ -108,7 +129,7 @@ export class GetLiveSessionStateUseCase {
                 isCorrect: chosenOptionId != null && chosenOptionId === correctOption?.id,
               };
             });
-            return { correct: items.filter((a) => a.isCorrect).length, total: qs.length, answers: items };
+            return { correct: items.filter((a: any) => a.isCorrect).length, total: qs.length, answers: items };
           };
           myResults = await buildResults(session.questions, participant.id, session);
           myResults.round1Results = null;
@@ -140,7 +161,7 @@ export class GetLiveSessionStateUseCase {
         content: currentQ.content,
         mediaUrl: currentQ.mediaUrl,
         order: currentQ.order,
-        options: currentQ.options.map((o) => ({
+        options: currentQ.options.map((o: any) => ({
           id: o.id, content: o.content, mediaUrl: (o as any).mediaUrl ?? null, order: o.order,
           isCorrect: isEducator || session.status === 'ENDED' ? o.isCorrect : undefined,
         })),
@@ -154,4 +175,13 @@ export class GetLiveSessionStateUseCase {
       round2: session.rounds?.[0] ?? null,
     };
   }
+}
+
+/**
+ * /state cache'ini geçersiz kıl — eğitici oturumu değiştiren bir aksiyon yaptığında
+ * (soru ilerlet/geri, istatistik aç/kapa, oturumu bitir) çağrılır; katılımcılar
+ * değişikliği bir sonraki poll'da TTL beklemeden görür. Best-effort.
+ */
+export async function invalidateLiveStateCache(sessionId: string): Promise<void> {
+  try { await stateCache().del(`live:state:session:${sessionId}`); } catch { /* best-effort */ }
 }

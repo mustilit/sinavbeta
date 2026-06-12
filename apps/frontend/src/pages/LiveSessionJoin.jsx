@@ -87,7 +87,9 @@ export default function LiveSessionJoin() {
     queryKey: ["liveJoinState", sessionId],
     queryFn: () => liveApi.getState(sessionId, guestToken),
     enabled: !!sessionId && hasIdentity,
-    refetchInterval: 2000,
+    // 3s: yüksek katılımda sunucu yükünü ~%33 azaltır. Backend /state cache + eğitici
+    // aksiyonlarında invalidation sayesinde soru geçişi yine ~anında yansır.
+    refetchInterval: 3000,
   });
 
   // Heartbeat — ping every 15s so educator can see active count

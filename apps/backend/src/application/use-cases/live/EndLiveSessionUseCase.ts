@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { invalidateLiveStateCache } from './GetLiveSessionStateUseCase';
 
 function generateJoinCode(): string {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -89,6 +90,7 @@ export class EndLiveSessionUseCase {
       }
     }
 
+    await invalidateLiveStateCache(sessionId);
     return ended;
   }
 }
