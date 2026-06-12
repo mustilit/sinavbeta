@@ -20,11 +20,18 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     review: {
       aggregate: jest.fn(async () => ({ _avg: { educatorRating: null }, _count: { _all: 0 } })),
     },
+    // pkgRows query (test packages per educator) — varsayılan boş; bazı testlerde override edilir
+    $queryRawUnsafe: jest.fn(async () => []),
+    // totalRows (cnt) + totalPurchases (cnt)
     $queryRaw: jest.fn(async () => [{ cnt: 0 }]),
   },
 }));
 
 import { GetEducatorPageUseCase } from '../../../src/application/use-cases/educator/GetEducatorPageUseCase';
+import { prisma } from '../../../src/infrastructure/database/prisma';
+
+const mockQueryRawUnsafe = prisma.$queryRawUnsafe as jest.Mock;
+const mockQueryRaw = prisma.$queryRaw as jest.Mock;
 
 function makeUsersRepo(educator: any) {
   return { findById: jest.fn().mockResolvedValue(educator) };
@@ -51,6 +58,12 @@ function makeEducator(overrides: Record<string, any> = {}) {
 }
 
 describe('GetEducatorPageUseCase', () => {
+  beforeEach(() => {
+    // Her test: pkgRows boş, cnt=0 ile başlar
+    mockQueryRawUnsafe.mockReset().mockResolvedValue([]);
+    mockQueryRaw.mockReset().mockResolvedValue([{ cnt: 0 }]);
+  });
+
   it('educatorId eksik ise INVALID_INPUT hatası fırlatır', async () => {
     const uc = new GetEducatorPageUseCase(makeUsersRepo(null) as any, makeExamsRepo() as any, makeStatsRepo() as any, makeReviewAgg() as any, makePrefsRepo() as any);
     await expect(uc.execute('')).rejects.toThrow('INVALID_INPUT');
@@ -105,10 +118,16 @@ describe('GetEducatorPageUseCase', () => {
   });
 
   it('testler ve sayfalama meta döner', async () => {
-    const tests = [
-      { id: 't1', title: 'Test 1', educatorId: 'edu-1', priceCents: 4900, currency: 'TRY', isTimed: false, questionCount: 10 },
+    // UC, test listesi için $queryRawUnsafe kullanır (examsRepo değil)
+    const pkgRows = [
+      { id: 't1', title: 'Test 1', educatorId: 'edu-1', priceCents: 4900, currency: 'TRY', examTypeId: null, questionCount: 10, ratingAvg: null, ratingCount: 0 },
     ];
-    const uc = new GetEducatorPageUseCase(makeUsersRepo(makeEducator()) as any, makeExamsRepo(tests, 1) as any, makeStatsRepo() as any, makeReviewAgg({ t1: { avg: 4.5, count: 10 } }) as any, makePrefsRepo() as any);
+    mockQueryRawUnsafe.mockResolvedValue(pkgRows);
+    // total count için $queryRaw → [{cnt:1}], purchases → [{cnt:0}]
+    mockQueryRaw
+      .mockResolvedValueOnce([{ cnt: 1 }])
+      .mockResolvedValueOnce([{ cnt: 0 }]);
+    const uc = new GetEducatorPageUseCase(makeUsersRepo(makeEducator()) as any, makeExamsRepo() as any, makeStatsRepo() as any, makeReviewAgg() as any, makePrefsRepo() as any);
     const result = await uc.execute('edu-1', { page: 1, limit: 20 });
     expect(result.tests.items).toHaveLength(1);
     expect(result.tests.items[0].title).toBe('Test 1');
@@ -117,9 +136,15 @@ describe('GetEducatorPageUseCase', () => {
   });
 
   it('stats tablosundan rating verisi alınır', async () => {
-    const tests = [{ id: 't1', title: 'Test 1', educatorId: 'edu-1', priceCents: 0, currency: 'TRY', isTimed: false, questionCount: 5 }];
-    const statsRows = [{ testId: 't1', ratingAvg: 4.8, ratingCount: 20 }];
-    const uc = new GetEducatorPageUseCase(makeUsersRepo(makeEducator()) as any, makeExamsRepo(tests, 1) as any, makeStatsRepo(statsRows) as any, makeReviewAgg() as any, makePrefsRepo() as any);
+    // UC, $queryRawUnsafe'den dönen pkgRows üzerinde ratingAvg/ratingCount alır
+    const pkgRows = [
+      { id: 't1', title: 'Test 1', educatorId: 'edu-1', priceCents: 0, currency: 'TRY', examTypeId: null, questionCount: 5, ratingAvg: 4.8, ratingCount: 20 },
+    ];
+    mockQueryRawUnsafe.mockResolvedValue(pkgRows);
+    mockQueryRaw
+      .mockResolvedValueOnce([{ cnt: 1 }])
+      .mockResolvedValueOnce([{ cnt: 0 }]);
+    const uc = new GetEducatorPageUseCase(makeUsersRepo(makeEducator()) as any, makeExamsRepo() as any, makeStatsRepo() as any, makeReviewAgg() as any, makePrefsRepo() as any);
     const result = await uc.execute('edu-1');
     expect(result.tests.items[0].ratingAvg).toBe(4.8);
     expect(result.tests.items[0].ratingCount).toBe(20);

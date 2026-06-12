@@ -9,7 +9,13 @@ jest.mock('../../src/infrastructure/database/prisma', () => ({
     review: {
       aggregate: jest.fn(async () => ({ _avg: { educatorRating: null }, _count: { _all: 0 } })),
     },
-    $queryRaw: jest.fn(async () => [{ cnt: 0 }]),
+    // pkgRows query (test packages per educator) — returns two fake packages for the happy-path test
+    $queryRawUnsafe: jest.fn(async () => [
+      { id: 't1', title: 'T1', educatorId: 'ed1', priceCents: 0, currency: 'TRY', examTypeId: null, questionCount: 1, ratingAvg: 4.5, ratingCount: 2 },
+      { id: 't2', title: 'T2', educatorId: 'ed1', priceCents: 0, currency: 'TRY', examTypeId: null, questionCount: 1, ratingAvg: null, ratingCount: 0 },
+    ]),
+    // totalRows (cnt) + totalPurchases (cnt)
+    $queryRaw: jest.fn(async () => [{ cnt: 2 }]),
   },
 }));
 

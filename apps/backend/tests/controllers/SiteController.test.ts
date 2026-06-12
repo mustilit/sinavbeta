@@ -58,7 +58,7 @@ describe('SiteController', () => {
   describe('getExamTypes', () => {
     it('aktif sınav türlerini döndürür', async () => {
       const result = await controller.getExamTypes();
-      expect(mockListExamTypes.execute).toHaveBeenCalledWith(true);
+      expect(mockListExamTypes.execute).toHaveBeenCalledWith(true, true);
       expect(result).toBeInstanceOf(Array);
     });
   });
