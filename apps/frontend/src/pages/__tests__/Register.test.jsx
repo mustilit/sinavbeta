@@ -96,7 +96,7 @@ function renderRegister(search = '') {
 }
 
 /** Form alanlarını doldur + "Kayıt Ol" → sözleşme popup'ını açar. */
-function fillAndOpenDialog({ email = 'test@example.com', username = 'testuser', password = 'pass123' } = {}) {
+function fillAndOpenDialog({ email = 'test@example.com', username = 'testuser', password = 'Pass1234' } = {}) {
   fireEvent.change(screen.getByLabelText(/e-posta/i), { target: { value: email } });
   fireEvent.change(screen.getByLabelText(/kullanıcı adı/i), { target: { value: username } });
   // İki şifre alanı var: "Şifre" + "Şifre tekrarı" — exact label ile ayırt et,
@@ -191,7 +191,7 @@ describe('Register sayfası', () => {
       expect(auth.register).toHaveBeenCalledWith(
         'test@example.com',
         'testuser',
-        'pass123',
+        'Pass1234',
         expect.objectContaining({
           acceptedTermsContractId: 'mock-terms-id',
           acceptedPrivacyContractId: 'mock-privacy-id',
@@ -208,7 +208,7 @@ describe('Register sayfası', () => {
     fireEvent.change(screen.getByLabelText(/^ad$/i), { target: { value: 'Ahmet' } });
     fireEvent.change(screen.getByLabelText(/^soyad$/i), { target: { value: 'Yılmaz' } });
     // Step 1 → İleri (eğitici akışında step 2'ye geçer, sözleşme adımına değil).
-    fillAndOpenDialog({ email: 'edu@example.com', username: 'eduuser', password: 'pass123' });
+    fillAndOpenDialog({ email: 'edu@example.com', username: 'eduuser', password: 'Pass1234' });
 
     // Step 2: CV yükleme (zorunlu) + en az bir uzmanlık seçimi (zorunlu).
     const specCheckbox = await screen.findByRole('checkbox', { name: 'YKS' });
@@ -234,7 +234,7 @@ describe('Register sayfası', () => {
       expect(auth.registerEducator).toHaveBeenCalledWith(
         'edu@example.com',
         'eduuser',
-        'pass123',
+        'Pass1234',
         expect.objectContaining({
           acceptedEducatorContractId: 'mock-terms-id',
           acceptedPrivacyContractId: 'mock-privacy-id',
@@ -250,7 +250,7 @@ describe('Register sayfası', () => {
     });
     renderRegister();
 
-    fillAndOpenDialog({ email: 'existing@example.com', username: 'existinguser', password: 'pass123' });
+    fillAndOpenDialog({ email: 'existing@example.com', username: 'existinguser', password: 'Pass1234' });
     await acceptInDialog();
 
     await waitFor(() => {
