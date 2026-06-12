@@ -179,4 +179,77 @@ describe('StartTestAttemptUseCase', () => {
     expect(mockTestAttemptCreate).not.toHaveBeenCalled();
     expect(result.remainingSec).toBe(2700);
   });
+
+  // ─── attemptsResetAt senaryoları ─────────────────────────────────────────
+
+  it('cari turda SUBMITTED attempt varsa ATTEMPT_ALREADY_FINISHED fırlatır (attemptsResetAt sonrası başlamış)', async () => {
+    // resetAt 60 saniye önce; attempt resetAt'ten SONRA başladı → cari tur
+    const resetAt = new Date(Date.now() - 60_000);
+    mockPurchaseFindFirst.mockResolvedValue({
+      id: 'pur-1',
+      testId: 'test-1',
+      candidateId: 'u1',
+      attemptsResetAt: resetAt,
+    });
+    mockTestAttemptFindFirst.mockResolvedValue({
+      id: 'att-done',
+      testId: 'test-1',
+      candidateId: 'u1',
+      status: 'SUBMITTED',
+      startedAt: new Date(Date.now() - 30_000), // reset'ten SONRA başladı
+      attemptNumber: 1,
+    });
+    const uc = new StartTestAttemptUseCase(prismaClient);
+    await expect(uc.execute('test-1', 'u1', 't1')).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'ATTEMPT_ALREADY_FINISHED' }),
+    });
+  });
+
+  it('reset\'ten önce SUBMITTED attempt var → yeni attempt açılır ve attemptNumber artar', async () => {
+    // resetAt 5 saniye önce; attempt resetAt'ten ÖNCE başladı → eski tur, yeni açılabilir
+    const resetAt = new Date(Date.now() - 5_000);
+    mockPurchaseFindFirst.mockResolvedValue({
+      id: 'pur-1',
+      testId: 'test-1',
+      candidateId: 'u1',
+      attemptsResetAt: resetAt,
+    });
+    mockTestAttemptFindFirst.mockResolvedValue({
+      id: 'att-old',
+      testId: 'test-1',
+      candidateId: 'u1',
+      status: 'SUBMITTED',
+      startedAt: new Date(Date.now() - 60_000), // reset'ten ÖNCE başladı → eski tur
+      attemptNumber: 1,
+    });
+    mockTestAttemptCreate.mockResolvedValue({ id: 'att-new2', remainingSec: 86400, attemptNumber: 2 });
+    const uc = new StartTestAttemptUseCase(prismaClient);
+    const result = await uc.execute('test-1', 'u1', 't1');
+    expect(mockTestAttemptCreate).toHaveBeenCalledTimes(1);
+    expect(result.attemptId).toBe('att-new2');
+  });
+
+  it('cari turda IN_PROGRESS attempt → resume (yeni attempt açılmaz, remainingSec döner)', async () => {
+    // resetAt 10 saniye önce; mevcut IN_PROGRESS attempt resetAt'ten sonra başladı → cari tur
+    const resetAt = new Date(Date.now() - 10_000);
+    mockPurchaseFindFirst.mockResolvedValue({
+      id: 'pur-1',
+      testId: 'test-1',
+      candidateId: 'u1',
+      attemptsResetAt: resetAt,
+    });
+    mockTestAttemptFindFirst.mockResolvedValue({
+      id: 'att-active',
+      testId: 'test-1',
+      candidateId: 'u1',
+      status: 'IN_PROGRESS',
+      startedAt: new Date(Date.now() - 5_000), // reset'ten SONRA başladı → cari tur
+      remainingSec: 1500,
+      lastResumedAt: new Date(),
+    });
+    const uc = new StartTestAttemptUseCase(prismaClient);
+    const result = await uc.execute('test-1', 'u1', 't1');
+    expect(mockTestAttemptCreate).not.toHaveBeenCalled();
+    expect(result.remainingSec).toBe(1500);
+  });
 });

@@ -62,21 +62,21 @@ describe('ResetPasswordUseCase', () => {
   it('geçerli token ve şifre ile şifreyi günceller', async () => {
     const deps = makeResetDeps(VALID_USER);
     const uc = new ResetPasswordUseCase(deps.userRepo as any, deps.pwService as any);
-    await uc.execute('valid-token', 'newpassword');
+    await uc.execute('valid-token', 'Newpass123');
     expect(deps.userRepo.resetPassword).toHaveBeenCalledWith('u1', expect.stringContaining('hashed'));
   });
 
   it('token bulunamazsa INVALID_TOKEN fırlatır', async () => {
     const deps = makeResetDeps(null);
     const uc = new ResetPasswordUseCase(deps.userRepo as any, deps.pwService as any);
-    await expect(uc.execute('bad-token', 'newpassword')).rejects.toMatchObject({ message: expect.stringContaining('Geçersiz') });
+    await expect(uc.execute('bad-token', 'Newpass123')).rejects.toMatchObject({ message: expect.stringContaining('Geçersiz') });
   });
 
   it('token süresi dolmuşsa TOKEN_EXPIRED fırlatır', async () => {
     const expiredUser = { id: 'u1', passwordResetTokenExpiresAt: new Date(Date.now() - 1000) };
     const deps = makeResetDeps(expiredUser);
     const uc = new ResetPasswordUseCase(deps.userRepo as any, deps.pwService as any);
-    await expect(uc.execute('expired-token', 'newpassword')).rejects.toMatchObject({ message: expect.stringContaining('dolmuş') });
+    await expect(uc.execute('expired-token', 'Newpass123')).rejects.toMatchObject({ message: expect.stringContaining('dolmuş') });
   });
 
   it('şifre 8 karakterden kısaysa INVALID_INPUT fırlatır', async () => {

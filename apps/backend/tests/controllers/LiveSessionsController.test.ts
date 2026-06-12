@@ -3,6 +3,13 @@
  * Her use-case'in doğru argümanlarla çağrıldığını doğrular.
  */
 import { LiveSessionsController } from '../../src/nest/controllers/live-sessions.controller';
+import * as jwt from 'jsonwebtoken';
+
+// Katılımcı endpoint'leri (join/state/ping/answer) artık @Public + resolveActor:
+// kimlik req.user'dan DEĞİL, Authorization Bearer JWT'sinden (veya X-Live-Guest-Token)
+// çözülüyor. Testte gerçek bir JWT header'ı kurarız.
+const JWT_SECRET = process.env.JWT_SECRET || 'dal-secret-change-in-production';
+const authReq = (id: string) => ({ headers: { authorization: 'Bearer ' + jwt.sign({ sub: id }, JWT_SECRET) } });
 
 describe('LiveSessionsController', () => {
   let controller: LiveSessionsController;
@@ -192,37 +199,50 @@ describe('LiveSessionsController', () => {
   });
 
   describe('join', () => {
-    it('katılım kodu ile oturuma katılır (büyük harf)', async () => {
-      const req = { user: { id: 'cand-1' } };
-      const result = await controller.join('abc123', req as any);
-      // Controller join'e 3. arg olarak { ip } geçer (kapatma saldırısı limiti).
-      expect(mockJoinUC.execute).toHaveBeenCalledWith('ABC123', 'cand-1', { ip: null });
+    it('katılım kodu ile oturuma katılır (büyük harf, kayıtlı kullanıcı JWT)', async () => {
+      // join artık (code, body, req); kimlik JWT'den. Actor: { userId, displayName, ip }.
+      const result = await controller.join('abc123', undefined as any, authReq('cand-1') as any);
+      expect(mockJoinUC.execute).toHaveBeenCalledWith(
+        'ABC123',
+        expect.objectContaining({ userId: 'cand-1', displayName: null }),
+      );
+      expect(result).toHaveProperty('joined', true);
+    });
+
+    it('misafir (JWT yok) displayName ile katılır', async () => {
+      const result = await controller.join('abc123', { displayName: 'Misafir Ali' } as any, { headers: {} } as any);
+      expect(mockJoinUC.execute).toHaveBeenCalledWith(
+        'ABC123',
+        expect.objectContaining({ userId: undefined, displayName: 'Misafir Ali' }),
+      );
       expect(result).toHaveProperty('joined', true);
     });
   });
 
   describe('ping', () => {
-    it('heartbeat gönderir', async () => {
-      const req = { user: { id: 'cand-1' } };
-      await controller.ping('ls-1', req as any);
-      expect(mockPingUC.execute).toHaveBeenCalledWith('ls-1', 'cand-1');
+    it('heartbeat gönderir (actor ile)', async () => {
+      await controller.ping('ls-1', authReq('cand-1') as any);
+      expect(mockPingUC.execute).toHaveBeenCalledWith('ls-1', expect.objectContaining({ userId: 'cand-1' }));
     });
   });
 
   describe('answer', () => {
-    it('cevabı kaydeder', async () => {
+    it('cevabı kaydeder (actor ile)', async () => {
       const body = { questionId: 'lq-1', optionId: 'lo-1' };
-      const req = { user: { id: 'cand-1' } };
-      await controller.answer('ls-1', body, req as any);
-      expect(mockAnswerUC.execute).toHaveBeenCalledWith('ls-1', 'cand-1', 'lq-1', 'lo-1');
+      await controller.answer('ls-1', body, authReq('cand-1') as any);
+      expect(mockAnswerUC.execute).toHaveBeenCalledWith(
+        'ls-1',
+        expect.objectContaining({ userId: 'cand-1' }),
+        'lq-1',
+        'lo-1',
+      );
     });
   });
 
   describe('state', () => {
-    it('oturum durumunu döndürür', async () => {
-      const req = { user: { id: 'cand-1' } };
-      const result = await controller.state('ls-1', req as any);
-      expect(mockStateUC.execute).toHaveBeenCalledWith('ls-1', 'cand-1');
+    it('oturum durumunu döndürür (actor ile)', async () => {
+      const result = await controller.state('ls-1', authReq('cand-1') as any);
+      expect(mockStateUC.execute).toHaveBeenCalledWith('ls-1', expect.objectContaining({ userId: 'cand-1' }));
       expect(result).toHaveProperty('status', 'ACTIVE');
     });
   });

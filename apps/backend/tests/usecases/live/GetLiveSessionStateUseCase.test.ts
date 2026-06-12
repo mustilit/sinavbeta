@@ -96,14 +96,14 @@ describe('GetLiveSessionStateUseCase', () => {
 
   it('educator isteğinde currentQuestion.options isCorrect içerir', async () => {
     const uc = new GetLiveSessionStateUseCase();
-    const result = await uc.execute('sess-1', 'edu-1'); // educator requesterId
+    const result = await uc.execute('sess-1', { userId: 'edu-1' }); // educator requesterId
     expect(result.currentQuestion).not.toBeNull();
     expect(result.currentQuestion!.options[0]).toHaveProperty('isCorrect');
   });
 
   it('candidate isteğinde ACTIVE sırasında isCorrect undefined', async () => {
     const uc = new GetLiveSessionStateUseCase();
-    const result = await uc.execute('sess-1', 'cand-1'); // candidate
+    const result = await uc.execute('sess-1', { userId: 'cand-1' }); // candidate
     expect(result.currentQuestion!.options[0].isCorrect).toBeUndefined();
   });
 
@@ -130,7 +130,7 @@ describe('GetLiveSessionStateUseCase', () => {
     mockParticipantFindUnique.mockResolvedValue(participant);
     mockLiveAnswerFindMany.mockResolvedValue([{ questionId: 'q1', optionId: 'o1' }]);
     const uc = new GetLiveSessionStateUseCase();
-    const result = await uc.execute('sess-1', 'cand-1');
+    const result = await uc.execute('sess-1', { userId: 'cand-1' });
     expect(result.myResults).not.toBeNull();
     expect(result.myResults.total).toBe(1);
     expect(result.myResults.correct).toBe(1);

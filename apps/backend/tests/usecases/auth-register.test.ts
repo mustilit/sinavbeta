@@ -17,7 +17,7 @@ function makePasswordService() {
 describe('RegisterUseCase', () => {
   it('yeni CANDIDATE kullanıcı oluşturur, public bilgi döner (fallback path: pendingRepo yok)', async () => {
     const uc = new RegisterUseCase(makeUserRepo() as any, makePasswordService() as any);
-    const result = await uc.execute({ email: 'New@Test.COM', username: 'newuser', password: 'securepass' });
+    const result = await uc.execute({ email: 'New@Test.COM', username: 'newuser', password: 'Securepass1' });
     expect((result as any).email).toBe('new@test.com'); // normalize
     expect((result as any).role).toBe('CANDIDATE');
     expect((result as any).status).toBe('ACTIVE');
@@ -26,14 +26,14 @@ describe('RegisterUseCase', () => {
 
   it('passwordHash plain metin şifresini içermez', async () => {
     const uc = new RegisterUseCase(makeUserRepo() as any, makePasswordService() as any);
-    const result = await uc.execute({ email: 'a@b.com', username: 'u', password: 'mypass' });
+    const result = await uc.execute({ email: 'a@b.com', username: 'u', password: 'Securepass1' });
     expect((result as any).passwordHash).toBeUndefined();
   });
 
   it('e-posta küçük harfe çevrilir', async () => {
     const repo = makeUserRepo();
     const uc = new RegisterUseCase(repo as any, makePasswordService() as any);
-    await uc.execute({ email: 'UPPER@CASE.COM', username: 'u', password: 'pass12345' });
+    await uc.execute({ email: 'UPPER@CASE.COM', username: 'u', password: 'Securepass1' });
     const savedUser = repo.save.mock.calls[0][0];
     expect(savedUser.email).toBe('upper@case.com');
   });
@@ -41,21 +41,21 @@ describe('RegisterUseCase', () => {
   it('şifre hash\'lenerek kaydedilir', async () => {
     const pwSvc = makePasswordService();
     const uc = new RegisterUseCase(makeUserRepo() as any, pwSvc as any);
-    await uc.execute({ email: 'x@x.com', username: 'u', password: 'mypassword' });
-    expect(pwSvc.hash).toHaveBeenCalledWith('mypassword');
+    await uc.execute({ email: 'x@x.com', username: 'u', password: 'Securepass1' });
+    expect(pwSvc.hash).toHaveBeenCalledWith('Securepass1');
   });
 
   it('sunucu tarafında UUID üretilir', async () => {
     const repo = makeUserRepo();
     const uc = new RegisterUseCase(repo as any, makePasswordService() as any);
-    await uc.execute({ email: 'x@x.com', username: 'u', password: 'pass' });
+    await uc.execute({ email: 'x@x.com', username: 'u', password: 'Securepass1' });
     const savedUser = repo.save.mock.calls[0][0];
     expect(savedUser.id).toMatch(/^[0-9a-f-]{36}$/i);
   });
 
   it('createdAt alanı döner', async () => {
     const uc = new RegisterUseCase(makeUserRepo() as any, makePasswordService() as any);
-    const result = await uc.execute({ email: 'x@x.com', username: 'u', password: 'pass' });
+    const result = await uc.execute({ email: 'x@x.com', username: 'u', password: 'Securepass1' });
     expect((result as any).createdAt).toBeInstanceOf(Date);
   });
 
@@ -91,7 +91,7 @@ describe('RegisterUseCase', () => {
 
     it('contract repo DI verilmediğinde acceptance kontrolü atlanır (backward compat)', async () => {
       const uc = new RegisterUseCase(makeUserRepo() as any, makePasswordService() as any);
-      const result = await uc.execute({ email: 'x@x.com', username: 'u', password: 'p12345' });
+      const result = await uc.execute({ email: 'x@x.com', username: 'u', password: 'Securepass1' });
       expect((result as any).email).toBe('x@x.com');
     });
 
@@ -143,7 +143,7 @@ describe('RegisterUseCase', () => {
         {
           email: 'aday@test.com',
           username: 'aday',
-          password: 'p12345',
+          password: 'Securepass1',
           acceptedTermsContractId: 'ctr-candidate-1',
           acceptedPrivacyContractId: 'ctr-privacy-1',
         },
@@ -216,7 +216,7 @@ describe('RegisterUseCase', () => {
         undefined,
         pendingRepo as any,
       );
-      const result = await uc.execute({ email: 'test@new.com', username: 'testnew', password: 'pw123' });
+      const result = await uc.execute({ email: 'test@new.com', username: 'testnew', password: 'Securepass1' });
       expect(result.message).toBe('Doğrulama maili gönderildi');
       expect(result.email).toBe('test@new.com');
       expect(userRepo.save).not.toHaveBeenCalled();
@@ -271,9 +271,9 @@ describe('RegisterUseCase', () => {
         undefined,
         pendingRepo as any,
       );
-      await uc.execute({ email: 'retry@x.com', username: 'retryuser', password: 'pw' });
+      await uc.execute({ email: 'retry@x.com', username: 'retryuser', password: 'Securepass1' });
       // İkinci deneme — aynı email/username (re-issue)
-      await uc.execute({ email: 'retry@x.com', username: 'retryuser', password: 'pw2' });
+      await uc.execute({ email: 'retry@x.com', username: 'retryuser', password: 'Securepass2' });
       expect(pendingRepo.deleteByEmail).toHaveBeenCalledTimes(2);
       expect(pendingRepo.create).toHaveBeenCalledTimes(2);
     });

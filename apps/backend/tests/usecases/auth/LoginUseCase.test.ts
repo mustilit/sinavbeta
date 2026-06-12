@@ -158,6 +158,49 @@ describe('LoginUseCase', () => {
     });
   });
 
+  describe('cihaz kapısı (notifyDevice)', () => {
+    const makeNotifyDevice = (requiresVerification: boolean) => ({
+      execute: jest.fn().mockResolvedValue({ requiresVerification }),
+    });
+
+    it('ADMIN + notifyDevice requiresVerification:true → DEVICE_VERIFICATION_REQUIRED, token verilmez', async () => {
+      const deps = buildDeps({
+        userRepository: { findByEmail: jest.fn().mockResolvedValue(makeUser({ role: 'ADMIN' })) },
+      });
+      const notifyDevice = makeNotifyDevice(true);
+      const uc = new LoginUseCase(
+        deps.userRepository, deps.passwordService, deps.jwtService, deps.audit, notifyDevice as any,
+      );
+      await expect(uc.execute({ email: 'admin@b.com', password: 'pw' })).rejects.toThrow('DEVICE_VERIFICATION_REQUIRED');
+      expect(deps.jwtService.sign).not.toHaveBeenCalled();
+    });
+
+    it('CANDIDATE + notifyDevice requiresVerification:true → giriş engellenmez, token döner', async () => {
+      const deps = buildDeps({
+        userRepository: { findByEmail: jest.fn().mockResolvedValue(makeUser({ role: 'CANDIDATE' })) },
+      });
+      const notifyDevice = makeNotifyDevice(true);
+      const uc = new LoginUseCase(
+        deps.userRepository, deps.passwordService, deps.jwtService, deps.audit, notifyDevice as any,
+      );
+      const result = await uc.execute({ email: 'cand@b.com', password: 'pw' });
+      expect((result as any).token).toBe('signed.jwt.token');
+    });
+
+    it('ADMIN + notifyDevice requiresVerification:false → normal giriş', async () => {
+      const deps = buildDeps({
+        userRepository: { findByEmail: jest.fn().mockResolvedValue(makeUser({ role: 'ADMIN' })) },
+      });
+      const notifyDevice = makeNotifyDevice(false);
+      const uc = new LoginUseCase(
+        deps.userRepository, deps.passwordService, deps.jwtService, deps.audit, notifyDevice as any,
+      );
+      const result = await uc.execute({ email: 'admin@b.com', password: 'pw' });
+      expect((result as any).token).toBe('signed.jwt.token');
+      expect(mockPrisma.$executeRaw).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('2FA gate', () => {
     it('sistem 2FA açık + user 2FA açık → pendingMfaToken döner (sessionId YAZILMAZ)', async () => {
       mockPrisma.$queryRaw

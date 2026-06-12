@@ -50,12 +50,12 @@ describe('ChangePasswordUseCase', () => {
     expect(deps.pwService.hash).not.toHaveBeenCalled();
   });
 
-  it('yeni şifre 8 karakterden kısa → PASSWORD_TOO_SHORT (DB hiç sorgulanmaz)', async () => {
+  it('yeni şifre politikaya uymuyorsa → WEAK_PASSWORD (DB hiç sorgulanmaz)', async () => {
     const deps = makeDeps({ user: { ...USER } });
     const uc = new ChangePasswordUseCase(deps.userRepo as any, deps.pwService as any);
 
     await expect(uc.execute('u1', 'currentPass1', 'short')).rejects.toMatchObject({
-      code: 'PASSWORD_TOO_SHORT',
+      code: 'WEAK_PASSWORD',
       status: 400,
     });
     expect(deps.userRepo.findById).not.toHaveBeenCalled();

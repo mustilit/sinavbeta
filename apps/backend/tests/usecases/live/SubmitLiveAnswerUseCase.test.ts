@@ -67,7 +67,7 @@ describe('SubmitLiveAnswerUseCase', () => {
   it('oturum bulunamazsa SESSION_NOT_FOUND fırlatır', async () => {
     mockPrisma.liveSession.findUnique.mockResolvedValue(null);
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-missing', 'u1', 'q1', 'opt-1')).rejects.toMatchObject({
+    await expect(uc.execute('sess-missing', { userId: 'u1' }, 'q1', 'opt-1')).rejects.toMatchObject({
       code: 'SESSION_NOT_FOUND',
     });
   });
@@ -75,19 +75,19 @@ describe('SubmitLiveAnswerUseCase', () => {
   it('oturum DRAFT → SESSION_NOT_ACTIVE fırlatır', async () => {
     mockPrisma.liveSession.findUnique.mockResolvedValue(makeSession({ status: 'DRAFT' }));
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-1', 'u1', 'q1', 'opt-1')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-1')).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('oturum ENDED → SESSION_NOT_ACTIVE fırlatır', async () => {
     mockPrisma.liveSession.findUnique.mockResolvedValue(makeSession({ status: 'ENDED' }));
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-1', 'u1', 'q1', 'opt-1')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-1')).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('soru bulunamazsa QUESTION_NOT_FOUND fırlatır', async () => {
     mockPrisma.liveQuestion.findUnique.mockResolvedValue(null);
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-1', 'u1', 'q-missing', 'opt-1')).rejects.toMatchObject({
+    await expect(uc.execute('sess-1', { userId: 'u1' }, 'q-missing', 'opt-1')).rejects.toMatchObject({
       code: 'QUESTION_NOT_FOUND',
     });
   });
@@ -95,7 +95,7 @@ describe('SubmitLiveAnswerUseCase', () => {
   it('başka oturumun sorusu → QUESTION_NOT_FOUND fırlatır', async () => {
     mockPrisma.liveQuestion.findUnique.mockResolvedValue(makeQuestion({ sessionId: 'other-sess' }));
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-1', 'u1', 'q1', 'opt-1')).rejects.toMatchObject({
+    await expect(uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-1')).rejects.toMatchObject({
       code: 'QUESTION_NOT_FOUND',
     });
   });
@@ -104,13 +104,13 @@ describe('SubmitLiveAnswerUseCase', () => {
     // currentQuestionIdx = 0, ama soru order = 2
     mockPrisma.liveQuestion.findUnique.mockResolvedValue(makeQuestion({ order: 2 }));
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-1', 'u1', 'q1', 'opt-1')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-1')).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('seçenek bulunamazsa OPTION_NOT_FOUND fırlatır', async () => {
     mockPrisma.liveOption.findUnique.mockResolvedValue(null);
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-1', 'u1', 'q1', 'opt-missing')).rejects.toMatchObject({
+    await expect(uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-missing')).rejects.toMatchObject({
       code: 'OPTION_NOT_FOUND',
     });
   });
@@ -118,7 +118,7 @@ describe('SubmitLiveAnswerUseCase', () => {
   it('başka sorunun seçeneği → OPTION_NOT_FOUND fırlatır', async () => {
     mockPrisma.liveOption.findUnique.mockResolvedValue({ id: 'opt-1', questionId: 'other-q' });
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-1', 'u1', 'q1', 'opt-1')).rejects.toMatchObject({
+    await expect(uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-1')).rejects.toMatchObject({
       code: 'OPTION_NOT_FOUND',
     });
   });
@@ -126,21 +126,21 @@ describe('SubmitLiveAnswerUseCase', () => {
   it('katılımcı oturuma katılmamışsa NOT_JOINED fırlatır', async () => {
     mockPrisma.liveParticipant.findUnique.mockResolvedValue(null);
     const uc = new SubmitLiveAnswerUseCase();
-    await expect(uc.execute('sess-1', 'u-nojoined', 'q1', 'opt-1')).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(uc.execute('sess-1', { userId: 'u-nojoined' }, 'q1', 'opt-1')).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('başarı: liveAnswer.upsert çağrılır, cevap döner', async () => {
     const uc = new SubmitLiveAnswerUseCase();
-    const result = await uc.execute('sess-1', 'u1', 'q1', 'opt-1');
+    const result = await uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-1');
     expect(mockPrisma.liveAnswer.upsert).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ id: 'ans-1' });
   });
 
   it('aynı soru ikinci kez cevaplandığında upsert update yolu izler', async () => {
     const uc = new SubmitLiveAnswerUseCase();
-    await uc.execute('sess-1', 'u1', 'q1', 'opt-1');
+    await uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-1');
     // upsert yeniden çağrılabilir (ikinci cevap)
-    await uc.execute('sess-1', 'u1', 'q1', 'opt-1');
+    await uc.execute('sess-1', { userId: 'u1' }, 'q1', 'opt-1');
     expect(mockPrisma.liveAnswer.upsert).toHaveBeenCalledTimes(2);
   });
 });

@@ -27,14 +27,14 @@ describe('PingLiveSessionUseCase', () => {
   it('katılımcı yoksa NOT_JOINED fırlatır', async () => {
     mockPrisma.liveParticipant.findUnique.mockResolvedValue(null);
     const uc = new PingLiveSessionUseCase();
-    await expect(uc.execute('sess-1', 'user-1')).rejects.toMatchObject({ code: 'NOT_JOINED' });
+    await expect(uc.execute('sess-1', { userId: 'user-1' })).rejects.toMatchObject({ code: 'NOT_JOINED' });
   });
 
   it('katılımcı varsa lastSeenAt update çağrılır', async () => {
-    mockPrisma.liveParticipant.findUnique.mockResolvedValue({ id: 'part-1' });
+    mockPrisma.liveParticipant.findUnique.mockResolvedValue({ id: 'part-1', sessionId: 'sess-1' });
     mockPrisma.liveParticipant.update.mockResolvedValue({ id: 'part-1' });
     const uc = new PingLiveSessionUseCase();
-    await uc.execute('sess-1', 'user-1');
+    await uc.execute('sess-1', { userId: 'user-1' });
     expect(mockPrisma.liveParticipant.update).toHaveBeenCalledWith({
       where: { id: 'part-1' },
       data: expect.objectContaining({ lastSeenAt: expect.any(Date) }),
@@ -42,17 +42,17 @@ describe('PingLiveSessionUseCase', () => {
   });
 
   it('başarılı ping sonucu ok:true döner', async () => {
-    mockPrisma.liveParticipant.findUnique.mockResolvedValue({ id: 'part-1' });
+    mockPrisma.liveParticipant.findUnique.mockResolvedValue({ id: 'part-1', sessionId: 'sess-1' });
     mockPrisma.liveParticipant.update.mockResolvedValue({ id: 'part-1' });
     const uc = new PingLiveSessionUseCase();
-    const result = await uc.execute('sess-1', 'user-1');
+    const result = await uc.execute('sess-1', { userId: 'user-1' });
     expect(result.ok).toBe(true);
   });
 
   it('sessionId ve userId doğru şekilde iletilir', async () => {
     mockPrisma.liveParticipant.findUnique.mockResolvedValue(null);
     const uc = new PingLiveSessionUseCase();
-    await expect(uc.execute('sess-xyz', 'user-abc')).rejects.toBeTruthy();
+    await expect(uc.execute('sess-xyz', { userId: 'user-abc' })).rejects.toBeTruthy();
     expect(mockPrisma.liveParticipant.findUnique).toHaveBeenCalledWith({
       where: { sessionId_userId: { sessionId: 'sess-xyz', userId: 'user-abc' } },
     });
