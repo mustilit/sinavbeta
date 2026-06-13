@@ -11,6 +11,9 @@ type Input = {
   questionId?: string | null;
   testId?: string | null;
   attemptId?: string | null;
+  // Ekranda görünen soru numarası (1-tabanlı). Verilirse DB order yerine bu saklanır
+  // — aday hangi soruda gördüyse o numara ("Soru N") korunur.
+  questionOrder?: number | null;
 };
 
 /**
@@ -68,7 +71,8 @@ export class CreateCandidateNoteUseCase {
       if (!q) throw new AppError('NOTE_TARGET_NOT_FOUND', 'Not eklenecek soru bulunamadı', 404);
       questionId = q.id;
       questionExcerpt = (q.content ?? '').slice(0, EXCERPT_LEN);
-      questionOrder = q.order;
+      // Ekranda görünen sıra (currentIndex+1) önceliklidir; yoksa DB order'a düş.
+      questionOrder = input.questionOrder ?? q.order;
       testId = q.test.id;
       testTitle = q.test.title;
       topicId = q.test.topicId;

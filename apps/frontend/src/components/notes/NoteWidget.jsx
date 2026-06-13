@@ -50,7 +50,7 @@ export function NoteWidget({ testId, questionId, attemptId, questionOrder, testT
     mutationFn: (body) =>
       notesApi.create(
         scope === "question"
-          ? { body, questionId, testId, attemptId }
+          ? { body, questionId, testId, attemptId, questionOrder }
           : { body },
       ),
     onSuccess: () => {

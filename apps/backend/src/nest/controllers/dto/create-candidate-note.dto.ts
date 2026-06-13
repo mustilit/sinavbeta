@@ -1,5 +1,6 @@
 /** Aday not oluşturma DTO'su — body zorunlu; soru/test/attempt bağlamı opsiyonel. */
-import { IsString, IsUUID, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsInt, Min, MinLength, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCandidateNoteDto {
@@ -23,4 +24,11 @@ export class CreateCandidateNoteDto {
   @IsOptional()
   @IsUUID()
   attemptId?: string;
+
+  @ApiPropertyOptional({ description: 'Ekranda görünen soru numarası (1-tabanlı)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  questionOrder?: number;
 }

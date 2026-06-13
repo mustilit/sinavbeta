@@ -43,7 +43,13 @@ export class CandidateNotesController {
   async create(@Body() dto: CreateCandidateNoteDto, @Req() req: any) {
     const actorId = req.user?.id;
     return this.createUC.execute(
-      { body: dto.body, questionId: dto.questionId, testId: dto.testId, attemptId: dto.attemptId },
+      {
+        body: dto.body,
+        questionId: dto.questionId,
+        testId: dto.testId,
+        attemptId: dto.attemptId,
+        questionOrder: dto.questionOrder,
+      },
       actorId,
     );
   }

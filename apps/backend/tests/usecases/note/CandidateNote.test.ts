@@ -104,6 +104,30 @@ describe('CreateCandidateNoteUseCase', () => {
     expect(r.questionExcerpt?.length).toBe(160); // kırpma
   });
 
+  it('ekranda görünen soru numarası (questionOrder) DB order yerine saklanır', async () => {
+    p.user.findUnique.mockResolvedValue({ id: 'u1', tenantId: 't1' });
+    p.examQuestion.findUnique.mockResolvedValue({
+      id: 'q1', content: 'soru', order: 5, testId: 'test1',
+      test: { id: 'test1', title: 'T', tenantId: 't1', topicId: null, examTypeId: null, topic: null, examType: null },
+    });
+    p.candidateNote.create.mockImplementation(({ data }: any) => noteRow({ ...data, id: 'n1' }));
+    // DB order=5 ama aday ekranda "Soru 2" gördü → 2 saklanmalı
+    const r = await new CreateCandidateNoteUseCase().execute(
+      { body: 'x', questionId: 'q1', questionOrder: 2 }, 'u1');
+    expect(r.questionOrder).toBe(2);
+  });
+
+  it('questionOrder verilmezse DB order fallback', async () => {
+    p.user.findUnique.mockResolvedValue({ id: 'u1', tenantId: 't1' });
+    p.examQuestion.findUnique.mockResolvedValue({
+      id: 'q1', content: 'soru', order: 7, testId: 'test1',
+      test: { id: 'test1', title: 'T', tenantId: 't1', topicId: null, examTypeId: null, topic: null, examType: null },
+    });
+    p.candidateNote.create.mockImplementation(({ data }: any) => noteRow({ ...data, id: 'n1' }));
+    const r = await new CreateCandidateNoteUseCase().execute({ body: 'x', questionId: 'q1' }, 'u1');
+    expect(r.questionOrder).toBe(7);
+  });
+
   it('geçersiz questionId → NOTE_TARGET_NOT_FOUND', async () => {
     p.user.findUnique.mockResolvedValue({ id: 'u1', tenantId: 't1' });
     p.examQuestion.findUnique.mockResolvedValue(null);

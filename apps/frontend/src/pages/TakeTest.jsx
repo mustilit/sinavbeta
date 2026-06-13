@@ -1066,7 +1066,7 @@ export default function TakeTest() {
         testId={testId}
         questionId={currentQuestion?.id}
         attemptId={resolvedAttemptId}
-        questionOrder={currentQuestion?.order ?? currentIndex + 1}
+        questionOrder={currentIndex + 1}
         testTitle={test?.title}
       />
       {/* Çoklu sekme/pencere çıkışı uyarısı — 1. ve 2. çıkışta gösterilir.
