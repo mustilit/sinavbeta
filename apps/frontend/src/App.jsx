@@ -101,8 +101,11 @@ const AuthenticatedApp = () => {
 // sistem mode aktifken görüntü tutarsız oluyordu — açık temayı default yapmak
 // görüntüyü preview ile birebir aynı tutuyor.)
 function App() {
+  // forcedTheme="light": Uygulama genelinde HER ZAMAN açık tema. Tema değişimi
+  // artık global değil; yalnızca test çözüm ekranında "bej okuma modu" olarak
+  // sunulur (TakeTest, data-exam-theme ile scope'lu). Diğer sayfalar etkilenmez.
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false} disableTransitionOnChange>
       <ErrorBoundary>
         <AuthProvider>
           <QueryClientProvider client={queryClientInstance}>

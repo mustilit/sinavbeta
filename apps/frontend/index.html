@@ -13,14 +13,12 @@
     <!-- vite-plugin-pwa: manifest.webmanifest otomatik inject edilir.
          Eski public/manifest.json kullanılmıyor — plugin'in ürettiği geçerlidir. -->
     <title>Sınav Salonu - Dal</title>
+    <!-- Global koyu tema kaldırıldı: uygulama her zaman açık tema (forcedTheme="light").
+         Tema değişimi yalnız test çözüm ekranında "bej okuma modu" olarak sunulur. -->
     <script>
       (function() {
-        try {
-          var theme = localStorage.getItem('theme');
-          if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-          }
-        } catch(e) {}
+        // Eskiden kalan 'dark' tercihini temizle ki hiçbir sayfa koyu açılmasın.
+        try { document.documentElement.classList.remove('dark'); localStorage.removeItem('theme'); } catch(e) {}
       })();
     </script>
   </head>

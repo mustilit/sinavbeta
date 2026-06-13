@@ -95,3 +95,27 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Test çözüm ekranı — "Bej Okuma Modu" (sepia)
+   Yalnızca TakeTest kapsayıcısına scope'ludur (data-exam-theme="sepia").
+   Diğer sayfalar ETKİLENMEZ; global koyu tema kullanılmaz. Sıcak/soft bej
+   tonlar göz yormaz. Sadece nötr yüzey/metin/kenar override edilir; vurgu
+   renkleri (indigo/rose/emerald/amber) korunur.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-exam-theme="sepia"] {
+  background-color: #f1e7d0;
+  color: #463a22;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+[data-exam-theme="sepia"] .bg-white { background-color: #faf4e6 !important; }
+[data-exam-theme="sepia"] .bg-slate-50 { background-color: #f3e9d2 !important; }
+[data-exam-theme="sepia"] .bg-slate-100 { background-color: #ece0c4 !important; }
+[data-exam-theme="sepia"] .text-slate-900 { color: #463a22 !important; }
+[data-exam-theme="sepia"] .text-slate-800 { color: #51442a !important; }
+[data-exam-theme="sepia"] .text-slate-700 { color: #5c4e30 !important; }
+[data-exam-theme="sepia"] .text-slate-600 { color: #6d5d3a !important; }
+[data-exam-theme="sepia"] .text-slate-500 { color: #87764f !important; }
+[data-exam-theme="sepia"] .text-slate-400 { color: #9c8a60 !important; }
+[data-exam-theme="sepia"] .border-slate-200 { border-color: #ddcba4 !important; }
+[data-exam-theme="sepia"] .border-slate-100 { border-color: #e7d9b6 !important; }

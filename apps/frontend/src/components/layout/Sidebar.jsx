@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LanguageSwitcherCompact } from "@/components/layout/LanguageSwitcherCompact";
 import {
   Tooltip,
@@ -260,14 +259,13 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
           collapsed ? "p-3 lg:p-2" : "p-4",
         )}
       >
-        {/* Tema + Dil */}
+        {/* Dil (tema değişimi artık global değil — yalnız test çözüm ekranında) */}
         <div
           className={cn(
             "flex items-center gap-2 px-4 py-2",
             collapsed && "lg:flex-col lg:items-center lg:px-0 lg:gap-2",
           )}
         >
-          <ThemeToggle />
           <LanguageSwitcherCompact />
         </div>
 

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { NoteWidget } from "@/components/notes/NoteWidget";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import {
   Clock,
   ChevronLeft,
@@ -106,6 +107,21 @@ export default function TakeTest() {
   const showTestTour = useShouldShowTour(TOUR_KEYS.CANDIDATE_TEST);
   const completeTour = useCompleteTour();
   const [currentIndex, setCurrentIndex] = useState(0);
+  // Bej okuma modu — yalnızca bu ekrana scope'lu (data-exam-theme), localStorage'da kalıcı.
+  const [examTheme, setExamTheme] = useState(() => {
+    try {
+      return localStorage.getItem("dal_exam_theme") === "sepia" ? "sepia" : "light";
+    } catch {
+      return "light";
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("dal_exam_theme", examTheme);
+    } catch {
+      /* yoksay */
+    }
+  }, [examTheme]);
   const [answers, setAnswers] = useState({});
   const [flagged, setFlagged] = useState(new Set());
   const [timeLeft, setTimeLeft] = useState(null);
@@ -1052,7 +1068,11 @@ export default function TakeTest() {
   return (
     <div
       ref={proctorContainerRef}
-      className="max-w-4xl lg:max-w-6xl mx-auto"
+      data-exam-theme={examTheme}
+      className={
+        "max-w-4xl lg:max-w-6xl mx-auto" +
+        (examTheme === "sepia" ? " rounded-2xl p-3 sm:p-5" : "")
+      }
       // CSS tarafı UX engelleri — devtools'tan stil silinebilir; bu yüzden
       // event handler'lar (useTestProctoring) gerçek savunma
       style={
@@ -1202,8 +1222,18 @@ export default function TakeTest() {
           )}
         </div>
 
-        {/* Sağ: ilerleme + süre */}
+        {/* Sağ: bej okuma modu + ilerleme + süre */}
         <div className="flex items-center gap-4 flex-wrap">
+          {/* Bej okuma modu — yalnız bu ekranı etkiler */}
+          <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-500">
+            <span aria-hidden="true">🌙</span>
+            <span className="hidden sm:inline">Bej mod</span>
+            <Switch
+              checked={examTheme === "sepia"}
+              onCheckedChange={(v) => setExamTheme(v ? "sepia" : "light")}
+              aria-label="Bej okuma modu"
+            />
+          </label>
           <span className="text-sm text-slate-500">
             {currentIndex + 1} / {questions.length}
           </span>
