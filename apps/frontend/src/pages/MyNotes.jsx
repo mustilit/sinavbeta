@@ -1,6 +1,6 @@
-import { useState, useDeferredValue } from "react";
+import { useState, useEffect, useDeferredValue } from "react";
 import { useTranslation } from "react-i18next";
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   StickyNote,
@@ -36,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Pagination } from "@/components/ui/Pagination";
 import { notes as notesApi } from "@/api/dalClient";
 import { format } from "date-fns";
 
@@ -55,6 +56,9 @@ export default function MyNotes() {
   const [search, setSearch] = useState("");
   const q = useDeferredValue(search);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [deleteId, setDeleteId] = useState(null);
@@ -72,19 +76,15 @@ export default function MyNotes() {
     q: q.trim() || undefined,
   };
 
-  const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["myNotes", filters],
-    queryFn: ({ pageParam }) =>
-      notesApi.list({ ...filters, cursorId: pageParam?.id, limit: 20 }),
-    initialPageParam: null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  // Filtre değişince ilk sayfaya dön
+  useEffect(() => {
+    setPage(1);
+  }, [topicId, testId, examTypeId, q]);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["myNotes", filters, page, pageSize],
+    queryFn: () => notesApi.list({ ...filters, page, pageSize }),
+    placeholderData: (prev) => prev, // sayfa değişiminde liste zıplamasın
     staleTime: 10_000,
   });
 
@@ -111,7 +111,8 @@ export default function MyNotes() {
     onError: () => toast.error(t("notes.page.error")),
   });
 
-  const items = data?.pages.flatMap((p) => p.items) ?? [];
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
   const hasAnyFilter =
     topicId !== ALL || testId !== ALL || examTypeId !== ALL || q.trim().length > 0;
 
@@ -320,14 +321,15 @@ export default function MyNotes() {
         </ul>
       )}
 
-      {hasNextPage ? (
-        <div className="mt-6 flex justify-center">
-          <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
-            {isFetchingNextPage ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : null}
-            {t("notes.page.loadMore")}
-          </Button>
+      {total > 0 ? (
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       ) : null}
 

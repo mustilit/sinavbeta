@@ -1790,9 +1790,9 @@ export const notes = {
     return data;
   },
   /**
-   * Notları listele (cursor sayfalı + filtreler).
-   * @param {{ cursorId?:string, limit?:number, topicId?:string, testId?:string, examTypeId?:string, q?:string, scope?:'general' }} [params]
-   * @returns {Promise<{ items:Array, nextCursor:{id:string}|null }>}
+   * Notları listele (numaralı sayfalama + filtreler).
+   * @param {{ page?:number, pageSize?:number, limit?:number, topicId?:string, testId?:string, examTypeId?:string, q?:string, scope?:'general' }} [params]
+   * @returns {Promise<{ items:Array, total:number, page:number, pageSize:number }>}
    */
   list: async (params = {}) => {
     const clean = Object.fromEntries(

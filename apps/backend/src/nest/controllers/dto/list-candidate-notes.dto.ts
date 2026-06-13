@@ -4,18 +4,20 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ListCandidateNotesQueryDto {
-  @ApiPropertyOptional({ description: 'Cursor (son görülen not id)' })
+  @ApiPropertyOptional({ description: 'Sayfa (1-tabanlı)', default: 1 })
   @IsOptional()
-  @IsString()
-  cursorId?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
 
-  @ApiPropertyOptional({ description: 'Sayfa boyutu (1-100)', default: 20 })
+  @ApiPropertyOptional({ description: 'Sayfa boyutu (1-100)', default: 10 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
-  limit?: number;
+  pageSize?: number;
 
   @ApiPropertyOptional({ description: 'Konu filtresi' })
   @IsOptional()

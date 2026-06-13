@@ -138,33 +138,39 @@ describe('CreateCandidateNoteUseCase', () => {
 });
 
 describe('ListCandidateNotesUseCase', () => {
-  it('hasMore: limit+1 satır gelince nextCursor dolu', async () => {
-    const rows = Array.from({ length: 3 }, (_, i) => noteRow({ id: `n${i}` }));
-    p.candidateNote.findMany.mockResolvedValue(rows);
-    const r = await new ListCandidateNotesUseCase().execute('u1', { limit: 2 });
+  it('numaralı sayfa: total + page + pageSize döner, doğru skip/take', async () => {
+    p.candidateNote.findMany.mockResolvedValue([noteRow({ id: 'n0' }), noteRow({ id: 'n1' })]);
+    p.candidateNote.count.mockResolvedValue(25);
+    const r = await new ListCandidateNotesUseCase().execute('u1', { page: 3, pageSize: 10 });
+    expect(r.total).toBe(25);
+    expect(r.page).toBe(3);
+    expect(r.pageSize).toBe(10);
     expect(r.items).toHaveLength(2);
-    expect(r.nextCursor).toEqual({ id: 'n1' });
-  });
-
-  it('son sayfa → nextCursor null', async () => {
-    p.candidateNote.findMany.mockResolvedValue([noteRow({ id: 'n0' })]);
-    const r = await new ListCandidateNotesUseCase().execute('u1', { limit: 20 });
-    expect(r.items).toHaveLength(1);
-    expect(r.nextCursor).toBeNull();
-  });
-
-  it('metin filtresi → body contains (insensitive) where', async () => {
-    p.candidateNote.findMany.mockResolvedValue([]);
-    await new ListCandidateNotesUseCase().execute('u1', { q: 'türev', topicId: 'top1' });
     expect(p.candidateNote.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          candidateId: 'u1',
-          topicId: 'top1',
-          body: { contains: 'türev', mode: 'insensitive' },
-        }),
-      }),
+      expect.objectContaining({ skip: 20, take: 10 }),
     );
+  });
+
+  it('varsayılan page=1, pageSize=10 (skip 0)', async () => {
+    p.candidateNote.findMany.mockResolvedValue([]);
+    p.candidateNote.count.mockResolvedValue(0);
+    const r = await new ListCandidateNotesUseCase().execute('u1', {});
+    expect(r.page).toBe(1);
+    expect(r.pageSize).toBe(10);
+    expect(p.candidateNote.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 10 }));
+  });
+
+  it('metin filtresi → body contains (insensitive); findMany ve count aynı where', async () => {
+    p.candidateNote.findMany.mockResolvedValue([]);
+    p.candidateNote.count.mockResolvedValue(0);
+    await new ListCandidateNotesUseCase().execute('u1', { q: 'türev', topicId: 'top1' });
+    const expectedWhere = expect.objectContaining({
+      candidateId: 'u1',
+      topicId: 'top1',
+      body: { contains: 'türev', mode: 'insensitive' },
+    });
+    expect(p.candidateNote.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expectedWhere }));
+    expect(p.candidateNote.count).toHaveBeenCalledWith({ where: expectedWhere });
   });
 });
 

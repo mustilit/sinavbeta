@@ -34,8 +34,8 @@ export function NoteWidget({ testId, questionId, attemptId, questionOrder, testT
   // İlgili notların akışı: kapsam "bu soru/test" ise testId ile, "genel" ise scope=general.
   const threadParams =
     scope === "question" && testId
-      ? { testId, limit: 30 }
-      : { scope: "general", limit: 30 };
+      ? { testId, pageSize: 30 }
+      : { scope: "general", pageSize: 30 };
 
   const { data: thread, isLoading: threadLoading } = useQuery({
     queryKey: ["noteThread", threadParams],

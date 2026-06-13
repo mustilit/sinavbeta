@@ -60,8 +60,8 @@ export class CandidateNotesController {
   async list(@Query() q: ListCandidateNotesQueryDto, @Req() req: any) {
     const actorId = req.user?.id;
     return this.listUC.execute(actorId, {
-      cursor: q.cursorId ? { id: q.cursorId } : null,
-      limit: q.limit,
+      page: q.page,
+      pageSize: q.pageSize,
       topicId: q.topicId,
       testId: q.testId,
       examTypeId: q.examTypeId,
