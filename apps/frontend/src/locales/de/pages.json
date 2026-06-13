@@ -1813,7 +1813,8 @@
         "allExamTypes": "Alle Prüfungstypen",
         "allTopics": "Alle Themen",
         "allTests": "Alle Tests",
-        "general": "Allgemein"
+        "general": "Allgemein",
+        "clear": "Filter zurücksetzen"
       },
       "empty": "Du hast noch keine Notizen",
       "emptyFiltered": "Keine Notizen entsprechen dem Filter",

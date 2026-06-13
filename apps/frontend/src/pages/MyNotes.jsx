@@ -121,6 +121,13 @@ export default function MyNotes() {
   const hasAnyFilter =
     topicId !== ALL || testId !== ALL || examTypeId !== ALL || q.trim().length > 0;
 
+  const clearFilters = () => {
+    setExamTypeId(ALL);
+    setTopicId(ALL);
+    setTestId(ALL);
+    setSearch("");
+  };
+
   const startEdit = (note) => {
     setEditingId(note.id);
     setEditText(note.body);
@@ -137,7 +144,8 @@ export default function MyNotes() {
       </header>
 
       {/* Filtreler */}
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="grid w-full flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <Input
@@ -201,6 +209,18 @@ export default function MyNotes() {
             ))}
           </SelectContent>
         </Select>
+        </div>
+
+        {hasAnyFilter ? (
+          <Button
+            variant="ghost"
+            onClick={clearFilters}
+            className="ml-auto shrink-0 text-slate-500 hover:text-slate-700"
+          >
+            <X className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            {t("notes.page.filters.clear")}
+          </Button>
+        ) : null}
       </div>
 
       {/* Liste */}

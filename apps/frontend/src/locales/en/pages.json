@@ -1813,7 +1813,8 @@
         "allExamTypes": "All exam types",
         "allTopics": "All topics",
         "allTests": "All tests",
-        "general": "General"
+        "general": "General",
+        "clear": "Clear filters"
       },
       "empty": "You have no notes yet",
       "emptyFiltered": "No notes match the filter",

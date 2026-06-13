@@ -1813,7 +1813,8 @@
         "allExamTypes": "Tüm sınav türleri",
         "allTopics": "Tüm konular",
         "allTests": "Tüm testler",
-        "general": "Genel"
+        "general": "Genel",
+        "clear": "Filtreleri temizle"
       },
       "empty": "Henüz notunuz yok",
       "emptyFiltered": "Filtreye uygun not yok",
