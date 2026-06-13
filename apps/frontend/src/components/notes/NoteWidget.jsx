@@ -210,15 +210,27 @@ export function NoteWidget({ testId, questionId, attemptId, questionOrder, testT
           </form>
         </div>
       ) : (
-        <Button
+        <button
           type="button"
           onClick={() => setOpen(true)}
-          className="rounded-full shadow-lg"
           aria-label={t("notes.widget.fab")}
+          className="group inline-flex h-12 items-center gap-2 rounded-full
+                     bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700
+                     px-5 text-sm font-semibold text-white
+                     shadow-[0_10px_25px_-5px_rgba(37,99,235,0.55),0_4px_10px_-3px_rgba(30,64,175,0.5)]
+                     ring-1 ring-inset ring-white/30
+                     transition-all duration-200 ease-out
+                     hover:-translate-y-0.5 hover:from-sky-300 hover:to-indigo-600
+                     hover:shadow-[0_16px_34px_-6px_rgba(37,99,235,0.7),0_6px_14px_-4px_rgba(30,64,175,0.6)]
+                     active:translate-y-0 active:shadow-[0_6px_14px_-6px_rgba(37,99,235,0.6)]
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2"
         >
-          <StickyNote className="mr-1.5 h-4 w-4" aria-hidden="true" />
+          <StickyNote
+            className="h-5 w-5 drop-shadow-sm transition-transform duration-200 group-hover:scale-110"
+            aria-hidden="true"
+          />
           {t("notes.widget.fab")}
-        </Button>
+        </button>
       )}
     </div>
   );
