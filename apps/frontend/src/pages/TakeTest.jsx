@@ -121,6 +121,11 @@ export default function TakeTest() {
     } catch {
       /* yoksay */
     }
+    // Dış zemini (Layout #main) de bej yapmak için body sınıfı; kapatma/unmount'ta
+    // temizlenir → başka sayfalar etkilenmez.
+    if (examTheme === "sepia") document.body.classList.add("exam-sepia");
+    else document.body.classList.remove("exam-sepia");
+    return () => document.body.classList.remove("exam-sepia");
   }, [examTheme]);
   const [answers, setAnswers] = useState({});
   const [flagged, setFlagged] = useState(new Set());
