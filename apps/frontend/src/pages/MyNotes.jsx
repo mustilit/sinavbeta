@@ -293,9 +293,9 @@ export default function MyNotes() {
             return (
             <li key={n.id}>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   {/* Üst sıra: adres (sol) + tarih (sağ) */}
-                  <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="mb-1 flex items-start justify-between gap-3">
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-600 dark:text-slate-300">
                       {addr.map((node, i) => (
                         <span className="inline-flex items-center gap-2" key={i}>
@@ -311,8 +311,9 @@ export default function MyNotes() {
                     </span>
                   </div>
 
+                  {/* Soru metni — uzasa bile tek satır, taşan kısım "..." ile kesilir */}
                   {n.questionExcerpt ? (
-                    <p className="mb-1.5 line-clamp-2 text-xs italic text-slate-400">
+                    <p className="mb-1 truncate text-xs italic text-slate-400">
                       “{cleanExcerpt(n.questionExcerpt)}”
                     </p>
                   ) : null}
@@ -352,20 +353,18 @@ export default function MyNotes() {
                       </div>
                     </div>
                   ) : (
-                    <p className="whitespace-pre-wrap break-words text-sm text-slate-800 dark:text-slate-100">
-                      {n.body}
-                    </p>
-                  )}
-
-                  {/* Alt bar: yalnızca aksiyonlar (tarih artık sağ üstte) */}
-                  {editingId === n.id ? null : (
-                    <div className="mt-3 flex items-center justify-end">
-                      <div className="flex gap-1">
+                    /* Gövde + aksiyonlar tek satırda (ayrı alt-bar yok → daha az yükseklik) */
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-sm text-slate-800 dark:text-slate-100">
+                        {n.body}
+                      </p>
+                      <div className="flex shrink-0 gap-0.5">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => startEdit(n)}
                           aria-label={t("notes.page.edit")}
+                          className="h-8 w-8"
                         >
                           <Pencil className="h-4 w-4" aria-hidden="true" />
                         </Button>
@@ -374,7 +373,7 @@ export default function MyNotes() {
                           size="icon"
                           onClick={() => setDeleteId(n.id)}
                           aria-label={t("notes.page.delete")}
-                          className="text-red-600 hover:text-red-700"
+                          className="h-8 w-8 text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </Button>
