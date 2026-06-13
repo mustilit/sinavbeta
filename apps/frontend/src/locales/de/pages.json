@@ -1812,7 +1812,8 @@
         "test": "Test",
         "allExamTypes": "Alle Prüfungstypen",
         "allTopics": "Alle Themen",
-        "allTests": "Alle Tests"
+        "allTests": "Alle Tests",
+        "general": "Allgemein"
       },
       "empty": "Du hast noch keine Notizen",
       "emptyFiltered": "Keine Notizen entsprechen dem Filter",

@@ -41,6 +41,7 @@ import { notes as notesApi } from "@/api/dalClient";
 import { format } from "date-fns";
 
 const ALL = "__all__";
+const GENERAL = "__general__"; // adres taşımayan serbest ("Genel") notlar
 
 /**
  * Notlarım — adayın tüm notları adresli (sınav türü / konu / test / soru) listelenir.
@@ -69,12 +70,16 @@ export default function MyNotes() {
     staleTime: 30_000,
   });
 
-  const filters = {
-    topicId: topicId === ALL ? undefined : topicId,
-    testId: testId === ALL ? undefined : testId,
-    examTypeId: examTypeId === ALL ? undefined : examTypeId,
-    q: q.trim() || undefined,
-  };
+  // "Genel" seçilince adres filtreleri (konu/test/sınav türü) anlamsız → scope='general'
+  const isGeneral = examTypeId === GENERAL;
+  const filters = isGeneral
+    ? { scope: "general", q: q.trim() || undefined }
+    : {
+        topicId: topicId === ALL ? undefined : topicId,
+        testId: testId === ALL ? undefined : testId,
+        examTypeId: examTypeId === ALL ? undefined : examTypeId,
+        q: q.trim() || undefined,
+      };
 
   // Filtre değişince ilk sayfaya dön
   useEffect(() => {
@@ -144,12 +149,23 @@ export default function MyNotes() {
           />
         </div>
 
-        <Select value={examTypeId} onValueChange={setExamTypeId}>
+        <Select
+          value={examTypeId}
+          onValueChange={(v) => {
+            setExamTypeId(v);
+            // "Genel" seçilince adres filtrelerini sıfırla (anlamsızlar)
+            if (v === GENERAL) {
+              setTopicId(ALL);
+              setTestId(ALL);
+            }
+          }}
+        >
           <SelectTrigger aria-label={t("notes.page.filters.examType")}>
             <SelectValue placeholder={t("notes.page.filters.examType")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>{t("notes.page.filters.allExamTypes")}</SelectItem>
+            <SelectItem value={GENERAL}>{t("notes.page.filters.general")}</SelectItem>
             {(facets?.examTypes ?? []).map((e) => (
               <SelectItem key={e.id} value={e.id}>
                 {e.name}
@@ -158,7 +174,7 @@ export default function MyNotes() {
           </SelectContent>
         </Select>
 
-        <Select value={topicId} onValueChange={setTopicId}>
+        <Select value={topicId} onValueChange={setTopicId} disabled={isGeneral}>
           <SelectTrigger aria-label={t("notes.page.filters.topic")}>
             <SelectValue placeholder={t("notes.page.filters.topic")} />
           </SelectTrigger>
@@ -172,7 +188,7 @@ export default function MyNotes() {
           </SelectContent>
         </Select>
 
-        <Select value={testId} onValueChange={setTestId}>
+        <Select value={testId} onValueChange={setTestId} disabled={isGeneral}>
           <SelectTrigger aria-label={t("notes.page.filters.test")}>
             <SelectValue placeholder={t("notes.page.filters.test")} />
           </SelectTrigger>

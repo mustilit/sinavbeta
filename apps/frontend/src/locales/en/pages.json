@@ -1812,7 +1812,8 @@
         "test": "Test",
         "allExamTypes": "All exam types",
         "allTopics": "All topics",
-        "allTests": "All tests"
+        "allTests": "All tests",
+        "general": "General"
       },
       "empty": "You have no notes yet",
       "emptyFiltered": "No notes match the filter",

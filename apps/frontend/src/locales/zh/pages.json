@@ -1812,7 +1812,8 @@
         "test": "测验",
         "allExamTypes": "全部考试类型",
         "allTopics": "全部主题",
-        "allTests": "全部测验"
+        "allTests": "全部测验",
+        "general": "通用"
       },
       "empty": "你还没有笔记",
       "emptyFiltered": "没有符合筛选的笔记",

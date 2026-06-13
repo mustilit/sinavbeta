@@ -1812,7 +1812,8 @@
         "test": "Test",
         "allExamTypes": "Tüm sınav türleri",
         "allTopics": "Tüm konular",
-        "allTests": "Tüm testler"
+        "allTests": "Tüm testler",
+        "general": "Genel"
       },
       "empty": "Henüz notunuz yok",
       "emptyFiltered": "Filtreye uygun not yok",

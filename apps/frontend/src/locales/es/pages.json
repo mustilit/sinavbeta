@@ -1815,7 +1815,8 @@
         "test": "Test",
         "allExamTypes": "Todos los tipos",
         "allTopics": "Todos los temas",
-        "allTests": "Todos los tests"
+        "allTests": "Todos los tests",
+        "general": "General"
       },
       "empty": "Aún no tienes notas",
       "emptyFiltered": "Ninguna nota coincide con el filtro",
