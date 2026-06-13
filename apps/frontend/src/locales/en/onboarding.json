@@ -27,6 +27,10 @@
     "s4": {
       "title": "Take Your First Test, Track Your Score",
       "description": "Every test you take is recorded on your 'My Results' page: accuracy, time, topic breakdown. Pick a package now and solve your first test — reach your first score within 5 minutes."
+    },
+    "s5": {
+      "title": "Take Notes, All in One Place 🗒️",
+      "description": "While solving, tap the blue \"+ Note\" at the bottom-right to jot down your thoughts. Notes are tagged by test, topic and exam type — filter and review them all on the \"My Notes\" page."
     }
   },
   "candidateTest": {

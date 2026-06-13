@@ -34,7 +34,7 @@ const MockBadge = ({ label, color = "indigo" }) => {
 
 /* ═══════════════════════════════════════════════
    ADAY — Karşılama Turu  (ob_cand_welcome)
-   4 adım
+   6 adım
 ═══════════════════════════════════════════════ */
 
 const IllustrationExplore = () => (
@@ -155,6 +155,29 @@ const IllustrationCandidateActivation = () => (
   </div>
 );
 
+// Aday persona 6. adım: "Not al" — soru çözerken "+ Not" widget'ı + Notlarım
+// adresli koleksiyonu. Yeni özelliğin keşfedilmesini sağlar.
+const IllustrationNotes = () => (
+  <div className="w-full max-w-xs space-y-2">
+    <MockCard className="space-y-2">
+      <div className="flex items-center gap-1.5">
+        <MockBadge label="Soru 2" color="indigo" />
+        <MockBadge label="Matematik" color="violet" />
+      </div>
+      <div className="space-y-1">
+        <MockBar className="w-full text-slate-500 h-2" />
+        <MockBar className="w-2/3 text-slate-500 h-2" />
+      </div>
+    </MockCard>
+    {/* Mavi 3B "+ Not" butonu (gerçek widget ile tutarlı) */}
+    <div className="flex justify-end">
+      <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 px-3 py-1.5 text-[10px] font-semibold text-white shadow-lg ring-1 ring-inset ring-white/30">
+        <span>🗒️</span> + Not
+      </div>
+    </div>
+  </div>
+);
+
 // NOT: title ve description i18n key'leridir; OnboardingTour.jsx t() ile çözer.
 // Bu sayede tüm tur içerikleri 5 dilde (tr/en/es/zh/de) görüntülenir.
 export const CANDIDATE_WELCOME_STEPS = [
@@ -192,6 +215,11 @@ export const CANDIDATE_WELCOME_STEPS = [
     title: "onboarding:candidateWelcome.s4.title",
     description: "onboarding:candidateWelcome.s4.description",
     illustration: <IllustrationCandidateActivation />,
+  },
+  {
+    title: "onboarding:candidateWelcome.s5.title",
+    description: "onboarding:candidateWelcome.s5.description",
+    illustration: <IllustrationNotes />,
   },
 ];
 

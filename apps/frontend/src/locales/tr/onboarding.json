@@ -27,6 +27,10 @@
     "s4": {
       "title": "İlk Sınavını Çöz, Skoru Görüntüle",
       "description": "Çözdüğün her test 'Sonuçlarım' sayfanda kayıt altına alınır: doğru yüzdesi, süre, konu bazlı dağılım. Şimdi bir paket seçip ilk sınavını çöz — 5 dakika içinde ilk skoruna ulaş."
+    },
+    "s5": {
+      "title": "Not Al, Tek Yerde Topla 🗒️",
+      "description": "Soru çözerken sağ-alttaki mavi \"+ Not\" ile aklındakini hemen kaydet. Notların test, konu ve sınav türüne göre adreslenir; \"Notlarım\" sayfasından filtreleyip tek yerde görürsün."
     }
   },
   "candidateTest": {

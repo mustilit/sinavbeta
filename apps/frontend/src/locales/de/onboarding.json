@@ -27,6 +27,10 @@
     "s4": {
       "title": "Erste Prüfung schreiben, Punktzahl sehen",
       "description": "Jede absolvierte Prüfung wird auf der Seite 'Meine Ergebnisse' festgehalten: Richtigkeitsquote, Zeit, Themenverteilung. Wählen Sie jetzt ein Paket und absolvieren Sie Ihre erste Prüfung — die erste Punktzahl in 5 Minuten."
+    },
+    "s5": {
+      "title": "Notizen machen, alles an einem Ort 🗒️",
+      "description": "Tippe beim Lösen unten rechts auf das blaue \"+ Notiz\", um Gedanken festzuhalten. Notizen werden nach Test, Thema und Prüfungstyp markiert — filtere und sieh sie alle auf der Seite \"Meine Notizen\"."
     }
   },
   "candidateTest": {

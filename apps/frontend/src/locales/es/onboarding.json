@@ -27,6 +27,10 @@
     "s4": {
       "title": "Haz tu primer examen y ve tu puntuación",
       "description": "Cada examen que hagas queda registrado en 'Mis resultados': porcentaje de aciertos, tiempo, desglose por tema. Elige un paquete y haz tu primer examen — alcanzarás tu primera puntuación en 5 minutos."
+    },
+    "s5": {
+      "title": "Toma notas, todo en un lugar 🗒️",
+      "description": "Mientras resuelves, toca el botón azul \"+ Nota\" abajo a la derecha para anotar tus ideas. Las notas se etiquetan por examen, tema y tipo de examen; fíltralas y revísalas en la página \"Mis notas\"."
     }
   },
   "candidateTest": {
