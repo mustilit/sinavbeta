@@ -65,7 +65,7 @@ export default function Layout({ children, currentPageName }) {
   if (isFullScreen) {
     return (
       <>
-        <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-gray-900" data-fullscreen>
           <div className="p-4 lg:p-8">{children}</div>
         </div>
         <ConsentBanner />

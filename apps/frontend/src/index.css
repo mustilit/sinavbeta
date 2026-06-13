@@ -103,9 +103,11 @@
    tonlar göz yormaz. Sadece nötr yüzey/metin/kenar override edilir; vurgu
    renkleri (indigo/rose/emerald/amber) korunur.
    ───────────────────────────────────────────────────────────────────────── */
-/* Dış zemin (Layout içerik sütunu) da bej olsun — body.exam-sepia sınıfı TakeTest
-   tarafından eklenir/kaldırılır (unmount/kapatmada temizlenir; diğer sayfalar etkilenmez). */
-body.exam-sepia #main { background-color: #f5eede !important; }
+/* Dış zemin (TakeTest tam-ekran layout sarmalayıcısı) da bej olsun — body.exam-sepia
+   sınıfı TakeTest tarafından eklenir/kaldırılır (kapatma/unmount'ta temizlenir;
+   diğer sayfalar etkilenmez). Test ekranı sidebar'sız "fullscreen" layout kullandığı
+   için #main yerine [data-fullscreen] hedeflenir. */
+body.exam-sepia [data-fullscreen] { background-color: #f5eede !important; }
 
 [data-exam-theme="sepia"] {
   background-color: #f5eede;
