@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { StickyNote, X, Send, Loader2, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { StickyNote, X, Send, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/AuthContext";
 import { notes as notesApi } from "@/api/dalClient";
@@ -96,23 +94,14 @@ export function NoteWidget({ testId, questionId, attemptId, questionOrder, testT
               <StickyNote className="h-4 w-4 text-indigo-600" aria-hidden="true" />
               {t("notes.widget.title")}
             </div>
-            <div className="flex items-center gap-1">
-              <Link
-                to="/MyNotes"
-                className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs text-indigo-600 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800"
-              >
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                {t("notes.widget.viewAll")}
-              </Link>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label={t("notes.widget.close")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-700"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label={t("notes.widget.close")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-700"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
 
           {/* Kapsam seçimi */}
@@ -195,18 +184,27 @@ export function NoteWidget({ testId, questionId, attemptId, questionOrder, testT
               aria-label={t("notes.widget.placeholder")}
               className="min-h-[2.5rem] resize-none text-sm"
             />
-            <Button
+            <button
               type="submit"
-              size="icon"
               disabled={!text.trim() || createNote.isPending}
               aria-label={t("notes.widget.save")}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
+                         bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 text-white
+                         shadow-[0_6px_16px_-4px_rgba(37,99,235,0.6)] ring-1 ring-inset ring-white/30
+                         transition-all duration-200 ease-out
+                         hover:-translate-y-0.5 hover:from-sky-300 hover:to-indigo-600
+                         hover:shadow-[0_10px_22px_-5px_rgba(37,99,235,0.7)]
+                         active:translate-y-0 active:shadow-[0_4px_10px_-5px_rgba(37,99,235,0.6)]
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2
+                         disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0
+                         disabled:hover:shadow-[0_6px_16px_-4px_rgba(37,99,235,0.6)]"
             >
               {createNote.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
                 <Send className="h-4 w-4" aria-hidden="true" />
               )}
-            </Button>
+            </button>
           </form>
         </div>
       ) : (
