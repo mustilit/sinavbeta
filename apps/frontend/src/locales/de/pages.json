@@ -1785,5 +1785,49 @@
       "noActor": "System",
       "unknownFile": "—"
     }
+  },
+  "notes": {
+    "widget": {
+      "fab": "+ Notiz",
+      "title": "Meine Notizen",
+      "scopeQuestion": "Diese Frage",
+      "scopeGeneral": "Allgemein",
+      "questionShort": "Frage {{order}}",
+      "placeholder": "Notiz schreiben…",
+      "save": "Speichern",
+      "saved": "Notiz gespeichert",
+      "empty": "Noch keine Notizen",
+      "viewAll": "Alle ansehen",
+      "close": "Schließen",
+      "error": "Notiz konnte nicht gespeichert werden"
+    },
+    "page": {
+      "title": "Meine Notizen",
+      "subtitle": "Alle deine Notizen nach Test, Thema und Prüfungstyp geordnet.",
+      "filters": {
+        "search": "Suchen",
+        "searchPlaceholder": "Notizen suchen…",
+        "examType": "Prüfungstyp",
+        "topic": "Thema",
+        "test": "Test",
+        "allExamTypes": "Alle Prüfungstypen",
+        "allTopics": "Alle Themen",
+        "allTests": "Alle Tests"
+      },
+      "empty": "Du hast noch keine Notizen",
+      "emptyFiltered": "Keine Notizen entsprechen dem Filter",
+      "loadMore": "Mehr laden",
+      "edit": "Bearbeiten",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "deleteTitle": "Notiz löschen",
+      "deleteConfirm": "Möchtest du diese Notiz wirklich löschen?",
+      "deleted": "Notiz gelöscht",
+      "updated": "Notiz aktualisiert",
+      "error": "Vorgang fehlgeschlagen",
+      "questionLabel": "Frage {{order}}",
+      "addressGeneral": "Allgemein"
+    }
   }
 }

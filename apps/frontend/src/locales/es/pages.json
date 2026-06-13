@@ -1788,5 +1788,49 @@
       "noActor": "Sistema",
       "unknownFile": "—"
     }
+  },
+  "notes": {
+    "widget": {
+      "fab": "+ Nota",
+      "title": "Mis notas",
+      "scopeQuestion": "Esta pregunta",
+      "scopeGeneral": "General",
+      "questionShort": "P{{order}}",
+      "placeholder": "Escribe tu nota…",
+      "save": "Guardar",
+      "saved": "Nota guardada",
+      "empty": "Aún no hay notas",
+      "viewAll": "Ver todo",
+      "close": "Cerrar",
+      "error": "No se pudo guardar la nota"
+    },
+    "page": {
+      "title": "Mis notas",
+      "subtitle": "Todas tus notas organizadas por examen, tema y tipo de examen.",
+      "filters": {
+        "search": "Buscar",
+        "searchPlaceholder": "Buscar notas…",
+        "examType": "Tipo de examen",
+        "topic": "Tema",
+        "test": "Test",
+        "allExamTypes": "Todos los tipos",
+        "allTopics": "Todos los temas",
+        "allTests": "Todos los tests"
+      },
+      "empty": "Aún no tienes notas",
+      "emptyFiltered": "Ninguna nota coincide con el filtro",
+      "loadMore": "Cargar más",
+      "edit": "Editar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "deleteTitle": "Eliminar nota",
+      "deleteConfirm": "¿Seguro que quieres eliminar esta nota?",
+      "deleted": "Nota eliminada",
+      "updated": "Nota actualizada",
+      "error": "Operación fallida",
+      "questionLabel": "Pregunta {{order}}",
+      "addressGeneral": "General"
+    }
   }
 }

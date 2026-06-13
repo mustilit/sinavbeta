@@ -102,6 +102,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
 const QuestionReports = lazy(() => import('./pages/QuestionReports'));
 const MyObjections = lazy(() => import('./pages/MyObjections'));
+const MyNotes = lazy(() => import('./pages/MyNotes'));
 const SelectExamTypes = lazy(() => import('./pages/SelectExamTypes'));
 const Support = lazy(() => import('./pages/Support'));
 const TakeTest = lazy(() => import('./pages/TakeTest'));
@@ -193,6 +194,7 @@ export const PAGES = {
     "ProfileSettings": ProfileSettings,
     "QuestionReports": QuestionReports,
     "MyObjections": MyObjections,
+    "MyNotes": MyNotes,
     "SelectExamTypes": SelectExamTypes,
     "Support": Support,
     "TakeTest": TakeTest,

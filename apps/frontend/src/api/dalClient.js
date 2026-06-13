@@ -1775,5 +1775,48 @@ export const contracts = {
   },
 };
 
+/**
+ * Aday kişisel notları (CANDIDATE). Soru çözerken "+ Not" ile alınır; Notlarım
+ * sayfasında adresli (test/konu/sınav türü) görünür ve filtrelenir.
+ */
+export const notes = {
+  /**
+   * Not oluştur. questionId → soru-bağlı (adres otomatik); testId → test bağlamı;
+   * ikisi de yoksa serbest ("genel") not.
+   * @param {{ body:string, questionId?:string, testId?:string, attemptId?:string }} input
+   */
+  create: async (input) => {
+    const { data } = await api.post('/candidate-notes', input);
+    return data;
+  },
+  /**
+   * Notları listele (cursor sayfalı + filtreler).
+   * @param {{ cursorId?:string, limit?:number, topicId?:string, testId?:string, examTypeId?:string, q?:string, scope?:'general' }} [params]
+   * @returns {Promise<{ items:Array, nextCursor:{id:string}|null }>}
+   */
+  list: async (params = {}) => {
+    const clean = Object.fromEntries(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    );
+    const { data } = await api.get('/candidate-notes', { params: clean });
+    return data;
+  },
+  /** Filtre seçenekleri (notlarda geçen konu/test/sınav türü + serbest not var mı). */
+  facets: async () => {
+    const { data } = await api.get('/candidate-notes/facets');
+    return data; // { topics, tests, examTypes, hasGeneral }
+  },
+  /** Not metnini güncelle (adresleme değişmez). */
+  update: async (id, body) => {
+    const { data } = await api.patch(`/candidate-notes/${id}`, { body });
+    return data;
+  },
+  /** Notu sil. */
+  remove: async (id) => {
+    const { data } = await api.delete(`/candidate-notes/${id}`);
+    return data;
+  },
+};
+
 export default api;
 export { api };

@@ -252,10 +252,10 @@ enum ObjectionStatus {
 }
 
 enum ContractType {
-  CANDIDATE       // Üyelik / Kullanım Sözleşmesi — kayıt sırasında her kullanıcıya
-  EDUCATOR        // Eğitici Hizmet Sözleşmesi — RegisterEducator'da, komisyon + IP/telif
-  PRIVACY         // KVKK Aydınlatma Metni — kayıt sırasında (Sprint 14)
-  DISTANCE_SALE   // Mesafeli Satış Sözleşmesi + Ön Bilgilendirme — her satın almada (Sprint 14)
+  CANDIDATE // Üyelik / Kullanım Sözleşmesi — kayıt sırasında her kullanıcıya
+  EDUCATOR // Eğitici Hizmet Sözleşmesi — RegisterEducator'da, komisyon + IP/telif
+  PRIVACY // KVKK Aydınlatma Metni — kayıt sırasında (Sprint 14)
+  DISTANCE_SALE // Mesafeli Satış Sözleşmesi + Ön Bilgilendirme — her satın almada (Sprint 14)
 }
 
 // Reklam satın alma hedef türü: belirli test paketi veya eğiticinin kendisi
@@ -291,6 +291,7 @@ model Tenant {
   moderationViolations ModerationViolation[]
   moderationActions    ModerationAction[]
   educatorRiskScores   EducatorRiskScore[]
+  candidateNotes       CandidateNote[]
 
   @@map("tenants")
 }
@@ -375,6 +376,7 @@ model User {
   educatorRiskScore    EducatorRiskScore?
   suspendedUntil       DateTime?
   isBanned             Boolean               @default(false)
+  candidateNotes       CandidateNote[]
 
   @@index([tenantId])
   @@index([twoFactorEnabled])
@@ -398,29 +400,29 @@ model UserPreference {
 // Doğrulama linkine tıklanınca buradan User'a promote edilir.
 // Aynı email/username ile yeni deneme: eski kayıt silinip yeni token üretilir.
 model PendingRegistration {
-  id                        String    @id @default(uuid())
-  email                     String    @unique
-  username                  String    @unique
-  passwordHash              String
-  firstName                 String?
-  lastName                  String?
-  role                      UserRole  @default(CANDIDATE)
-  acceptedTermsContractId   String?
-  acceptedPrivacyContractId String?
-  verificationToken         String    @unique
+  id                         String   @id @default(uuid())
+  email                      String   @unique
+  username                   String   @unique
+  passwordHash               String
+  firstName                  String?
+  lastName                   String?
+  role                       UserRole @default(CANDIDATE)
+  acceptedTermsContractId    String?
+  acceptedPrivacyContractId  String?
+  verificationToken          String   @unique
   verificationTokenExpiresAt DateTime
-  ip                        String?
-  userAgent                 String?
-  tenantId                  String?
+  ip                         String?
+  userAgent                  String?
+  tenantId                   String?
 
   // Eğitici kayıt akışı alanları (RegisterEducatorUseCase). Repository raw SQL
   // ile yazar; migration 20260605210000 ile DB'ye eklendi.
-  cvUrl                     String?
-  specializations           String[]
-  educationInfo             String?
-  bio                       String?
-  linkedinUrl               String?
-  websiteUrl                String?
+  cvUrl           String?
+  specializations String[]
+  educationInfo   String?
+  bio             String?
+  linkedinUrl     String?
+  websiteUrl      String?
 
   createdAt DateTime @default(now())
 
@@ -439,7 +441,8 @@ model ExamType {
   active      Boolean         @default(true)
   topics      TopicExamType[]
 
-  tests ExamTest[]
+  tests          ExamTest[]
+  candidateNotes CandidateNote[]
 
   @@map("exam_types")
 }
@@ -454,10 +457,11 @@ model Topic {
   parentId  String?
   createdAt DateTime @default(now())
 
-  parent    Topic?          @relation("TopicTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children  Topic[]         @relation("TopicTree")
-  examTypes TopicExamType[]
-  tests     ExamTest[]
+  parent         Topic?          @relation("TopicTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Topic[]         @relation("TopicTree")
+  examTypes      TopicExamType[]
+  tests          ExamTest[]
+  candidateNotes CandidateNote[]
 
   @@map("topics")
 }
@@ -506,11 +510,12 @@ model ExamTest {
   questions ExamQuestion[]
   attempts  TestAttempt[]
 
-  examType    ExamType?    @relation(fields: [examTypeId], references: [id], onDelete: SetNull)
-  topic       Topic?       @relation(fields: [topicId], references: [id], onDelete: SetNull)
-  educator    User?        @relation("educatorTests", fields: [educatorId], references: [id], onDelete: SetNull)
-  Purchase    Purchase[]
-  adPurchases AdPurchase[]
+  examType       ExamType?       @relation(fields: [examTypeId], references: [id], onDelete: SetNull)
+  topic          Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  educator       User?           @relation("educatorTests", fields: [educatorId], references: [id], onDelete: SetNull)
+  Purchase       Purchase[]
+  adPurchases    AdPurchase[]
+  candidateNotes CandidateNote[]
 
   @@index([tenantId])
   @@index([packageId])
@@ -531,10 +536,11 @@ model ExamQuestion {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  test       ExamTest        @relation(fields: [testId], references: [id], onDelete: Cascade)
-  options    ExamOption[]
-  answers    AttemptAnswer[]
-  objections Objection[]
+  test           ExamTest        @relation(fields: [testId], references: [id], onDelete: Cascade)
+  options        ExamOption[]
+  answers        AttemptAnswer[]
+  objections     Objection[]
+  candidateNotes CandidateNote[]
 
   @@map("exam_questions")
 }
@@ -559,19 +565,19 @@ model ExamOption {
 // Note: candidates are represented by `User` entries (role = CANDIDATE)
 
 model TestAttempt {
-  id          String        @id @default(uuid())
-  testId      String
-  candidateId String
+  id            String        @id @default(uuid())
+  testId        String
+  candidateId   String
   // Çok-denemeli: aynı (test,aday) için 1..N deneme. Her "tekrar çöz" yeni satır
   // (attemptNumber = mevcut max + 1). Eski denemeler korunur (history + kıyas).
-  attemptNumber Int         @default(1)
-  startedAt   DateTime      @default(now())
-  completedAt DateTime?
-  submittedAt DateTime?
-  status      AttemptStatus @default(IN_PROGRESS)
-  score       Float?
+  attemptNumber Int           @default(1)
+  startedAt     DateTime      @default(now())
+  completedAt   DateTime?
+  submittedAt   DateTime?
+  status        AttemptStatus @default(IN_PROGRESS)
+  score         Float?
   // autosave payload could be stored in metadata if needed
-  metadata    Json?
+  metadata      Json?
 
   // Timer engine alanları
   lastResumedAt DateTime?
@@ -630,18 +636,18 @@ model AttemptAnswer {
 }
 
 model Purchase {
-  id             String         @id @default(uuid())
-  testId         String
-  candidateId    String
-  amountCents    Int?
-  currency       Currency       @default(TRY)
-  amountUsdCents Int? // USD normalize snapshot (reporting)
-  status         PurchaseStatus @default(ACTIVE)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  refundedAt     DateTime?
-  expiredAt      DateTime?
-  deletedAt      DateTime?
+  id              String         @id @default(uuid())
+  testId          String
+  candidateId     String
+  amountCents     Int?
+  currency        Currency       @default(TRY)
+  amountUsdCents  Int? // USD normalize snapshot (reporting)
+  status          PurchaseStatus @default(ACTIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  refundedAt      DateTime?
+  expiredAt       DateTime?
+  deletedAt       DateTime?
   // Çok-denemeli "paketi yeniden çöz": aday bu (paket) için sıfırlama yaptığında now()
   // yazılır. Bu tarihten ÖNCE başlamış denemeler "geçmiş tur" sayılır → UI'da test
   // "Başla"ya döner, yeni Start yeni deneme açar. Eski denemeler korunur (kıyas/history).
@@ -667,9 +673,9 @@ model Purchase {
   // distanceSaleContractId: kabul edilen Contract.id snapshot'ı (NOT FK — versiyon
   //                        ileride pasif olsa bile kayıt korunur; FK olsaydı
   //                        on-delete tehlikesi vardı).
-  distanceSaleContractId       String?   @db.Uuid
-  distanceSaleAcceptedAt       DateTime?
-  distanceSaleAcceptedIp       String?
+  distanceSaleContractId        String?   @db.Uuid
+  distanceSaleAcceptedAt        DateTime?
+  distanceSaleAcceptedIp        String?
   distanceSaleAcceptedUserAgent String?
 
   // Satın alma anında paketin testlerinin + sorularının + seçeneklerinin
@@ -1155,9 +1161,9 @@ model AdPurchase {
   // Ödenen tutar (paidCents) reporting/audit için saklanır; AdPackage.priceCents
   // hâlâ baz fiyat olarak kalır. promoCodeId snapshot (FK) — promo silinse de
   // kayıt korunur.
-  paidCents                    Int?
-  platformPromoCodeId          String? @db.Uuid
-  platformPromoDiscountCents   Int?
+  paidCents                  Int?
+  platformPromoCodeId        String? @db.Uuid
+  platformPromoDiscountCents Int?
 
   educator    User           @relation("educatorAdPurchases", fields: [educatorId], references: [id], onDelete: Cascade)
   adPackage   AdPackage      @relation(fields: [adPackageId], references: [id], onDelete: Cascade)
@@ -1312,9 +1318,9 @@ model LiveSession {
 
   // Sprint 15 — Platform admin promo kodu uygulanmışsa snapshot.
   // Tier.priceCents baz fiyat; ödenen tutar paidCents'te. Reporting + audit için.
-  paidCents                    Int?
-  platformPromoCodeId          String? @db.Uuid
-  platformPromoDiscountCents   Int?
+  paidCents                  Int?
+  platformPromoCodeId        String? @db.Uuid
+  platformPromoDiscountCents Int?
 
   educator     User              @relation("EducatorLiveSessions", fields: [educatorId], references: [id])
   tier         LiveSessionTier?  @relation(fields: [tierId], references: [id])
@@ -1360,21 +1366,21 @@ model LiveOption {
 }
 
 model LiveParticipant {
-  id         String   @id @default(uuid())
-  sessionId  String
+  id          String   @id @default(uuid())
+  sessionId   String
   // Login'siz (misafir) katılımda null. Kayıtlı kullanıcı katılımında dolu.
-  userId     String?
+  userId      String?
   // Misafir görünen adı (login'siz katılımda zorunlu girilir). Kayıtlı kullanıcıda null.
   displayName String?
   // Misafir kimlik token'ı — login'siz katılımcının sonraki isteklerini (state/ping/answer)
   // doğrular. Kayıtlı kullanıcıda null (JWT kullanılır).
-  guestToken String?  @unique @map("guest_token")
-  joinedAt   DateTime @default(now())
-  lastSeenAt DateTime @default(now())
+  guestToken  String?  @unique @map("guest_token")
+  joinedAt    DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
   // Kapatma saldırısı koruması: katılım anındaki IP. Aynı cihaz/IP'den oturuma
   // katılım sayısını sınırlamak için (JoinLiveSessionUseCase) — tek cihazın çok
   // sahte hesapla tüm kotayı doldurmasını engeller.
-  joinIp     String?  @map("join_ip")
+  joinIp      String?  @map("join_ip")
 
   session LiveSession  @relation(fields: [sessionId], references: [id])
   user    User?        @relation("UserLiveParticipations", fields: [userId], references: [id])
@@ -1779,22 +1785,22 @@ model BackupLog {
 // ---------------------------------------------------------------------------
 
 enum PlatformPromoScope {
-  LIVE_SESSION  // Eğitici canlı test ödemesinde
-  AD_PACKAGE    // Eğitici reklam paketi ödemesinde
+  LIVE_SESSION // Eğitici canlı test ödemesinde
+  AD_PACKAGE // Eğitici reklam paketi ödemesinde
 }
 
 model PlatformPromoCode {
   id          String               @id @default(uuid()) @db.Uuid
   code        String               @unique
   description String?
-  percentOff  Int                  // 1-100
+  percentOff  Int // 1-100
   scopes      PlatformPromoScope[] // hangi akışlarda geçerli (birden fazla olabilir)
-  maxUses     Int?                 // null = sınırsız
+  maxUses     Int? // null = sınırsız
   usedCount   Int                  @default(0)
   validFrom   DateTime?
   validUntil  DateTime?
   isActive    Boolean              @default(true)
-  createdById String?              // admin userId — denormalize, FK on-delete tehlikeli
+  createdById String? // admin userId — denormalize, FK on-delete tehlikeli
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
@@ -1809,13 +1815,13 @@ model PlatformPromoCode {
 // aynı purchase'da iki kez kullanamaz. Race condition koruması için Promo
 // kullanımı her zaman bir transaction içinde `usedCount++` ile yapılır.
 model PlatformPromoCodeUsage {
-  id           String   @id @default(uuid()) @db.Uuid
-  promoCodeId  String   @db.Uuid
-  educatorId   String
-  purchaseType String   // 'LIVE_SESSION' | 'AD_PACKAGE'
-  purchaseId   String   // liveSessionId veya adPurchaseId
-  discountCents Int     // hesaplanan indirim tutarı (audit/reporting için)
-  usedAt       DateTime @default(now())
+  id            String   @id @default(uuid()) @db.Uuid
+  promoCodeId   String   @db.Uuid
+  educatorId    String
+  purchaseType  String // 'LIVE_SESSION' | 'AD_PACKAGE'
+  purchaseId    String // liveSessionId veya adPurchaseId
+  discountCents Int // hesaplanan indirim tutarı (audit/reporting için)
+  usedAt        DateTime @default(now())
 
   promoCode PlatformPromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
 
@@ -1823,4 +1829,46 @@ model PlatformPromoCodeUsage {
   @@index([educatorId])
   @@index([purchaseId])
   @@map("platform_promo_code_usages")
+}
+
+/// Aday kişisel notları. Soru çözerken "+ Not" ile alınır; soru-bağlı (adresli)
+/// veya serbest (genel) olabilir. Adresleme hem FK (kaynak silinirse SetNull) hem
+/// snapshot (silinse de Notlarım'da adres korunur) ile tutulur — TKHK/audit değil,
+/// kullanıcı verisi sürekliliği için.
+model CandidateNote {
+  id          String @id @default(uuid())
+  tenantId    String
+  candidateId String
+  body        String
+
+  // Adresleme — FK (kaynak silinince SetNull) + snapshot (kalıcı görünüm)
+  testId     String?
+  questionId String?
+  topicId    String?
+  examTypeId String?
+  attemptId  String? // bağlam işareti (FK yok — silinen attempt notu düşürmesin)
+
+  // Snapshot (denormalize): kaynak değişse/silinse de Notlarım'da doğru adres
+  testTitle       String?
+  topicName       String?
+  examTypeName    String?
+  questionExcerpt String? // sorunun ilk ~160 karakteri
+  questionOrder   Int? // "Soru 5" gösterimi (1-tabanlı)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant        @relation(fields: [tenantId], references: [id])
+  candidate User          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  test      ExamTest?     @relation(fields: [testId], references: [id], onDelete: SetNull)
+  question  ExamQuestion? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+  topic     Topic?        @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  examType  ExamType?     @relation(fields: [examTypeId], references: [id], onDelete: SetNull)
+
+  @@index([candidateId, createdAt(sort: Desc), id(sort: Desc)]) // cursor listeleme
+  @@index([candidateId, topicId])
+  @@index([candidateId, testId])
+  @@index([candidateId, examTypeId])
+  @@index([candidateId, questionId])
+  @@map("candidate_notes")
 }

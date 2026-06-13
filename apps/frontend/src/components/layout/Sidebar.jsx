@@ -37,6 +37,7 @@ import {
   Database,
   History,
   FileText,
+  StickyNote,
 } from "lucide-react";
 
 /**
@@ -100,6 +101,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     // "konu hâkimiyeti / hedef tutturma" semantiğine de uyuyor
     { name: t("sidebar.candidate.myTopicReport"), page: "MyTopicReport", icon: Target },
     { name: t("sidebar.candidate.myObjections"), page: "MyObjections", icon: AlertTriangle },
+    { name: t("sidebar.candidate.myNotes"), page: "MyNotes", icon: StickyNote },
     { name: t("sidebar.candidate.profileSettings"), page: "ProfileSettings", icon: User },
   ];
 

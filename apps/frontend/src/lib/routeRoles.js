@@ -44,6 +44,8 @@ export const PAGE_ROLES = {
   MyTopicReport: [ROLES.CANDIDATE],
   // MyObjections: Adayın açtığı hata bildirimleri (salt-okunur izleme)
   MyObjections: [ROLES.CANDIDATE],
+  // MyNotes: Adayın kişisel notları (test/konu/sınav türü adresli)
+  MyNotes: [ROLES.CANDIDATE],
   ProfileSettings: [ROLES.CANDIDATE],
   TakeTest: [ROLES.CANDIDATE],
   CompleteProfile: [ROLES.CANDIDATE],

@@ -160,6 +160,12 @@ import { BackupSchedulerService } from './services/BackupSchedulerService';
 import { AdminBackupController } from './controllers/admin.backup.controller';
 import { PackagesController } from './controllers/packages.controller';
 import { DraftsController } from './controllers/drafts.controller';
+import { CandidateNotesController } from './controllers/candidate-notes.controller';
+import { CreateCandidateNoteUseCase } from '../application/use-cases/note/CreateCandidateNoteUseCase';
+import { ListCandidateNotesUseCase } from '../application/use-cases/note/ListCandidateNotesUseCase';
+import { GetCandidateNoteFacetsUseCase } from '../application/use-cases/note/GetCandidateNoteFacetsUseCase';
+import { UpdateCandidateNoteUseCase } from '../application/use-cases/note/UpdateCandidateNoteUseCase';
+import { DeleteCandidateNoteUseCase } from '../application/use-cases/note/DeleteCandidateNoteUseCase';
 import { PrismaTestPackageRepository } from '../infrastructure/repositories/PrismaTestPackageRepository';
 import { CreateTestPackageUseCase } from '../application/use-cases/package/CreateTestPackageUseCase';
 import { GetTestPackageUseCase } from '../application/use-cases/package/GetTestPackageUseCase';
@@ -341,6 +347,8 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     EmailWebhookController,
     // Server-side draft yedek endpoint'leri (autoSave)
     DraftsController,
+    // Aday kişisel notları
+    CandidateNotesController,
   ],
   providers: [
     SeedService,
@@ -699,6 +707,12 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     // LiveSession use-cases — singleton prisma kullanır, bağımlılıksız
     { provide: CreateLiveSessionUseCase, useFactory: () => new CreateLiveSessionUseCase(getSharedModerateTextContentUseCase()) },
     { provide: GetLiveSessionStateUseCase, useFactory: () => new GetLiveSessionStateUseCase() },
+    // Aday kişisel notları
+    { provide: CreateCandidateNoteUseCase, useFactory: () => new CreateCandidateNoteUseCase() },
+    { provide: ListCandidateNotesUseCase, useFactory: () => new ListCandidateNotesUseCase() },
+    { provide: GetCandidateNoteFacetsUseCase, useFactory: () => new GetCandidateNoteFacetsUseCase() },
+    { provide: UpdateCandidateNoteUseCase, useFactory: () => new UpdateCandidateNoteUseCase() },
+    { provide: DeleteCandidateNoteUseCase, useFactory: () => new DeleteCandidateNoteUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },
     { provide: StartLiveSessionUseCase, useFactory: () => new StartLiveSessionUseCase() },

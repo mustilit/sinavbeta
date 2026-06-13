@@ -6,6 +6,7 @@ import api from "@/lib/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { NoteWidget } from "@/components/notes/NoteWidget";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -1060,6 +1061,14 @@ export default function TakeTest() {
           : undefined
       }
     >
+      {/* Aday not alma widget'ı — sağ-altta sabit "+ Not". O anki soruya adreslenir. */}
+      <NoteWidget
+        testId={testId}
+        questionId={currentQuestion?.id}
+        attemptId={resolvedAttemptId}
+        questionOrder={currentQuestion?.order ?? currentIndex + 1}
+        testTitle={test?.title}
+      />
       {/* Çoklu sekme/pencere çıkışı uyarısı — 1. ve 2. çıkışta gösterilir.
           3.'de useTestProctoring onViolationLimit ile auto-submit eder. */}
       <Dialog open={showExitWarning} onOpenChange={setShowExitWarning}>

@@ -1785,5 +1785,49 @@
       "noActor": "系统",
       "unknownFile": "—"
     }
+  },
+  "notes": {
+    "widget": {
+      "fab": "+ 笔记",
+      "title": "我的笔记",
+      "scopeQuestion": "本题",
+      "scopeGeneral": "通用",
+      "questionShort": "第{{order}}题",
+      "placeholder": "写下你的笔记…",
+      "save": "保存",
+      "saved": "笔记已保存",
+      "empty": "暂无笔记",
+      "viewAll": "查看全部",
+      "close": "关闭",
+      "error": "无法保存笔记"
+    },
+    "page": {
+      "title": "我的笔记",
+      "subtitle": "你的所有笔记按测验、主题和考试类型归类。",
+      "filters": {
+        "search": "搜索",
+        "searchPlaceholder": "搜索笔记…",
+        "examType": "考试类型",
+        "topic": "主题",
+        "test": "测验",
+        "allExamTypes": "全部考试类型",
+        "allTopics": "全部主题",
+        "allTests": "全部测验"
+      },
+      "empty": "你还没有笔记",
+      "emptyFiltered": "没有符合筛选的笔记",
+      "loadMore": "加载更多",
+      "edit": "编辑",
+      "save": "保存",
+      "cancel": "取消",
+      "delete": "删除",
+      "deleteTitle": "删除笔记",
+      "deleteConfirm": "确定要删除这条笔记吗？",
+      "deleted": "笔记已删除",
+      "updated": "笔记已更新",
+      "error": "操作失败",
+      "questionLabel": "第 {{order}} 题",
+      "addressGeneral": "通用"
+    }
   }
 }

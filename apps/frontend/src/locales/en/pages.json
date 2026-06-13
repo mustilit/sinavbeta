@@ -1785,5 +1785,49 @@
       "noActor": "System",
       "unknownFile": "—"
     }
+  },
+  "notes": {
+    "widget": {
+      "fab": "+ Note",
+      "title": "My Notes",
+      "scopeQuestion": "This question",
+      "scopeGeneral": "General",
+      "questionShort": "Q{{order}}",
+      "placeholder": "Write your note…",
+      "save": "Save",
+      "saved": "Note saved",
+      "empty": "No notes yet",
+      "viewAll": "View all",
+      "close": "Close",
+      "error": "Could not save note"
+    },
+    "page": {
+      "title": "My Notes",
+      "subtitle": "All your notes addressed by test, topic and exam type.",
+      "filters": {
+        "search": "Search",
+        "searchPlaceholder": "Search notes…",
+        "examType": "Exam type",
+        "topic": "Topic",
+        "test": "Test",
+        "allExamTypes": "All exam types",
+        "allTopics": "All topics",
+        "allTests": "All tests"
+      },
+      "empty": "You have no notes yet",
+      "emptyFiltered": "No notes match the filter",
+      "loadMore": "Load more",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleteTitle": "Delete note",
+      "deleteConfirm": "Are you sure you want to delete this note?",
+      "deleted": "Note deleted",
+      "updated": "Note updated",
+      "error": "Operation failed",
+      "questionLabel": "Question {{order}}",
+      "addressGeneral": "General"
+    }
   }
 }

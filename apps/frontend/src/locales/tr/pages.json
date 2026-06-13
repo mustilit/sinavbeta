@@ -1785,5 +1785,49 @@
       "noActor": "Sistem",
       "unknownFile": "—"
     }
+  },
+  "notes": {
+    "widget": {
+      "fab": "+ Not",
+      "title": "Notlarım",
+      "scopeQuestion": "Bu soru",
+      "scopeGeneral": "Genel",
+      "questionShort": "Soru {{order}}",
+      "placeholder": "Notunu yaz…",
+      "save": "Kaydet",
+      "saved": "Not kaydedildi",
+      "empty": "Henüz not yok",
+      "viewAll": "Tümünü gör",
+      "close": "Kapat",
+      "error": "Not kaydedilemedi"
+    },
+    "page": {
+      "title": "Notlarım",
+      "subtitle": "Tüm notların test, konu ve sınav türüne göre adresli.",
+      "filters": {
+        "search": "Ara",
+        "searchPlaceholder": "Notlarda ara…",
+        "examType": "Sınav türü",
+        "topic": "Konu",
+        "test": "Test",
+        "allExamTypes": "Tüm sınav türleri",
+        "allTopics": "Tüm konular",
+        "allTests": "Tüm testler"
+      },
+      "empty": "Henüz notunuz yok",
+      "emptyFiltered": "Filtreye uygun not yok",
+      "loadMore": "Daha fazla",
+      "edit": "Düzenle",
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "deleteTitle": "Notu sil",
+      "deleteConfirm": "Bu notu silmek istediğinize emin misiniz?",
+      "deleted": "Not silindi",
+      "updated": "Not güncellendi",
+      "error": "İşlem başarısız",
+      "questionLabel": "Soru {{order}}",
+      "addressGeneral": "Genel"
+    }
   }
 }
