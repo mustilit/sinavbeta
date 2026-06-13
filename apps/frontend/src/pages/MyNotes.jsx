@@ -15,7 +15,6 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +41,17 @@ import { format } from "date-fns";
 
 const ALL = "__all__";
 const GENERAL = "__general__"; // adres taşımayan serbest ("Genel") notlar
+
+/**
+ * Soru metnini sadeleştirir: "Soru N:" öncesindeki prefix'i (sınav türü/test vb.
+ * — zaten üstte etiketlerde var) kırpar. "Soru N:" bulunmazsa metni olduğu gibi
+ * döndürür (her soru bu seed formatında değil).
+ */
+function cleanExcerpt(text) {
+  if (!text) return text;
+  const m = text.match(/Soru\s*\d+\s*[:.)-]/i);
+  return m && m.index > 0 ? text.slice(m.index) : text;
+}
 
 /**
  * Notlarım — adayın tüm notları adresli (sınav türü / konu / test / soru) listelenir.
@@ -243,43 +253,67 @@ export default function MyNotes() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {items.map((n) => (
+          {items.map((n) => {
+            // Üst sıra: Sınav Türü · Sınav adı · Soru no · Konu (arka plan rengi yok)
+            const addr = [];
+            if (n.examTypeName)
+              addr.push(
+                <span className="inline-flex items-center gap-1" key="et">
+                  <GraduationCap className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                  {n.examTypeName}
+                </span>,
+              );
+            if (n.testTitle)
+              addr.push(
+                <span className="inline-flex items-center gap-1" key="t">
+                  <BookOpen className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                  {n.testTitle}
+                </span>,
+              );
+            if (n.questionOrder)
+              addr.push(
+                <span className="font-semibold text-indigo-600 dark:text-indigo-400" key="q">
+                  {t("notes.page.questionLabel", { order: n.questionOrder })}
+                </span>,
+              );
+            if (n.topicName)
+              addr.push(
+                <span className="inline-flex items-center gap-1" key="tp">
+                  <Layers className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                  {n.topicName}
+                </span>,
+              );
+            if (addr.length === 0)
+              addr.push(
+                <span className="text-slate-400" key="g">
+                  {t("notes.page.addressGeneral")}
+                </span>,
+              );
+
+            return (
             <li key={n.id}>
               <Card>
                 <CardContent className="p-4">
-                  {/* Adres etiketleri */}
-                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                    {n.examTypeName ? (
-                      <Badge variant="secondary" className="gap-1">
-                        <GraduationCap className="h-3 w-3" aria-hidden="true" />
-                        {n.examTypeName}
-                      </Badge>
-                    ) : null}
-                    {n.topicName ? (
-                      <Badge variant="secondary" className="gap-1">
-                        <Layers className="h-3 w-3" aria-hidden="true" />
-                        {n.topicName}
-                      </Badge>
-                    ) : null}
-                    {n.testTitle ? (
-                      <Badge variant="secondary" className="gap-1">
-                        <BookOpen className="h-3 w-3" aria-hidden="true" />
-                        {n.testTitle}
-                      </Badge>
-                    ) : null}
-                    {n.questionOrder ? (
-                      <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">
-                        {t("notes.page.questionLabel", { order: n.questionOrder })}
-                      </Badge>
-                    ) : null}
-                    {!n.testTitle && !n.topicName && !n.examTypeName ? (
-                      <Badge variant="outline">{t("notes.page.addressGeneral")}</Badge>
-                    ) : null}
+                  {/* Üst sıra: adres (sol) + tarih (sağ) */}
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-600 dark:text-slate-300">
+                      {addr.map((node, i) => (
+                        <span className="inline-flex items-center gap-2" key={i}>
+                          {i > 0 ? (
+                            <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+                          ) : null}
+                          {node}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="shrink-0 text-xs text-slate-400">
+                      {format(new Date(n.createdAt), "dd.MM.yyyy HH:mm")}
+                    </span>
                   </div>
 
                   {n.questionExcerpt ? (
                     <p className="mb-1.5 line-clamp-2 text-xs italic text-slate-400">
-                      “{n.questionExcerpt}”
+                      “{cleanExcerpt(n.questionExcerpt)}”
                     </p>
                   ) : null}
 
@@ -323,12 +357,9 @@ export default function MyNotes() {
                     </p>
                   )}
 
-                  {/* Alt bar: tarih + aksiyonlar */}
+                  {/* Alt bar: yalnızca aksiyonlar (tarih artık sağ üstte) */}
                   {editingId === n.id ? null : (
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-xs text-slate-400">
-                        {format(new Date(n.createdAt), "dd.MM.yyyy HH:mm")}
-                      </span>
+                    <div className="mt-3 flex items-center justify-end">
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"
@@ -353,7 +384,8 @@ export default function MyNotes() {
                 </CardContent>
               </Card>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 
