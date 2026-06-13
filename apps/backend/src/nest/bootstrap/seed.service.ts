@@ -67,6 +67,10 @@ export class SeedService implements OnApplicationBootstrap {
       // veya "ilk kurulum" için güvence (versiyon 1).
       await this.seedLegalContracts();
 
+      // Sınav türü/konu seçmeyen testlere atanan sistem "Diğer" fallback'i.
+      // Production'da da çalışmalı (CreateTestUseCase slug ile arar).
+      await this.seedFallbackTaxonomy();
+
       // Buradan itibaren DEMO verisi — yalnızca production dışı ortamlarda.
       if (process.env.NODE_ENV === 'production') {
         console.log('Seed: demo users/test data skipped (production)');
@@ -92,6 +96,34 @@ export class SeedService implements OnApplicationBootstrap {
    * docs/legal/*.md dosyaları yoksa (örn. test ortamı) inline fallback metin kullanılır.
    * Production'da bu metinler **avukat onaylı** versiyonla değiştirilmelidir.
    */
+  /**
+   * "Diğer" sınav türü + konu — eğiticinin sınav türü/konu seçmediği testlere
+   * sistemin atadığı fallback. Idempotent (her boot). CreateTestUseCase bu satırları
+   * `slug = 'diger'` ile bulur. Sabit UUID'ler migration ile aynı (tekilleştirme).
+   */
+  private async seedFallbackTaxonomy() {
+    try {
+      const examType = await this.prisma.examType.upsert({
+        where: { slug: 'diger' },
+        create: { id: '11111111-1111-4111-8111-111111111111', name: 'Diğer', slug: 'diger', active: true },
+        update: {},
+      });
+      let topic = await this.prisma.topic.findFirst({ where: { slug: 'diger' } });
+      if (!topic) {
+        topic = await this.prisma.topic.create({
+          data: { id: '22222222-2222-4222-8222-222222222222', name: 'Diğer', slug: 'diger', active: true },
+        });
+      }
+      await this.prisma.topicExamType.upsert({
+        where: { topicId_examTypeId: { topicId: topic.id, examTypeId: examType.id } },
+        create: { topicId: topic.id, examTypeId: examType.id },
+        update: {},
+      });
+    } catch (e) {
+      console.warn('Seed: fallback taxonomy (Diğer) skipped:', (e as Error).message);
+    }
+  }
+
   private async seedLegalContracts() {
     // Yasal md'lerin yeri ortama göre değişir:
     //  - PROD image: docs/ image'a kopyalanmaz; bunun yerine `src/legal/*.md`

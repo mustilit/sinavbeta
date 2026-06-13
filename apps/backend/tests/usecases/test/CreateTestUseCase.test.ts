@@ -12,10 +12,14 @@
  */
 
 const mockAdminSettings = jest.fn();
+const mockExamTypeFindUnique = jest.fn();
+const mockTopicFindFirst = jest.fn();
 
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     adminSettings: { findFirst: (...args: any[]) => mockAdminSettings(...args) },
+    examType: { findUnique: (...args: any[]) => mockExamTypeFindUnique(...args) },
+    topic: { findFirst: (...args: any[]) => mockTopicFindFirst(...args) },
   },
 }));
 
@@ -24,6 +28,8 @@ import { AppError } from '../../../src/application/errors/AppError';
 
 const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
 const VALID_UUID2 = '660e8400-e29b-41d4-a716-446655440000';
+const OTHER_EXAMTYPE = { id: 'other-examtype-id', slug: 'diger', name: 'Diğer' };
+const OTHER_TOPIC = { id: 'other-topic-id', slug: 'diger', name: 'Diğer' };
 
 function makeExamRepo(saveResult: any = { id: 'test-1' }) {
   return { save: jest.fn().mockResolvedValue(saveResult) };
@@ -41,6 +47,9 @@ describe('CreateTestUseCase', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockAdminSettings.mockResolvedValue({ id: 1, packageCreationEnabled: true });
+    // "Diğer" fallback satırları (slug='diger') varsayılan olarak bulunur
+    mockExamTypeFindUnique.mockResolvedValue(OTHER_EXAMTYPE);
+    mockTopicFindFirst.mockResolvedValue(OTHER_TOPIC);
   });
 
   it('kill-switch aktifse PACKAGE_CREATION_DISABLED fırlatır', async () => {
@@ -88,6 +97,30 @@ describe('CreateTestUseCase', () => {
     await uc.execute({ title: 'Test Başlığı', educatorId: 'edu-1' });
     expect(examRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Test Başlığı' }),
+      expect.any(Array),
+    );
+  });
+
+  it('sınav türü ve konu seçilmezse "Diğer" (slug=diger) atanır', async () => {
+    const examRepo = makeExamRepo();
+    const uc = new CreateTestUseCase(examRepo as any, makeExamTypeRepo() as any, makeTopicRepo() as any);
+    await uc.execute({ title: 'Türsüz Test', educatorId: 'edu-1' });
+    expect(mockExamTypeFindUnique).toHaveBeenCalledWith({ where: { slug: 'diger' } });
+    expect(mockTopicFindFirst).toHaveBeenCalledWith({ where: { slug: 'diger' } });
+    expect(examRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ examTypeId: OTHER_EXAMTYPE.id, topicId: OTHER_TOPIC.id }),
+      expect.any(Array),
+    );
+  });
+
+  it('sınav türü verilirse "Diğer" examType lookup yapılmaz (sadece konu fallback)', async () => {
+    const examRepo = makeExamRepo();
+    const uc = new CreateTestUseCase(examRepo as any, makeExamTypeRepo() as any, makeTopicRepo() as any);
+    await uc.execute({ title: 'Türlü Test', educatorId: 'edu-1', examTypeId: VALID_UUID });
+    expect(mockExamTypeFindUnique).not.toHaveBeenCalled();
+    expect(mockTopicFindFirst).toHaveBeenCalledWith({ where: { slug: 'diger' } });
+    expect(examRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ examTypeId: VALID_UUID, topicId: OTHER_TOPIC.id }),
       expect.any(Array),
     );
   });

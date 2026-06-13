@@ -68,6 +68,17 @@ export class CreateTestUseCase {
       }
     }
 
+    // Eğitici sınav türü/konu seçmediyse sistem "Diğer" fallback'ini atar.
+    // ("Diğer" satırları seed + migration ile garanti edilir; bulunamazsa null kalır.)
+    if (!examTypeId) {
+      const other = await prisma.examType.findUnique({ where: { slug: 'diger' } });
+      if (other) examTypeId = other.id;
+    }
+    if (!topicId) {
+      const otherTopic = await prisma.topic.findFirst({ where: { slug: 'diger' } });
+      if (otherTopic) topicId = otherTopic.id;
+    }
+
     const id = randomUUID();
     const test: ExamTest = {
       id,
