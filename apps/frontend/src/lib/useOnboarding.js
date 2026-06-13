@@ -7,7 +7,7 @@
  *   ob_edu_welcome   - Eğitici karşılama turu
  *   ob_edu_create    - Eğitici test oluşturma turu
  */
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import api from '@/lib/api/apiClient';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -20,6 +20,8 @@ export const TOUR_KEYS = {
 
 /** sessionStorage anahtarı — mevcut oturumda tamamlananları tut */
 const SESSION_KEY = 'dal_completed_tours';
+/** localStorage prefix — bu cihazda kalıcı "görüldü" işareti (flicker engeli) */
+const LOCAL_PREFIX = 'dal_tour_done_';
 
 function getSessionCompleted() {
   try {
@@ -36,14 +38,42 @@ function markSessionCompleted(tourKey) {
   } catch {}
 }
 
+function getLocalDone(tourKey) {
+  try {
+    return localStorage.getItem(LOCAL_PREFIX + tourKey) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markLocalDone(tourKey) {
+  try {
+    localStorage.setItem(LOCAL_PREFIX + tourKey, '1');
+  } catch {}
+}
+
 /**
  * Verilen tur görünmeli mi?
- * - Kullanıcı giriş yapmamışsa false
- * - preferences'ta veya bu sessionda tamamlandıysa false
+ *
+ * FLICKER ENGELİ: Tur durumu `user` nesnesinden okunuyor; navigasyon/geçişlerde
+ * `user` bir an preferences'sız (kısmi) gelirse gate yanlışlıkla `true` dönüp
+ * tur'u bir saniyeliğine flash ederdi. Çözüm: bu cihazda bir kez "görüldü"
+ * bilgisini localStorage'a yazıp ÖNCE oradan okuruz (senkron, user titremesinden
+ * bağımsız). Backend pref'i true gelince de yerel önbelleğe kopyalanır.
  */
 export function useShouldShowTour(tourKey) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth } = useAuth();
+
+  // Backend pref'i true ise yerel önbelleğe yaz → bir daha asla flash etmez.
+  useEffect(() => {
+    if (user && user[tourKey]) markLocalDone(tourKey);
+  }, [user, tourKey]);
+
+  // Auth henüz yükleniyorsa karar verme (geçici yanlış-pozitif flash'ı önle)
+  if (isLoadingAuth) return false;
   if (!isAuthenticated || !user) return false;
+  // Bu cihazda daha önce görüldü/tamamlandı → asla gösterme (flicker engeli)
+  if (getLocalDone(tourKey)) return false;
   // preferences merge edilmiş user nesnesinden oku
   if (user[tourKey]) return false;
   // Bu session'da tamamlandıysa da gösterme
@@ -53,15 +83,16 @@ export function useShouldShowTour(tourKey) {
 
 /**
  * Bir turu tamamlandı olarak işaretler.
- * Session storage'a yazar (anlık) + backend preferences'a kaydeder (kalıcı).
+ * Session + localStorage'a yazar (anlık/kalıcı yerel) + backend preferences (kalıcı).
  */
 export function useCompleteTour() {
   const { user } = useAuth();
 
   return useCallback(async (tourKey) => {
     if (!user) return;
-    // Hemen session'a işaretle (aynı session'da tekrar açılmasın)
+    // Hemen yerel işaretle (aynı session + bu cihazda tekrar açılmasın/flash etmesin)
     markSessionCompleted(tourKey);
+    markLocalDone(tourKey);
     // Backend'e kaydet (fail-safe)
     try {
       await api.patch('/me/preferences', { [tourKey]: true });
