@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TestPackageCard from "@/components/ui/TestPackageCard";
+import { TunnelGrid } from "@/components/tunnel/TunnelGrid";
 import PaginationBar from "@/components/ui/PaginationBar";
 import { Search, ShoppingBag, Filter, X } from "lucide-react";
 
@@ -20,6 +21,10 @@ export default function MyTests() {
   const [selectedExamType, setSelectedExamType] = useState("all");
   const [selectedEducator, setSelectedEducator] = useState("all");
   const [completionFilter, setCompletionFilter] = useState("all");
+  const [contentTab, setContentTab] = useState("tests"); // "tests" | "tunnels"
+  const contentTabBtn = (key) =>
+    "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors " +
+    (contentTab === key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200");
 
   const { data: purchases = [], isLoading: loadingPurchases } = useQuery({
     queryKey: ["myPurchases", user?.id],
@@ -231,11 +236,21 @@ export default function MyTests() {
     // max-w-7xl + mx-auto: Explore sayfasıyla aynı container genişliği.
     // Wide ekranda yanlarda otomatik boşluk; içerik 1280px ile sınırlı kalır.
     <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-slate-900">{t("pages:myTests.title")}</h1>
         <p className="text-slate-500 mt-2">{t("pages:myTests.subtitle")}</p>
       </div>
 
+      {/* İçerik sekmeleri: Testler | Tüneller */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
+        <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
+      </div>
+
+      {contentTab === "tunnels" ? (
+        <TunnelGrid mode="mine" />
+      ) : (
+      <>
       {!isLoading && purchases.length > 0 && (
         <div className="mb-6 bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center gap-2 mb-4">
@@ -364,6 +379,8 @@ export default function MyTests() {
             onPageChange={setPage}
           />
         </>
+      )}
+      </>
       )}
     </div>
   );

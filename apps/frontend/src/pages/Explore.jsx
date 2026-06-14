@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import TestPackageCard from "@/components/ui/TestPackageCard";
+import { TunnelGrid } from "@/components/tunnel/TunnelGrid";
 import { Search, SlidersHorizontal, X, Star, ArrowUpDown } from "lucide-react";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 
@@ -29,6 +30,10 @@ export default function Explore() {
   const [showFilters, setShowFilters] = useState(false);
   // Sıralama — filtreden bağımsız: "recommended" (varsayılan) / "rating" / "popular"
   const [sortBy, setSortBy] = useState("recommended");
+  const [contentTab, setContentTab] = useState("tests"); // "tests" | "tunnels"
+  const contentTabBtn = (key) =>
+    "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors " +
+    (contentTab === key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200");
 
   // useDeferredValue: kullanıcı yazarken UI bloklanmaz; 2+ karakter sunucuya gider
   const deferredSearch = useDeferredValue(searchQuery);
@@ -185,11 +190,21 @@ export default function Explore() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-slate-900">{t("pages:explore.title")}</h1>
         <p className="text-slate-500 mt-2">{t("pages:explore.subtitle")}</p>
       </div>
 
+      {/* İçerik sekmeleri: Testler | Tüneller */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
+        <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
+      </div>
+
+      {contentTab === "tunnels" ? (
+        <TunnelGrid mode="discover" />
+      ) : (
+      <>
       {/* Search & Filters */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-8">
         <div className="flex flex-col lg:flex-row gap-4">
@@ -348,6 +363,8 @@ export default function Explore() {
             })}
           </div>
         </>
+      )}
+      </>
       )}
     </div>
   );
