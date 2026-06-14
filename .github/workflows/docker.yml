@@ -16,6 +16,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Prod compose `env_file: ../../.env` ister; .env gitignore'da (secret) → CI'da yok.
+      # Doğrulama için .env.example'dan placeholder üret (gerçek değer gerekmez; sadece
+      # sözdizimi kontrolü, eksik değişkenler hata değil yalnız uyarı verir).
+      - name: Prepare placeholder .env for compose validation
+        run: cp .env.example .env
+
       - name: Validate dev docker-compose
         run: docker compose -f infra/docker/docker-compose.yml config
 
