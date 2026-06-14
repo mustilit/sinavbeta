@@ -17,6 +17,8 @@ const DEFAULTS = {
   minPackagePriceCents: 100,
   // Minimum tünel fiyatı (kuruş) — varsayılan 0 (ücretsiz serbest)
   minTunnelPriceCents: 0,
+  // Tünel katmanı başına minimum soru — varsayılan 10
+  minQuestionsPerLayer: 10,
   // Paket başına en fazla test (admin ayarı) — varsayılan 10
   maxTestsPerPackage: 10,
   // Test başına en fazla soru (admin ayarı) — varsayılan 100

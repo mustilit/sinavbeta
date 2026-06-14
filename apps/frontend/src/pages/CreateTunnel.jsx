@@ -27,6 +27,21 @@ function Req() {
   return <span className="text-rose-500"> *</span>;
 }
 
+/** Bir soru "tam" mı: içerik/görsel var + tüm şıklar dolu + doğru şık işaretli. */
+function isTunnelQuestionComplete(q, optionCount) {
+  const qImg = q?._imgPreview || q?.mediaUrl;
+  const hasContent = !!((q?.content || "").trim() || qImg);
+  const filledOpts = (q?.options ?? []).filter((o) => (o.content || "").trim() || o._imgPreview || o.mediaUrl).length;
+  const hasCorrect = (q?.options ?? []).some((o) => o.isCorrect);
+  return hasContent && filledOpts === optionCount && hasCorrect;
+}
+
+/** Bir katman "tam" mı: asgari soru sayısı dolu + tüm sorular eksiksiz. */
+function isTunnelLayerComplete(layer, optionCount, minQuestions) {
+  const qs = layer?.questions ?? [];
+  return qs.length >= minQuestions && qs.every((q) => isTunnelQuestionComplete(q, optionCount));
+}
+
 /** Taslak için katmanları serileştir — File/blob önizleme alanları ATILIR
  *  (localStorage'a yazılamaz; normal testteki gibi yalnız yüklenmiş URL saklanır). */
 function stripLayersForDraft(ls) {
@@ -103,7 +118,7 @@ export default function CreateTunnel() {
   const [layers, setLayers] = useState([]); // [{ index, questions:[...] }]
   const [activeLayer, setActiveLayer] = useState(1);
 
-  const { minTunnelPriceCents = 0 } = useServiceStatus();
+  const { minTunnelPriceCents = 0, minQuestionsPerLayer = 10 } = useServiceStatus();
   const minPriceTL = minTunnelPriceCents / 100;
   const priceCents = Math.round((parseFloat(priceTL) || 0) * 100);
   const priceTooLow = priceCents < minTunnelPriceCents;
@@ -512,17 +527,22 @@ export default function CreateTunnel() {
             {/* Katman listesi — sol, yukarıdan aşağı */}
             <nav className="flex flex-row flex-wrap gap-1.5 sm:w-44 sm:flex-shrink-0 sm:flex-col" aria-label="Katmanlar">
               {Array.from({ length: layerCount }, (_, i) => i + 1).map((idx) => {
-                const cnt = layers.find((l) => l.index === idx)?.questions.length ?? 0;
+                const layerObj = layers.find((l) => l.index === idx);
+                const cnt = layerObj?.questions.length ?? 0;
+                const complete = isTunnelLayerComplete(layerObj, optionCount, minQuestionsPerLayer);
                 return (
                   <button
                     key={idx}
                     onClick={() => setActiveLayer(idx)}
+                    title={complete ? "Katman tamamlandı" : `En az ${minQuestionsPerLayer} eksiksiz soru gerekli`}
                     className={
                       "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium sm:w-full " +
                       (activeLayer === idx ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")
                     }
                   >
-                    <Layers className="h-3.5 w-3.5 flex-shrink-0" />
+                    {complete
+                      ? <CheckCircle2 className={"h-3.5 w-3.5 flex-shrink-0 " + (activeLayer === idx ? "text-emerald-300" : "text-emerald-600")} />
+                      : <Layers className="h-3.5 w-3.5 flex-shrink-0" />}
                     <span className="sm:flex-1 sm:text-left">Katman {idx}</span>
                     <span className={"rounded-full px-1.5 text-xs " + (activeLayer === idx ? "bg-white/20" : "bg-slate-200")}>{cnt}</span>
                   </button>
@@ -695,7 +715,7 @@ function LayerEditor({ layer, optionCount, onChange }) {
         const hasContent = !!((q.content || "").trim() || qImg);
         const filledOpts = q.options.filter((o) => (o.content || "").trim() || o._imgPreview || o.mediaUrl).length;
         const correctIdx = q.options.findIndex((o) => o.isCorrect);
-        const isComplete = hasContent && filledOpts === optionCount && correctIdx >= 0;
+        const isComplete = isTunnelQuestionComplete(q, optionCount);
         return (
           <div key={qi} className={"rounded-lg border " + (isOpen ? "border-indigo-200" : "border-slate-200 hover:bg-slate-50/50")}>
               {/* Başlık satırı — normal test ile aynı düzen */}
