@@ -384,7 +384,8 @@ export default function CreateTunnel() {
     },
     onSuccess: (clean) => {
       syncCleanToState(clean);
-      toast.success("Sorular kaydedildi");
+      toast.success("Taslak kaydedildi");
+      navigate(createPageUrl("ManageTunnels"));
     },
     onError: (e) => toast.error(e?.message || "Kaydedilemedi"),
   });
