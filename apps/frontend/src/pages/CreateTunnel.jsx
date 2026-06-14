@@ -347,44 +347,49 @@ export default function CreateTunnel() {
             </Button>
           </div>
 
-          {/* Katman sekmeleri */}
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            {Array.from({ length: layerCount }, (_, i) => i + 1).map((idx) => {
-              const cnt = layers.find((l) => l.index === idx)?.questions.length ?? 0;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => setActiveLayer(idx)}
-                  className={
-                    "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium " +
-                    (activeLayer === idx ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")
-                  }
-                >
-                  <Layers className="h-3.5 w-3.5" /> Katman {idx}
-                  <span className={"rounded-full px-1.5 text-xs " + (activeLayer === idx ? "bg-white/20" : "bg-slate-200")}>{cnt}</span>
-                </button>
-              );
-            })}
-          </div>
+          {/* İki sütun: solda dikey katman listesi, sağda soru editörü */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            {/* Katman listesi — sol, yukarıdan aşağı */}
+            <nav className="flex flex-row flex-wrap gap-1.5 sm:w-44 sm:flex-shrink-0 sm:flex-col" aria-label="Katmanlar">
+              {Array.from({ length: layerCount }, (_, i) => i + 1).map((idx) => {
+                const cnt = layers.find((l) => l.index === idx)?.questions.length ?? 0;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveLayer(idx)}
+                    className={
+                      "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium sm:w-full " +
+                      (activeLayer === idx ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")
+                    }
+                  >
+                    <Layers className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="sm:flex-1 sm:text-left">Katman {idx}</span>
+                    <span className={"rounded-full px-1.5 text-xs " + (activeLayer === idx ? "bg-white/20" : "bg-slate-200")}>{cnt}</span>
+                  </button>
+                );
+              })}
+            </nav>
 
-          {/* Aktif katman soruları */}
-          <LayerEditor
-            key={activeLayer}
-            layer={current}
-            optionCount={optionCount}
-            onChange={(qs) => updateLayer(activeLayer, qs)}
-          />
+            {/* Sağ: aktif katman soruları + aksiyonlar */}
+            <div className="min-w-0 flex-1">
+              <LayerEditor
+                key={activeLayer}
+                layer={current}
+                optionCount={optionCount}
+                onChange={(qs) => updateLayer(activeLayer, qs)}
+              />
 
-          {/* Aksiyonlar */}
-          <div className="mt-6 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-              {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Taslağı Kaydet
-            </Button>
-            <Button onClick={() => submitMut.mutate()} disabled={submitMut.isPending}>
-              {submitMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              Onaya Gönder
-            </Button>
+              <div className="mt-6 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+                  {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Taslağı Kaydet
+                </Button>
+                <Button onClick={() => submitMut.mutate()} disabled={submitMut.isPending}>
+                  {submitMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  Onaya Gönder
+                </Button>
+              </div>
+            </div>
           </div>
         </>
       )}
