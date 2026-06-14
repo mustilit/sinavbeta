@@ -85,18 +85,36 @@ export function pickNextPresentation(
     upperOpen: boolean;
     masks: Map<string, number>; // questionId → correctMask
     requiredCorrect?: number;
+    excludeQuestionId?: string | null; // az önce sorulan soru — başka soru varsa atlanır
   },
   rand: Rand = Math.random,
 ): { questionId: string; correctPosition: number; order: string[] } | null {
-  const { questions, baseLayer, upperOpen, masks } = params;
+  const { questions, baseLayer, upperOpen, masks, excludeQuestionId } = params;
   const requiredCorrect = params.requiredCorrect ?? REQUIRED_CORRECT;
   const visible = new Set<number>([baseLayer]);
   if (upperOpen) visible.add(baseLayer + 1);
 
-  const pool = questions.filter(
+  let pool = questions.filter(
     (q) => visible.has(q.layerIndex) && !isMastered(masks.get(q.id) ?? 0, requiredCorrect),
   );
   if (pool.length === 0) return null;
+
+  // Arka arkaya aynı soruyu sorma (seçenekler değişse bile):
+  //  - Görünür havuzda başka soru varsa az önce sorulanı çıkar (round-robin).
+  //  - Görünür havuz yalnız az önce sorulan soruya düştüyse (katman kuyruğu),
+  //    tekrarı önlemek için DİĞER bir öğrenilmemiş soruyu (her katmandan) dolgu
+  //    olarak getir. Tüm tünelde tek soru kaldıysa zorunlu olarak o sorulur.
+  if (excludeQuestionId) {
+    const withoutLast = pool.filter((q) => q.id !== excludeQuestionId);
+    if (withoutLast.length > 0) {
+      pool = withoutLast;
+    } else {
+      const fillerAnywhere = questions.filter(
+        (q) => q.id !== excludeQuestionId && !isMastered(masks.get(q.id) ?? 0, requiredCorrect),
+      );
+      if (fillerAnywhere.length > 0) pool = fillerAnywhere;
+    }
+  }
 
   const q = pool[Math.floor(rand() * pool.length)];
   const mask = masks.get(q.id) ?? 0;

@@ -130,6 +130,22 @@ describe('pickNextPresentation — 5 seçeneklik pencere', () => {
     expect(r!.questionId).toBe('q2');
   });
 
+  it('excludeQuestionId: başka soru varsa aynı soruyu arka arkaya sormaz', () => {
+    const qs: EngineQuestion[] = [
+      { id: 'q1', layerIndex: 1, optionIds: ['a', 'b', 'c', 'd', 'e'], correctOptionId: 'a' },
+      { id: 'q2', layerIndex: 1, optionIds: ['f', 'g', 'h', 'i', 'j'], correctOptionId: 'f' },
+    ];
+    // rand=>0 normalde pool[0]=q1 seçerdi; q1 hariç tutulunca q2 gelir
+    const r = pickNextPresentation({ questions: qs, baseLayer: 1, upperOpen: false, masks: new Map(), excludeQuestionId: 'q1' }, () => 0);
+    expect(r!.questionId).toBe('q2');
+  });
+
+  it('excludeQuestionId: tek soru kaldıysa zorunlu olarak o sorulur', () => {
+    const qs: EngineQuestion[] = [{ id: 'q1', layerIndex: 1, optionIds: ['a', 'b', 'c', 'd', 'e'], correctOptionId: 'a' }];
+    const r = pickNextPresentation({ questions: qs, baseLayer: 1, upperOpen: false, masks: new Map(), excludeQuestionId: 'q1' }, () => 0);
+    expect(r!.questionId).toBe('q1'); // başka soru yok → istisna
+  });
+
   it('tüm görünür sorular öğrenildiyse null', () => {
     const qs: EngineQuestion[] = [{ id: 'q1', layerIndex: 1, optionIds: ['a', 'b', 'c'], correctOptionId: 'a' }];
     const masks = new Map<string, number>([['q1', 0b111]]);

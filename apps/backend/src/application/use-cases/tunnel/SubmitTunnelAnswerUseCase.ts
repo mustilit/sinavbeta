@@ -69,7 +69,7 @@ export class SubmitTunnelAnswerUseCase {
     if (completed) {
       updateData = { ...updateData, status: 'COMPLETED', completedAt: new Date(), currentQuestionId: null, currentCorrectPosition: null, currentOrderJson: null };
     } else {
-      const pick = pickNextPresentation({ questions: play.questions, baseLayer, upperOpen, masks });
+      const pick = pickNextPresentation({ questions: play.questions, baseLayer, upperOpen, masks, excludeQuestionId: engineQ.id });
       if (pick) {
         updateData = { ...updateData, currentQuestionId: pick.questionId, currentCorrectPosition: pick.correctPosition, currentOrderJson: JSON.stringify(pick.order) };
       } else {
