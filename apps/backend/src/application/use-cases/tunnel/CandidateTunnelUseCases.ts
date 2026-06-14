@@ -12,6 +12,7 @@ function pubSummary(t: any) {
     layerCount: t.layerCount,
     examTypeName: t.examType?.name ?? null,
     topicName: t.topic?.name ?? null,
+    educatorId: t.educatorId ?? null,
     educatorUsername: t.educator?.username ?? null,
     questionCount: t._count?.questions ?? 0,
   };
@@ -91,6 +92,7 @@ export class GetPublishedTunnelMetaUseCase {
       });
       attemptStatus = a?.status ?? null;
     }
-    return { ...pubSummary(t), purchased, attemptStatus };
+    const salesCount = await prisma.tunnelPurchase.count({ where: { tunnelId, status: 'ACTIVE' } });
+    return { ...pubSummary(t), salesCount, purchased, attemptStatus };
   }
 }

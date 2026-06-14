@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Layers, BookOpen, FileText, User, Play, CheckCircle2, ShoppingCart, ArrowLeft, Loader2, Star, MessageSquare } from "lucide-react";
+import { Layers, BookOpen, FileText, User, Play, CheckCircle2, ShoppingCart, ArrowLeft, Loader2, Star, MessageSquare, Bell, BellOff, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import StarRating from "@/components/ui/StarRating";
 import { useAuth } from "@/lib/AuthContext";
 import { PaymentModal } from "@/components/ui/PaymentModal";
-import { candidateTunnels as api } from "@/api/dalClient";
+import { candidateTunnels as api, entities } from "@/api/dalClient";
+import http from "@/lib/api/apiClient";
 import { createPageUrl } from "@/utils";
 
 const REVIEWS_PER_PAGE = 5;
@@ -50,6 +51,43 @@ export default function TunnelDetail() {
     enabled: !!id && !!user?.id && !!t?.purchased,
   });
 
+  // Eğitici takip durumu + özet istatistikleri (TestDetail ile aynı kaynak; educatorId = eğitici UUID)
+  const { data: follows = [] } = useQuery({
+    queryKey: ["follows", user?.id, t?.educatorId],
+    queryFn: () => entities.Follow.filter({ educator_email: t.educatorId }),
+    enabled: !!user && !!t?.educatorId,
+  });
+  const isFollowing = follows.length > 0;
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      if (isFollowing) {
+        await entities.Follow.delete(follows[0].educatorId ?? follows[0].id);
+      } else {
+        await entities.Follow.create({
+          follower_email: user.email,
+          follow_type: "educator",
+          educator_email: t.educatorId,
+          educator_name: t.educatorUsername,
+          notifications_enabled: true,
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["follows", user?.id, t?.educatorId] });
+      toast.success(isFollowing ? "Takipten çıkıldı" : "Takip ediliyor");
+    },
+    onError: (e) => toast.error(e?.message || "İşlem başarısız"),
+  });
+  const { data: educatorStats } = useQuery({
+    queryKey: ["educatorStats", t?.educatorId],
+    queryFn: async () => {
+      const res = await http.get(`/educators/${encodeURIComponent(t.educatorId)}?limit=1`);
+      return (res?.data ?? res)?.stats ?? null;
+    },
+    enabled: !!t?.educatorId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const totalReviewPages = Math.max(1, Math.ceil((reviewData.count || 0) / REVIEWS_PER_PAGE));
   const openReview = () => { setRating(myReview?.rating ?? 0); setComment(myReview?.comment ?? ""); setReviewOpen(true); };
   const submitReview = async () => {
@@ -77,10 +115,10 @@ export default function TunnelDetail() {
   const goSolve = () => navigate(createPageUrl("TakeTunnel") + `?id=${t.id}`);
 
   const features = [
+    { icon: FileText, label: "Soru Sayısı", value: t.questionCount },
     { icon: BookOpen, label: "Konu", value: t.topicName || "—" },
-    { icon: FileText, label: "Soru", value: t.questionCount },
     { icon: Layers, label: "Sınav Türü", value: t.examTypeName || "—" },
-    { icon: User, label: "Eğitici", value: t.educatorUsername || "—" },
+    { icon: TrendingUp, label: "Satış Adedi", value: t.salesCount ?? 0 },
   ];
 
   return (
@@ -129,13 +167,58 @@ export default function TunnelDetail() {
 
           {t.description && (
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
-              <h2 className="mb-2 font-semibold text-slate-900">Açıklama</h2>
+              <h2 className="mb-2 text-lg font-semibold text-slate-900">Tünel Hakkında</h2>
               <p className="whitespace-pre-wrap text-slate-600">{t.description}</p>
             </div>
           )}
 
+          {/* Eğitici — TestDetail ile aynı (avatar + Takip Et + özet istatistik) */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="mb-4 font-semibold text-slate-900">Tünel Bilgileri</h2>
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Eğitici</h2>
+            <div className="flex items-center justify-between">
+              <Link
+                to={createPageUrl("EducatorProfile") + `?email=${encodeURIComponent(t.educatorId || "")}`}
+                className="flex items-center gap-4 transition-opacity hover:opacity-80"
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-violet-100">
+                  <User className="h-7 w-7 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900 transition-colors hover:text-indigo-600">
+                    {t.educatorUsername || "Eğitici"}
+                  </p>
+                </div>
+              </Link>
+              {user && t.educatorId && (
+                <Button variant="outline" size="sm" onClick={() => followMutation.mutate()} disabled={followMutation.isPending}>
+                  {isFollowing ? (<><BellOff className="mr-1 h-4 w-4" /> Takiptesin</>) : (<><Bell className="mr-1 h-4 w-4" /> Takip Et</>)}
+                </Button>
+              )}
+            </div>
+            {educatorStats && (
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                <span className="flex items-center gap-1">
+                  <BookOpen className="h-4 w-4" aria-hidden="true" />
+                  {educatorStats.totalPublishedTests ?? 0} test
+                </span>
+                {(educatorStats.totalPurchases ?? 0) > 0 && (
+                  <span className="flex items-center gap-1">
+                    <TrendingUp className="h-4 w-4 text-emerald-500" aria-hidden="true" />
+                    {educatorStats.totalPurchases} satış
+                  </span>
+                )}
+                {educatorStats.ratingAvg != null && Number(educatorStats.ratingAvg) > 0 && (
+                  <span className="flex items-center gap-1 font-medium text-amber-600">
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />
+                    {Number(educatorStats.ratingAvg).toFixed(1)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Özellikler</h2>
             <div className="grid grid-cols-2 gap-4">
               {features.map((f, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
