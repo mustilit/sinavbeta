@@ -33,8 +33,8 @@ export class CandidateTunnelsController {
   @Get()
   @Roles('CANDIDATE')
   @ApiOkResponse({ description: 'Yayınlanmış tüneller' })
-  async list(@Query('examTypeId') examTypeId?: string, @Query('topicId') topicId?: string) {
-    return this.listUC.execute({ examTypeId, topicId });
+  async list(@Req() req: any, @Query('examTypeId') examTypeId?: string, @Query('topicId') topicId?: string) {
+    return this.listUC.execute({ examTypeId, topicId }, req.user?.id);
   }
 
   @Get(':id')

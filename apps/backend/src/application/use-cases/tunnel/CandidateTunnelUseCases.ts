@@ -17,9 +17,10 @@ function pubSummary(t: any) {
   };
 }
 
-/** Aday: yayınlanmış tünellerin pazar listesi (soru/cevap içermez). */
+/** Aday: yayınlanmış tünellerin pazar listesi (soru/cevap içermez).
+ *  actorId verilirse her tünel için purchased + attemptStatus döner (kart durumu). */
 export class ListPublishedTunnelsUseCase {
-  async execute(filter?: { examTypeId?: string; topicId?: string }) {
+  async execute(filter?: { examTypeId?: string; topicId?: string }, actorId?: string | null) {
     const rows = await prisma.tunnel.findMany({
       where: {
         status: 'PUBLISHED',
@@ -34,7 +35,32 @@ export class ListPublishedTunnelsUseCase {
         _count: { select: { questions: true } },
       },
     });
-    return { items: rows.map(pubSummary) };
+
+    let purchased = new Set<string>();
+    let attemptStatus = new Map<string, string>();
+    if (actorId && rows.length) {
+      const ids = rows.map((r) => r.id);
+      const [ps, as] = await Promise.all([
+        prisma.tunnelPurchase.findMany({
+          where: { candidateId: actorId, tunnelId: { in: ids }, status: 'ACTIVE' },
+          select: { tunnelId: true },
+        }),
+        prisma.tunnelAttempt.findMany({
+          where: { candidateId: actorId, tunnelId: { in: ids } },
+          select: { tunnelId: true, status: true },
+        }),
+      ]);
+      purchased = new Set(ps.map((p) => p.tunnelId));
+      attemptStatus = new Map(as.map((a) => [a.tunnelId, a.status]));
+    }
+
+    return {
+      items: rows.map((t) => ({
+        ...pubSummary(t),
+        purchased: purchased.has(t.id),
+        attemptStatus: attemptStatus.get(t.id) ?? null,
+      })),
+    };
   }
 }
 

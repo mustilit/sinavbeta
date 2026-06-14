@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Layers, Loader2, Play, ShoppingCart, CheckCircle2, FileText, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { createPageUrl } from "@/utils";
  */
 export default function Tunnels() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["candidateTunnels"],
     queryFn: () => api.list(),
@@ -118,10 +119,10 @@ export default function Tunnels() {
         onClose={() => setBuyTarget(null)}
         test={buyTarget ? { id: buyTarget.id, title: buyTarget.title, price: (buyTarget.priceCents ?? 0) / 100 } : undefined}
         onPurchased={() => {
-          const id = buyTarget?.id;
-          toast.success("Tünel kütüphanene eklendi");
+          // Satın alma sonrası teste atlamadan listeye dön; kart "Başla" durumuna geçer.
+          toast.success("Tünel satın alındı — tünellerinde 'Başla' ile çözebilirsin");
           setBuyTarget(null);
-          if (id) navigate(createPageUrl("TakeTunnel") + `?id=${id}`);
+          queryClient.invalidateQueries({ queryKey: ["candidateTunnels"] });
         }}
       />
     </div>
