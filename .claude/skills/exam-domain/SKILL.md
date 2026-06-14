@@ -185,6 +185,42 @@ Gerçek zamanlı toplu sınav özelliği. **6 Prisma modeli:**
 
 **Use-case domain:** `application/use-cases/live/` (18 use case).
 
+### Tunnel — Tünel (Adaptif Ustalık Öğrenme)
+
+Gamified ustalık-öğrenme modülü. Eğitici **katmanlı** (kolaydan zora) bir tünel oluşturur; aday satın alıp **adaptif** çözer — her soru aynı anda **5 seçenekle** (1 doğru + 4 rastgele çeldirici) gelir, doğru şık **her zaman içindedir** ama yeri değişir. Bir soru **3 farklı pozisyonda** doğru cevaplanınca "öğrenildi". Tüm katmanlar öğrenilince tünel biter. **TestPackage'dan tamamen ayrı bir satış+çözme akışıdır.**
+
+**9 Prisma modeli:**
+
+- **Tunnel** — `id, tenantId, educatorId, examTypeId?, topicId?, title, description?, coverImageUrl?, priceCents, currency, layerCount, optionsPerQuestion, advanceStreak, status (TunnelStatus: DRAFT|PENDING_APPROVAL|PUBLISHED|REJECTED), reviewNote?, reviewedById?, submittedAt?, reviewedAt?, publishedAt?`. `layerCount/optionsPerQuestion/advanceStreak` **oluşturma anında AdminSettings'ten snapshot** (admin sonradan değiştirse mevcut tünel bozulmaz — TestPackage snapshot deseni).
+- **TunnelLayer** — `tunnelId, index` (1-tabanlı, 1 = en kolay). `@@unique([tunnelId, index])`.
+- **TunnelQuestion** — `tunnelId (denormalize), layerId, content, mediaUrl?, order`.
+- **TunnelOption** — `questionId, content, mediaUrl?, isCorrect, order`. Her soruda **tam 1 doğru**; `order` kanonik sıradır, aday sunumunda karıştırılır (pozisyon ustalığı için).
+- **TunnelPurchase** — `tenantId, tunnelId, candidateId, amountCents, status (PurchaseStatus), discountCodeId?/discountAmountCents? (snapshot), distanceSale* (TKHK kanıt zinciri), refundedAt?`. `@@unique([candidateId, tunnelId])`. **`Purchase.testId` zorunlu olduğu için ayrı model** — TestPackage Purchase'ından bağımsız.
+- **TunnelAttempt** — adaptif ilerleme. `baseLayer` (en alttaki tam-öğrenilmemiş katman), `upperOpen` (baseLayer+1 görünür mü), `streakCount` (tabanda üst üste doğru), `current{QuestionId,CorrectPosition,OrderJson}` (resume aynı sunumu göstersin), `status (TunnelAttemptStatus: IN_PROGRESS|COMPLETED)`. `@@unique([candidateId, tunnelId])` — aday+tünel başına tek attempt.
+- **TunnelQuestionProgress** — soru bazlı pozisyon ustalığı. `correctMask` (doğru cevaplanan pozisyonların bitmask'i), `mastered`. Ustalık **monoton** (bit silinmez). `@@unique([attemptId, questionId])`.
+- **TunnelReview** — aday değerlendirmesi (`rating 1-5, comment?`). `@@unique([tunnelId, candidateId])` (upsert). **Yalnız aktif satın alan** yazabilir; ortalama kart/detayda gösterilir.
+- **TunnelQuestionReport** — aday çözüm sırasında soru hata bildirimi (`questionId?, reason, status OPEN|RESOLVED`). Hafif, scalar-only.
+
+**Adaptif motor (`engine.ts` — saf, prisma'sız):**
+- `WINDOW_SIZE = 5` (gösterilen seçenek), `REQUIRED_CORRECT = 3` (ustalık için farklı pozisyon).
+- Görünür pencere: `{baseLayer}` ∪ (`{baseLayer+1}` eğer `upperOpen`). Maks 2 katman.
+- Tabanda `advanceStreak` kez üst üste doğru → üst katman açılır. Taban sorusuna **yanlış** → üst kapanır + streak sıfır (gerileme). Üst katman yanlış → gerileme yok.
+- Bir soru `REQUIRED_CORRECT` farklı pozisyonda doğru → `mastered`. Taban katmanın tüm soruları öğrenilince taban bir üste kayar; tüm katmanlar bitince tünel `COMPLETED`.
+- Arka arkaya aynı soruyu sormaz (`excludeQuestionId`); görünürde tek o soru kaldıysa başka katmandan dolgu.
+
+**Akış:** Admin AdminSettings'te tünel parametrelerini ayarlar → Eğitici tünel + katman + soru yazar (DRAFT), onaya gönderir (PENDING_APPROVAL) → Admin onaylar (PUBLISHED) / reddeder (REJECTED + not) → Aday keşfeder, satın alır (indirim kodu + mesafeli satış sözleşmesi), çözer (adaptif), değerlendirir → ilerleme raporu.
+
+**İş kuralları (özet):**
+- Yalnız **sahibi** ve yalnız **DRAFT/REJECTED** durumunda meta düzenlenebilir (Update); katman/snapshot değişmez. Soru kaydetme (Save) yalnız yayınlanmamışta.
+- Onaya gönderme: her katmanda `minQuestionsPerLayer..maxQuestionsPerLayer` arası soru (AdminSettings).
+- Satın alma: CANDIDATE alır, eğitici kendi tünelini alamaz (`OWN_TUNNEL`), aday tekrar alamaz (idempotent → mevcut döner), `usedCount` race-safe artırma + snapshot. Ücretsiz tünel provider'sız.
+- İndirim kodu: eğitici kodu %50 clamp, global admin kodu (createdById=null) clamp yok — `ValidateTunnelDiscountUseCase` ↔ `PurchaseTunnelUseCase` birebir hizalı.
+- Çözme/değerlendirme/rapor/hata bildirimi: **aktif satın alma** şart (`TUNNEL_NOT_PURCHASED`).
+
+**Use-case domain:** `application/use-cases/tunnel/` (Create/Update/Save/Submit/Approve/Reject, List/Get, Purchase/ValidateDiscount, Start/SubmitAnswer/GetState, Review×3, Reports, Report, engine + tunnelPlay).
+**Frontend sayfaları:** `Explore`/`MyTests` (Tüneller sekmesi — `TunnelGrid`), `TunnelDetail`, `TakeTunnel`, `MyResults` (rapor), eğitici `CreateTunnel`/`EditTunnel`, admin onay. dalClient: `candidateTunnels` namespace.
+**Anti-kopya:** `TakeTunnel` normal sınavla aynı koruma — metin kopyalama/screenshot engeli + `TestWatermark` + bej okuma modu.
+
 ## İş Kuralları
 
 **Yayımlama**
@@ -229,6 +265,9 @@ Gerçek zamanlı toplu sınav özelliği. **6 Prisma modeli:**
 | PlatformPromoCode uygula (satın alırken) | - | ✓ | - |
 | Skor görüntüle | kendi | kendi yazdığı paketler + kendi çözdüğü | tüm |
 | AdPackage satın al (reklam) | - | ✓ | ✓ |
+| Tünel oluştur/düzenle/onaya gönder | - | ✓ (kendi) | ✓ |
+| Tünel onayla/reddet | - | - | ✓ |
+| Tünel satın al + çöz + değerlendir | ✓ | - | - |
 | AdminSettings | - | - | ✓ |
 | BackupLog | - | - | ✓ |
 
@@ -266,6 +305,12 @@ Kod İngilizce, UI Türkçe. API yanıtları İngilizce alan adlı, frontend'de 
 | Canlı oturum | Live session | `liveSession` |
 | Canlı soru | Live question | `liveQuestion` |
 | Katılımcı | Participant | `liveParticipant` |
+| Tünel | Tunnel | `tunnel` |
+| Katman | Layer | `tunnelLayer` |
+| Tünel satın alma | Tunnel purchase | `tunnelPurchase` |
+| Tünel çözme | Tunnel attempt | `tunnelAttempt` |
+| (Pozisyon) ustalık | Mastery (progress) | `tunnelQuestionProgress` |
+| Tünel değerlendirme | Tunnel review | `tunnelReview` |
 
 ## Notlar
 

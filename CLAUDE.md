@@ -20,7 +20,7 @@ apps/
   backend/               → NestJS backend
     src/
       application/
-        use-cases/           → İş mantığı buradadır — 19 domain alt klasörüne ayrılmış
+        use-cases/           → İş mantığı buradadır — 20 domain alt klasörüne ayrılmış
           auth/              → Kayıt, giriş, şifre sıfırlama, 2FA (Setup/Disable/VerifyTwoFactorLogin), cihaz doğrulama (VerifyDevice/NotifyNewDeviceLogin)
           billing/           → Abonelik & ödeme: StartCheckout, CreatePortalLink, GetMySubscription, HandleStripeWebhook, HandleIyzicoWebhook
           moderation/        → AI içerik moderasyonu: ModerateQuestionContent, ProcessModerationJob, BlockedTerm CRUD, risk skoru, ihlal/aksiyon yönetimi (17 use-case)
@@ -41,6 +41,7 @@ apps/
           contract/          → Eğitici sözleşmesi
           report/            → Raporlama
           notification/      → Bildirim tercihleri, digest
+          tunnel/            → Tünel (adaptif ustalık öğrenme): Create/Update/Save/Submit/Approve/Reject, List/Get, Purchase/ValidateDiscount, Start/SubmitAnswer/GetState, Review×3, Reports, Report + engine (saf adaptif motor) + tunnelPlay
         services/        → Yardımcı servisler (ReviewAggregation, AuditLogService, RefundProcessor, TestAttemptService)
           email/         → EmailDispatcher, EmailRenderer, providers (Brevo/SMTP/Console), workers
           content-safety/→ AI moderasyon (Claude/Nsfwjs providers)
@@ -150,6 +151,7 @@ docs/
 - **IdempotencyKey:** Para akışlı POST/PUT isteklerinde çift işlem koruması. `@@unique([userId, route, key])`. Çalışma zamanında Redis kullanılır (24h TTL, 60s lock); model kalıcı kayıt/audit içindir.
 - **UserDevice:** Kullanıcının giriş yaptığı cihazlar. `fingerprint`, `trusted`, `trustToken`. Yeni/bilinmeyen cihazda uyarı e-postası tetiklenir (`NotifyNewDeviceLogin`).
 - **Moderation (AI içerik moderasyonu):** `ModerationResult` (içerik tarama sonucu), `BlockedTerm` (yasaklı terim listesi), `ModerationViolation` (ihlal kaydı), `ModerationAction` (uygulanan yaptırım), `EducatorRiskScore` (eğitici risk skoru). Enum'lar: `ModerationStatus`, `ModerationCategory`, `ModerationProvider`, `EducatorRiskLevel`, `ModerationActionType`.
+- **Tunnel (Tünel — adaptif ustalık öğrenme):** TestPackage'dan **ayrı** satış+çözme modülü. Eğitici katmanlı (kolay→zor) tünel yazar; aday satın alıp adaptif çözer — her soru 5 seçenekle (1 doğru + 4 çeldirici, doğru hep içeride, yeri değişken) gelir, bir soru **3 farklı pozisyonda** doğru → "öğrenildi", tüm katmanlar bitince tamamlanır. 9 model: `Tunnel`, `TunnelLayer`, `TunnelQuestion`, `TunnelOption`, `TunnelPurchase` (`@@unique[candidateId,tunnelId]`, indirim+TKHK snapshot), `TunnelAttempt` (`baseLayer/upperOpen/streakCount/current*`), `TunnelQuestionProgress` (`correctMask` bitmask, monoton ustalık), `TunnelReview` (`@@unique[tunnelId,candidateId]`, satın alma kapılı), `TunnelQuestionReport`. Enum: `TunnelStatus` (DRAFT/PENDING_APPROVAL/PUBLISHED/REJECTED), `TunnelAttemptStatus`. `layerCount/optionsPerQuestion/advanceStreak` AdminSettings'ten oluşturma-anı snapshot. Adaptif motor `use-cases/tunnel/engine.ts` (saf, `WINDOW_SIZE=5`, `REQUIRED_CORRECT=3`). Domain detayı: `exam-domain` skill.
 
 ## Komutlar
 
@@ -227,7 +229,7 @@ cd apps/frontend && npm audit --audit-level=high
 - **Dark mode:** `next-themes` ile aktif, `<html class="dark">` toggle, localStorage persist.
 - **A11y testleri:** Playwright + axe-core ile kritik sayfalar WCAG 2.1 AA bekçisinde.
 - **Canlı sınav (LiveSession):** Educator oturum oluşturur/yönetir; candidate koda girerek katılır, soruları cevaplar. HTTP polling (2s) + heartbeat (15s). 6 yeni Prisma modeli: `LiveSessionTier`, `LiveSession`, `LiveQuestion`, `LiveOption`, `LiveParticipant`, `LiveAnswer`.
-- **Use-case domain refaktörü:** Use-case'ler `application/use-cases/` altında domain alt klasörlerine taşındı. Başlangıçta 17 domain (auth, educator, test, question, attempt, purchase, refund, discount, review, objection, ad, package, live, admin, contract, report, notification); sonradan `billing` ve `moderation` eklenerek **19 domain** oldu.
+- **Use-case domain refaktörü:** Use-case'ler `application/use-cases/` altında domain alt klasörlerine taşındı. Başlangıçta 17 domain (auth, educator, test, question, attempt, purchase, refund, discount, review, objection, ad, package, live, admin, contract, report, notification); sonradan `billing` ve `moderation` eklenerek 19, ardından `tunnel` ile **20 domain** oldu.
 - **Sentry hata izleme:** Backend `src/instrument.ts` + `HttpExceptionFilter` (5xx → captureException); frontend `main.jsx` + `ErrorBoundary`. DSN yoksa devre dışı. Sample rate prod'da %10. PII filtresi: authorization ve cookie header'ları event'ten kaldırılır.
 - **Bundle analyzer:** `ANALYZE=1 npm run build` → `dist/stats.html` treemap. CI'da `frontend_build` job'ı artifact yükler.
 - **settings.local.json wildcard izinler:** `Bash(*) PowerShell(*) Read(*) Write(*) Edit(*) Glob(*) Grep(*)` — yerel araçlarda onay istenmez.
@@ -293,6 +295,16 @@ Her satın alma türünde indirim kodu girişi tam-akış: backend doğrulama + 
 - **Frontend:** `pages/ManagePromoCodes.jsx` admin CRUD; `pages/LiveSessionCreate.jsx` + `pages/MyAds.jsx` eğitici "promo uygula" UI; `components/ui/PaymentModal.jsx` aday "indirim uygula" UI. dalClient: `platformPromoCodes` namespace (list/create/toggle/delete/validate) + `discounts.validate`. `routeRoles.js`: `ManagePromoCodes: [ROLES.ADMIN]`.
 - **Test:** 6 yeni Jest suite + 66 unit test (`tests/usecases/platform-promo/` 5 dosya + `tests/usecases/discount/ValidateDiscountCodeUseCase.test.ts`). Coverage: validation hataları, sahiplik, tarih penceresi, usage limit, küçük→büyük harf normalize, atomik race senaryoları, audit log best-effort. 66/66 pass.
 - **TKHK + audit kanıt zinciri:** Her satın alma satırı kendi promo bilgisini snapshot olarak taşır (`paidCents/platformPromoCodeId/platformPromoDiscountCents` — LiveSession/AdPurchase'ta; `discountCodeId/discountAmount` — Purchase'ta). Promo silinse bile raporlama bozulmaz.
+
+### Tünel modülü — adaptif ustalık öğrenme (v1.7.0)
+
+Gamified, **TestPackage'dan ayrı** satış+çözme modülü. Eğitici katmanlı (kolay→zor) tünel yazar, onaya gönderir; admin onaylar; aday keşfeder/satın alır/adaptif çözer/değerlendirir.
+
+- **Adaptif motor (`use-cases/tunnel/engine.ts`, saf):** Her soru 5 seçenekle (1 doğru + 4 rastgele çeldirici) gelir; doğru şık **her zaman içeride** ama yeri değişken. Bir soru **3 farklı pozisyonda** doğru cevaplanınca "öğrenildi" (`correctMask` bitmask, monoton). Tabanda `advanceStreak` kez üst üste doğru → üst katman açılır; taban yanlış → üst kapanır + streak sıfır. Taban katman bitince yukarı kayar, tüm katmanlar bitince `COMPLETED`.
+- **9 Prisma modeli + migration `20260614190000_tunnel_review`** (TunnelReview eklenmesi). `layerCount/optionsPerQuestion/advanceStreak` AdminSettings'ten oluşturma-anı snapshot.
+- **Akış:** DRAFT → PENDING_APPROVAL → PUBLISHED/REJECTED. Aday satın alma indirim kodu (%50 eğitici clamp / global clamp yok) + mesafeli satış sözleşmesi (TKHK) ile; çözme/değerlendirme/rapor/hata bildirimi **aktif satın alma** gerektirir.
+- **Frontend:** Keşfet & Satın Aldıklarım'da **Tüneller sekmesi** (paylaşılan `TunnelGrid`, tek-satır filtre), TestDetail uyumlu `TunnelDetail` (Eğitici kartı + Özellikler + satış sayısı + yorum/puan), `TakeTunnel` (anti-kopya + filigran + tek güneş ikonlu bej mod), `MyResults` tünel raporu. dalClient `candidateTunnels` namespace.
+- **Test:** tünel use-case kapsamı **%82** (engine + review + meta + discount + play + CRUD; `tests/usecases/tunnel/` 8 suite). Domain tek-kaynak: `exam-domain` skill.
 
 ## Delege Rehberi
 
