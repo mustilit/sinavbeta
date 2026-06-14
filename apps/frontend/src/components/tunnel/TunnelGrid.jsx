@@ -117,7 +117,15 @@ export function TunnelGrid({ mode = "discover" }) {
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
             <span className="text-2xl font-bold text-slate-900">{t.priceCents > 0 ? `₺${(t.priceCents / 100).toFixed(0)}` : "Ücretsiz"}</span>
             {t.purchased ? (
-              <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={(e) => { e.stopPropagation(); navigate(createPageUrl("TakeTunnel") + `?id=${t.id}`); }}>
+              <Button
+                size="sm"
+                className={
+                  (t.attemptStatus && t.attemptStatus !== "COMPLETED"
+                    ? "bg-amber-500 hover:bg-amber-600"
+                    : "bg-indigo-600 hover:bg-indigo-700") + " text-white"
+                }
+                onClick={(e) => { e.stopPropagation(); navigate(createPageUrl("TakeTunnel") + `?id=${t.id}`); }}
+              >
                 {t.attemptStatus === "COMPLETED" ? (<><CheckCircle2 className="mr-1.5 h-4 w-4" /> Tamamlandı</>) : (<><Play className="mr-1.5 h-4 w-4" /> {t.attemptStatus ? "Devam Et" : "Başla"}</>)}
               </Button>
             ) : (

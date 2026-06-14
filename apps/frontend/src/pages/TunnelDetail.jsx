@@ -110,30 +110,21 @@ export default function TunnelDetail() {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Ana içerik */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Puan özeti */}
+          {/* Puan özeti — yalnızca ortalama (buton Yorumlar başlığında) */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="mb-1 font-semibold text-slate-900">Puan</h2>
-                <div className="flex items-center gap-2">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className={"h-5 w-5 " + (s <= Math.round(reviewData.avg || 0) ? "fill-amber-400 text-amber-400" : "text-slate-200")} />
-                    ))}
-                  </div>
-                  <span className="text-2xl font-bold text-slate-900">{reviewData.avg ?? "—"}</span>
-                  <span className="text-sm text-slate-500">/ 5</span>
-                </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  {reviewData.count > 0 ? `${reviewData.count} değerlendirme` : "Henüz değerlendirme yok"}
-                </p>
+            <h2 className="mb-1 font-semibold text-slate-900">Puan</h2>
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} className={"h-6 w-6 " + (s <= Math.round(reviewData.avg || 0) ? "fill-amber-400 text-amber-400" : "text-slate-200")} />
+                ))}
               </div>
-              {t.purchased && (
-                <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={openReview}>
-                  <Star className="mr-1.5 h-4 w-4" /> {myReview ? "Değerlendirmeni Güncelle" : "Değerlendir"}
-                </Button>
-              )}
+              <span className="text-2xl font-bold text-slate-900">{reviewData.avg ?? "—"}</span>
+              <span className="text-sm text-slate-500">/ 5</span>
             </div>
+            <p className="mt-1 text-xs text-slate-500">
+              {reviewData.count > 0 ? `${reviewData.count} değerlendirme` : "Henüz değerlendirme yok"}
+            </p>
           </div>
 
           {t.description && (
@@ -167,11 +158,18 @@ export default function TunnelDetail() {
             </p>
           </div>
 
-          {/* Yorumlar */}
+          {/* Yorumlar — başlıkta Değerlendir/Puanı Güncelle (TestDetail ile aynı) */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="mb-4 font-semibold text-slate-900">
-              Yorumlar <span className="text-sm font-normal text-slate-500">({reviewData.count})</span>
-            </h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-semibold text-slate-900">
+                Yorumlar <span className="text-sm font-normal text-slate-500">({reviewData.count})</span>
+              </h2>
+              {user && t.purchased && (
+                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={openReview}>
+                  <Star className="mr-1.5 h-4 w-4" /> {myReview ? "Puanı Güncelle" : "Değerlendir"}
+                </Button>
+              )}
+            </div>
             {reviewData.items.length === 0 ? (
               <div className="py-8 text-center text-sm text-slate-400">
                 <MessageSquare className="mx-auto mb-2 h-8 w-8 text-slate-200" /> Henüz yorum yok.
@@ -214,7 +212,10 @@ export default function TunnelDetail() {
             </div>
 
             {t.purchased ? (
-              <Button className="h-12 w-full bg-indigo-600 hover:bg-indigo-700" onClick={goSolve}>
+              <Button
+                className={"h-12 w-full text-white " + (t.attemptStatus && t.attemptStatus !== "COMPLETED" ? "bg-amber-500 hover:bg-amber-600" : "bg-indigo-600 hover:bg-indigo-700")}
+                onClick={goSolve}
+              >
                 {t.attemptStatus === "COMPLETED" ? (<><CheckCircle2 className="mr-2 h-5 w-5" /> Tekrar Çöz</>) : (<><Play className="mr-2 h-5 w-5" /> {t.attemptStatus ? "Devam Et" : "Başla"}</>)}
               </Button>
             ) : (

@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
+import { TestWatermark } from "@/components/test/TestWatermark";
+import { useAuth } from "@/lib/AuthContext";
 import { candidateTunnels as api } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
 
@@ -23,7 +25,9 @@ const fmt = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")
 export default function TakeTunnel() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const tunnelId = params.get("id");
+  const guardRef = useRef(null); // kopya/sağ-tık koruması bu kapsayıcıda
 
   const [state, setState] = useState(null);     // canlı sunucu durumu
   const [loading, setLoading] = useState(true);
@@ -68,6 +72,38 @@ export default function TakeTunnel() {
     const id = setInterval(() => setElapsedSec((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, [loading, state]);
+
+  // Kopya/sızıntı koruması (normal test ekranıyla aynı): sağ tık, copy/cut/paste,
+  // drag/select ve Ctrl+P/S/A/U, F12, Ctrl+Shift+I/J/C engellenir. Çözüm sırasında aktif.
+  const solving = !!state && state.status !== "COMPLETED";
+  useEffect(() => {
+    if (!solving) return;
+    const el = guardRef.current;
+    if (!el) return;
+    const block = (e) => { e.preventDefault(); };
+    el.addEventListener("contextmenu", block);
+    el.addEventListener("copy", block);
+    el.addEventListener("cut", block);
+    el.addEventListener("paste", block);
+    el.addEventListener("dragstart", block);
+    el.addEventListener("selectstart", block);
+    const onKeyDown = (e) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      const key = (e.key || "").toLowerCase();
+      if (ctrl && ["p", "s", "a", "u"].includes(key)) { e.preventDefault(); return; }
+      if (e.key === "F12" || (ctrl && e.shiftKey && ["i", "j", "c"].includes(key))) { e.preventDefault(); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      el.removeEventListener("contextmenu", block);
+      el.removeEventListener("copy", block);
+      el.removeEventListener("cut", block);
+      el.removeEventListener("paste", block);
+      el.removeEventListener("dragstart", block);
+      el.removeEventListener("selectstart", block);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [solving]);
 
   const handleAnswer = useCallback(
     (optionId) => {
@@ -115,7 +151,12 @@ export default function TakeTunnel() {
   const canNext = viewIndex < answered.length; // canlıya kadar ileri gidilebilir
 
   return (
-    <div data-exam-theme={examTheme} className="mx-auto max-w-3xl">
+    <div
+      ref={guardRef}
+      data-exam-theme={examTheme}
+      className="mx-auto max-w-3xl"
+      style={solving ? { userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" } : undefined}
+    >
       {/* Araç çubuğu — normal test ekranıyla aynı format */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -188,6 +229,10 @@ export default function TakeTunnel() {
       ) : (
         <>
           <div className="relative">
+            {/* Filigran — çözüm sırasında kişiyi belirtir (ekran görüntüsü/kayıt caydırıcı) */}
+            {solving && (
+              <TestWatermark identity={{ name: user?.full_name || user?.username || user?.email, email: user?.email }} />
+            )}
             <Card>
               <CardContent className="p-5">
                 <p className="mb-4 text-base font-medium text-slate-900 whitespace-pre-wrap">{q.content}</p>
