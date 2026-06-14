@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 // Sprint 12 #1 — html2canvas (~250 KB) lazy: handleShare içinde dynamic import.
-import { entities } from "@/api/dalClient";
+import { entities, candidateTunnels } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import { Layers, CheckCircle2 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, subWeeks } from "date-fns";
 import { tr } from "date-fns/locale";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -130,6 +131,10 @@ export default function MyResults() {
   const [filterExamType, setFilterExamType] = useState("all");
   const [chartType, setChartType] = useState("performance");
   const [page, setPage] = useState(1);
+  const [contentTab, setContentTab] = useState("tests"); // "tests" | "tunnels"
+  const contentTabBtn = (key) =>
+    "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors " +
+    (contentTab === key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200");
 
   const { data: examTypes = [] } = useQuery({
     queryKey: ["examTypes"],
@@ -272,11 +277,21 @@ export default function MyResults() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-slate-900">{t("pages:titles.myResults")}</h1>
         <p className="text-slate-500 mt-2">{t("pages:titles.myResultsDesc")}</p>
       </div>
 
+      {/* Rapor sekmeleri: Testler | Tüneller */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
+        <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
+      </div>
+
+      {contentTab === "tunnels" ? (
+        <TunnelReportsTab />
+      ) : (
+      <>
       {/* Filters */}
       <div className="mb-6 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-4 flex-wrap">
@@ -652,6 +667,60 @@ export default function MyResults() {
             </p>
         </div>
       )}
+      </>
+      )}
     </div>
+  );
+}
+
+/** Tünel raporları sekmesi — satın alınan tünellerde ilerleme + durum (hafif). */
+function TunnelReportsTab() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["candidateTunnelReports"],
+    queryFn: () => candidateTunnels.reports(),
+    staleTime: 30_000,
+  });
+  const items = data?.items ?? [];
+
+  if (isLoading) {
+    return <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" /></div>;
+  }
+  if (items.length === 0) {
+    return <p className="py-16 text-center text-sm text-slate-500">Henüz satın aldığın tünel yok.</p>;
+  }
+
+  const statusBadge = (it) => {
+    if (it.status === "COMPLETED") return <Badge className="bg-emerald-100 text-emerald-700"><CheckCircle2 className="mr-1 h-3 w-3" /> Tamamlandı</Badge>;
+    if (it.status === "IN_PROGRESS") return <Badge className="bg-amber-100 text-amber-700">Devam Ediyor</Badge>;
+    return <Badge className="bg-slate-100 text-slate-600">Başlanmadı</Badge>;
+  };
+
+  return (
+    <ul className="space-y-3">
+      {items.map((it) => (
+        <li key={it.tunnelId} className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 flex-shrink-0 text-indigo-600" />
+                <span className="font-semibold text-slate-900">{it.title}</span>
+              </div>
+              <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-slate-500">
+                {it.examTypeName && <span>{it.examTypeName}</span>}
+                {it.topicName && <span>· {it.topicName}</span>}
+                <span>· {it.masteredQuestions}/{it.totalQuestions} soru öğrenildi</span>
+              </div>
+            </div>
+            {statusBadge(it)}
+          </div>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-2 rounded-full bg-indigo-600 transition-all" style={{ width: `${it.progressPercent}%` }} />
+            </div>
+            <span className="w-10 text-right text-sm font-semibold text-indigo-600">%{it.progressPercent}</span>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

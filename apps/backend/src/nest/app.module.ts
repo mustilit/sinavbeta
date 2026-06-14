@@ -184,6 +184,7 @@ import { ValidateTunnelDiscountUseCase } from '../application/use-cases/tunnel/V
 import { StartTunnelAttemptUseCase, GetTunnelAttemptStateUseCase } from '../application/use-cases/tunnel/StartTunnelAttemptUseCase';
 import { SubmitTunnelAnswerUseCase } from '../application/use-cases/tunnel/SubmitTunnelAnswerUseCase';
 import { ReportTunnelQuestionUseCase } from '../application/use-cases/tunnel/ReportTunnelQuestionUseCase';
+import { GetCandidateTunnelReportsUseCase } from '../application/use-cases/tunnel/GetCandidateTunnelReportsUseCase';
 import { PrismaTestPackageRepository } from '../infrastructure/repositories/PrismaTestPackageRepository';
 import { CreateTestPackageUseCase } from '../application/use-cases/package/CreateTestPackageUseCase';
 import { GetTestPackageUseCase } from '../application/use-cases/package/GetTestPackageUseCase';
@@ -754,6 +755,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: GetTunnelAttemptStateUseCase, useFactory: () => new GetTunnelAttemptStateUseCase() },
     { provide: SubmitTunnelAnswerUseCase, useFactory: () => new SubmitTunnelAnswerUseCase() },
     { provide: ReportTunnelQuestionUseCase, useFactory: () => new ReportTunnelQuestionUseCase() },
+    { provide: GetCandidateTunnelReportsUseCase, useFactory: () => new GetCandidateTunnelReportsUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },
     { provide: StartLiveSessionUseCase, useFactory: () => new StartLiveSessionUseCase() },

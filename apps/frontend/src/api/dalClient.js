@@ -1901,6 +1901,11 @@ export const candidateTunnels = {
     const { data } = await api.post(`/candidate-tunnels/${id}/validate-discount`, { code });
     return data;
   },
+  /** Aday tünel raporu (ilerleme + durum) → { items } */
+  reports: async () => {
+    const { data } = await api.get('/candidate-tunnels/reports');
+    return data;
+  },
   start: async (id) => {
     const { data } = await api.post(`/candidate-tunnels/${id}/start`, {});
     return data; // state

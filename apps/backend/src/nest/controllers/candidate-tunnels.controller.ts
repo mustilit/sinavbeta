@@ -10,6 +10,7 @@ import { ValidateTunnelDiscountUseCase } from '../../application/use-cases/tunne
 import { StartTunnelAttemptUseCase, GetTunnelAttemptStateUseCase } from '../../application/use-cases/tunnel/StartTunnelAttemptUseCase';
 import { SubmitTunnelAnswerUseCase } from '../../application/use-cases/tunnel/SubmitTunnelAnswerUseCase';
 import { ReportTunnelQuestionUseCase } from '../../application/use-cases/tunnel/ReportTunnelQuestionUseCase';
+import { GetCandidateTunnelReportsUseCase } from '../../application/use-cases/tunnel/GetCandidateTunnelReportsUseCase';
 
 /**
  * Aday tünel akışı — pazar listesi, satın alma, başlat/sürdür, çöz.
@@ -28,6 +29,7 @@ export class CandidateTunnelsController {
     @Inject(GetTunnelAttemptStateUseCase) private readonly stateUC: GetTunnelAttemptStateUseCase,
     @Inject(SubmitTunnelAnswerUseCase) private readonly answerUC: SubmitTunnelAnswerUseCase,
     @Inject(ReportTunnelQuestionUseCase) private readonly reportUC: ReportTunnelQuestionUseCase,
+    @Inject(GetCandidateTunnelReportsUseCase) private readonly reportsUC: GetCandidateTunnelReportsUseCase,
   ) {}
 
   @Get()
@@ -35,6 +37,13 @@ export class CandidateTunnelsController {
   @ApiOkResponse({ description: 'Yayınlanmış tüneller' })
   async list(@Req() req: any, @Query('examTypeId') examTypeId?: string, @Query('topicId') topicId?: string) {
     return this.listUC.execute({ examTypeId, topicId }, req.user?.id);
+  }
+
+  @Get('reports')
+  @Roles('CANDIDATE')
+  @ApiOkResponse({ description: 'Aday tünel raporu (ilerleme + durum)' })
+  async reports(@Req() req: any) {
+    return this.reportsUC.execute(req.user?.id);
   }
 
   @Get(':id')
