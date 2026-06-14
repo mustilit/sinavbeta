@@ -292,6 +292,7 @@ model Tenant {
   moderationActions    ModerationAction[]
   educatorRiskScores   EducatorRiskScore[]
   candidateNotes       CandidateNote[]
+  tunnels              Tunnel[]
 
   @@map("tenants")
 }
@@ -377,6 +378,8 @@ model User {
   suspendedUntil       DateTime?
   isBanned             Boolean               @default(false)
   candidateNotes       CandidateNote[]
+  tunnels              Tunnel[]              @relation("educatorTunnels")
+  tunnelsReviewed      Tunnel[]              @relation("tunnelReviewer")
 
   @@index([tenantId])
   @@index([twoFactorEnabled])
@@ -443,6 +446,7 @@ model ExamType {
 
   tests          ExamTest[]
   candidateNotes CandidateNote[]
+  tunnels        Tunnel[]
 
   @@map("exam_types")
 }
@@ -462,6 +466,7 @@ model Topic {
   examTypes      TopicExamType[]
   tests          ExamTest[]
   candidateNotes CandidateNote[]
+  tunnels        Tunnel[]
 
   @@map("topics")
 }
@@ -1036,6 +1041,12 @@ model AdminSettings {
   maxQuestionsPerTest              Int       @default(100) // Test başına maksimum soru sayısı
   maxTestsPerPackage               Int       @default(10) // Paket başına maksimum test sayısı
   maxLiveQuestions                 Int       @default(50) // Canlı oturum başına maksimum soru sayısı
+  // ── Tünel limitleri (Test Yönetimi) ───────────────────────────────────────
+  maxLayersPerTunnel               Int       @default(7) // Tünel başına katman sayısı
+  minQuestionsPerLayer             Int       @default(10) // Katman başına minimum soru
+  maxQuestionsPerLayer             Int       @default(50) // Katman başına maksimum soru
+  tunnelAdvanceStreak              Int       @default(10) // Üst katmanı açmak için üst üste doğru sayısı
+  tunnelOptionsPerQuestion         Int       @default(10) // Tünel sorusu başına seçenek sayısı (1 doğru)
   // ── İçerik Moderasyonu ────────────────────────────────────────────────────
   moderationEnabled                Boolean   @default(true)
   moderationClaudeEnabled          Boolean   @default(true)
@@ -1871,4 +1882,104 @@ model CandidateNote {
   @@index([candidateId, examTypeId])
   @@index([candidateId, questionId])
   @@map("candidate_notes")
+}
+
+/// ─────────────────────────────────────────────────────────────────────────
+/// TÜNEL — Eğiticinin sınav türü + konu seçip 7 (admin ayarı) katmanda 10-seçenekli
+/// sorular oluşturduğu, adayın adaptif (kayan pencere + pozisyon ustalığı) çözdüğü
+/// ustalık modülü. Admin onayından geçmeden yayınlanamaz.
+/// Faz 1: içerik + onay. Aday attempt/ilerleme + satış Faz 2'de eklenecek.
+/// ─────────────────────────────────────────────────────────────────────────
+enum TunnelStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PUBLISHED
+  UNPUBLISHED
+}
+
+model Tunnel {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  educatorId         String
+  examTypeId         String?
+  topicId            String?
+  title              String
+  description        String?
+  priceCents         Int      @default(0)
+  currency           Currency @default(TRY)
+  // Oluşturma anında admin ayarından snapshot — admin sonradan değiştirse mevcut tünel bozulmaz.
+  layerCount         Int
+  optionsPerQuestion Int
+  advanceStreak      Int
+
+  status       TunnelStatus @default(DRAFT)
+  reviewNote   String? // admin red/onay notu
+  reviewedById String?
+  submittedAt  DateTime?
+  reviewedAt   DateTime?
+  publishedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
+  educator   User             @relation("educatorTunnels", fields: [educatorId], references: [id], onDelete: Cascade)
+  examType   ExamType?        @relation(fields: [examTypeId], references: [id], onDelete: SetNull)
+  topic      Topic?           @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  reviewedBy User?            @relation("tunnelReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  layers     TunnelLayer[]
+  questions  TunnelQuestion[]
+
+  @@index([tenantId, status])
+  @@index([educatorId, status])
+  @@index([examTypeId])
+  @@index([topicId])
+  @@map("tunnels")
+}
+
+model TunnelLayer {
+  id        String   @id @default(uuid())
+  tunnelId  String
+  index     Int // 1-tabanlı katman sırası (1 = en kolay)
+  createdAt DateTime @default(now())
+
+  tunnel    Tunnel           @relation(fields: [tunnelId], references: [id], onDelete: Cascade)
+  questions TunnelQuestion[]
+
+  @@unique([tunnelId, index])
+  @@map("tunnel_layers")
+}
+
+model TunnelQuestion {
+  id        String   @id @default(uuid())
+  tunnelId  String // denormalize (tünel geneli sorgular için)
+  layerId   String
+  content   String
+  mediaUrl  String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tunnel  Tunnel         @relation(fields: [tunnelId], references: [id], onDelete: Cascade)
+  layer   TunnelLayer    @relation(fields: [layerId], references: [id], onDelete: Cascade)
+  options TunnelOption[]
+
+  @@index([tunnelId])
+  @@index([layerId, order])
+  @@map("tunnel_questions")
+}
+
+model TunnelOption {
+  id         String   @id @default(uuid())
+  questionId String
+  content    String
+  isCorrect  Boolean  @default(false) // her soruda tam 1 doğru
+  order      Int      @default(0) // kanonik sıra; aday sunumunda karıştırılır (pozisyon ustalığı)
+  createdAt  DateTime @default(now())
+
+  question TunnelQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("tunnel_options")
 }
