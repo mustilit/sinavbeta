@@ -46,10 +46,10 @@ export function TunnelGrid({ mode = "discover" }) {
       const inPrice = (cents) => {
         const tl = (cents || 0) / 100;
         switch (priceRange) {
-          case "free": return tl === 0;
-          case "0-50": return tl > 0 && tl <= 50;
-          case "50-100": return tl > 50 && tl <= 100;
-          case "100+": return tl > 100;
+          case "100to250": return tl >= 100 && tl <= 250;
+          case "251to500": return tl >= 251 && tl <= 500;
+          case "501to1000": return tl >= 501 && tl <= 1000;
+          case "over1000": return tl > 1000;
           default: return true;
         }
       };
@@ -166,11 +166,11 @@ export function TunnelGrid({ mode = "discover" }) {
           <Select value={priceRange} onValueChange={setPriceRange}>
             <SelectTrigger className="sm:w-44" aria-label="Fiyat"><SelectValue placeholder="Fiyat" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tüm Fiyatlar</SelectItem>
-              <SelectItem value="free">Ücretsiz</SelectItem>
-              <SelectItem value="0-50">₺0 – ₺50</SelectItem>
-              <SelectItem value="50-100">₺50 – ₺100</SelectItem>
-              <SelectItem value="100+">₺100+</SelectItem>
+              <SelectItem value="all">Tümü</SelectItem>
+              <SelectItem value="100to250">₺100 – ₺250</SelectItem>
+              <SelectItem value="251to500">₺251 – ₺500</SelectItem>
+              <SelectItem value="501to1000">₺501 – ₺1000</SelectItem>
+              <SelectItem value="over1000">₺1000 Üstü</SelectItem>
             </SelectContent>
           </Select>
         )}
