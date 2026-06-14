@@ -1031,6 +1031,7 @@ model AdminSettings {
   adPurchasesEnabled               Boolean   @default(true) // Reklam Satın Alma Durdur
   twoFactorSystemEnabled           Boolean   @default(false) // 2FA sistem geneli aç/kapat (admin kontrolü)
   minPackagePriceCents             Int       @default(100) // Minimum paket fiyatı (kuruş)
+  minTunnelPriceCents              Int       @default(0) // Minimum tünel fiyatı (kuruş; 0 = ücretsiz serbest)
   maxDiscountPercent               Int       @default(50) // Eğiticinin tanımlayabileceği maksimum indirim oranı (%)
   // Google OAuth 2.0 Client ID — admin panelinden yönetilir. Boşken Google ile giriş devre dışı.
   // Not: Client ID gizli değildir (tarayıcıya açıkça gönderilir); env'deki GOOGLE_CLIENT_ID fallback olarak kullanılır.

@@ -102,6 +102,8 @@ export type AdminSettings = {
   twoFactorSystemEnabled: boolean;
   /** Minimum paket fiyatı (kuruş). Eğitici bu değerin altında fiyat giremez. */
   minPackagePriceCents: number;
+  /** Minimum tünel fiyatı (kuruş; 0 = ücretsiz serbest). */
+  minTunnelPriceCents: number;
   /** Eğiticinin tanımlayabileceği maksimum indirim oranı (% 1-100). */
   maxDiscountPercent: number;
   /** Google OAuth 2.0 Client ID — admin panelinden yönetilir; boşsa Google ile giriş kapalı. */

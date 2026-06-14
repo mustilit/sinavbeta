@@ -53,6 +53,12 @@ export class UpdateAdminSettingsDto {
   @IsPositive()
   minPackagePriceCents?: number;
 
+  @ApiPropertyOptional({ example: 0, description: 'Minimum tünel fiyatı (kuruş; 0 = ücretsiz serbest)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  minTunnelPriceCents?: number;
+
   @ApiPropertyOptional({ example: 50, description: 'Eğiticinin tanımlayabileceği maksimum indirim oranı (1-100)' })
   @IsOptional()
   @IsInt()

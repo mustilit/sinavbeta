@@ -15,6 +15,8 @@ const DEFAULTS = {
   adPurchasesEnabled: true,
   // Minimum paket fiyatı (kuruş) — varsayılan 1 ₺
   minPackagePriceCents: 100,
+  // Minimum tünel fiyatı (kuruş) — varsayılan 0 (ücretsiz serbest)
+  minTunnelPriceCents: 0,
   // Paket başına en fazla test (admin ayarı) — varsayılan 10
   maxTestsPerPackage: 10,
   // Test başına en fazla soru (admin ayarı) — varsayılan 100

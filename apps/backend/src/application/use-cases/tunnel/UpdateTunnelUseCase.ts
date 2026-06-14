@@ -59,7 +59,14 @@ export class UpdateTunnelUseCase {
       if (!tp) throw new AppError('TOPIC_NOT_FOUND', 'Konu bulunamadı', 404);
       data.topicId = input.topicId;
     }
-    if (input.priceCents !== undefined) data.priceCents = Math.max(0, Math.floor(input.priceCents));
+    if (input.priceCents !== undefined) {
+      const priceCents = Math.max(0, Math.floor(input.priceCents));
+      const settings = await prisma.adminSettings.findFirst({ where: { id: 1 }, select: { minTunnelPriceCents: true } });
+      const minPrice = settings?.minTunnelPriceCents ?? 0;
+      if (priceCents < minPrice)
+        throw new AppError('TUNNEL_PRICE_TOO_LOW', `Tünel fiyatı en az ${(minPrice / 100).toFixed(2)} ₺ olmalı`, 400);
+      data.priceCents = priceCents;
+    }
 
     const updated = await prisma.tunnel.update({
       where: { id: tunnelId },

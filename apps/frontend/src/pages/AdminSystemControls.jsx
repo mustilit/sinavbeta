@@ -277,6 +277,7 @@ export default function AdminSystemControls() {
   const [activeTab, setActiveTab] = useState("system");
   const [savingKey, setSavingKey] = useState(null);
   const [minPriceInput, setMinPriceInput] = useState("");
+  const [minTunnelPriceInput, setMinTunnelPriceInput] = useState("");
   const [maxDiscountInput, setMaxDiscountInput] = useState("");
   const [googleClientIdInput, setGoogleClientIdInput] = useState("");
   const [showGoogleClientId, setShowGoogleClientId] = useState(false);
@@ -362,6 +363,18 @@ export default function AdminSystemControls() {
     setSavingKey("minPackagePriceCents");
     updateMutation.mutate({ minPackagePriceCents: cents });
     setMinPriceInput("");
+  };
+
+  const handleMinTunnelPriceSave = () => {
+    const tl = parseFloat(minTunnelPriceInput);
+    if (isNaN(tl) || tl < 0) {
+      toast.error("Geçerli bir fiyat giriniz (0 = ücretsiz serbest)");
+      return;
+    }
+    const cents = Math.round(tl * 100);
+    setSavingKey("minTunnelPriceCents");
+    updateMutation.mutate({ minTunnelPriceCents: cents });
+    setMinTunnelPriceInput("");
   };
 
   const handleMaxDiscountSave = () => {
@@ -1336,6 +1349,54 @@ export default function AdminSystemControls() {
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
               >
                 {savingKey === "minPackagePriceCents"
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Kaydediliyor...</>
+                  : "Kaydet"}
+              </button>
+            </div>
+          </div>
+
+          {/* Minimum Tünel Fiyatı */}
+          <div className="p-5 bg-white border border-slate-200 rounded-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                <BadgeDollarSign className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Minimum Tünel Fiyatı</p>
+                <p className="text-sm text-slate-500">
+                  Eğiticilerin tünel oluştururken girebileceği en düşük fiyat (0 = ücretsiz serbest).
+                  Mevcut değer:{" "}
+                  <strong className="text-slate-700">
+                    {settings?.minTunnelPriceCents != null
+                      ? `${(settings.minTunnelPriceCents / 100).toFixed(2)} ₺`
+                      : "0,00 ₺"}
+                  </strong>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-xs">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₺</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder={
+                    settings?.minTunnelPriceCents != null
+                      ? (settings.minTunnelPriceCents / 100).toFixed(2)
+                      : "0.00"
+                  }
+                  value={minTunnelPriceInput}
+                  onChange={(e) => setMinTunnelPriceInput(e.target.value)}
+                  className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <button
+                onClick={handleMinTunnelPriceSave}
+                disabled={minTunnelPriceInput === "" || savingKey === "minTunnelPriceCents"}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                {savingKey === "minTunnelPriceCents"
                   ? <><Loader2 className="w-4 h-4 animate-spin" />Kaydediliyor...</>
                   : "Kaydet"}
               </button>

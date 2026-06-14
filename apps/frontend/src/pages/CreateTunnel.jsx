@@ -15,7 +15,13 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { entities, topics as topicsApi, tunnels as tunnelApi } from "@/api/dalClient";
+import { useServiceStatus } from "@/lib/useServiceStatus";
 import { createPageUrl } from "@/utils";
+
+/** Zorunlu alan yıldızı. */
+function Req() {
+  return <span className="text-rose-500"> *</span>;
+}
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
@@ -61,6 +67,11 @@ export default function CreateTunnel() {
   // Adım 2 — katman bazlı sorular
   const [layers, setLayers] = useState([]); // [{ index, questions:[...] }]
   const [activeLayer, setActiveLayer] = useState(1);
+
+  const { minTunnelPriceCents = 0 } = useServiceStatus();
+  const minPriceTL = minTunnelPriceCents / 100;
+  const priceCents = Math.round((parseFloat(priceTL) || 0) * 100);
+  const priceTooLow = priceCents < minTunnelPriceCents;
 
   const { data: examTypes = [] } = useQuery({
     queryKey: ["examTypes"],
@@ -226,7 +237,7 @@ export default function CreateTunnel() {
 
   // ─── Adım 1 ───
   if (step === 1) {
-    const canSubmit = title.trim() && examTypeId && topicId;
+    const canSubmit = title.trim() && examTypeId && topicId && !priceTooLow;
     const editing = !!tunnelId;
     return (
       <div className="mx-auto max-w-2xl px-4 py-6">
@@ -238,7 +249,7 @@ export default function CreateTunnel() {
             <TunnelCoverUpload value={coverImageUrl} onChange={setCoverImageUrl} titlePreview={title} />
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Başlık</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Başlık<Req /></label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tünel başlığı" maxLength={200} />
             </div>
             <div>
@@ -247,7 +258,7 @@ export default function CreateTunnel() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Sınav Türü</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Sınav Türü<Req /></label>
                 <Select value={examTypeId} onValueChange={(v) => { setExamTypeId(v); setTopicId(""); }}>
                   <SelectTrigger><SelectValue placeholder="Seçin" /></SelectTrigger>
                   <SelectContent>
@@ -256,18 +267,28 @@ export default function CreateTunnel() {
                 </Select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Konu</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Konu<Req /></label>
                 <Select value={topicId} onValueChange={setTopicId} disabled={!examTypeId}>
                   <SelectTrigger><SelectValue placeholder="Seçin" /></SelectTrigger>
                   <SelectContent>
                     {topicList.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {examTypeId && topicList.length === 0 && (
+                  <p className="mt-1 text-xs text-amber-600">Bu sınav türünde tanımlı konu yok; tünel için konu zorunlu.</p>
+                )}
               </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Fiyat (₺)</label>
               <Input type="number" min="0" step="1" value={priceTL} onChange={(e) => setPriceTL(e.target.value)} placeholder="0" className="max-w-[140px]" />
+              {minTunnelPriceCents > 0 ? (
+                <p className={"mt-1 text-xs " + (priceTooLow ? "text-rose-600" : "text-slate-400")}>
+                  Minimum tünel fiyatı: ₺{minPriceTL.toFixed(2)}
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-slate-400">0 = ücretsiz</p>
+              )}
             </div>
             <div className="flex justify-between pt-2">
               {editing ? (
@@ -348,6 +369,7 @@ export default function CreateTunnel() {
 
           {/* Aktif katman soruları */}
           <LayerEditor
+            key={activeLayer}
             layer={current}
             optionCount={optionCount}
             onChange={(qs) => updateLayer(activeLayer, qs)}
@@ -438,9 +460,18 @@ function TunnelCoverUpload({ value, onChange, titlePreview }) {
 /** Tek katmanın soru editörü (görselli soru + görselli şık). */
 function LayerEditor({ layer, optionCount, onChange }) {
   const questions = layer?.questions ?? [];
+  // Akordeon: aynı anda yalnız bir soru açık. null = hepsi kapalı.
+  const [openIndex, setOpenIndex] = useState(null);
 
-  const addQuestion = () => onChange([...questions, emptyQuestion(optionCount)]);
-  const removeQuestion = (qi) => onChange(questions.filter((_, i) => i !== qi));
+  const addQuestion = () => {
+    const next = [...questions, emptyQuestion(optionCount)];
+    onChange(next);
+    setOpenIndex(next.length - 1); // yeni soru açılır, diğerleri kapanır
+  };
+  const removeQuestion = (qi) => {
+    onChange(questions.filter((_, i) => i !== qi));
+    setOpenIndex((cur) => (cur === qi ? null : cur != null && cur > qi ? cur - 1 : cur));
+  };
   const setQ = (qi, patch) => onChange(questions.map((q, i) => (i === qi ? { ...q, ...patch } : q)));
   const setOpt = (qi, oi, patch) =>
     setQ(qi, { options: questions[qi].options.map((o, i) => (i === oi ? { ...o, ...patch } : o)) });
@@ -468,15 +499,40 @@ function LayerEditor({ layer, optionCount, onChange }) {
       )}
       {questions.map((q, qi) => {
         const qImg = q._imgPreview || q.mediaUrl;
+        const isOpen = openIndex === qi;
+        const summary = (q.content || "").trim() || (qImg ? "(görsel soru)" : "(boş soru)");
+        const hasCorrect = q.options?.some((o) => o.isCorrect);
         return (
           <Card key={qi}>
-            <CardContent className="space-y-2 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-sm font-semibold text-slate-700">Soru {qi + 1}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={() => removeQuestion(qi)} aria-label="Soruyu sil">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+            <CardContent className="p-0">
+              {/* Başlık satırı — tıkla aç/kapa + Düzenle + Sil */}
+              <div className="flex items-center justify-between gap-2 p-3">
+                <button
+                  type="button"
+                  onClick={() => setOpenIndex(isOpen ? null : qi)}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                >
+                  <span className="flex-shrink-0 text-sm font-semibold text-slate-700">Soru {qi + 1}</span>
+                  {!isOpen && <span className="truncate text-sm text-slate-500">{summary}</span>}
+                  {!isOpen && !hasCorrect && (
+                    <span className="flex-shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">doğru şık yok</span>
+                  )}
+                </button>
+                <div className="flex flex-shrink-0 items-center gap-1">
+                  {!isOpen && (
+                    <Button variant="ghost" size="sm" onClick={() => setOpenIndex(qi)}>
+                      <Pencil className="mr-1.5 h-4 w-4" /> Düzenle
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={() => removeQuestion(qi)} aria-label="Soruyu sil">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
+
+              {/* Gövde — yalnız açıkken */}
+              {isOpen && (
+                <div className="space-y-2 border-t border-slate-100 p-4 pt-3">
               <Textarea
                 value={q.content}
                 onChange={(e) => setQ(qi, { content: e.target.value })}
@@ -539,6 +595,8 @@ function LayerEditor({ layer, optionCount, onChange }) {
                 })}
               </div>
               <p className="text-xs text-slate-400">Doğru şıkkı radyo ile işaretleyin ({optionCount} seçenek). Metin yerine görsel de kullanılabilir.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         );

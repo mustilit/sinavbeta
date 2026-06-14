@@ -24,6 +24,7 @@ export interface UpdateAdminSettingsInput {
   adPurchasesEnabled?: boolean;
   twoFactorSystemEnabled?: boolean;
   minPackagePriceCents?: number;
+  minTunnelPriceCents?: number;
   maxDiscountPercent?: number;
   googleClientId?: string | null;
   turnstileSiteKey?: string | null;
@@ -92,6 +93,11 @@ export class UpdateAdminSettingsUseCase {
           UPDATE admin_settings
           SET "minPackagePriceCents" = ${input.minPackagePriceCents}
           WHERE id = 1
+        `;
+      }
+      if (input.minTunnelPriceCents !== undefined) {
+        await prisma.$executeRaw`
+          UPDATE admin_settings SET "minTunnelPriceCents" = ${input.minTunnelPriceCents} WHERE id = 1
         `;
       }
       if (input.maxDiscountPercent !== undefined) {
@@ -208,6 +214,7 @@ export class UpdateAdminSettingsUseCase {
       adPurchasesEnabled: (row as any).adPurchasesEnabled ?? true,
       twoFactorSystemEnabled: (row as any).twoFactorSystemEnabled ?? false,
       minPackagePriceCents,
+      minTunnelPriceCents: (row as any).minTunnelPriceCents ?? 0,
       maxDiscountPercent,
       googleClientId,
       turnstileSiteKey,
@@ -271,6 +278,7 @@ export class UpdateAdminSettingsUseCase {
         adPurchasesEnabled: (row as any).adPurchasesEnabled ?? true,
         twoFactorSystemEnabled: (row as any).twoFactorSystemEnabled ?? false,
         minPackagePriceCents: mpp,
+        minTunnelPriceCents: (row as any).minTunnelPriceCents ?? 0,
         maxDiscountPercent: mdp,
         googleClientId: gci,
         turnstileSiteKey: tsk,

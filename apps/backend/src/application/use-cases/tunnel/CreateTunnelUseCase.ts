@@ -48,6 +48,9 @@ export class CreateTunnelUseCase {
     const advanceStreak = settings?.tunnelAdvanceStreak ?? 10;
 
     const priceCents = Math.max(0, Math.floor(input.priceCents ?? 0));
+    const minPrice = settings?.minTunnelPriceCents ?? 0;
+    if (priceCents < minPrice)
+      throw new AppError('TUNNEL_PRICE_TOO_LOW', `Tünel fiyatı en az ${(minPrice / 100).toFixed(2)} ₺ olmalı`, 400);
 
     const tunnel = await prisma.tunnel.create({
       data: {
