@@ -489,6 +489,34 @@ export default function CreateTunnel() {
   }
 
   // ─── Adım 2 ───
+  // Sol dikey katman listesi — hem düzenleme hem salt-görüntüleme modunda kullanılır.
+  const layerNav = (
+    <nav className="flex flex-row flex-wrap gap-1.5 sm:w-44 sm:flex-shrink-0 sm:flex-col" aria-label="Katmanlar">
+      {Array.from({ length: layerCount }, (_, i) => i + 1).map((idx) => {
+        const layerObj = layers.find((l) => l.index === idx);
+        const cnt = layerObj?.questions.length ?? 0;
+        const complete = isTunnelLayerComplete(layerObj, optionCount, minQuestionsPerLayer);
+        return (
+          <button
+            key={idx}
+            onClick={() => setActiveLayer(idx)}
+            title={complete ? "Katman tamamlandı" : `En az ${minQuestionsPerLayer} eksiksiz soru gerekli`}
+            className={
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium sm:w-full " +
+              (activeLayer === idx ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")
+            }
+          >
+            {complete
+              ? <CheckCircle2 className={"h-3.5 w-3.5 flex-shrink-0 " + (activeLayer === idx ? "text-emerald-300" : "text-emerald-600")} />
+              : <Layers className="h-3.5 w-3.5 flex-shrink-0" />}
+            <span className="sm:flex-1 sm:text-left">Katman {idx}</span>
+            <span className={"rounded-full px-1.5 text-xs " + (activeLayer === idx ? "bg-white/20" : "bg-slate-200")}>{cnt}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
       {draftDialog}
@@ -510,9 +538,21 @@ export default function CreateTunnel() {
       </div>
 
       {readOnly ? (
-        <Card><CardContent className="p-5 text-sm text-slate-600">
-          Bu tünel {tunnel.status} durumunda; düzenlenemez. Önizleme için Tünellerim sayfasını kullanın.
-        </CardContent></Card>
+        <>
+          {/* Salt-görüntüleme önizlemesi — yayınlanmış/onaydaki tünel düzenlenemez. */}
+          <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+            Bu tünel {tunnel.status} durumunda — yalnızca görüntüleniyor, düzenlenemez.
+          </div>
+          {tunnel.coverImageUrl && (
+            <img src={tunnel.coverImageUrl} alt={tunnel.title} className="mb-4 h-40 w-full rounded-xl object-cover" />
+          )}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            {layerNav}
+            <div className="min-w-0 flex-1">
+              <LayerPreview layer={current} />
+            </div>
+          </div>
+        </>
       ) : (
         <>
           {/* Adım 1'e dön (meta düzenle) */}
@@ -524,31 +564,7 @@ export default function CreateTunnel() {
 
           {/* İki sütun: solda dikey katman listesi, sağda soru editörü */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            {/* Katman listesi — sol, yukarıdan aşağı */}
-            <nav className="flex flex-row flex-wrap gap-1.5 sm:w-44 sm:flex-shrink-0 sm:flex-col" aria-label="Katmanlar">
-              {Array.from({ length: layerCount }, (_, i) => i + 1).map((idx) => {
-                const layerObj = layers.find((l) => l.index === idx);
-                const cnt = layerObj?.questions.length ?? 0;
-                const complete = isTunnelLayerComplete(layerObj, optionCount, minQuestionsPerLayer);
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveLayer(idx)}
-                    title={complete ? "Katman tamamlandı" : `En az ${minQuestionsPerLayer} eksiksiz soru gerekli`}
-                    className={
-                      "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium sm:w-full " +
-                      (activeLayer === idx ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")
-                    }
-                  >
-                    {complete
-                      ? <CheckCircle2 className={"h-3.5 w-3.5 flex-shrink-0 " + (activeLayer === idx ? "text-emerald-300" : "text-emerald-600")} />
-                      : <Layers className="h-3.5 w-3.5 flex-shrink-0" />}
-                    <span className="sm:flex-1 sm:text-left">Katman {idx}</span>
-                    <span className={"rounded-full px-1.5 text-xs " + (activeLayer === idx ? "bg-white/20" : "bg-slate-200")}>{cnt}</span>
-                  </button>
-                );
-              })}
-            </nav>
+            {layerNav}
 
             {/* Sağ: aktif katman soruları + aksiyonlar */}
             <div className="min-w-0 flex-1">
@@ -577,6 +593,36 @@ export default function CreateTunnel() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Salt-görüntüleme katman önizlemesi (yayınlanmış/onaydaki tünel için). */
+function LayerPreview({ layer }) {
+  const questions = layer?.questions ?? [];
+  if (questions.length === 0) {
+    return <p className="py-6 text-center text-sm text-slate-400">Bu katmanda soru yok.</p>;
+  }
+  return (
+    <div className="space-y-3">
+      {questions.map((q, qi) => (
+        <div key={qi} className="rounded-lg border border-slate-200 p-4">
+          <div className="whitespace-pre-wrap text-sm font-medium text-slate-800">{qi + 1}. {q.content}</div>
+          {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mt-2 max-h-48 rounded-md object-contain" />}
+          <ul className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
+            {q.options.map((o, oi) => (
+              <li key={oi} className={"flex items-center gap-1.5 text-sm " + (o.isCorrect ? "font-semibold text-emerald-700" : "text-slate-600")}>
+                <span className="w-4 flex-shrink-0 text-xs font-semibold text-slate-400">{LETTERS[oi]}</span>
+                {o.isCorrect
+                  ? <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+                  : <span className="h-4 w-4 flex-shrink-0" />}
+                {o.mediaUrl && <img src={o.mediaUrl} alt="" className="h-8 w-8 flex-shrink-0 rounded object-cover" />}
+                {o.content && <span>{o.content}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }
