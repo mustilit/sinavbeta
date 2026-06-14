@@ -6,13 +6,28 @@
  *  - Görünür pencere: { baseLayer } ∪ ({ baseLayer+1 } eğer upperOpen). Maks 2 katman.
  *  - streakCount: taban katmanda üst üste doğru; advanceStreak'e ulaşınca üst katman açılır.
  *  - Alt (taban) katman sorusuna yanlış → üst kapanır + streak sıfırlanır (gerileme).
- *  - Ustalık: her soru, doğru şıkkı optionsPerQuestion farklı pozisyonda doğru
- *    cevaplanınca "öğrenildi" (correctMask tüm bitler set). Ustalık monoton (bit silinmez).
+ *  - SUNUM: Her soru aynı anda WINDOW_SIZE (5) seçenekle gösterilir; DOĞRU ŞIK HER ZAMAN
+ *    içindedir, kalan yuvalar havuzdaki (9) çeldiriciden rastgele seçilir → her sunumda
+ *    farklı seçenekler. Doğru şıkkın yeri (pozisyon 1..5) de değişir.
+ *  - USTALIK: Bir soru, doğru şık REQUIRED_CORRECT (≥3) FARKLI pozisyonda doğru
+ *    cevaplanınca "öğrenildi". correctMask pozisyon bitlerini tutar; popcount ≥ 3 → ustalık.
+ *    Yani her soru en az 3 kez (farklı seçenek/pozisyonla) doğru sorulmuş olur. Monoton.
  *  - Taban katman tam öğrenilince bir üst seviyeye kayar. Tüm katmanlar öğrenilince tünel biter.
  */
 
-export function fullMask(optionsPerQuestion: number): number {
-  return (1 << optionsPerQuestion) - 1;
+/** Aday'a aynı anda gösterilen seçenek sayısı (1 doğru + 4 çeldirici). */
+export const WINDOW_SIZE = 5;
+/** Ustalık için gereken farklı-pozisyon doğru sayısı (her soru en az bu kadar sorulur). */
+export const REQUIRED_CORRECT = 3;
+
+function popcount(n: number): number {
+  let c = 0;
+  let x = n;
+  while (x) {
+    c += x & 1;
+    x >>>= 1;
+  }
+  return c;
 }
 
 export function isPositionDone(mask: number, position1: number): boolean {
@@ -23,14 +38,20 @@ export function withPosition(mask: number, position1: number): number {
   return mask | (1 << (position1 - 1));
 }
 
-export function isMastered(mask: number, optionsPerQuestion: number): boolean {
-  return mask === fullMask(optionsPerQuestion);
+/** Doğru cevaplanan farklı pozisyon sayısı. */
+export function correctCount(mask: number): number {
+  return popcount(mask);
+}
+
+/** Soru öğrenildi mi: en az requiredCorrect farklı pozisyonda doğru. */
+export function isMastered(mask: number, requiredCorrect: number = REQUIRED_CORRECT): boolean {
+  return popcount(mask) >= requiredCorrect;
 }
 
 export type EngineQuestion = {
   id: string;
   layerIndex: number;
-  optionIds: string[]; // kanonik sıradaki seçenek id'leri
+  optionIds: string[]; // kanonik sıradaki seçenek id'leri (1 doğru + N-1 çeldirici)
   correctOptionId: string;
 };
 
@@ -46,9 +67,15 @@ function shuffle<T>(arr: T[], rand: Rand): T[] {
   return a;
 }
 
+/** Bu soru için pencere boyutu (toplam seçenek 5'ten azsa hepsini göster). */
+function windowFor(q: EngineQuestion): number {
+  return Math.min(WINDOW_SIZE, q.optionIds.length);
+}
+
 /**
- * Sıradaki soruyu + sunumu seç. Görünür katmanlardaki ÖĞRENİLMEMİŞ sorulardan
- * birini, daha önce doğru cevaplanmamış bir pozisyonda sunar (her cevap ustalığı ilerletsin).
+ * Sıradaki soruyu + sunumu seç. Görünür katmanlardaki ÖĞRENİLMEMİŞ sorulardan birini,
+ * daha önce doğru cevaplanMAMIŞ bir pozisyonda (varsa) sunar. Pencere = doğru şık +
+ * (WINDOW_SIZE-1) rastgele çeldirici; doğru şık her zaman içeride, yeri değişken.
  * @returns null → görünür katmanlarda öğrenilmemiş soru yok (taban ilerleyebilir / tünel bitebilir)
  */
 export function pickNextPresentation(
@@ -56,32 +83,37 @@ export function pickNextPresentation(
     questions: EngineQuestion[];
     baseLayer: number;
     upperOpen: boolean;
-    optionsPerQuestion: number;
     masks: Map<string, number>; // questionId → correctMask
+    requiredCorrect?: number;
   },
   rand: Rand = Math.random,
 ): { questionId: string; correctPosition: number; order: string[] } | null {
-  const { questions, baseLayer, upperOpen, optionsPerQuestion, masks } = params;
+  const { questions, baseLayer, upperOpen, masks } = params;
+  const requiredCorrect = params.requiredCorrect ?? REQUIRED_CORRECT;
   const visible = new Set<number>([baseLayer]);
   if (upperOpen) visible.add(baseLayer + 1);
 
   const pool = questions.filter(
-    (q) => visible.has(q.layerIndex) && !isMastered(masks.get(q.id) ?? 0, optionsPerQuestion),
+    (q) => visible.has(q.layerIndex) && !isMastered(masks.get(q.id) ?? 0, requiredCorrect),
   );
   if (pool.length === 0) return null;
 
   const q = pool[Math.floor(rand() * pool.length)];
   const mask = masks.get(q.id) ?? 0;
-  const openPositions: number[] = [];
-  for (let p = 1; p <= optionsPerQuestion; p++) if (!isPositionDone(mask, p)) openPositions.push(p);
-  const correctPosition = openPositions[Math.floor(rand() * openPositions.length)];
+  const window = windowFor(q);
 
-  // Sunum sırası: doğru şık correctPosition'a, çeldiriciler kalan yuvalara (karışık).
-  const distractors = shuffle(q.optionIds.filter((id) => id !== q.correctOptionId), rand);
+  // Henüz doğru cevaplanmamış pencere pozisyonlarını tercih et (farklı pozisyon → ustalık ilerler)
+  const openPositions: number[] = [];
+  for (let p = 1; p <= window; p++) if (!isPositionDone(mask, p)) openPositions.push(p);
+  const positions = openPositions.length ? openPositions : Array.from({ length: window }, (_, i) => i + 1);
+  const correctPosition = positions[Math.floor(rand() * positions.length)];
+
+  // Çeldiriciler: havuzdan rastgele (window-1) tane → her sunumda farklı set
+  const chosen = shuffle(q.optionIds.filter((id) => id !== q.correctOptionId), rand).slice(0, window - 1);
   const order: string[] = [];
   let di = 0;
-  for (let p = 1; p <= optionsPerQuestion; p++) {
-    order.push(p === correctPosition ? q.correctOptionId : distractors[di++]);
+  for (let p = 1; p <= window; p++) {
+    order.push(p === correctPosition ? q.correctOptionId : chosen[di++]);
   }
   return { questionId: q.id, correctPosition, order };
 }
@@ -100,7 +132,7 @@ export function applyAnswer(params: {
   layerCount: number;
   questionMask: number;
   correctPosition: number;
-  optionsPerQuestion: number;
+  requiredCorrect?: number;
 }): {
   baseLayer: number;
   upperOpen: boolean;
@@ -108,15 +140,16 @@ export function applyAnswer(params: {
   newMask: number;
   mastered: boolean;
 } {
-  const { correct, questionLayerIndex, advanceStreak, layerCount, optionsPerQuestion } = params;
+  const { correct, questionLayerIndex, advanceStreak, layerCount } = params;
+  const requiredCorrect = params.requiredCorrect ?? REQUIRED_CORRECT;
   let { baseLayer, upperOpen, streakCount, questionMask } = params;
 
   const isBaseQuestion = questionLayerIndex === baseLayer;
 
-  // Ustalık (yalnız doğruda bit set; monoton)
+  // Ustalık (yalnız doğruda pozisyon biti set; monoton)
   let newMask = questionMask;
   if (correct) newMask = withPosition(questionMask, params.correctPosition);
-  const mastered = isMastered(newMask, optionsPerQuestion);
+  const mastered = isMastered(newMask, requiredCorrect);
 
   if (correct) {
     if (isBaseQuestion) {

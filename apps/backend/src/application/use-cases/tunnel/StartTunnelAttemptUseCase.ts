@@ -1,6 +1,6 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
-import { pickNextPresentation } from './engine';
+import { pickNextPresentation, isMastered } from './engine';
 import { loadPlayData, loadMasks, buildAttemptState, PlayData } from './tunnelPlay';
 
 /** Geçerli bir current soru yoksa seç + persist; yoksa tünel tamamlanmış demektir. */
@@ -9,14 +9,13 @@ export async function ensureCurrentQuestion(attempt: any, play: PlayData, masks:
   const stillValid =
     attempt.currentQuestionId &&
     play.qmeta.has(attempt.currentQuestionId) &&
-    (masks.get(attempt.currentQuestionId) ?? 0) !== (1 << play.tunnel.optionsPerQuestion) - 1;
+    !isMastered(masks.get(attempt.currentQuestionId) ?? 0);
   if (stillValid) return attempt;
 
   const pick = pickNextPresentation({
     questions: play.questions,
     baseLayer: attempt.baseLayer,
     upperOpen: attempt.upperOpen,
-    optionsPerQuestion: play.tunnel.optionsPerQuestion,
     masks,
   });
   if (!pick) {

@@ -2076,3 +2076,19 @@ model TunnelQuestionProgress {
   @@index([attemptId])
   @@map("tunnel_question_progress")
 }
+
+/// Aday çözüm sırasında bir soru için "hata bildirimi" gönderir (yanlış cevap,
+/// belirsiz ifade vb.). Eğitici/admin sonradan inceler. Scalar-only (hafif).
+model TunnelQuestionReport {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tunnelId    String
+  questionId  String?
+  candidateId String
+  reason      String
+  status      String   @default("OPEN") // OPEN | RESOLVED
+  createdAt   DateTime @default(now())
+
+  @@index([tunnelId, status])
+  @@map("tunnel_question_reports")
+}

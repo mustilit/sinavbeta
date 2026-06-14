@@ -1907,6 +1907,10 @@ export const candidateTunnels = {
     const { data } = await api.post(`/candidate-tunnels/${id}/answer`, { selectedOptionId });
     return data; // { correct, correctOptionId, completed, state }
   },
+  report: async (id, { questionId, reason }) => {
+    const { data } = await api.post(`/candidate-tunnels/${id}/report`, { questionId, reason });
+    return data; // { ok, id }
+  },
 };
 
 export default api;

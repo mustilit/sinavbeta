@@ -88,7 +88,7 @@ export function buildAttemptState(
   const { tunnel, qmeta } = play;
   const total = play.questions.length;
   let mastered = 0;
-  for (const q of play.questions) if (isMastered(masks.get(q.id) ?? 0, tunnel.optionsPerQuestion)) mastered++;
+  for (const q of play.questions) if (isMastered(masks.get(q.id) ?? 0)) mastered++;
 
   // Katman tamamlanma (öğrenilen katman sayısı) — aday hangi katmanda olduğunu görmez,
   // yalnızca genel ilerleme yüzdesi.

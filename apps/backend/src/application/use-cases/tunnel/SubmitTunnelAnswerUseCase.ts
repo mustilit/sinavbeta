@@ -21,7 +21,6 @@ export class SubmitTunnelAnswerUseCase {
       throw new AppError('NO_CURRENT_QUESTION', 'Aktif soru yok', 409);
 
     const play = await loadPlayData(tunnelId);
-    const opc = play.tunnel.optionsPerQuestion;
     const engineQ = play.questions.find((q) => q.id === attempt.currentQuestionId);
     const meta = play.qmeta.get(attempt.currentQuestionId);
     if (!engineQ || !meta) throw new AppError('QUESTION_GONE', 'Soru bulunamadı', 409);
@@ -42,7 +41,6 @@ export class SubmitTunnelAnswerUseCase {
       layerCount: play.tunnel.layerCount,
       questionMask: masks.get(engineQ.id) ?? 0,
       correctPosition: attempt.currentCorrectPosition,
-      optionsPerQuestion: opc,
     });
 
     // 2) Soru ilerlemesini kaydet
@@ -58,7 +56,7 @@ export class SubmitTunnelAnswerUseCase {
     let upperOpen = res.upperOpen;
     let streakCount = res.streakCount;
     const layerMastered = (idx: number) =>
-      play.questions.filter((q) => q.layerIndex === idx).every((q) => isMastered(masks.get(q.id) ?? 0, opc));
+      play.questions.filter((q) => q.layerIndex === idx).every((q) => isMastered(masks.get(q.id) ?? 0));
     while (baseLayer <= play.tunnel.layerCount && layerMastered(baseLayer)) {
       baseLayer += 1;
       upperOpen = false;
@@ -71,7 +69,7 @@ export class SubmitTunnelAnswerUseCase {
     if (completed) {
       updateData = { ...updateData, status: 'COMPLETED', completedAt: new Date(), currentQuestionId: null, currentCorrectPosition: null, currentOrderJson: null };
     } else {
-      const pick = pickNextPresentation({ questions: play.questions, baseLayer, upperOpen, optionsPerQuestion: opc, masks });
+      const pick = pickNextPresentation({ questions: play.questions, baseLayer, upperOpen, masks });
       if (pick) {
         updateData = { ...updateData, currentQuestionId: pick.questionId, currentCorrectPosition: pick.correctPosition, currentOrderJson: JSON.stringify(pick.order) };
       } else {

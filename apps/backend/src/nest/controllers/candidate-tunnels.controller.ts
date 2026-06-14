@@ -3,10 +3,12 @@ import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
 import { SubmitTunnelAnswerDto } from './dto/submit-tunnel-answer.dto';
 import { PurchaseTunnelDto } from './dto/purchase-tunnel.dto';
+import { ReportTunnelQuestionDto } from './dto/report-tunnel-question.dto';
 import { ListPublishedTunnelsUseCase, GetPublishedTunnelMetaUseCase } from '../../application/use-cases/tunnel/CandidateTunnelUseCases';
 import { PurchaseTunnelUseCase } from '../../application/use-cases/tunnel/PurchaseTunnelUseCase';
 import { StartTunnelAttemptUseCase, GetTunnelAttemptStateUseCase } from '../../application/use-cases/tunnel/StartTunnelAttemptUseCase';
 import { SubmitTunnelAnswerUseCase } from '../../application/use-cases/tunnel/SubmitTunnelAnswerUseCase';
+import { ReportTunnelQuestionUseCase } from '../../application/use-cases/tunnel/ReportTunnelQuestionUseCase';
 
 /**
  * Aday tünel akışı — pazar listesi, satın alma, başlat/sürdür, çöz.
@@ -23,6 +25,7 @@ export class CandidateTunnelsController {
     @Inject(StartTunnelAttemptUseCase) private readonly startUC: StartTunnelAttemptUseCase,
     @Inject(GetTunnelAttemptStateUseCase) private readonly stateUC: GetTunnelAttemptStateUseCase,
     @Inject(SubmitTunnelAnswerUseCase) private readonly answerUC: SubmitTunnelAnswerUseCase,
+    @Inject(ReportTunnelQuestionUseCase) private readonly reportUC: ReportTunnelQuestionUseCase,
   ) {}
 
   @Get()
@@ -65,5 +68,12 @@ export class CandidateTunnelsController {
   @ApiOkResponse({ description: 'Cevap gönder (adaptif motor)' })
   async answer(@Param('id') id: string, @Body() dto: SubmitTunnelAnswerDto, @Req() req: any) {
     return this.answerUC.execute(id, dto.selectedOptionId, req.user?.id);
+  }
+
+  @Post(':id/report')
+  @Roles('CANDIDATE')
+  @ApiOkResponse({ description: 'Soru hata bildirimi' })
+  async report(@Param('id') id: string, @Body() dto: ReportTunnelQuestionDto, @Req() req: any) {
+    return this.reportUC.execute(id, { questionId: dto.questionId, reason: dto.reason }, req.user?.id);
   }
 }

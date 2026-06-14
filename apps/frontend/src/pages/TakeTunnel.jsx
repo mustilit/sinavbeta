@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, Trophy, ArrowLeft, Layers, LogOut } from "lucide-react";
+import { Loader2, Trophy, ArrowLeft, Layers, AlertTriangle, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { candidateTunnels as api } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
 /**
- * Aday tünel çözme ekranı (adaptif). Katmanları/sırayı göremez; tek soru akışı.
- * Cevap sonrası doğru/yanlış geri bildirim + otomatik sonraki soru. İlerleme yüzdesi.
+ * Aday tünel çözme ekranı (adaptif). Katmanları/sırayı GÖREMEZ; tek soru akışı.
+ * Her soru aynı anda 5 seçenekle (doğru her zaman içeride) sunulur; aynı soru
+ * farklı zamanlarda farklı seçeneklerle tekrar gelir. Üst menü: Hata Bildirimi +
+ * Kaydet ve Çık (ilerleme her cevapta otomatik kaydedilir).
  */
 export default function TakeTunnel() {
   const [params] = useSearchParams();
@@ -23,13 +26,9 @@ export default function TakeTunnel() {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState(null); // { selectedId, correctId, correct }
   const [answering, setAnswering] = useState(false);
-  // Bej okuma modu — yalnız bu ekrana scope'lu (data-exam-theme), kalıcı.
-  const [examTheme, setExamTheme] = useState(() => {
-    try { return localStorage.getItem("dal_exam_theme") === "sepia" ? "sepia" : "light"; } catch { return "light"; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("dal_exam_theme", examTheme); } catch { /* yoksay */ }
-  }, [examTheme]);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     if (!tunnelId) return;
@@ -64,6 +63,21 @@ export default function TakeTunnel() {
     [answering, feedback, tunnelId],
   );
 
+  const submitReport = () => {
+    const reason = reportReason.trim();
+    if (!reason) return;
+    setReporting(true);
+    api
+      .report(tunnelId, { questionId: state?.currentQuestion?.id, reason })
+      .then(() => {
+        toast.success("Hata bildirimi gönderildi");
+        setReportOpen(false);
+        setReportReason("");
+      })
+      .catch((e) => toast.error(e?.message || "Bildirim gönderilemedi"))
+      .finally(() => setReporting(false));
+  };
+
   if (loading) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-indigo-500" /></div>;
   }
@@ -92,19 +106,18 @@ export default function TakeTunnel() {
   const q = state.currentQuestion;
 
   return (
-    <div data-exam-theme={examTheme} className={"mx-auto max-w-2xl px-4 py-6" + (examTheme === "sepia" ? " rounded-2xl" : "")}>
-      {/* Üst aksiyon barı: çıkış + bej mod */}
+    <div className="mx-auto max-w-2xl px-4 py-6">
+      {/* Üst menü: Hata Bildirimi + Kaydet ve Çık (diğer test çözme ekranıyla aynı) */}
       <div className="mb-3 flex items-center justify-between">
-        <Button variant="ghost" size="sm" className="text-slate-500" onClick={() => navigate(createPageUrl("Tunnels"))}>
-          <LogOut className="mr-1.5 h-4 w-4" /> Çıkış
+        <Button variant="ghost" size="sm" className="text-amber-600 hover:bg-amber-50 hover:text-amber-700" onClick={() => setReportOpen(true)}>
+          <AlertTriangle className="mr-1.5 h-4 w-4" /> Hata Bildirimi
         </Button>
-        <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-500">
-          <span aria-hidden="true">🌙</span>
-          <span className="hidden sm:inline">Bej mod</span>
-          <Switch checked={examTheme === "sepia"} onCheckedChange={(v) => setExamTheme(v ? "sepia" : "light")} aria-label="Bej okuma modu" />
-        </label>
+        <Button variant="outline" size="sm" onClick={() => { toast.success("İlerleme kaydedildi"); navigate(createPageUrl("Tunnels")); }}>
+          <Save className="mr-1.5 h-4 w-4" /> Kaydet ve Çık
+        </Button>
       </div>
-      {/* Üst: başlık + ilerleme */}
+
+      {/* Üst: başlık + ilerleme (KATMAN GÖSTERİLMEZ) */}
       <div className="mb-4">
         <div className="mb-1 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
@@ -162,6 +175,34 @@ export default function TakeTunnel() {
           </CardContent>
         </Card>
       )}
+
+      {/* Hata bildirimi modalı */}
+      <Dialog open={reportOpen} onOpenChange={(o) => !o && setReportOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" /> Hata Bildirimi
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">Bu soruyla ilgili bir sorun mu var? Eğitici/yönetici inceleyecek.</p>
+            <Textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              rows={3}
+              maxLength={1000}
+              placeholder="Sorunu kısaca açıkla (ör. doğru cevap yanlış, ifade belirsiz)…"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setReportOpen(false)} disabled={reporting}>Vazgeç</Button>
+              <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={submitReport} disabled={!reportReason.trim() || reporting}>
+                {reporting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-1.5 h-4 w-4" />}
+                Gönder
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
