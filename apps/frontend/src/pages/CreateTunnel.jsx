@@ -542,7 +542,13 @@ export default function CreateTunnel() {
         <>
           {/* Salt-görüntüleme önizlemesi — yayınlanmış/onaydaki tünel düzenlenemez. */}
           <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-            Bu tünel {tunnel.status} durumunda — yalnızca görüntüleniyor, düzenlenemez.
+            {tunnel.status === "PENDING_APPROVAL"
+              ? "Bu tünel yönetici onayı bekliyor. Yalnızca görüntüleniyor, düzenlenemez."
+              : tunnel.status === "PUBLISHED"
+                ? "Bu tünel yayında. Yalnızca görüntüleniyor, düzenlenemez."
+                : tunnel.status === "APPROVED"
+                  ? "Bu tünel onaylandı. Yalnızca görüntüleniyor, düzenlenemez."
+                  : "Bu tünel yalnızca görüntüleniyor, düzenlenemez."}
           </div>
           {tunnel.coverImageUrl && (
             <img src={tunnel.coverImageUrl} alt={tunnel.title} className="mb-4 h-40 w-full rounded-xl object-cover" />
