@@ -133,16 +133,15 @@ export function TunnelGrid({ mode = "discover" }) {
 
   return (
     <div>
-      {/* Filtre — MyTests filtresiyle aynı (logosuz kart + başlık + etiketli alanlar) */}
+      {/* Filtre — başlıksız (logosuz) kart; Temizle yalnız aktifken */}
       <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="mb-4 flex items-center gap-2">
-          <h2 className="font-semibold text-slate-900">Filtrele</h2>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-indigo-600 hover:text-indigo-700">
+        {hasActiveFilters && (
+          <div className="mb-3 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-indigo-600 hover:text-indigo-700">
               <X className="mr-1 h-4 w-4" /> Temizle
             </Button>
-          )}
-        </div>
+          </div>
+        )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Ara</label>

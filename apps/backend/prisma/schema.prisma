@@ -2083,6 +2083,24 @@ model TunnelQuestionProgress {
   @@map("tunnel_question_progress")
 }
 
+/// Aday tünel değerlendirmesi (puan + yorum). Aday başına tek satır (upsert).
+/// Sadece satın alan aday yazabilir (use-case'te zorlanır). Ortalama tunnel
+/// kartı/detayında gösterilir.
+model TunnelReview {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tunnelId    String
+  candidateId String
+  rating      Int // 1-5
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tunnelId, candidateId])
+  @@index([tunnelId])
+  @@map("tunnel_reviews")
+}
+
 /// Aday çözüm sırasında bir soru için "hata bildirimi" gönderir (yanlış cevap,
 /// belirsiz ifade vb.). Eğitici/admin sonradan inceler. Scalar-only (hafif).
 model TunnelQuestionReport {

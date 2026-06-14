@@ -1906,6 +1906,23 @@ export const candidateTunnels = {
     const { data } = await api.get('/candidate-tunnels/reports');
     return data;
   },
+  /** Tünel değerlendirmeleri → { avg, count, items } */
+  reviews: async (id, { limit = 5, offset = 0 } = {}) => {
+    const { data } = await api.get(`/candidate-tunnels/${id}/reviews`, { params: { limit, offset } });
+    return data ?? { avg: null, count: 0, items: [] };
+  },
+  /** Adayın kendi değerlendirmesi → { rating, comment } | null */
+  myReview: async (id) => {
+    try {
+      const { data } = await api.get(`/candidate-tunnels/${id}/my-review`);
+      return data ?? null;
+    } catch { return null; }
+  },
+  /** Değerlendirme oluştur/güncelle */
+  upsertReview: async (id, { rating, comment }) => {
+    const { data } = await api.post(`/candidate-tunnels/${id}/reviews`, { rating, comment });
+    return data;
+  },
   start: async (id) => {
     const { data } = await api.post(`/candidate-tunnels/${id}/start`, {});
     return data; // state

@@ -3,7 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
 import { SubmitTunnelAnswerDto } from './dto/submit-tunnel-answer.dto';
 import { PurchaseTunnelDto, ValidateTunnelDiscountDto } from './dto/purchase-tunnel.dto';
-import { ReportTunnelQuestionDto } from './dto/report-tunnel-question.dto';
+import { ReportTunnelQuestionDto, UpsertTunnelReviewDto } from './dto/report-tunnel-question.dto';
+import { UpsertTunnelReviewUseCase, ListTunnelReviewsUseCase, GetMyTunnelReviewUseCase } from '../../application/use-cases/tunnel/TunnelReviewUseCases';
 import { ListPublishedTunnelsUseCase, GetPublishedTunnelMetaUseCase } from '../../application/use-cases/tunnel/CandidateTunnelUseCases';
 import { PurchaseTunnelUseCase } from '../../application/use-cases/tunnel/PurchaseTunnelUseCase';
 import { ValidateTunnelDiscountUseCase } from '../../application/use-cases/tunnel/ValidateTunnelDiscountUseCase';
@@ -30,6 +31,9 @@ export class CandidateTunnelsController {
     @Inject(SubmitTunnelAnswerUseCase) private readonly answerUC: SubmitTunnelAnswerUseCase,
     @Inject(ReportTunnelQuestionUseCase) private readonly reportUC: ReportTunnelQuestionUseCase,
     @Inject(GetCandidateTunnelReportsUseCase) private readonly reportsUC: GetCandidateTunnelReportsUseCase,
+    @Inject(UpsertTunnelReviewUseCase) private readonly upsertReviewUC: UpsertTunnelReviewUseCase,
+    @Inject(ListTunnelReviewsUseCase) private readonly listReviewsUC: ListTunnelReviewsUseCase,
+    @Inject(GetMyTunnelReviewUseCase) private readonly myReviewUC: GetMyTunnelReviewUseCase,
   ) {}
 
   @Get()
@@ -98,5 +102,26 @@ export class CandidateTunnelsController {
   @ApiOkResponse({ description: 'Soru hata bildirimi' })
   async report(@Param('id') id: string, @Body() dto: ReportTunnelQuestionDto, @Req() req: any) {
     return this.reportUC.execute(id, { questionId: dto.questionId, reason: dto.reason }, req.user?.id);
+  }
+
+  @Get(':id/reviews')
+  @Roles('CANDIDATE')
+  @ApiOkResponse({ description: 'Tünel değerlendirmeleri (ortalama + liste)' })
+  async reviews(@Param('id') id: string, @Query('limit') limit?: string, @Query('offset') offset?: string) {
+    return this.listReviewsUC.execute(id, { limit: limit ? Number(limit) : undefined, offset: offset ? Number(offset) : undefined });
+  }
+
+  @Get(':id/my-review')
+  @Roles('CANDIDATE')
+  @ApiOkResponse({ description: 'Adayın kendi tünel değerlendirmesi' })
+  async myReview(@Param('id') id: string, @Req() req: any) {
+    return this.myReviewUC.execute(id, req.user?.id);
+  }
+
+  @Post(':id/reviews')
+  @Roles('CANDIDATE')
+  @ApiOkResponse({ description: 'Tünel değerlendirmesi oluştur/güncelle' })
+  async upsertReview(@Param('id') id: string, @Body() dto: UpsertTunnelReviewDto, @Req() req: any) {
+    return this.upsertReviewUC.execute(id, req.user?.id, { rating: dto.rating, comment: dto.comment });
   }
 }

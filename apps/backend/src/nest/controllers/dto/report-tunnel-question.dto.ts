@@ -1,5 +1,20 @@
-import { IsString, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Max, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+/** Aday tünel değerlendirmesi (puan + yorum). */
+export class UpsertTunnelReviewDto {
+  @ApiProperty({ description: 'Puan 1-5', minimum: 1, maximum: 5 })
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rating!: number;
+
+  @ApiPropertyOptional({ description: 'Yorum' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  comment?: string;
+}
 
 /** Aday tünel sorusu hata bildirimi. */
 export class ReportTunnelQuestionDto {

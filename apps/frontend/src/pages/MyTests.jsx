@@ -253,20 +253,19 @@ export default function MyTests() {
       <>
       {!isLoading && purchases.length > 0 && (
         <div className="mb-6 bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="font-semibold text-slate-900">{t("pages:myTests.filter.title")}</h2>
-            {hasActiveFilters && (
+          {hasActiveFilters && (
+            <div className="mb-3 flex justify-end">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="ml-auto text-indigo-600 hover:text-indigo-700"
+                className="text-indigo-600 hover:text-indigo-700"
               >
                 <X className="w-4 h-4 mr-1" />
                 {t("pages:myTests.filter.clear")}
               </Button>
-            )}
-          </div>
+            </div>
+          )}
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">{t("pages:myTests.filter.examTypeLabel")}</label>
