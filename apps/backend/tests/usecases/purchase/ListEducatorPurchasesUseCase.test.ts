@@ -11,11 +11,16 @@
 const mockUserFindById = jest.fn();
 const mockExamTestFindMany = jest.fn();
 const mockPurchaseFindMany = jest.fn();
+const mockTunnelFindMany = jest.fn();
+const mockTunnelPurchaseFindMany = jest.fn();
 
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     examTest: { findMany: (...args: any[]) => mockExamTestFindMany(...args) },
     purchase: { findMany: (...args: any[]) => mockPurchaseFindMany(...args) },
+    // Eğitici satışları artık tünel satışlarını da kapsıyor
+    tunnel: { findMany: (...args: any[]) => mockTunnelFindMany(...args) },
+    tunnelPurchase: { findMany: (...args: any[]) => mockTunnelPurchaseFindMany(...args) },
   },
 }));
 
@@ -32,6 +37,9 @@ function makeEducator(overrides: Record<string, any> = {}) {
 describe('ListEducatorPurchasesUseCase', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Varsayılan: eğiticinin tüneli/tünel satışı yok (testler gerekirse override eder)
+    mockTunnelFindMany.mockResolvedValue([]);
+    mockTunnelPurchaseFindMany.mockResolvedValue([]);
   });
 
   it('kullanıcı bulunamazsa USER_NOT_FOUND fırlatır', async () => {

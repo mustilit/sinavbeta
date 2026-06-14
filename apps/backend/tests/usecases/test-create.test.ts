@@ -3,6 +3,9 @@ import { CreateTestUseCase } from '../../src/application/use-cases/test/CreateTe
 jest.mock('../../src/infrastructure/database/prisma', () => ({
   prisma: {
     adminSettings: { findFirst: jest.fn(async () => ({ packageCreationEnabled: true })) },
+    // "Diğer" fallback (examTypeId/topicId verilmeyince): bulunamadı → null kalır
+    examType: { findUnique: jest.fn(async () => null) },
+    topic: { findFirst: jest.fn(async () => null) },
   },
 }));
 import { prisma } from '../../src/infrastructure/database/prisma';
