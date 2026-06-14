@@ -3,6 +3,29 @@
 `npm audit` high/critical açıklarının temizlenmesi + CI denetim kapısının canlı ama
 yeşil hale getirilmesi.
 
+## ✅ Güncelleme (2026-06-14) — NestJS 10→11 (Express 5) uygulandı
+
+"Sonraki sprint" olarak planlanan büyük geçiş **tamamlandı** (`chore/nestjs11-express5`):
+`@nestjs/{common,core,platform-express,testing}@11`, `@nestjs/swagger@11`,
+`@nestjs/throttler@6.5`, `express@5`, `@types/express@5`, `@stryker-mutator/*@9`.
+
+Sonuç: **Backend high/critical = 0** (önce 4 high). lodash + multer + platform-express
+NestJS 11 ile, tmp ise stryker 9 ile kapandı. `apps/backend/.audit-allowlist.json`
+boşaltıldı (residual kalmadı).
+
+Express 5 hazırlık taraması (hepsi temiz çıktı): wildcard route yok, opsiyonel/regex
+param yok, `req.query` mutasyonu yok, eski `res.json(status,…)` imzası yok. Tek `@Res()`
+(commission CSV) `setHeader`+`send` ile Express-5 uyumlu. Webhook raw-body
+(`express.raw`) + `express.static(uploads)` + `trust proxy` korundu.
+
+Doğrulama: tsc 0, build 0, **2314 test geçti**; uygulama gerçek DB'ye karşı boot edip
+HTTP yollarını doğru servis etti (health 200, `:id` param route → 401 guard, webhook
+imza reddi → 403, statik → 404). Detay aşağıda; bu bölümden öncesi geçişin başlangıç
+durumunu yansıtır.
+
+> Kalan: **Frontend** dev-only (esbuild/vite/vitest) + xlsx (npm fix yok) — hâlâ
+> `apps/frontend/.audit-allowlist.json`'da, ayrı ele alınacak (vite@8/vitest@4 / exceljs).
+
 ## Kök sebep (asıl CI kırmızısı)
 
 `backend-migrate-and-test.yml` job'ı **ilk adımda `npm ci` ile** patlıyordu:

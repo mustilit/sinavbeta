@@ -179,7 +179,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: (origin, cb) => {
+    origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
       // curl/postman gibi origin göndermeyenleri de kabul et
       if (!origin) return cb(null, true);
       return cb(null, allowedOrigins.has(origin));
