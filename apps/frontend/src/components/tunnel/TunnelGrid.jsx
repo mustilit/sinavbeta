@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Layers, Loader2, Play, ShoppingCart, CheckCircle2, FileText, User, Filter, X, Search } from "lucide-react";
+import { Layers, Loader2, Play, ShoppingCart, CheckCircle2, FileText, User, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -30,9 +30,11 @@ export function TunnelGrid({ mode = "discover" }) {
     [data, mode],
   );
   const examTypes = useMemo(() => [...new Set(all.map((t) => t.examTypeName).filter(Boolean))], [all]);
+  const topics = useMemo(() => [...new Set(all.map((t) => t.topicName).filter(Boolean))], [all]);
 
   const [search, setSearch] = useState("");
   const [examType, setExamType] = useState("all");
+  const [topic, setTopic] = useState("all");
   const [status, setStatus] = useState("all"); // yalnız mine
   const [page, setPage] = useState(1);
 
@@ -41,6 +43,7 @@ export function TunnelGrid({ mode = "discover" }) {
       all.filter((t) => {
         if (search && !(t.title || "").toLowerCase().includes(search.toLowerCase())) return false;
         if (examType !== "all" && t.examTypeName !== examType) return false;
+        if (topic !== "all" && t.topicName !== topic) return false;
         if (mode === "mine" && status !== "all") {
           const s = t.attemptStatus;
           if (status === "not_started" && s) return false;
@@ -49,15 +52,15 @@ export function TunnelGrid({ mode = "discover" }) {
         }
         return true;
       }),
-    [all, search, examType, status, mode],
+    [all, search, examType, topic, status, mode],
   );
 
-  useEffect(() => { setPage(1); }, [search, examType, status, mode]);
+  useEffect(() => { setPage(1); }, [search, examType, topic, status, mode]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const hasActiveFilters = !!search || examType !== "all" || status !== "all";
-  const clearFilters = () => { setSearch(""); setExamType("all"); setStatus("all"); };
+  const hasActiveFilters = !!search || examType !== "all" || topic !== "all" || status !== "all";
+  const clearFilters = () => { setSearch(""); setExamType("all"); setTopic("all"); setStatus("all"); };
 
   const detailUrl = (t) => createPageUrl("TunnelDetail") + `?id=${t.id}`;
 
@@ -109,50 +112,42 @@ export function TunnelGrid({ mode = "discover" }) {
 
   return (
     <div>
-      {/* Filtre kutusu — Testler sekmesindeki görünümle aynı */}
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="mb-4 flex items-center gap-2">
-          <Filter className="h-5 w-5 text-slate-600" />
-          <h2 className="font-semibold text-slate-900">Filtrele</h2>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-indigo-600 hover:text-indigo-700">
-              <X className="mr-1 h-4 w-4" /> Temizle
-            </Button>
-          )}
+      {/* Filtre — başlıksız, hafif satır */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative sm:w-56">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tünel ara" className="pl-9" />
         </div>
-        <div className={"grid gap-4 sm:grid-cols-2 " + (mode === "mine" ? "lg:grid-cols-3" : "")}>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Ara</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tünel adı" className="pl-9" />
-            </div>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Sınav Türü</label>
-            <Select value={examType} onValueChange={setExamType}>
-              <SelectTrigger aria-label="Sınav türü"><SelectValue placeholder="Tümü" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tümü</SelectItem>
-                {examTypes.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          {mode === "mine" && (
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Durum</label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger aria-label="Durum"><SelectValue placeholder="Tümü" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tümü</SelectItem>
-                  <SelectItem value="not_started">Başlanmadı</SelectItem>
-                  <SelectItem value="in_progress">Devam Ediyor</SelectItem>
-                  <SelectItem value="completed">Tamamlandı</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
+        <Select value={examType} onValueChange={setExamType}>
+          <SelectTrigger className="sm:w-44" aria-label="Sınav türü"><SelectValue placeholder="Sınav Türü" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm Sınav Türleri</SelectItem>
+            {examTypes.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={topic} onValueChange={setTopic}>
+          <SelectTrigger className="sm:w-44" aria-label="Konu"><SelectValue placeholder="Konu" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm Konular</SelectItem>
+            {topics.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {mode === "mine" && (
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="sm:w-44" aria-label="Durum"><SelectValue placeholder="Durum" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
+              <SelectItem value="not_started">Başlanmadı</SelectItem>
+              <SelectItem value="in_progress">Devam Ediyor</SelectItem>
+              <SelectItem value="completed">Tamamlandı</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-rose-600 hover:text-rose-700">
+            <X className="mr-1 h-4 w-4" /> Temizle
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
