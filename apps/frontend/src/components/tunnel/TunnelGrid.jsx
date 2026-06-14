@@ -31,19 +31,36 @@ export function TunnelGrid({ mode = "discover" }) {
   );
   const examTypes = useMemo(() => [...new Set(all.map((t) => t.examTypeName).filter(Boolean))], [all]);
   const topics = useMemo(() => [...new Set(all.map((t) => t.topicName).filter(Boolean))], [all]);
+  const educators = useMemo(() => [...new Set(all.map((t) => t.educatorUsername).filter(Boolean))], [all]);
 
   const [search, setSearch] = useState("");
   const [examType, setExamType] = useState("all");
   const [topic, setTopic] = useState("all");
+  const [educator, setEducator] = useState("all"); // yalnız discover (Keşfet)
+  const [priceRange, setPriceRange] = useState("all"); // yalnız discover
   const [status, setStatus] = useState("all"); // yalnız mine
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(
-    () =>
-      all.filter((t) => {
+    () => {
+      const inPrice = (cents) => {
+        const tl = (cents || 0) / 100;
+        switch (priceRange) {
+          case "free": return tl === 0;
+          case "0-50": return tl > 0 && tl <= 50;
+          case "50-100": return tl > 50 && tl <= 100;
+          case "100+": return tl > 100;
+          default: return true;
+        }
+      };
+      return all.filter((t) => {
         if (search && !(t.title || "").toLowerCase().includes(search.toLowerCase())) return false;
         if (examType !== "all" && t.examTypeName !== examType) return false;
         if (topic !== "all" && t.topicName !== topic) return false;
+        if (mode === "discover") {
+          if (educator !== "all" && t.educatorUsername !== educator) return false;
+          if (!inPrice(t.priceCents)) return false;
+        }
         if (mode === "mine" && status !== "all") {
           const s = t.attemptStatus;
           if (status === "not_started" && s) return false;
@@ -51,16 +68,20 @@ export function TunnelGrid({ mode = "discover" }) {
           if (status === "completed" && s !== "COMPLETED") return false;
         }
         return true;
-      }),
-    [all, search, examType, topic, status, mode],
+      });
+    },
+    [all, search, examType, topic, educator, priceRange, status, mode],
   );
 
-  useEffect(() => { setPage(1); }, [search, examType, topic, status, mode]);
+  useEffect(() => { setPage(1); }, [search, examType, topic, educator, priceRange, status, mode]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const hasActiveFilters = !!search || examType !== "all" || topic !== "all" || status !== "all";
-  const clearFilters = () => { setSearch(""); setExamType("all"); setTopic("all"); setStatus("all"); };
+  const hasActiveFilters =
+    !!search || examType !== "all" || topic !== "all" || educator !== "all" || priceRange !== "all" || status !== "all";
+  const clearFilters = () => {
+    setSearch(""); setExamType("all"); setTopic("all"); setEducator("all"); setPriceRange("all"); setStatus("all");
+  };
 
   const detailUrl = (t) => createPageUrl("TunnelDetail") + `?id=${t.id}`;
 
@@ -132,6 +153,27 @@ export function TunnelGrid({ mode = "discover" }) {
             {topics.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
           </SelectContent>
         </Select>
+        {mode === "discover" && (
+          <Select value={educator} onValueChange={setEducator}>
+            <SelectTrigger className="sm:w-44" aria-label="Eğitici"><SelectValue placeholder="Eğitici" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Eğiticiler</SelectItem>
+              {educators.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        {mode === "discover" && (
+          <Select value={priceRange} onValueChange={setPriceRange}>
+            <SelectTrigger className="sm:w-44" aria-label="Fiyat"><SelectValue placeholder="Fiyat" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Fiyatlar</SelectItem>
+              <SelectItem value="free">Ücretsiz</SelectItem>
+              <SelectItem value="0-50">₺0 – ₺50</SelectItem>
+              <SelectItem value="50-100">₺50 – ₺100</SelectItem>
+              <SelectItem value="100+">₺100+</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
         {mode === "mine" && (
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="sm:w-44" aria-label="Durum"><SelectValue placeholder="Durum" /></SelectTrigger>
