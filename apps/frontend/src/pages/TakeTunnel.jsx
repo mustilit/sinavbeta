@@ -115,7 +115,7 @@ export default function TakeTunnel() {
   const canNext = viewIndex < answered.length; // canlıya kadar ileri gidilebilir
 
   return (
-    <div data-exam-theme={examTheme} className="mx-auto max-w-2xl px-4 py-6">
+    <div data-exam-theme={examTheme} className="mx-auto max-w-3xl">
       {/* Araç çubuğu — normal test ekranıyla aynı format */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3">
         <div className="flex flex-wrap items-center gap-1.5">

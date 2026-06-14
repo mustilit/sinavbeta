@@ -41,6 +41,7 @@ export default function Layout({ children, currentPageName }) {
   // tam ekran overlay'e geçer (LiveSessionJoin.jsx → FullscreenStage).
   const FULLSCREEN_PAGES = [
     "TakeTest",
+    "TakeTunnel",
     "LiveSessionHost",
     "EducatorOnboarding", // CV + uzmanlık alanı tamamlanana kadar başka yere gidemez
     "SelectExamTypes",    // Aday onboarding'i — ilgi alanı seçilene kadar
