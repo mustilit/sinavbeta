@@ -158,50 +158,6 @@ export default function TunnelDetail() {
             </p>
           </div>
 
-          {/* Yorumlar — başlıkta Değerlendir/Puanı Güncelle (TestDetail ile aynı) */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold text-slate-900">
-                Yorumlar <span className="text-sm font-normal text-slate-500">({reviewData.count})</span>
-              </h2>
-              {user && t.purchased && (
-                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={openReview}>
-                  <Star className="mr-1.5 h-4 w-4" /> {myReview ? "Puanı Güncelle" : "Değerlendir"}
-                </Button>
-              )}
-            </div>
-            {reviewData.items.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-400">
-                <MessageSquare className="mx-auto mb-2 h-8 w-8 text-slate-200" /> Henüz yorum yok.
-              </div>
-            ) : (
-              <>
-                <div className={"space-y-4 " + (reviewsFetching ? "opacity-60" : "")}>
-                  {reviewData.items.map((r) => (
-                    <div key={r.id} className="border-b border-slate-100 pb-4 last:border-0">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star key={s} className={"h-4 w-4 " + (s <= r.rating ? "fill-amber-400 text-amber-400" : "text-slate-200")} />
-                          ))}
-                        </div>
-                        <span className="text-sm font-medium text-slate-700">{Number(r.rating).toFixed(1)}</span>
-                        <span className="text-sm text-slate-500">— {r.candidateName}</span>
-                      </div>
-                      {r.comment && <p className="text-sm text-slate-600">{r.comment}</p>}
-                    </div>
-                  ))}
-                </div>
-                {totalReviewPages > 1 && (
-                  <div className="mt-6 flex items-center justify-center gap-3 border-t border-slate-100 pt-4">
-                    <Button variant="outline" size="sm" disabled={reviewPage <= 1 || reviewsFetching} onClick={() => setReviewPage((p) => Math.max(1, p - 1))}>Önceki</Button>
-                    <span className="text-sm text-slate-600">{reviewPage} / {totalReviewPages}</span>
-                    <Button variant="outline" size="sm" disabled={reviewPage >= totalReviewPages || reviewsFetching} onClick={() => setReviewPage((p) => Math.min(totalReviewPages, p + 1))}>Sonraki</Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
         </div>
 
         {/* Sticky satın alma / başlama paneli */}
@@ -231,6 +187,52 @@ export default function TunnelDetail() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Yorumlar — sayfa altında tam genişlik (TestDetail ile aynı yapı) */}
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Yorumlar <span className="ml-2 text-sm font-normal text-slate-500">({reviewData.count})</span>
+          </h2>
+          {user && t.purchased && (
+            <Button size="sm" className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700" onClick={openReview}>
+              <Star className="mr-1.5 h-4 w-4" /> {myReview ? "Puanı Güncelle" : "Değerlendir"}
+            </Button>
+          )}
+        </div>
+        {reviewData.items.length === 0 ? (
+          <div className="py-10 text-center">
+            <MessageSquare className="mx-auto mb-3 h-10 w-10 text-slate-200" />
+            <p className="text-sm text-slate-400">Henüz değerlendirme yok.</p>
+          </div>
+        ) : (
+          <>
+            <div className={"space-y-4 " + (reviewsFetching ? "opacity-60" : "")}>
+              {reviewData.items.map((r) => (
+                <div key={r.id} className="border-b border-slate-100 pb-4 last:border-0">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className={"h-4 w-4 " + (s <= Math.round(r.rating) ? "fill-amber-400 text-amber-400" : "text-slate-200")} />
+                      ))}
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">{Number(r.rating).toFixed(1)}</span>
+                    <span className="text-sm text-slate-500">— {r.candidateName}</span>
+                  </div>
+                  {r.comment && <p className="text-sm text-slate-600">{r.comment}</p>}
+                </div>
+              ))}
+            </div>
+            {totalReviewPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2 border-t border-slate-100 pt-4">
+                <Button variant="outline" size="sm" disabled={reviewPage <= 1 || reviewsFetching} onClick={() => setReviewPage((p) => Math.max(1, p - 1))}>Önceki</Button>
+                <span className="mx-3 text-sm text-slate-600">{reviewPage} / {totalReviewPages}</span>
+                <Button variant="outline" size="sm" disabled={reviewPage >= totalReviewPages || reviewsFetching} onClick={() => setReviewPage((p) => Math.min(totalReviewPages, p + 1))}>Sonraki</Button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Değerlendirme modalı (satın alan aday) */}
