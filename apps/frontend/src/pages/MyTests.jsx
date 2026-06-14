@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { entities } from "@/api/dalClient";
@@ -21,7 +21,8 @@ export default function MyTests() {
   const [selectedExamType, setSelectedExamType] = useState("all");
   const [selectedEducator, setSelectedEducator] = useState("all");
   const [completionFilter, setCompletionFilter] = useState("all");
-  const [contentTab, setContentTab] = useState("tests"); // "tests" | "tunnels"
+  const [sp] = useSearchParams();
+  const [contentTab, setContentTab] = useState(sp.get("tab") === "tunnels" ? "tunnels" : "tests"); // "tests" | "tunnels"
   const contentTabBtn = (key) =>
     "inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 min-h-10 text-sm font-medium transition-colors " +
     (contentTab === key ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900");

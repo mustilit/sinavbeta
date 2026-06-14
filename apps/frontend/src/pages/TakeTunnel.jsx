@@ -176,7 +176,7 @@ export default function TakeTunnel() {
               <Eraser className="mr-1 h-4 w-4" /> Temizle
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="text-slate-600 hover:bg-slate-100" onClick={() => { toast.success("İlerleme kaydedildi"); navigate(createPageUrl("Tunnels")); }}>
+          <Button variant="ghost" size="sm" className="text-slate-600 hover:bg-slate-100" onClick={() => { toast.success("İlerleme kaydedildi"); navigate(createPageUrl("MyTests") + "?tab=tunnels"); }}>
             <Save className="mr-1 h-4 w-4" /> Kaydet ve Çık
           </Button>
         </div>
@@ -219,8 +219,8 @@ export default function TakeTunnel() {
                 <ChevronLeft className="mr-1.5 h-4 w-4" /> Soruları İncele
               </Button>
             )}
-            <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => navigate(createPageUrl("Tunnels"))}>
-              <ArrowLeft className="mr-1.5 h-4 w-4" /> Tünellere Dön
+            <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => navigate(createPageUrl("MyTests") + "?tab=tunnels")}>
+              <ArrowLeft className="mr-1.5 h-4 w-4" /> Testlerime Dön
             </Button>
           </div>
         </div>

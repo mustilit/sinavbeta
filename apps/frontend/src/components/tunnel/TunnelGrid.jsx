@@ -150,15 +150,15 @@ export function TunnelGrid({ mode = "discover" }) {
             </Button>
           </div>
         )}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="sm:flex-1 sm:min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-slate-700">Ara</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tünel adı" className="pl-9" />
             </div>
           </div>
-          <div>
+          <div className="sm:flex-1 sm:min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-slate-700">Sınav Türü</label>
             <Select value={examType} onValueChange={setExamType}>
               <SelectTrigger aria-label="Sınav türü"><SelectValue placeholder="Tümü" /></SelectTrigger>
@@ -168,7 +168,7 @@ export function TunnelGrid({ mode = "discover" }) {
               </SelectContent>
             </Select>
           </div>
-          <div>
+          <div className="sm:flex-1 sm:min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-slate-700">Konu</label>
             <Select value={topic} onValueChange={setTopic}>
               <SelectTrigger aria-label="Konu"><SelectValue placeholder="Tümü" /></SelectTrigger>
@@ -179,7 +179,7 @@ export function TunnelGrid({ mode = "discover" }) {
             </Select>
           </div>
           {mode === "discover" && (
-            <div>
+            <div className="sm:flex-1 sm:min-w-[150px]">
               <label className="mb-2 block text-sm font-medium text-slate-700">Eğitici</label>
               <Select value={educator} onValueChange={setEducator}>
                 <SelectTrigger aria-label="Eğitici"><SelectValue placeholder="Tümü" /></SelectTrigger>
@@ -191,7 +191,7 @@ export function TunnelGrid({ mode = "discover" }) {
             </div>
           )}
           {mode === "discover" && (
-            <div>
+            <div className="sm:flex-1 sm:min-w-[150px]">
               <label className="mb-2 block text-sm font-medium text-slate-700">Fiyat</label>
               <Select value={priceRange} onValueChange={setPriceRange}>
                 <SelectTrigger aria-label="Fiyat"><SelectValue placeholder="Tümü" /></SelectTrigger>
@@ -206,7 +206,7 @@ export function TunnelGrid({ mode = "discover" }) {
             </div>
           )}
           {mode === "mine" && (
-            <div>
+            <div className="sm:flex-1 sm:min-w-[150px]">
               <label className="mb-2 block text-sm font-medium text-slate-700">Durum</label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger aria-label="Durum"><SelectValue placeholder="Tümü" /></SelectTrigger>
