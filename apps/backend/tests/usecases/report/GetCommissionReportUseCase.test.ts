@@ -73,9 +73,15 @@ describe('GetCommissionReportUseCase', () => {
     expect(result.commissionPercent).toBe(20);
   });
 
+  // Normal/canlı sorgusu ile tünel sorgusunu SQL içeriğine göre ayır (tünel ikinci query).
+  const mockRows = (normalRows: any[], tunnelRows: any[] = []) =>
+    mockPrisma.$queryRawUnsafe.mockImplementation((sql: string) =>
+      Promise.resolve(sql.includes('tunnel_purchases') ? tunnelRows : normalRows),
+    );
+
   it('normal satışlarda komisyon hesaplanır', async () => {
     mockPrisma.adminSettings.findFirst.mockResolvedValue({ commissionPercent: 20 });
-    mockPrisma.$queryRawUnsafe.mockResolvedValue([
+    mockRows([
       {
         educatorId: 'edu-1',
         username: 'educator1',
@@ -98,7 +104,7 @@ describe('GetCommissionReportUseCase', () => {
   });
 
   it('canlı test satışlarında (isTimed=true) komisyon uygulanmaz', async () => {
-    mockPrisma.$queryRawUnsafe.mockResolvedValue([
+    mockRows([
       {
         educatorId: 'edu-2',
         username: 'live_edu',
@@ -117,6 +123,38 @@ describe('GetCommissionReportUseCase', () => {
     expect(result.items[0].liveSalesCents).toBe(15000);
     expect(result.items[0].commissionCents).toBe(0);
     expect(result.items[0].totalPayoutCents).toBe(15000);
+  });
+
+  it('tünel satışlarına komisyon uygulanır ve toplamlara dahil edilir', async () => {
+    mockPrisma.adminSettings.findFirst.mockResolvedValue({ commissionPercent: 20 });
+    mockRows(
+      [], // normal/canlı satış yok
+      [
+        {
+          educatorId: 'edu-3',
+          username: 'tunnel_edu',
+          email: 'tunnel@test.com',
+          iban: null,
+          bankName: null,
+          accountHolder: null,
+          saleCount: BigInt(4),
+          totalSalesCents: BigInt(20000),
+          purchaseDate: new Date(2025, 0, 15),
+        },
+      ],
+    );
+    const uc = new GetCommissionReportUseCase();
+    const result = await uc.execute(2025, 1);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].tunnelSaleCount).toBe(4);
+    expect(result.items[0].tunnelSalesCents).toBe(20000);
+    expect(result.items[0].tunnelCommissionCents).toBe(4000); // %20
+    expect(result.items[0].tunnelPayoutCents).toBe(16000);
+    expect(result.items[0].totalSalesCents).toBe(20000);
+    expect(result.items[0].totalPayoutCents).toBe(16000);
+    expect(result.totalTunnelSalesCents).toBe(20000);
+    expect(result.totalSalesCents).toBe(20000);
+    expect(result.totalPayoutCents).toBe(16000);
   });
 
   it('exportCsv UTF-8 BOM ile başlar', async () => {

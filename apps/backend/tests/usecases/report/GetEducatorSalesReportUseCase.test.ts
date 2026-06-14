@@ -10,6 +10,7 @@
 
 const mockExamTestFindMany = jest.fn();
 const mockPurchaseAggregate = jest.fn();
+const mockTunnelPurchaseAggregate = jest.fn();
 const mockTestAttemptCount = jest.fn();
 const mockObjectionFindMany = jest.fn();
 const mockObjectionCount = jest.fn();
@@ -22,6 +23,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
       findUnique: (...args: any[]) => mockExamTestFindUnique(...args),
     },
     purchase: { aggregate: (...args: any[]) => mockPurchaseAggregate(...args) },
+    tunnelPurchase: { aggregate: (...args: any[]) => mockTunnelPurchaseAggregate(...args) },
     testAttempt: { count: (...args: any[]) => mockTestAttemptCount(...args) },
     objection: {
       findMany: (...args: any[]) => mockObjectionFindMany(...args),
@@ -51,6 +53,7 @@ describe('GetEducatorSalesReportUseCase', () => {
     jest.clearAllMocks();
     mockExamTestFindMany.mockResolvedValue([]);
     mockPurchaseAggregate.mockResolvedValue({ _count: 0, _sum: { amountCents: 0 } });
+    mockTunnelPurchaseAggregate.mockResolvedValue({ _count: 0, _sum: { amountCents: null } });
     mockTestAttemptCount.mockResolvedValue(0);
     mockObjectionFindMany.mockResolvedValue([]);
     mockObjectionCount.mockResolvedValue(0);

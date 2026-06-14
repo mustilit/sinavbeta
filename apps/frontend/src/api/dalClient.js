@@ -353,6 +353,7 @@ export const entities = {
             price_paid: p.amountCents != null ? p.amountCents / 100 : 0,
             status: p.status === 'ACTIVE' ? 'completed' : p.status === 'REFUNDED' ? 'refunded' : 'pending',
             created_date: p.createdAt,
+            kind: p.kind ?? 'package', // 'package' | 'tunnel'
           }));
         } catch {
           return [];

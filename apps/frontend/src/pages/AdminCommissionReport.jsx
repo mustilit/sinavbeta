@@ -30,6 +30,7 @@ import {
   Users,
   CreditCard,
   Radio,
+  Layers,
   ShoppingBag,
   ArrowRight,
   History,
@@ -248,7 +249,7 @@ export default function AdminCommissionReport() {
 
       {/* ── Özet kartlar ────────────────────────────────────────────────── */}
       {data && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Eğitici sayısı */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <div className="flex items-center gap-3">
@@ -289,6 +290,20 @@ export default function AdminCommissionReport() {
             </div>
           </div>
 
+          {/* Tünel satış toplamı — komisyonlu */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+                <Layers className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Tünel Satışı</p>
+                <p className="text-2xl font-bold text-slate-900">{formatTL(data.totalTunnelSalesCents || 0)}</p>
+                <p className="text-xs text-slate-400">Komisyonlu</p>
+              </div>
+            </div>
+          </div>
+
           {/* Toplam ödenecek */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <div className="flex items-center gap-3">
@@ -315,8 +330,15 @@ export default function AdminCommissionReport() {
               </span>
               <span className="text-sm font-bold text-rose-700">{formatTL(data.totalCommissionCents)}</span>
             </div>
+            {(data.totalTunnelCommissionCents || 0) > 0 && (
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-500" />
+                <span className="text-sm font-semibold text-rose-800">Tünel Komisyonu:</span>
+                <span className="text-sm font-bold text-rose-700">{formatTL(data.totalTunnelCommissionCents)}</span>
+              </div>
+            )}
             <span className="text-xs text-rose-500">
-              Yalnızca normal paket satışlarına uygulanır — canlı testler komisyon dışıdır.
+              Normal paket ve tünel satışlarına uygulanır — canlı testler komisyon dışıdır.
             </span>
           </div>
 
@@ -429,6 +451,15 @@ export default function AdminCommissionReport() {
                     <div className="text-xs font-semibold text-violet-700">Canlı Test</div>
                     Tutar
                   </th>
+                  {/* Tünel sütunları */}
+                  <th className="text-right px-4 py-3 font-semibold text-slate-600 bg-indigo-50/40">
+                    <div className="text-xs font-semibold text-indigo-700">Tünel</div>
+                    Satış
+                  </th>
+                  <th className="text-right px-4 py-3 font-semibold text-slate-600 bg-indigo-50/40">
+                    <div className="text-xs font-semibold text-indigo-700">Tünel</div>
+                    Tutar
+                  </th>
                   {/* Toplam */}
                   <th className="text-right px-4 py-3 font-semibold text-slate-900 bg-amber-50/60">
                     Toplam Ödenecek
@@ -481,6 +512,13 @@ export default function AdminCommissionReport() {
                     <td className="px-4 py-3.5 text-right font-medium text-violet-700 bg-violet-50/20">
                       {formatTL(item.liveSalesCents)}
                     </td>
+                    {/* Tünel sütunları */}
+                    <td className="px-4 py-3.5 text-right text-slate-700 bg-indigo-50/20">
+                      {item.tunnelSaleCount || 0}
+                    </td>
+                    <td className="px-4 py-3.5 text-right font-medium text-indigo-700 bg-indigo-50/20">
+                      {formatTL(item.tunnelSalesCents || 0)}
+                    </td>
                     {/* Toplam */}
                     <td className="px-4 py-3.5 text-right font-bold text-amber-700 bg-amber-50/30">
                       {formatTL(item.totalPayoutCents)}
@@ -514,6 +552,13 @@ export default function AdminCommissionReport() {
                   </td>
                   <td className="px-4 py-3.5 text-right font-bold text-violet-700 bg-violet-50/20">
                     {data && formatTL(data.totalLiveSalesCents)}
+                  </td>
+                  {/* Tünel toplamları */}
+                  <td className="px-4 py-3.5 text-right font-bold text-slate-900 bg-indigo-50/20">
+                    {items.reduce((s, i) => s + (i.tunnelSaleCount || 0), 0)}
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-bold text-indigo-700 bg-indigo-50/20">
+                    {data && formatTL(data.totalTunnelSalesCents || 0)}
                   </td>
                   {/* Genel toplam */}
                   <td className="px-4 py-3.5 text-right font-bold text-amber-700 bg-amber-50/40">

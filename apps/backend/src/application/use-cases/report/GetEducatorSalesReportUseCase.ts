@@ -12,20 +12,29 @@ export class GetEducatorSalesReportUseCase {
     if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
     ensureEducatorActive(user);
 
-    const testIds = await prisma.examTest.findMany({
-      where: { educatorId },
-      select: { id: true },
-    }).then((r) => r.map((t) => t.id));
+    const [testIds, tunnelAgg] = await Promise.all([
+      prisma.examTest.findMany({ where: { educatorId }, select: { id: true } }).then((r) => r.map((t) => t.id)),
+      // Tünel satışları (paket gibi gelir) — eğiticinin tünellerine ACTIVE satın almalar
+      prisma.tunnelPurchase.aggregate({
+        where: { status: 'ACTIVE', tunnel: { educatorId } },
+        _count: true,
+        _sum: { amountCents: true },
+      }),
+    ]);
+    const tunnelPurchaseCount = tunnelAgg._count ?? 0;
+    const tunnelRevenueCents = tunnelAgg._sum.amountCents ?? 0;
 
     if (testIds.length === 0) {
       return {
-        totalPurchases: 0,
-        totalRevenueCents: 0,
+        totalPurchases: tunnelPurchaseCount,
+        totalRevenueCents: tunnelRevenueCents,
         totalAttempts: 0,
         totalObjections: 0,
         objectionsResolved: 0,
         objectionsEscalated: 0,
         objectionsOpen: 0,
+        tunnelPurchaseCount,
+        tunnelRevenueCents,
         byTest: [],
       };
     }
@@ -82,13 +91,16 @@ export class GetEducatorSalesReportUseCase {
     );
 
     return {
-      totalPurchases: purchases._count,
-      totalRevenueCents: purchases._sum.amountCents ?? 0,
+      // Toplamlar tünel satışlarını da içerir (paket gibi gelir sayılır)
+      totalPurchases: purchases._count + tunnelPurchaseCount,
+      totalRevenueCents: (purchases._sum.amountCents ?? 0) + tunnelRevenueCents,
       totalAttempts: attempts,
       totalObjections: objections.length,
       objectionsResolved: objectionsByStatus.resolved,
       objectionsEscalated: objectionsByStatus.escalated,
       objectionsOpen: objectionsByStatus.open,
+      tunnelPurchaseCount,
+      tunnelRevenueCents,
       byTest,
     };
   }

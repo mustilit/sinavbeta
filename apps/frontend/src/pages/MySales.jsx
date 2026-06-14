@@ -265,9 +265,17 @@ export default function MySales() {
                           <p className="text-sm text-slate-500">{sale.user_email}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {/* test_package_title user-generated */}
-                        {sale.test_package_title}
+                      <TableCell className="max-w-[220px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className={
+                            "flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold " +
+                            (sale.kind === "tunnel" ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-500")
+                          }>
+                            {sale.kind === "tunnel" ? "Tünel" : "Paket"}
+                          </span>
+                          {/* test_package_title user-generated */}
+                          <span className="truncate">{sale.test_package_title}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-semibold text-emerald-600">
                         ₺{sale.price_paid}
