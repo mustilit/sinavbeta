@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, ShieldCheck, Check, X, Eye } from "lucide-react";
+import { Loader2, ShieldCheck, Check, X, Eye, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+
+const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +16,7 @@ export default function AdminTunnels() {
   const [reviewId, setReviewId] = useState(null);
   const [rejectMode, setRejectMode] = useState(false);
   const [reason, setReason] = useState("");
+  const [qIndex, setQIndex] = useState(0); // inceleme: aktif soru
 
   const { data, isLoading } = useQuery({
     queryKey: ["pendingTunnels"],
@@ -28,7 +31,20 @@ export default function AdminTunnels() {
     enabled: !!reviewId,
   });
 
-  const closeReview = () => { setReviewId(null); setRejectMode(false); setReason(""); };
+  const closeReview = () => { setReviewId(null); setRejectMode(false); setReason(""); setQIndex(0); };
+
+  // Tüm katmanların soruları tek sıralı listeye düzleştirilir (soru-soru gezinme).
+  const flatQuestions = useMemo(() => {
+    const out = [];
+    (detail?.layers ?? []).forEach((l) => (l.questions ?? []).forEach((q) => out.push({ layerIndex: l.index, q })));
+    return out;
+  }, [detail]);
+  const total = flatQuestions.length;
+  const safeIndex = Math.min(qIndex, Math.max(0, total - 1));
+  const cur = flatQuestions[safeIndex];
+
+  // Yeni tünel açıldığında ilk soruya dön
+  useEffect(() => { setQIndex(0); }, [reviewId]);
 
   const approveMut = useMutation({
     mutationFn: (id) => tunnelApi.adminApprove(id),
@@ -100,29 +116,55 @@ export default function AdminTunnels() {
                 <img src={detail.coverImageUrl} alt="" className="h-32 w-full rounded-lg object-cover" />
               )}
               <div className="text-xs text-slate-500">
-                {detail.examType?.name} · {detail.topic?.name} · {detail.layerCount} katman · {detail.optionsPerQuestion} seçenek
+                {detail.examType?.name} · {detail.topic?.name} · {detail.layerCount} katman · {detail.optionsPerQuestion} seçenek · {total} soru
               </div>
-              {detail.layers.map((l) => (
-                <div key={l.index} className="rounded-lg border border-slate-100 p-3">
-                  <div className="mb-2 text-sm font-semibold text-indigo-600">Katman {l.index} ({l.questions.length} soru)</div>
-                  <ul className="space-y-2">
-                    {l.questions.map((q, qi) => (
-                      <li key={q.id} className="text-sm">
-                        <div className="font-medium text-slate-800">{qi + 1}. {q.content}</div>
-                        {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mt-1 max-h-40 rounded-md object-contain" />}
-                        <ul className="mt-1 grid grid-cols-1 gap-0.5 sm:grid-cols-2">
-                          {q.options.map((o) => (
-                            <li key={o.id} className={"flex items-center gap-1.5 text-xs " + (o.isCorrect ? "font-semibold text-emerald-600" : "text-slate-500")}>
-                              <span>{o.isCorrect ? "✓ " : "• "}{o.content}</span>
-                              {o.mediaUrl && <img src={o.mediaUrl} alt="" className="h-8 w-8 rounded object-cover" />}
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+
+              {total === 0 || !cur ? (
+                <p className="py-8 text-center text-sm text-slate-400">Bu tünelde soru yok.</p>
+              ) : (
+                <>
+                  {/* Soru başlığı + ilerleme */}
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">Katman {cur.layerIndex}</span>
+                    <span className="text-xs font-medium text-slate-500">Soru {safeIndex + 1} / {total}</span>
+                  </div>
+
+                  {/* Tek soru — tüm şıklar */}
+                  <div className="rounded-lg border border-slate-200 p-4">
+                    <div className="whitespace-pre-wrap text-base font-medium text-slate-900">{cur.q.content}</div>
+                    {cur.q.mediaUrl && <img src={cur.q.mediaUrl} alt="" className="mt-3 max-h-56 rounded-md object-contain" />}
+                    <ul className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                      {cur.q.options.map((o, oi) => (
+                        <li
+                          key={o.id}
+                          className={
+                            "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm " +
+                            (o.isCorrect ? "border-emerald-300 bg-emerald-50 font-semibold text-emerald-700" : "border-slate-200 text-slate-600")
+                          }
+                        >
+                          <span className="w-4 flex-shrink-0 text-xs font-semibold text-slate-400">{LETTERS[oi]}</span>
+                          {o.isCorrect
+                            ? <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+                            : <span className="h-4 w-4 flex-shrink-0" />}
+                          {o.mediaUrl && <img src={o.mediaUrl} alt="" className="h-9 w-9 flex-shrink-0 rounded object-cover" />}
+                          {o.content && <span>{o.content}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Soru gezinme */}
+                  <div className="flex items-center justify-between">
+                    <Button variant="outline" size="sm" disabled={safeIndex === 0} onClick={() => setQIndex((i) => Math.max(0, i - 1))}>
+                      <ChevronLeft className="mr-1 h-4 w-4" /> Önceki
+                    </Button>
+                    <span className="text-xs text-slate-400">{safeIndex + 1} / {total}</span>
+                    <Button variant="outline" size="sm" disabled={safeIndex >= total - 1} onClick={() => setQIndex((i) => Math.min(total - 1, i + 1))}>
+                      Sonraki <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
 
               {rejectMode ? (
                 <div className="space-y-2 border-t border-slate-100 pt-3">
