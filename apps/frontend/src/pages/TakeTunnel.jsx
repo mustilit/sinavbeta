@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, Trophy, ArrowLeft, Layers, AlertTriangle, Save, Pencil, Eraser, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Trophy, ArrowLeft, Layers, AlertTriangle, Save, Pencil, Eraser, Clock, ChevronLeft, ChevronRight, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -181,11 +180,17 @@ export default function TakeTunnel() {
           </Button>
         </div>
         <div className="flex items-center gap-3">
-          <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-500">
-            <span aria-hidden="true">🌙</span>
-            <span className="hidden sm:inline">Bej mod</span>
-            <Switch checked={examTheme === "sepia"} onCheckedChange={(v) => setExamTheme(v ? "sepia" : "light")} aria-label="Bej okuma modu" />
-          </label>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={examTheme === "sepia" ? "bg-amber-50 text-amber-600" : "text-slate-400"}
+            onClick={() => setExamTheme(examTheme === "sepia" ? "light" : "sepia")}
+            aria-label="Bej okuma modu"
+            aria-pressed={examTheme === "sepia"}
+            title="Bej okuma modu"
+          >
+            <Sun className="h-4 w-4" />
+          </Button>
           <div className="flex items-center gap-1 font-mono font-semibold text-slate-600">
             <Clock className="h-4 w-4" /> {fmt(elapsedSec)}
           </div>

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { NoteWidget } from "@/components/notes/NoteWidget";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
 import {
   Clock,
   ChevronLeft,
@@ -30,6 +29,7 @@ import {
   LogOut,
   Rocket,
   FastForward,
+  Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -1229,16 +1229,18 @@ export default function TakeTest() {
 
         {/* Sağ: bej okuma modu + ilerleme + süre */}
         <div className="flex items-center gap-4 flex-wrap">
-          {/* Bej okuma modu — yalnız bu ekranı etkiler */}
-          <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-500">
-            <span aria-hidden="true">🌙</span>
-            <span className="hidden sm:inline">Bej mod</span>
-            <Switch
-              checked={examTheme === "sepia"}
-              onCheckedChange={(v) => setExamTheme(v ? "sepia" : "light")}
-              aria-label="Bej okuma modu"
-            />
-          </label>
+          {/* Bej okuma modu — yalnız bu ekranı etkiler (tek güneş ikonu) */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={examTheme === "sepia" ? "bg-amber-50 text-amber-600" : "text-slate-400"}
+            onClick={() => setExamTheme(examTheme === "sepia" ? "light" : "sepia")}
+            aria-label="Bej okuma modu"
+            aria-pressed={examTheme === "sepia"}
+            title="Bej okuma modu"
+          >
+            <Sun className="h-4 w-4" />
+          </Button>
           <span className="text-sm text-slate-500">
             {currentIndex + 1} / {questions.length}
           </span>
