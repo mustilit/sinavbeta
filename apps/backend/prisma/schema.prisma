@@ -1999,15 +1999,18 @@ enum TunnelAttemptStatus {
 
 /// Tünel satın alma (paket gibi; Purchase.testId zorunlu olduğu için ayrı model).
 model TunnelPurchase {
-  id          String         @id @default(uuid())
-  tenantId    String
-  tunnelId    String
-  candidateId String
-  amountCents Int            @default(0)
-  currency    Currency       @default(TRY)
-  status      PurchaseStatus @default(ACTIVE)
-  createdAt   DateTime       @default(now())
-  refundedAt  DateTime?
+  id                  String         @id @default(uuid())
+  tenantId            String
+  tunnelId            String
+  candidateId         String
+  amountCents         Int            @default(0)
+  currency            Currency       @default(TRY)
+  status              PurchaseStatus @default(ACTIVE)
+  // İndirim snapshot (FK yok — kod silinse de kanıt korunur; Purchase deseni)
+  discountCodeId      String?
+  discountAmountCents Int?
+  createdAt           DateTime       @default(now())
+  refundedAt          DateTime?
 
   tenant    Tenant @relation(fields: [tenantId], references: [id])
   tunnel    Tunnel @relation(fields: [tunnelId], references: [id], onDelete: Cascade)

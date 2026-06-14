@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Query, Req, Inject } from '@nestjs/
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
 import { SubmitTunnelAnswerDto } from './dto/submit-tunnel-answer.dto';
+import { PurchaseTunnelDto } from './dto/purchase-tunnel.dto';
 import { ListPublishedTunnelsUseCase, GetPublishedTunnelMetaUseCase } from '../../application/use-cases/tunnel/CandidateTunnelUseCases';
 import { PurchaseTunnelUseCase } from '../../application/use-cases/tunnel/PurchaseTunnelUseCase';
 import { StartTunnelAttemptUseCase, GetTunnelAttemptStateUseCase } from '../../application/use-cases/tunnel/StartTunnelAttemptUseCase';
@@ -41,8 +42,8 @@ export class CandidateTunnelsController {
   @Post(':id/purchase')
   @Roles('CANDIDATE')
   @ApiOkResponse({ description: 'Tünel satın alındı' })
-  async purchase(@Param('id') id: string, @Req() req: any) {
-    return this.purchaseUC.execute(id, req.user?.id);
+  async purchase(@Param('id') id: string, @Body() body: PurchaseTunnelDto, @Req() req: any) {
+    return this.purchaseUC.execute(id, req.user?.id, body?.discountCode);
   }
 
   @Post(':id/start')

@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Layers, Loader2, Play, ShoppingCart, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { candidateTunnels as api } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
 
@@ -21,15 +24,22 @@ export default function Tunnels() {
   });
   const items = data?.items ?? [];
 
+  const [buyTarget, setBuyTarget] = useState(null); // { id, title, priceCents }
+  const [discountCode, setDiscountCode] = useState("");
+
   const buyMut = useMutation({
-    mutationFn: (id) => api.purchase(id),
-    onSuccess: (_r, id) => {
+    mutationFn: ({ id, code }) => api.purchase(id, code || undefined),
+    onSuccess: (_r, vars) => {
       toast.success("Tünel kütüphanene eklendi");
       queryClient.invalidateQueries({ queryKey: ["candidateTunnels"] });
-      navigate(createPageUrl("TakeTunnel") + `?id=${id}`);
+      setBuyTarget(null);
+      setDiscountCode("");
+      navigate(createPageUrl("TakeTunnel") + `?id=${vars.id}`);
     },
     onError: (e) => toast.error(e?.message || "Satın alınamadı"),
   });
+
+  const openBuy = (t) => { setBuyTarget(t); setDiscountCode(""); };
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
@@ -75,9 +85,8 @@ export default function Tunnels() {
                         )}
                       </Button>
                     ) : (
-                      <Button size="sm" onClick={() => buyMut.mutate(t.id)} disabled={buyMut.isPending}>
-                        {buyMut.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-1.5 h-4 w-4" />}
-                        Satın Al
+                      <Button size="sm" onClick={() => openBuy(t)}>
+                        <ShoppingCart className="mr-1.5 h-4 w-4" /> Satın Al
                       </Button>
                     )}
                   </div>
@@ -87,6 +96,36 @@ export default function Tunnels() {
           ))}
         </ul>
       )}
+
+      {/* Satın alma modalı — opsiyonel indirim kodu */}
+      <Dialog open={!!buyTarget} onOpenChange={(o) => !o && setBuyTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tüneli Satın Al</DialogTitle>
+          </DialogHeader>
+          {buyTarget && (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600">
+                <strong>{buyTarget.title}</strong> —{" "}
+                {buyTarget.priceCents > 0 ? `₺${(buyTarget.priceCents / 100).toFixed(0)}` : "Ücretsiz"}
+              </p>
+              {buyTarget.priceCents > 0 && (
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">İndirim kodu (opsiyonel)</label>
+                  <Input value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="Kod" maxLength={64} />
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-1">
+                <Button variant="ghost" onClick={() => setBuyTarget(null)} disabled={buyMut.isPending}>Vazgeç</Button>
+                <Button onClick={() => buyMut.mutate({ id: buyTarget.id, code: discountCode.trim() })} disabled={buyMut.isPending}>
+                  {buyMut.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-1.5 h-4 w-4" />}
+                  Satın Al
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

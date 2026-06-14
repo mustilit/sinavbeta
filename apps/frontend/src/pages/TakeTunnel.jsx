@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, Trophy, ArrowLeft, Layers } from "lucide-react";
+import { Loader2, Trophy, ArrowLeft, Layers, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { candidateTunnels as api } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
@@ -22,6 +23,13 @@ export default function TakeTunnel() {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState(null); // { selectedId, correctId, correct }
   const [answering, setAnswering] = useState(false);
+  // Bej okuma modu — yalnız bu ekrana scope'lu (data-exam-theme), kalıcı.
+  const [examTheme, setExamTheme] = useState(() => {
+    try { return localStorage.getItem("dal_exam_theme") === "sepia" ? "sepia" : "light"; } catch { return "light"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("dal_exam_theme", examTheme); } catch { /* yoksay */ }
+  }, [examTheme]);
 
   useEffect(() => {
     if (!tunnelId) return;
@@ -84,7 +92,18 @@ export default function TakeTunnel() {
   const q = state.currentQuestion;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <div data-exam-theme={examTheme} className={"mx-auto max-w-2xl px-4 py-6" + (examTheme === "sepia" ? " rounded-2xl" : "")}>
+      {/* Üst aksiyon barı: çıkış + bej mod */}
+      <div className="mb-3 flex items-center justify-between">
+        <Button variant="ghost" size="sm" className="text-slate-500" onClick={() => navigate(createPageUrl("Tunnels"))}>
+          <LogOut className="mr-1.5 h-4 w-4" /> Çıkış
+        </Button>
+        <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-500">
+          <span aria-hidden="true">🌙</span>
+          <span className="hidden sm:inline">Bej mod</span>
+          <Switch checked={examTheme === "sepia"} onCheckedChange={(v) => setExamTheme(v ? "sepia" : "light")} aria-label="Bej okuma modu" />
+        </label>
+      </div>
       {/* Üst: başlık + ilerleme */}
       <div className="mb-4">
         <div className="mb-1 flex items-center justify-between">

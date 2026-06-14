@@ -1878,8 +1878,8 @@ export const candidateTunnels = {
     const { data } = await api.get(`/candidate-tunnels/${id}`);
     return data; // { ...summary, purchased, attemptStatus }
   },
-  purchase: async (id) => {
-    const { data } = await api.post(`/candidate-tunnels/${id}/purchase`, {});
+  purchase: async (id, discountCode) => {
+    const { data } = await api.post(`/candidate-tunnels/${id}/purchase`, discountCode ? { discountCode } : {});
     return data;
   },
   start: async (id) => {

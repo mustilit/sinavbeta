@@ -115,6 +115,7 @@ body.exam-sepia [data-fullscreen] { background-color: #f5eede !important; }
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 [data-exam-theme="sepia"] .bg-white { background-color: #fcf7ee !important; }
+[data-exam-theme="sepia"] .bg-card { background-color: #fcf7ee !important; }
 [data-exam-theme="sepia"] .bg-slate-50 { background-color: #f7f0e0 !important; }
 [data-exam-theme="sepia"] .bg-slate-100 { background-color: #f2e9d6 !important; }
 [data-exam-theme="sepia"] .text-slate-900 { color: #463a22 !important; }
