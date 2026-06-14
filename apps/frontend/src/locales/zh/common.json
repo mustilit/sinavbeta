@@ -97,7 +97,8 @@
       "refunds": "退款请求",
       "questionReports": "错误报告",
       "settings": "个人设置",
-      "moderationStatus": "内容状态"
+      "moderationStatus": "内容状态",
+      "myTunnels": "我的隧道"
     },
     "admin": {
       "dashboard": "管理面板",
@@ -121,7 +122,8 @@
       "emailManagement": "邮件管理",
       "riskyContent": "风险内容",
       "contracts": "协议",
-      "backup": "备份"
+      "backup": "备份",
+      "tunnelApprovals": "隧道审批"
     },
     "collapseAria": "收起侧边栏",
     "expandAria": "展开侧边栏"

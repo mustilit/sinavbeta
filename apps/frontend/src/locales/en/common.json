@@ -97,7 +97,8 @@
       "refunds": "Refund Requests",
       "questionReports": "Issue Reports",
       "settings": "Profile Settings",
-      "moderationStatus": "Content Status"
+      "moderationStatus": "Content Status",
+      "myTunnels": "My Tunnels"
     },
     "admin": {
       "dashboard": "Admin Panel",
@@ -121,7 +122,8 @@
       "emailManagement": "Email Management",
       "riskyContent": "Risky Content",
       "contracts": "Contracts",
-      "backup": "Backup"
+      "backup": "Backup",
+      "tunnelApprovals": "Tunnel Approvals"
     },
     "collapseAria": "Collapse sidebar",
     "expandAria": "Expand sidebar"

@@ -294,6 +294,11 @@ export default function AdminSystemControls() {
     maxQuestionsPerTest: "",
     maxTestsPerPackage: "",
     maxLiveQuestions: "",
+    maxLayersPerTunnel: "",
+    minQuestionsPerLayer: "",
+    maxQuestionsPerLayer: "",
+    tunnelAdvanceStreak: "",
+    tunnelOptionsPerQuestion: "",
   });
   const [savingTc, setSavingTc] = useState(null);
 
@@ -776,6 +781,47 @@ export default function AdminSystemControls() {
                 Kaydet
               </button>
             </div>
+          </div>
+
+          {/* Tünel limitleri */}
+          <div className="p-5 bg-white border border-slate-200 rounded-xl space-y-4">
+            <div>
+              <p className="font-semibold text-slate-900">Tünel Limitleri</p>
+              <p className="text-sm text-slate-500">
+                Katman sayısı/seçenek/streak yeni oluşturulan tünellere snapshot olarak uygulanır;
+                soru sayısı limitleri onaya gönderirken kontrol edilir.
+              </p>
+            </div>
+            {[
+              { key: "maxLayersPerTunnel", label: "Katman sayısı", def: 7, min: 1 },
+              { key: "minQuestionsPerLayer", label: "Katman başına min. soru", def: 10, min: 1 },
+              { key: "maxQuestionsPerLayer", label: "Katman başına maks. soru", def: 50, min: 1 },
+              { key: "tunnelAdvanceStreak", label: "Üst katmanı açma (üst üste doğru)", def: 10, min: 1 },
+              { key: "tunnelOptionsPerQuestion", label: "Soru başına seçenek", def: 10, min: 2 },
+            ].map((f) => (
+              <div key={f.key} className="flex flex-wrap items-center gap-3">
+                <div className="min-w-[220px] flex-1">
+                  <p className="text-sm font-medium text-slate-700">{f.label}</p>
+                  <p className="text-xs text-slate-400">Mevcut: <strong className="text-slate-600">{settings?.[f.key] ?? f.def}</strong></p>
+                </div>
+                <input
+                  type="number"
+                  min={f.min}
+                  placeholder={`${settings?.[f.key] ?? f.def}`}
+                  value={tcInputs[f.key]}
+                  onChange={(e) => setTcInputs((p) => ({ ...p, [f.key]: e.target.value }))}
+                  className="w-28 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  onClick={() => handleTcSave(f.key, f.min)}
+                  disabled={!tcInputs[f.key] || savingTc === f.key}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {savingTc === f.key ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  Kaydet
+                </button>
+              </div>
+            ))}
           </div>
         </>
       )}

@@ -46,6 +46,10 @@ export const PAGE_ROLES = {
   MyObjections: [ROLES.CANDIDATE],
   // MyNotes: Adayın kişisel notları (test/konu/sınav türü adresli)
   MyNotes: [ROLES.CANDIDATE],
+  // Tünel: eğitici oluşturma/yönetim, admin onay
+  CreateTunnel: [ROLES.EDUCATOR, ROLES.ADMIN],
+  ManageTunnels: [ROLES.EDUCATOR, ROLES.ADMIN],
+  AdminTunnels: [ROLES.ADMIN],
   ProfileSettings: [ROLES.CANDIDATE],
   TakeTest: [ROLES.CANDIDATE],
   CompleteProfile: [ROLES.CANDIDATE],

@@ -1818,5 +1818,53 @@ export const notes = {
   },
 };
 
+/**
+ * Tünel modülü (Faz 1: eğitici oluşturma + admin onay).
+ */
+export const tunnels = {
+  /** Wizard 1 — tünel oluştur (DRAFT). */
+  create: async (input) => {
+    const { data } = await api.post('/tunnels', input);
+    return data;
+  },
+  /** Eğiticinin tünelleri. */
+  mine: async () => {
+    const { data } = await api.get('/tunnels/mine');
+    return data; // { items }
+  },
+  /** Tünel detayı (katman+soru+seçenek). */
+  get: async (id) => {
+    const { data } = await api.get(`/tunnels/${id}`);
+    return data;
+  },
+  /** Wizard 2 — katman bazlı soruları kaydet. */
+  saveQuestions: async (id, layers) => {
+    const { data } = await api.patch(`/tunnels/${id}/questions`, { layers });
+    return data;
+  },
+  /** Onaya gönder. */
+  submit: async (id) => {
+    const { data } = await api.post(`/tunnels/${id}/submit`, {});
+    return data;
+  },
+  // ── Admin ──
+  adminPending: async () => {
+    const { data } = await api.get('/admin/tunnels/pending');
+    return data; // { items }
+  },
+  adminGet: async (id) => {
+    const { data } = await api.get(`/admin/tunnels/${id}`);
+    return data;
+  },
+  adminApprove: async (id) => {
+    const { data } = await api.post(`/admin/tunnels/${id}/approve`, {});
+    return data;
+  },
+  adminReject: async (id, reason) => {
+    const { data } = await api.post(`/admin/tunnels/${id}/reject`, { reason });
+    return data;
+  },
+};
+
 export default api;
 export { api };

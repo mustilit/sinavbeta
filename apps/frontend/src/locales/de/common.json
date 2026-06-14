@@ -97,7 +97,8 @@
       "refunds": "Rückerstattungsanträge",
       "questionReports": "Fehlermeldungen",
       "settings": "Profileinstellungen",
-      "moderationStatus": "Inhaltsstatus"
+      "moderationStatus": "Inhaltsstatus",
+      "myTunnels": "Meine Tunnel"
     },
     "admin": {
       "dashboard": "Admin-Panel",
@@ -121,7 +122,8 @@
       "emailManagement": "E-Mail-Verwaltung",
       "riskyContent": "Riskante Inhalte",
       "contracts": "Verträge",
-      "backup": "Sicherung"
+      "backup": "Sicherung",
+      "tunnelApprovals": "Tunnel-Freigaben"
     },
     "collapseAria": "Seitenleiste einklappen",
     "expandAria": "Seitenleiste ausklappen"

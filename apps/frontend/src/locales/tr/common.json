@@ -97,7 +97,8 @@
       "refunds": "İade Talepleri",
       "questionReports": "Hata Bildirimleri",
       "settings": "Profil Ayarları",
-      "moderationStatus": "İçerik Durumum"
+      "moderationStatus": "İçerik Durumum",
+      "myTunnels": "Tünellerim"
     },
     "admin": {
       "dashboard": "Yönetim Paneli",
@@ -121,7 +122,8 @@
       "emailManagement": "Mail Yönetimi",
       "riskyContent": "Riskli İçerik",
       "contracts": "Sözleşmeler",
-      "backup": "Yedekleme"
+      "backup": "Yedekleme",
+      "tunnelApprovals": "Tünel Onayları"
     },
     "collapseAria": "Yan menüyü kapat",
     "expandAria": "Yan menüyü genişlet"

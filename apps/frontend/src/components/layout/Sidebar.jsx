@@ -37,6 +37,8 @@ import {
   History,
   FileText,
   StickyNote,
+  Layers,
+  ShieldCheck,
 } from "lucide-react";
 
 /**
@@ -108,6 +110,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     { name: t("sidebar.educator.dashboard"), page: "EducatorDashboard", icon: Home },
     { name: t("sidebar.educator.myTestPackages"), page: "MyTestPackages", icon: BookOpen },
     { name: t("sidebar.educator.createTest"), page: "CreateTest", icon: Plus },
+    { name: t("sidebar.educator.myTunnels"), page: "ManageTunnels", icon: Layers },
     { name: t("sidebar.educator.mySales"), page: "MySales", icon: ShoppingBag },
     { name: t("sidebar.educator.myDiscountCodes"), page: "MyDiscountCodes", icon: Award },
     { name: t("sidebar.educator.myAds"), page: "MyAds", icon: Megaphone },
@@ -135,6 +138,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     { name: t("sidebar.admin.claims"), page: "AdminClaims", icon: ShoppingBag },
     { name: t("sidebar.admin.revenue"), page: "AdminRevenue", icon: Banknote },
     { name: t("sidebar.admin.systemControls"), page: "AdminSystemControls", icon: ShieldAlert },
+    { name: t("sidebar.admin.tunnelApprovals"), page: "AdminTunnels", icon: ShieldCheck },
     // Paket Yönetimi: Canlı Test + Reklam paketleri tek sayfada iki sekme.
     // Eski /ManageLiveTiers ve /AdminAdPackages route'ları çalışmaya devam eder
     // (deep-link / bookmark backward compatibility).
