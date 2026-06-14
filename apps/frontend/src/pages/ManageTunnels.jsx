@@ -34,7 +34,7 @@ export default function ManageTunnels() {
           </h1>
           <p className="mt-1 text-sm text-slate-500">Oluşturduğun tüneller ve onay durumları</p>
         </div>
-        <Button onClick={() => navigate(createPageUrl("CreateTunnel"))}>
+        <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => navigate(createPageUrl("CreateTunnel"))}>
           <Plus className="mr-2 h-4 w-4" /> Yeni Tünel
         </Button>
       </div>
@@ -70,6 +70,7 @@ export default function ManageTunnels() {
                     <Button
                       variant={editable ? "default" : "outline"}
                       size="sm"
+                      className={editable ? "bg-indigo-600 text-white hover:bg-indigo-700" : ""}
                       onClick={() => navigate(createPageUrl("CreateTunnel") + `?id=${t.id}`)}
                     >
                       {editable ? <><Pencil className="mr-1.5 h-4 w-4" /> Düzenle</> : <><Eye className="mr-1.5 h-4 w-4" /> Görüntüle</>}

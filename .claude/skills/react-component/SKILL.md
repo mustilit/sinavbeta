@@ -600,6 +600,31 @@ npm run pwa:icons         # 32/180/192/512 PNG'ları regenerate eder
 - Dev ortamında SW açmak (devOptions.enabled=true) — Vite HMR + cache çakışır.
 - API endpoint'ini cache-first yapmak — stale data 4xx/5xx response döndürür.
 
+## Buton Renkleri — Primary = Site Mavisi (indigo-600)
+
+> **Kural:** Ana (primary) aksiyon butonları **ASLA siyah olmamalı.** `<Button>`
+> varsayılan `default` varyantı `bg-primary`'dir ve bu projede `--primary` neredeyse
+> siyahtır (`0 0% 9%`). Primary aksiyonlar sitenin mavisi **indigo-600** (hover
+> `indigo-700`) ile gösterilir — `CreateTest`/`Tünel` ekranlarındaki tüm "Kaydet,
+> Devam, Onaya Gönder, Satın Al, Yeni X, Düzenle" butonları bu tonu kullanır.
+
+```jsx
+// İYİ — primary aksiyon site mavisi
+<Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={save}>
+  Kaydet
+</Button>
+
+// KÖTÜ — default varyant = siyaha yakın bg-primary
+<Button onClick={save}>Kaydet</Button>
+```
+
+- **Primary** (asıl eylem): `className="bg-indigo-600 text-white hover:bg-indigo-700"`.
+- **İkincil**: `variant="outline"` veya `variant="ghost"` (zaten siyah değil) — olduğu gibi bırak.
+- **Yıkıcı/semantik**: sil/red → `bg-rose-600 hover:bg-rose-700`; onayla/başarı → `bg-emerald-600 hover:bg-emerald-700`. Bunlar bilinçli renklerdir, indigo'ya çevirme.
+- Koşullu varyantta yalnız `default` (siyah) dalına indigo class ekle:
+  `className={editable ? "bg-indigo-600 text-white hover:bg-indigo-700" : ""}`.
+- İleride doğrusu: `button.jsx` `default` varyantını indigo yapmak (tek kaynak). O yapılana kadar yeni primary butonlarda yukarıdaki class zorunlu.
+
 ## Yapmayacakların
 
 - Component içinde direkt `fetch`/`axios` — `dalClient` kullan.
@@ -608,6 +633,8 @@ npm run pwa:icons         # 32/180/192/512 PNG'ları regenerate eder
 - Button olmayan element'e onClick — a11y kırar.
 - `style` inline — Tailwind kullan.
 - Tailwind dinamik class (`bg-${color}-500`, `dark:bg-${...}`) — JIT taramaz.
+- **Primary buton'u siyah (`<Button>` default varyant) bırakmak** — site mavisi
+  `bg-indigo-600 hover:bg-indigo-700` ekle (bkz. "Buton Renkleri").
 - Default export — **sadece `pages/` altında React.lazy için istisna**.
 - Server Component / Server Action öner — bu proje SPA.
 
@@ -658,6 +685,7 @@ Sentry.captureException(error);
 - [ ] Semantic HTML + aria attribute'ları yerli yerinde mi?
 - [ ] Tailwind dinamik class yok, sabit utility'ler mi?
 - [ ] Dark mode için `dark:` varyantları eklendi mi?
+- [ ] Primary buton site mavisi mi (`bg-indigo-600 hover:bg-indigo-700`), siyah `default` varyant bırakılmadı mı?
 - [ ] Component testi var mı (Vitest + Testing Library)?
 - [ ] Mutation varsa `form-mutation` skill checklist'i çalıştırıldı mı?
 - [ ] Yeni sayfa ise `pages.config.js` (lazy import) + `routeRoles.js` güncellendi mi?

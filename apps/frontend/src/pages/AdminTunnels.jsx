@@ -76,7 +76,7 @@ export default function AdminTunnels() {
                       <span>· {t.questionCount} soru</span>
                     </div>
                   </div>
-                  <Button size="sm" onClick={() => setReviewId(t.id)}>
+                  <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setReviewId(t.id)}>
                     <Eye className="mr-1.5 h-4 w-4" /> İncele
                   </Button>
                 </CardContent>
