@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import TestPackageCard from "@/components/ui/TestPackageCard";
 import { TunnelGrid } from "@/components/tunnel/TunnelGrid";
 import PaginationBar from "@/components/ui/PaginationBar";
-import { Search, ShoppingBag, Filter, X } from "lucide-react";
+import { Search, ShoppingBag, X } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -254,7 +254,6 @@ export default function MyTests() {
       {!isLoading && purchases.length > 0 && (
         <div className="mb-6 bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-slate-600" />
             <h2 className="font-semibold text-slate-900">{t("pages:myTests.filter.title")}</h2>
             {hasActiveFilters && (
               <Button

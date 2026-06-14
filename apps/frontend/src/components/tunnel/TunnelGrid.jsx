@@ -133,63 +133,86 @@ export function TunnelGrid({ mode = "discover" }) {
 
   return (
     <div>
-      {/* Filtre — başlıksız, hafif satır */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative sm:w-56">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tünel ara" className="pl-9" />
+      {/* Filtre — MyTests filtresiyle aynı (logosuz kart + başlık + etiketli alanlar) */}
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="font-semibold text-slate-900">Filtrele</h2>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-indigo-600 hover:text-indigo-700">
+              <X className="mr-1 h-4 w-4" /> Temizle
+            </Button>
+          )}
         </div>
-        <Select value={examType} onValueChange={setExamType}>
-          <SelectTrigger className="sm:w-44" aria-label="Sınav türü"><SelectValue placeholder="Sınav Türü" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm Sınav Türleri</SelectItem>
-            {examTypes.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={topic} onValueChange={setTopic}>
-          <SelectTrigger className="sm:w-44" aria-label="Konu"><SelectValue placeholder="Konu" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm Konular</SelectItem>
-            {topics.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        {mode === "discover" && (
-          <Select value={educator} onValueChange={setEducator}>
-            <SelectTrigger className="sm:w-44" aria-label="Eğitici"><SelectValue placeholder="Eğitici" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tüm Eğiticiler</SelectItem>
-              {educators.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        )}
-        {mode === "discover" && (
-          <Select value={priceRange} onValueChange={setPriceRange}>
-            <SelectTrigger className="sm:w-44" aria-label="Fiyat"><SelectValue placeholder="Fiyat" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tümü</SelectItem>
-              <SelectItem value="100to250">₺100 – ₺250</SelectItem>
-              <SelectItem value="251to500">₺251 – ₺500</SelectItem>
-              <SelectItem value="501to1000">₺501 – ₺1000</SelectItem>
-              <SelectItem value="over1000">₺1000 Üstü</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
-        {mode === "mine" && (
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="sm:w-44" aria-label="Durum"><SelectValue placeholder="Durum" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tüm Durumlar</SelectItem>
-              <SelectItem value="not_started">Başlanmadı</SelectItem>
-              <SelectItem value="in_progress">Devam Ediyor</SelectItem>
-              <SelectItem value="completed">Tamamlandı</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-rose-600 hover:text-rose-700">
-            <X className="mr-1 h-4 w-4" /> Temizle
-          </Button>
-        )}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Ara</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tünel adı" className="pl-9" />
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Sınav Türü</label>
+            <Select value={examType} onValueChange={setExamType}>
+              <SelectTrigger aria-label="Sınav türü"><SelectValue placeholder="Tümü" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tümü</SelectItem>
+                {examTypes.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Konu</label>
+            <Select value={topic} onValueChange={setTopic}>
+              <SelectTrigger aria-label="Konu"><SelectValue placeholder="Tümü" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tümü</SelectItem>
+                {topics.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {mode === "discover" && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Eğitici</label>
+              <Select value={educator} onValueChange={setEducator}>
+                <SelectTrigger aria-label="Eğitici"><SelectValue placeholder="Tümü" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tümü</SelectItem>
+                  {educators.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {mode === "discover" && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Fiyat</label>
+              <Select value={priceRange} onValueChange={setPriceRange}>
+                <SelectTrigger aria-label="Fiyat"><SelectValue placeholder="Tümü" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tümü</SelectItem>
+                  <SelectItem value="100to250">₺100 – ₺250</SelectItem>
+                  <SelectItem value="251to500">₺251 – ₺500</SelectItem>
+                  <SelectItem value="501to1000">₺501 – ₺1000</SelectItem>
+                  <SelectItem value="over1000">₺1000 Üstü</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {mode === "mine" && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Durum</label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger aria-label="Durum"><SelectValue placeholder="Tümü" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tümü</SelectItem>
+                  <SelectItem value="not_started">Başlanmadı</SelectItem>
+                  <SelectItem value="in_progress">Devam Ediyor</SelectItem>
+                  <SelectItem value="completed">Tamamlandı</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
