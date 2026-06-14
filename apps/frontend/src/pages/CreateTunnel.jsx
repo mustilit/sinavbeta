@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, ArrowRight, Layers, ImagePlus, X, Pencil, CheckCircle2, Upload } from "lucide-react";
+import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, ArrowRight, Layers, ImagePlus, X, Pencil, CheckCircle2, Upload, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { entities, topics as topicsApi, tunnels as tunnelApi } from "@/api/dalClient";
+import { useAuth } from "@/lib/AuthContext";
+import { useAutoSave } from "@/lib/useAutoSave";
 import { useServiceStatus } from "@/lib/useServiceStatus";
 import { parseDocxToQuestions, parsePdfToQuestions } from "@/lib/importQuestions";
 import { createPageUrl } from "@/utils";
@@ -22,6 +25,37 @@ import { createPageUrl } from "@/utils";
 /** Zorunlu alan yıldızı. */
 function Req() {
   return <span className="text-rose-500"> *</span>;
+}
+
+/** Taslak için katmanları serileştir — File/blob önizleme alanları ATILIR
+ *  (localStorage'a yazılamaz; normal testteki gibi yalnız yüklenmiş URL saklanır). */
+function stripLayersForDraft(ls) {
+  return (ls ?? []).map((l) => ({
+    index: l.index,
+    questions: (l.questions ?? []).map((q) => ({
+      content: q.content || "",
+      mediaUrl: q.mediaUrl || "",
+      options: (q.options ?? []).map((o) => ({
+        content: o.content || "",
+        isCorrect: !!o.isCorrect,
+        mediaUrl: o.mediaUrl || "",
+      })),
+    })),
+  }));
+}
+
+/** Kararlı (deterministik) taslak görüntüsü — baseline ve karşılaştırma için. */
+function buildTunnelSnapshot(m) {
+  return {
+    v: 1,
+    title: m.title || "",
+    description: m.description || "",
+    examTypeId: m.examTypeId || "",
+    topicId: m.topicId || "",
+    priceTL: m.priceTL || "",
+    coverImageUrl: m.coverImageUrl || "",
+    layers: stripLayersForDraft(m.layers),
+  };
 }
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -94,6 +128,127 @@ export default function CreateTunnel() {
   const layerCount = tunnel?.layerCount ?? 7;
   const readOnly = tunnel && !["DRAFT", "REJECTED"].includes(tunnel.status);
 
+  // ─── Taslak koruma (otomatik kaydetme) — normal test ekranıyla aynı ────────
+  // Elektrik kesilmesi / sekme kapanması / yenileme durumunda yazılan sorular
+  // kaybolmaz: localStorage (senkron) + sunucu DraftSnapshot (debounce) yedeği.
+  const { user } = useAuth();
+  const draftKey = user?.id ? `createTunnel_${user.id}_${tunnelId || "new"}` : null;
+  const serverKey = user?.id ? `createTunnel_${tunnelId || "new"}` : null;
+  const baselineRef = useRef(null);   // server'dan yüklenen halin canonical JSON'u
+  const restoredRef = useRef(false);  // restore kontrolü bir kez çalışsın
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [draftInfo, setDraftInfo] = useState(null);
+
+  const getFormData = useCallback(
+    () => buildTunnelSnapshot({ title, description, examTypeId, topicId, priceTL, coverImageUrl, layers }),
+    [title, description, examTypeId, topicId, priceTL, coverImageUrl, layers],
+  );
+
+  const { scheduleSave, loadDraft, clearDraft, lastSavedAt } = useAutoSave(
+    draftKey ?? "__noop__",
+    getFormData,
+    { enabled: !!draftKey, serverKey },
+  );
+
+  // Form değiştikçe debounce'lu kaydet
+  useEffect(() => {
+    if (draftKey) scheduleSave();
+  }, [getFormData, draftKey, scheduleSave]);
+
+  // Mevcut tünel için server baseline'ı kur (taslak gerçekten daha yeni mi karşılaştırması)
+  useEffect(() => {
+    if (!tunnel) return;
+    baselineRef.current = JSON.stringify(
+      buildTunnelSnapshot({
+        title: tunnel.title,
+        description: tunnel.description,
+        examTypeId: tunnel.examType?.id,
+        topicId: tunnel.topic?.id,
+        priceTL: tunnel.priceCents ? String(tunnel.priceCents / 100) : "",
+        coverImageUrl: tunnel.coverImageUrl,
+        layers: (tunnel.layers ?? []).map((l) => ({ index: l.index, questions: l.questions ?? [] })),
+      }),
+    );
+  }, [tunnel]);
+
+  // Açılışta taslak kontrolü — server ile aynı değilse "geri yükle?" sor
+  useEffect(() => {
+    if (!draftKey || restoredRef.current) return;
+    if (tunnelId && !tunnel) return; // mevcut tünelde server yüklensin
+    let cancelled = false;
+    (async () => {
+      const draft = await loadDraft();
+      if (cancelled) return;
+      restoredRef.current = true;
+      const d = draft?.data;
+      if (!d) return;
+      const hasWork = (d.layers ?? []).some((l) => (l.questions ?? []).length > 0) || (d.title ?? "").trim();
+      if (!hasWork) return;
+      const draftCanon = JSON.stringify(buildTunnelSnapshot(d));
+      if (baselineRef.current && draftCanon === baselineRef.current) return; // server ile birebir aynı
+      setDraftInfo(draft);
+      setShowDraftDialog(true);
+    })();
+    return () => { cancelled = true; };
+  }, [draftKey, tunnelId, tunnel, loadDraft]);
+
+  const applyDraft = () => {
+    const d = draftInfo?.data;
+    if (!d) { setShowDraftDialog(false); return; }
+    setTitle(d.title || "");
+    setDescription(d.description || "");
+    setExamTypeId(d.examTypeId || "");
+    setTopicId(d.topicId || "");
+    setPriceTL(d.priceTL || "");
+    setCoverImageUrl(d.coverImageUrl || "");
+    setLayers((d.layers ?? []).map((l) => ({
+      index: l.index,
+      questions: (l.questions ?? []).map((q) => ({
+        content: q.content || "",
+        mediaUrl: q.mediaUrl || "",
+        _imgFile: null,
+        _imgPreview: "",
+        options: (q.options ?? []).map((o) => ({
+          content: o.content || "",
+          isCorrect: !!o.isCorrect,
+          mediaUrl: o.mediaUrl || "",
+          _imgFile: null,
+          _imgPreview: "",
+        })),
+      })),
+    })));
+    metaLoaded.current = true;
+    setShowDraftDialog(false);
+    toast.success("Taslak geri yüklendi");
+  };
+  const discardDraft = () => { clearDraft(); setShowDraftDialog(false); };
+
+  const draftSavedAtLabel = draftInfo?.savedAt
+    ? new Date(draftInfo.savedAt).toLocaleString("tr-TR")
+    : "";
+
+  const draftDialog = (
+    <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 text-indigo-600" /> Kaydedilmemiş taslak bulundu
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Bu tünel için kaydedilmemiş değişiklikler var. Kaldığın yerden devam etmek ister misin?
+            {draftSavedAtLabel && <span className="text-slate-400"> ({draftSavedAtLabel})</span>}
+          </p>
+          <div className="flex gap-3">
+            <Button className="flex-1" onClick={applyDraft}>Devam et</Button>
+            <Button variant="outline" className="flex-1" onClick={discardDraft}>Taslağı sil</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   // Tünel gelince katman + adım1 meta state'ini kur (yalnız ilk yükleme)
   useEffect(() => {
     if (!tunnel) return;
@@ -139,6 +294,7 @@ export default function CreateTunnel() {
       }),
     onSuccess: (t) => {
       toast.success("Tünel oluşturuldu");
+      clearDraft(); // "new" taslağını temizle (artık server'da kayıtlı)
       metaLoaded.current = true;
       setParams({ id: t.id });
       setStep(2);
@@ -226,6 +382,7 @@ export default function CreateTunnel() {
     },
     onSuccess: () => {
       toast.success("Tünel onaya gönderildi");
+      clearDraft(); // onaya gönderildi → taslak gereksiz
       navigate(createPageUrl("ManageTunnels"));
     },
     onError: (e) => toast.error(e?.message || "Onaya gönderilemedi"),
@@ -311,6 +468,7 @@ export default function CreateTunnel() {
             </div>
           </CardContent>
         </Card>
+        {draftDialog}
       </div>
     );
   }
@@ -318,6 +476,7 @@ export default function CreateTunnel() {
   // ─── Adım 2 ───
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
+      {draftDialog}
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{tunnel?.title || "Tünel"}</h1>
@@ -380,7 +539,11 @@ export default function CreateTunnel() {
                 onChange={(qs) => updateLayer(activeLayer, qs)}
               />
 
-              <div className="mt-6 flex justify-end gap-2">
+              <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+                <span className="mr-auto inline-flex items-center gap-1 text-xs text-slate-400">
+                  <History className="h-3.5 w-3.5" />
+                  {lastSavedAt ? `Otomatik kaydedildi · ${lastSavedAt.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}` : "Otomatik kaydetme açık"}
+                </span>
                 <Button variant="outline" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
                   {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Taslağı Kaydet
