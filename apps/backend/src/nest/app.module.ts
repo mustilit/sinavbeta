@@ -180,6 +180,7 @@ import { ApproveTunnelUseCase, RejectTunnelUseCase } from '../application/use-ca
 import { CandidateTunnelsController } from './controllers/candidate-tunnels.controller';
 import { ListPublishedTunnelsUseCase, GetPublishedTunnelMetaUseCase } from '../application/use-cases/tunnel/CandidateTunnelUseCases';
 import { PurchaseTunnelUseCase } from '../application/use-cases/tunnel/PurchaseTunnelUseCase';
+import { ValidateTunnelDiscountUseCase } from '../application/use-cases/tunnel/ValidateTunnelDiscountUseCase';
 import { StartTunnelAttemptUseCase, GetTunnelAttemptStateUseCase } from '../application/use-cases/tunnel/StartTunnelAttemptUseCase';
 import { SubmitTunnelAnswerUseCase } from '../application/use-cases/tunnel/SubmitTunnelAnswerUseCase';
 import { ReportTunnelQuestionUseCase } from '../application/use-cases/tunnel/ReportTunnelQuestionUseCase';
@@ -748,6 +749,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: ListPublishedTunnelsUseCase, useFactory: () => new ListPublishedTunnelsUseCase() },
     { provide: GetPublishedTunnelMetaUseCase, useFactory: () => new GetPublishedTunnelMetaUseCase() },
     { provide: PurchaseTunnelUseCase, useFactory: () => new PurchaseTunnelUseCase() },
+    { provide: ValidateTunnelDiscountUseCase, useFactory: () => new ValidateTunnelDiscountUseCase() },
     { provide: StartTunnelAttemptUseCase, useFactory: () => new StartTunnelAttemptUseCase() },
     { provide: GetTunnelAttemptStateUseCase, useFactory: () => new GetTunnelAttemptStateUseCase() },
     { provide: SubmitTunnelAnswerUseCase, useFactory: () => new SubmitTunnelAnswerUseCase() },

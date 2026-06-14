@@ -2,10 +2,11 @@ import { Controller, Get, Post, Body, Param, Query, Req, Inject } from '@nestjs/
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
 import { SubmitTunnelAnswerDto } from './dto/submit-tunnel-answer.dto';
-import { PurchaseTunnelDto } from './dto/purchase-tunnel.dto';
+import { PurchaseTunnelDto, ValidateTunnelDiscountDto } from './dto/purchase-tunnel.dto';
 import { ReportTunnelQuestionDto } from './dto/report-tunnel-question.dto';
 import { ListPublishedTunnelsUseCase, GetPublishedTunnelMetaUseCase } from '../../application/use-cases/tunnel/CandidateTunnelUseCases';
 import { PurchaseTunnelUseCase } from '../../application/use-cases/tunnel/PurchaseTunnelUseCase';
+import { ValidateTunnelDiscountUseCase } from '../../application/use-cases/tunnel/ValidateTunnelDiscountUseCase';
 import { StartTunnelAttemptUseCase, GetTunnelAttemptStateUseCase } from '../../application/use-cases/tunnel/StartTunnelAttemptUseCase';
 import { SubmitTunnelAnswerUseCase } from '../../application/use-cases/tunnel/SubmitTunnelAnswerUseCase';
 import { ReportTunnelQuestionUseCase } from '../../application/use-cases/tunnel/ReportTunnelQuestionUseCase';
@@ -22,6 +23,7 @@ export class CandidateTunnelsController {
     @Inject(ListPublishedTunnelsUseCase) private readonly listUC: ListPublishedTunnelsUseCase,
     @Inject(GetPublishedTunnelMetaUseCase) private readonly metaUC: GetPublishedTunnelMetaUseCase,
     @Inject(PurchaseTunnelUseCase) private readonly purchaseUC: PurchaseTunnelUseCase,
+    @Inject(ValidateTunnelDiscountUseCase) private readonly validateDiscountUC: ValidateTunnelDiscountUseCase,
     @Inject(StartTunnelAttemptUseCase) private readonly startUC: StartTunnelAttemptUseCase,
     @Inject(GetTunnelAttemptStateUseCase) private readonly stateUC: GetTunnelAttemptStateUseCase,
     @Inject(SubmitTunnelAnswerUseCase) private readonly answerUC: SubmitTunnelAnswerUseCase,
@@ -42,11 +44,23 @@ export class CandidateTunnelsController {
     return this.metaUC.execute(id, req.user?.id);
   }
 
+  @Post(':id/validate-discount')
+  @Roles('CANDIDATE')
+  @ApiOkResponse({ description: 'İndirim kodu önizleme doğrulaması' })
+  async validateDiscount(@Param('id') id: string, @Body() body: ValidateTunnelDiscountDto) {
+    return this.validateDiscountUC.execute({ code: body.code, tunnelId: id });
+  }
+
   @Post(':id/purchase')
   @Roles('CANDIDATE')
   @ApiOkResponse({ description: 'Tünel satın alındı' })
   async purchase(@Param('id') id: string, @Body() body: PurchaseTunnelDto, @Req() req: any) {
-    return this.purchaseUC.execute(id, req.user?.id, body?.discountCode);
+    return this.purchaseUC.execute(id, req.user?.id, body?.discountCode, {
+      acceptedDistanceSaleContractId: body?.acceptedDistanceSaleContractId,
+      paymentProvider: body?.paymentProvider,
+      ip: req.ip ?? req.headers?.['x-forwarded-for'] ?? null,
+      userAgent: req.headers?.['user-agent'] ?? null,
+    });
   }
 
   @Post(':id/start')

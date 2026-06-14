@@ -8,6 +8,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => {
     prisma: {
       user: { findUnique: jest.fn() },
       tunnel: { findUnique: jest.fn() },
+      contract: { findFirst: jest.fn(async () => null) },
       tunnelPurchase: { findUnique: jest.fn(), create: jest.fn() },
       tunnelAttempt: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
       discountCode: { findFirst: jest.fn(), updateMany: jest.fn() },

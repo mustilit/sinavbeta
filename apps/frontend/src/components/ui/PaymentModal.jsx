@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { entities, contracts as contractsApi, discounts as discountsApi } from "@/api/dalClient";
+import { entities, contracts as contractsApi, discounts as discountsApi, candidateTunnels as tunnelsApi } from "@/api/dalClient";
 import {
   Dialog,
   DialogContent,
@@ -222,8 +222,11 @@ function DistanceSaleCheckbox({ checked, onChange, available }) {
  * @param {() => void} props.onClose
  * @param {{ id: string, title: string, price: number }} props.test
  * @param {string}  [props.discountCode]
+ * @param {"package"|"tunnel"} [props.kind] - Satın alma türü (varsayılan paket).
+ * @param {() => void} [props.onPurchased] - Başarılı satın almadan sonra (tünel: çözmeye git).
  */
-export function PaymentModal({ isOpen, onClose, test, discountCode }) {
+export function PaymentModal({ isOpen, onClose, test, discountCode, kind = "package", onPurchased }) {
+  const isTunnel = kind === "tunnel";
   // "select" | "card" | "processing" | "success" | "error"
   const [step, setStep] = useState("select");
   const [selectedProvider, setSelectedProvider] = useState(null);
@@ -295,7 +298,9 @@ export function PaymentModal({ isOpen, onClose, test, discountCode }) {
     setDiscountLoading(true);
     try {
       const basePrice = Math.round((test?.price ?? 0) * 100); // ₺ → cents
-      const result = await discountsApi.validate(code, test.id, basePrice);
+      const result = isTunnel
+        ? await tunnelsApi.validateDiscount(test.id, code)
+        : await discountsApi.validate(code, test.id, basePrice);
       setAppliedDiscount(result);
     } catch (err) {
       const errorCode = err?.response?.data?.code || err?.response?.data?.error?.code;
@@ -332,6 +337,14 @@ export function PaymentModal({ isOpen, onClose, test, discountCode }) {
       // edip uyguladığı `appliedDiscount.code`, yoksa parent'tan gelen
       // `discountCode` prop'u (geriye dönük). Backend `PurchaseUseCase`
       // race-condition korumalı şekilde usedCount++ yapar.
+      if (isTunnel) {
+        await tunnelsApi.purchase(test.id, {
+          discountCode: appliedDiscount?.code || discountCode || undefined,
+          paymentProvider: selectedProvider,
+          acceptedDistanceSaleContractId: distanceSaleContract?.id,
+        });
+        return;
+      }
       await entities.Purchase.create({
         test_package_id: test.id,
         discount_code: appliedDiscount?.code || discountCode || undefined,
@@ -343,7 +356,13 @@ export function PaymentModal({ isOpen, onClose, test, discountCode }) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["purchases"] }),
         queryClient.invalidateQueries({ queryKey: ["myPurchases"] }),
+        queryClient.invalidateQueries({ queryKey: ["candidateTunnels"] }),
       ]);
+      // Tünelde başarı ekranı yerine doğrudan çözmeye yönlendir (parent karar verir).
+      if (isTunnel && onPurchased) {
+        onPurchased();
+        return;
+      }
       setStep("success");
     },
     onError: (err) => {

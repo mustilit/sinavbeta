@@ -12,8 +12,20 @@ const EDUCATOR_MAX_PERCENT = 50;
  * kodu (createdById === null, sınırsız %) geçerli. usedCount artışı race-safe.
  * Komisyon RAPORU entegrasyonu ayrı iterasyon; burada tutar + indirim snapshot'lanır.
  */
+type PurchaseCtx = {
+  acceptedDistanceSaleContractId?: string | null;
+  paymentProvider?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+};
+
 export class PurchaseTunnelUseCase {
-  async execute(tunnelId: string, actorId?: string | null, discountCodeRaw?: string | null) {
+  async execute(
+    tunnelId: string,
+    actorId?: string | null,
+    discountCodeRaw?: string | null,
+    ctx?: PurchaseCtx,
+  ) {
     if (!actorId) throw new AppError('UNAUTHORIZED', 'Giriş gerekli', 401);
 
     const candidate = await prisma.user.findUnique({
@@ -37,6 +49,26 @@ export class PurchaseTunnelUseCase {
     });
     if (existing) return existing;
 
+    // Mesafeli satış sözleşmesi (paket akışıyla aynı): aktif sözleşme varsa onay zorunlu.
+    // Aktif sözleşme yoksa (test/dev) atlanır — paketlerle tutarlı snapshot, esnek kapı.
+    const activeContract = await prisma.contract.findFirst({
+      where: { type: 'DISTANCE_SALE', isActive: true },
+      orderBy: { version: 'desc' },
+    });
+    if (activeContract) {
+      if (!ctx?.acceptedDistanceSaleContractId || ctx.acceptedDistanceSaleContractId !== activeContract.id)
+        throw new AppError('TERMS_NOT_ACCEPTED', 'Mesafeli satış sözleşmesi onayı zorunludur', 400);
+    }
+    const contractSnapshot = activeContract
+      ? {
+          paymentProvider: ctx?.paymentProvider ?? null,
+          distanceSaleContractId: activeContract.id,
+          distanceSaleAcceptedAt: new Date(),
+          distanceSaleAcceptedIp: ctx?.ip ?? null,
+          distanceSaleAcceptedUserAgent: ctx?.userAgent ?? null,
+        }
+      : { paymentProvider: ctx?.paymentProvider ?? null };
+
     const code = (discountCodeRaw ?? '').trim();
     // İndirimsiz / ücretsiz akış
     if (!code || tunnel.priceCents <= 0) {
@@ -48,6 +80,7 @@ export class PurchaseTunnelUseCase {
           amountCents: tunnel.priceCents,
           currency: tunnel.currency,
           status: 'ACTIVE',
+          ...contractSnapshot,
         },
       });
     }
@@ -91,6 +124,7 @@ export class PurchaseTunnelUseCase {
           status: 'ACTIVE',
           discountCodeId: dc.id,
           discountAmountCents: discountAmount,
+          ...contractSnapshot,
         },
       });
     });

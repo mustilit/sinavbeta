@@ -2014,6 +2014,12 @@ model TunnelPurchase {
   // İndirim snapshot (FK yok — kod silinse de kanıt korunur; Purchase deseni)
   discountCodeId      String?
   discountAmountCents Int?
+  paymentProvider     String?
+  // Mesafeli satış sözleşmesi kanıt zinciri (TKHK — Purchase ile aynı desen)
+  distanceSaleContractId        String?
+  distanceSaleAcceptedAt        DateTime?
+  distanceSaleAcceptedIp        String?
+  distanceSaleAcceptedUserAgent String?
   createdAt           DateTime       @default(now())
   refundedAt          DateTime?
 

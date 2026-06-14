@@ -1891,8 +1891,14 @@ export const candidateTunnels = {
     const { data } = await api.get(`/candidate-tunnels/${id}`);
     return data; // { ...summary, purchased, attemptStatus }
   },
-  purchase: async (id, discountCode) => {
-    const { data } = await api.post(`/candidate-tunnels/${id}/purchase`, discountCode ? { discountCode } : {});
+  /** Satın al. body: { discountCode?, paymentProvider?, acceptedDistanceSaleContractId? } */
+  purchase: async (id, body = {}) => {
+    const { data } = await api.post(`/candidate-tunnels/${id}/purchase`, body);
+    return data;
+  },
+  /** İndirim kodu önizleme doğrulaması → { code, percentOff, discountCents, finalAmountCents } */
+  validateDiscount: async (id, code) => {
+    const { data } = await api.post(`/candidate-tunnels/${id}/validate-discount`, { code });
     return data;
   },
   start: async (id) => {
