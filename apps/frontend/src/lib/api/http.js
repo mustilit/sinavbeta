@@ -108,11 +108,20 @@ export async function apiRequest(path, opts = {}) {
   const baseUrl = getApiBaseUrl();
   const url = joinUrl(baseUrl, path);
 
-  // FormData ise Content-Type browser tarafından boundary ile otomatik eklenir
+  // FormData ise Content-Type browser tarafından boundary ile otomatik eklenir.
+  // ÖNEMLİ: Çağıran taraf yanlışlıkla "Content-Type: multipart/form-data" (boundary'siz)
+  // geçse bile bunu TEMİZLE — aksi halde browser boundary eklemez, sunucu (multer)
+  // body'yi parse edemez ve dosya kaybolur ("Görsel yüklenemedi" hatası).
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
-  const headers = isFormData
-    ? { ...customHeaders }
-    : { 'Content-Type': 'application/json', ...customHeaders };
+  let headers;
+  if (isFormData) {
+    headers = { ...customHeaders };
+    for (const k of Object.keys(headers)) {
+      if (k.toLowerCase() === 'content-type') delete headers[k];
+    }
+  } else {
+    headers = { 'Content-Type': 'application/json', ...customHeaders };
+  }
   if (!skipAuth) {
     const token = getStoredToken();
     if (token) headers.Authorization = `Bearer ${token}`;
