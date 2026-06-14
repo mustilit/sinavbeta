@@ -84,7 +84,8 @@
       "joinLive": "Unirse a examen en vivo",
       "educators": "Educadores",
       "profileSettings": "Ajustes de perfil",
-      "myNotes": "Mis notas"
+      "myNotes": "Mis notas",
+      "tunnels": "Túneles"
     },
     "educator": {
       "dashboard": "Panel",

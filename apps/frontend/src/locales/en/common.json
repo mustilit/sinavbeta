@@ -84,7 +84,8 @@
       "joinLive": "Join Live Test",
       "educators": "Educators",
       "profileSettings": "Profile Settings",
-      "myNotes": "My Notes"
+      "myNotes": "My Notes",
+      "tunnels": "Tunnels"
     },
     "educator": {
       "dashboard": "Dashboard",

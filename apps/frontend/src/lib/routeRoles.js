@@ -50,6 +50,9 @@ export const PAGE_ROLES = {
   CreateTunnel: [ROLES.EDUCATOR, ROLES.ADMIN],
   ManageTunnels: [ROLES.EDUCATOR, ROLES.ADMIN],
   AdminTunnels: [ROLES.ADMIN],
+  // Aday tünel pazarı + çözme
+  Tunnels: [ROLES.CANDIDATE],
+  TakeTunnel: [ROLES.CANDIDATE],
   ProfileSettings: [ROLES.CANDIDATE],
   TakeTest: [ROLES.CANDIDATE],
   CompleteProfile: [ROLES.CANDIDATE],

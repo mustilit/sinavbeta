@@ -1866,5 +1866,35 @@ export const tunnels = {
   },
 };
 
+/**
+ * Aday tünel akışı — pazar, satın alma, başlat/sürdür, çöz (adaptif).
+ */
+export const candidateTunnels = {
+  list: async (params = {}) => {
+    const { data } = await api.get('/candidate-tunnels', { params });
+    return data; // { items }
+  },
+  meta: async (id) => {
+    const { data } = await api.get(`/candidate-tunnels/${id}`);
+    return data; // { ...summary, purchased, attemptStatus }
+  },
+  purchase: async (id) => {
+    const { data } = await api.post(`/candidate-tunnels/${id}/purchase`, {});
+    return data;
+  },
+  start: async (id) => {
+    const { data } = await api.post(`/candidate-tunnels/${id}/start`, {});
+    return data; // state
+  },
+  play: async (id) => {
+    const { data } = await api.get(`/candidate-tunnels/${id}/play`);
+    return data; // state
+  },
+  answer: async (id, selectedOptionId) => {
+    const { data } = await api.post(`/candidate-tunnels/${id}/answer`, { selectedOptionId });
+    return data; // { correct, correctOptionId, completed, state }
+  },
+};
+
 export default api;
 export { api };
