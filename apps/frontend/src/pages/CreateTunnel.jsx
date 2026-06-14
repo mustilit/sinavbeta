@@ -241,7 +241,7 @@ export default function CreateTunnel() {
             {draftSavedAtLabel && <span className="text-slate-400"> ({draftSavedAtLabel})</span>}
           </p>
           <div className="flex gap-3">
-            <Button className="flex-1" onClick={applyDraft}>Devam et</Button>
+            <Button className="flex-1 bg-indigo-600 text-white hover:bg-indigo-700" onClick={applyDraft}>Devam et</Button>
             <Button variant="outline" className="flex-1" onClick={discardDraft}>Taslağı sil</Button>
           </div>
         </div>
@@ -455,12 +455,12 @@ export default function CreateTunnel() {
                 </Button>
               ) : <span />}
               {editing ? (
-                <Button onClick={() => updateMut.mutate()} disabled={!canSubmit || updateMut.isPending}>
+                <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => updateMut.mutate()} disabled={!canSubmit || updateMut.isPending}>
                   {updateMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Kaydet ve devam
                 </Button>
               ) : (
-                <Button onClick={() => createMut.mutate()} disabled={!canSubmit || createMut.isPending}>
+                <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => createMut.mutate()} disabled={!canSubmit || createMut.isPending}>
                   {createMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
                   Devam (sorular)
                 </Button>
@@ -548,7 +548,7 @@ export default function CreateTunnel() {
                   {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Taslağı Kaydet
                 </Button>
-                <Button onClick={() => submitMut.mutate()} disabled={submitMut.isPending}>
+                <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => submitMut.mutate()} disabled={submitMut.isPending}>
                   {submitMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Onaya Gönder
                 </Button>

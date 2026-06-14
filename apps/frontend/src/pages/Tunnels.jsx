@@ -105,7 +105,7 @@ export default function Tunnels() {
                       {t.priceCents > 0 ? `₺${(t.priceCents / 100).toFixed(0)}` : "Ücretsiz"}
                     </span>
                     {t.purchased ? (
-                      <Button size="sm" onClick={() => navigate(createPageUrl("TakeTunnel") + `?id=${t.id}`)}>
+                      <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => navigate(createPageUrl("TakeTunnel") + `?id=${t.id}`)}>
                         {t.attemptStatus === "COMPLETED" ? (
                           <><CheckCircle2 className="mr-1.5 h-4 w-4" /> Tamamlandı</>
                         ) : (
@@ -113,7 +113,7 @@ export default function Tunnels() {
                         )}
                       </Button>
                     ) : (
-                      <Button size="sm" onClick={() => openBuy(t)}>
+                      <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => openBuy(t)}>
                         <ShoppingCart className="mr-1.5 h-4 w-4" /> Satın Al
                       </Button>
                     )}
@@ -145,7 +145,7 @@ export default function Tunnels() {
               )}
               <div className="flex justify-end gap-2 pt-1">
                 <Button variant="ghost" onClick={() => setBuyTarget(null)} disabled={buyMut.isPending}>Vazgeç</Button>
-                <Button onClick={() => buyMut.mutate({ id: buyTarget.id, code: discountCode.trim() })} disabled={buyMut.isPending}>
+                <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => buyMut.mutate({ id: buyTarget.id, code: discountCode.trim() })} disabled={buyMut.isPending}>
                   {buyMut.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-1.5 h-4 w-4" />}
                   Satın Al
                 </Button>

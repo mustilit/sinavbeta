@@ -82,7 +82,7 @@ export default function TakeTunnel() {
         <p className="mt-2 text-slate-600">
           "{state.title}" tünelindeki tüm soruları, farklı seçenek dizilişlerine rağmen doğru cevapladın. Bu konuda artık yetkinsin.
         </p>
-        <Button className="mt-6" onClick={() => navigate(createPageUrl("Tunnels"))}>
+        <Button className="mt-6 bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => navigate(createPageUrl("Tunnels"))}>
           <ArrowLeft className="mr-1.5 h-4 w-4" /> Tünellere Dön
         </Button>
       </div>
