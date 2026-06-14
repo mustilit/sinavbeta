@@ -14,8 +14,8 @@ export default function Tunnels() {
       type="button"
       onClick={() => setTab(key)}
       className={
-        "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors " +
-        (tab === key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")
+        "inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 min-h-10 text-sm font-medium transition-colors " +
+        (tab === key ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900")
       }
     >
       {label}
@@ -32,7 +32,7 @@ export default function Tunnels() {
           Bir konuyu, çeldirici şıklara rağmen tüm sorularını doğru cevaplayana kadar derinlemesine öğren.
         </p>
       </header>
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="mb-5 flex flex-wrap gap-1 border-b border-slate-200">
         {tabBtn("discover", "Keşfet")}
         {tabBtn("mine", "Satın Aldıklarım")}
       </div>
