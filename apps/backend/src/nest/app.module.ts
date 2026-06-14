@@ -175,6 +175,12 @@ import { SubmitTunnelForApprovalUseCase } from '../application/use-cases/tunnel/
 import { GetTunnelUseCase } from '../application/use-cases/tunnel/GetTunnelUseCase';
 import { ListEducatorTunnelsUseCase, ListPendingTunnelsUseCase } from '../application/use-cases/tunnel/ListTunnelsUseCase';
 import { ApproveTunnelUseCase, RejectTunnelUseCase } from '../application/use-cases/tunnel/ReviewTunnelUseCase';
+// Tünel Faz 2 — aday akışı
+import { CandidateTunnelsController } from './controllers/candidate-tunnels.controller';
+import { ListPublishedTunnelsUseCase, GetPublishedTunnelMetaUseCase } from '../application/use-cases/tunnel/CandidateTunnelUseCases';
+import { PurchaseTunnelUseCase } from '../application/use-cases/tunnel/PurchaseTunnelUseCase';
+import { StartTunnelAttemptUseCase, GetTunnelAttemptStateUseCase } from '../application/use-cases/tunnel/StartTunnelAttemptUseCase';
+import { SubmitTunnelAnswerUseCase } from '../application/use-cases/tunnel/SubmitTunnelAnswerUseCase';
 import { PrismaTestPackageRepository } from '../infrastructure/repositories/PrismaTestPackageRepository';
 import { CreateTestPackageUseCase } from '../application/use-cases/package/CreateTestPackageUseCase';
 import { GetTestPackageUseCase } from '../application/use-cases/package/GetTestPackageUseCase';
@@ -361,6 +367,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     // Tünel modülü
     TunnelsController,
     AdminTunnelsController,
+    CandidateTunnelsController,
   ],
   providers: [
     SeedService,
@@ -734,6 +741,13 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: ListPendingTunnelsUseCase, useFactory: () => new ListPendingTunnelsUseCase() },
     { provide: ApproveTunnelUseCase, useFactory: () => new ApproveTunnelUseCase() },
     { provide: RejectTunnelUseCase, useFactory: () => new RejectTunnelUseCase() },
+    // Tünel Faz 2 — aday akışı
+    { provide: ListPublishedTunnelsUseCase, useFactory: () => new ListPublishedTunnelsUseCase() },
+    { provide: GetPublishedTunnelMetaUseCase, useFactory: () => new GetPublishedTunnelMetaUseCase() },
+    { provide: PurchaseTunnelUseCase, useFactory: () => new PurchaseTunnelUseCase() },
+    { provide: StartTunnelAttemptUseCase, useFactory: () => new StartTunnelAttemptUseCase() },
+    { provide: GetTunnelAttemptStateUseCase, useFactory: () => new GetTunnelAttemptStateUseCase() },
+    { provide: SubmitTunnelAnswerUseCase, useFactory: () => new SubmitTunnelAnswerUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },
     { provide: StartLiveSessionUseCase, useFactory: () => new StartLiveSessionUseCase() },

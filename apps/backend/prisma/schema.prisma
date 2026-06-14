@@ -293,6 +293,8 @@ model Tenant {
   educatorRiskScores   EducatorRiskScore[]
   candidateNotes       CandidateNote[]
   tunnels              Tunnel[]
+  tunnelPurchases      TunnelPurchase[]
+  tunnelAttempts       TunnelAttempt[]
 
   @@map("tenants")
 }
@@ -371,15 +373,17 @@ model User {
   triggeredBackups        BackupLog[]              @relation("backupActor")
 
   // ── İçerik Moderasyonu ──────────────────────────────────────────────────
-  moderationResults    ModerationResult[]
-  moderationViolations ModerationViolation[]
-  moderationActions    ModerationAction[]
-  educatorRiskScore    EducatorRiskScore?
-  suspendedUntil       DateTime?
-  isBanned             Boolean               @default(false)
-  candidateNotes       CandidateNote[]
-  tunnels              Tunnel[]              @relation("educatorTunnels")
-  tunnelsReviewed      Tunnel[]              @relation("tunnelReviewer")
+  moderationResults        ModerationResult[]
+  moderationViolations     ModerationViolation[]
+  moderationActions        ModerationAction[]
+  educatorRiskScore        EducatorRiskScore?
+  suspendedUntil           DateTime?
+  isBanned                 Boolean               @default(false)
+  candidateNotes           CandidateNote[]
+  tunnels                  Tunnel[]              @relation("educatorTunnels")
+  tunnelsReviewed          Tunnel[]              @relation("tunnelReviewer")
+  candidateTunnelPurchases TunnelPurchase[]      @relation("candidateTunnelPurchases")
+  candidateTunnelAttempts  TunnelAttempt[]       @relation("candidateTunnelAttempts")
 
   @@index([tenantId])
   @@index([twoFactorEnabled])
@@ -1930,6 +1934,8 @@ model Tunnel {
   reviewedBy User?            @relation("tunnelReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   layers     TunnelLayer[]
   questions  TunnelQuestion[]
+  purchases  TunnelPurchase[]
+  attempts   TunnelAttempt[]
 
   @@index([tenantId, status])
   @@index([educatorId, status])
@@ -1961,9 +1967,10 @@ model TunnelQuestion {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tunnel  Tunnel         @relation(fields: [tunnelId], references: [id], onDelete: Cascade)
-  layer   TunnelLayer    @relation(fields: [layerId], references: [id], onDelete: Cascade)
-  options TunnelOption[]
+  tunnel   Tunnel                   @relation(fields: [tunnelId], references: [id], onDelete: Cascade)
+  layer    TunnelLayer              @relation(fields: [layerId], references: [id], onDelete: Cascade)
+  options  TunnelOption[]
+  progress TunnelQuestionProgress[]
 
   @@index([tunnelId])
   @@index([layerId, order])
@@ -1982,4 +1989,82 @@ model TunnelOption {
 
   @@index([questionId])
   @@map("tunnel_options")
+}
+
+/// ─── TÜNEL Faz 2: satış + aday adaptif çözme motoru ───────────────────────
+enum TunnelAttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+/// Tünel satın alma (paket gibi; Purchase.testId zorunlu olduğu için ayrı model).
+model TunnelPurchase {
+  id          String         @id @default(uuid())
+  tenantId    String
+  tunnelId    String
+  candidateId String
+  amountCents Int            @default(0)
+  currency    Currency       @default(TRY)
+  status      PurchaseStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  refundedAt  DateTime?
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id])
+  tunnel    Tunnel @relation(fields: [tunnelId], references: [id], onDelete: Cascade)
+  candidate User   @relation("candidateTunnelPurchases", fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, tunnelId])
+  @@index([tunnelId])
+  @@map("tunnel_purchases")
+}
+
+/// Adayın bir tüneldeki adaptif ilerleme durumu (aday+tünel başına tek aktif).
+/// baseLayer = en alttaki henüz tam-öğrenilmemiş katman; upperOpen = baseLayer+1 görünür mü;
+/// streakCount = taban katmanda üst üste doğru (üst katmanı açmaya yönelik).
+/// current* = o an sunulan soru + doğru şıkkın yerleştirildiği pozisyon + seçenek sırası
+/// (yenileme/resume aynı sunumu göstersin).
+model TunnelAttempt {
+  id          String              @id @default(uuid())
+  tenantId    String
+  tunnelId    String
+  candidateId String
+  status      TunnelAttemptStatus @default(IN_PROGRESS)
+  baseLayer   Int                 @default(1)
+  upperOpen   Boolean             @default(false)
+  streakCount Int                 @default(0)
+
+  currentQuestionId      String?
+  currentCorrectPosition Int? // 1-tabanlı; doğru şıkkın sunumdaki yeri
+  currentOrderJson       String? // sunumdaki optionId sırası (JSON dizi)
+
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  lastActivityAt DateTime  @default(now())
+
+  tenant    Tenant                   @relation(fields: [tenantId], references: [id])
+  tunnel    Tunnel                   @relation(fields: [tunnelId], references: [id], onDelete: Cascade)
+  candidate User                     @relation("candidateTunnelAttempts", fields: [candidateId], references: [id], onDelete: Cascade)
+  progress  TunnelQuestionProgress[]
+
+  @@unique([candidateId, tunnelId])
+  @@index([tunnelId])
+  @@map("tunnel_attempts")
+}
+
+/// Soru bazlı pozisyon ustalığı. correctMask = doğru cevaplanan pozisyonların bitmask'i
+/// (1..optionsPerQuestion). mastered = tüm pozisyonlar set. Ustalık monotondur (bit silinmez).
+model TunnelQuestionProgress {
+  id          String   @id @default(uuid())
+  attemptId   String
+  questionId  String
+  correctMask Int      @default(0)
+  mastered    Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+
+  attempt  TunnelAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question TunnelQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@map("tunnel_question_progress")
 }
