@@ -500,13 +500,12 @@ export default function TestDetail() {
                   <p className="font-semibold text-slate-900">{difficultyLabel}</p>
                 </div>
               </div>
+              {/* Puan zaten üstteki değerlendirme kartında — burada paket satış sayısı */}
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
-                <Star className="w-5 h-5 text-amber-500" />
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
                 <div>
-                  <p className="text-sm text-slate-500">{t("pages:testDetail.features.rating")}</p>
-                  <p className="font-semibold text-slate-900">
-                    {avgRating > 0 ? avgRating : "-"}
-                  </p>
+                  <p className="text-sm text-slate-500">{t("pages:testDetail.features.salesCount")}</p>
+                  <p className="font-semibold text-slate-900">{test.total_sales ?? 0}</p>
                 </div>
               </div>
             </div>

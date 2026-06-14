@@ -202,7 +202,8 @@
       "testCount": "测试数量",
       "questionCount": "题目数量",
       "difficulty": "难度",
-      "rating": "评分"
+      "rating": "评分",
+      "salesCount": "销量"
     },
     "purchase": {
       "totalSales_one": "{{count}} 人已购买",

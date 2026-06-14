@@ -202,7 +202,8 @@
       "testCount": "Anzahl Tests",
       "questionCount": "Anzahl Fragen",
       "difficulty": "Schwierigkeit",
-      "rating": "Bewertung"
+      "rating": "Bewertung",
+      "salesCount": "Verkaufszahl"
     },
     "purchase": {
       "totalSales_one": "{{count}} Person hat gekauft",

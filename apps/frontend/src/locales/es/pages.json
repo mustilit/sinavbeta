@@ -202,7 +202,8 @@
       "testCount": "Número de exámenes",
       "questionCount": "Número de preguntas",
       "difficulty": "Dificultad",
-      "rating": "Calificación"
+      "rating": "Calificación",
+      "salesCount": "Número de ventas"
     },
     "purchase": {
       "totalSales_one": "{{count}} persona compró",

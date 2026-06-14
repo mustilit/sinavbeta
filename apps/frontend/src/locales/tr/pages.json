@@ -202,7 +202,8 @@
       "testCount": "Test Sayısı",
       "questionCount": "Soru Sayısı",
       "difficulty": "Zorluk",
-      "rating": "Puan"
+      "rating": "Puan",
+      "salesCount": "Satış Sayısı"
     },
     "purchase": {
       "totalSales_one": "{{count}} kişi satın aldı",

@@ -202,7 +202,8 @@
       "testCount": "Test Count",
       "questionCount": "Question Count",
       "difficulty": "Difficulty",
-      "rating": "Rating"
+      "rating": "Rating",
+      "salesCount": "Sales Count"
     },
     "purchase": {
       "totalSales_one": "{{count}} person purchased",
