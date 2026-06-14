@@ -29,6 +29,11 @@ export class GetAdminSettingsUseCase {
         maxQuestionsPerTest: 100,
         maxTestsPerPackage: 10,
         maxLiveQuestions: 50,
+        maxLayersPerTunnel: 7,
+        minQuestionsPerLayer: 10,
+        maxQuestionsPerLayer: 50,
+        tunnelAdvanceStreak: 10,
+        tunnelOptionsPerQuestion: 10,
       };
     }
 
@@ -75,6 +80,11 @@ export class GetAdminSettingsUseCase {
       maxQuestionsPerTest: (row as any).maxQuestionsPerTest ?? 100,
       maxTestsPerPackage: (row as any).maxTestsPerPackage ?? 10,
       maxLiveQuestions: (row as any).maxLiveQuestions ?? 50,
+      maxLayersPerTunnel: (row as any).maxLayersPerTunnel ?? 7,
+      minQuestionsPerLayer: (row as any).minQuestionsPerLayer ?? 10,
+      maxQuestionsPerLayer: (row as any).maxQuestionsPerLayer ?? 50,
+      tunnelAdvanceStreak: (row as any).tunnelAdvanceStreak ?? 10,
+      tunnelOptionsPerQuestion: (row as any).tunnelOptionsPerQuestion ?? 10,
     };
   }
 }

@@ -118,6 +118,16 @@ export type AdminSettings = {
   maxTestsPerPackage: number;
   /** Canlı oturum başına maksimum soru sayısı. Oturum oluştururken kontrol edilir. */
   maxLiveQuestions: number;
+  /** Tünel başına katman sayısı (oluşturmada snapshot'lanır). */
+  maxLayersPerTunnel: number;
+  /** Tünel katmanı başına minimum soru (onaya gönderirken kontrol edilir). */
+  minQuestionsPerLayer: number;
+  /** Tünel katmanı başına maksimum soru. */
+  maxQuestionsPerLayer: number;
+  /** Üst katmanı açmak için üst üste doğru sayısı (snapshot). */
+  tunnelAdvanceStreak: number;
+  /** Tünel sorusu başına seçenek sayısı, 1 doğru (snapshot). */
+  tunnelOptionsPerQuestion: number;
 };
 
 export type SiteSettings = {

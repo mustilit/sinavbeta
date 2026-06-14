@@ -98,4 +98,37 @@ export class UpdateAdminSettingsDto {
   @IsInt()
   @Min(1)
   maxLiveQuestions?: number;
+
+  // ── Tünel limitleri ──
+  @ApiPropertyOptional({ example: 7, description: 'Tünel başına katman sayısı' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  maxLayersPerTunnel?: number;
+
+  @ApiPropertyOptional({ example: 10, description: 'Katman başına minimum soru' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  minQuestionsPerLayer?: number;
+
+  @ApiPropertyOptional({ example: 50, description: 'Katman başına maksimum soru' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxQuestionsPerLayer?: number;
+
+  @ApiPropertyOptional({ example: 10, description: 'Üst katmanı açmak için üst üste doğru sayısı' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  tunnelAdvanceStreak?: number;
+
+  @ApiPropertyOptional({ example: 10, description: 'Tünel sorusu başına seçenek sayısı' })
+  @IsOptional()
+  @IsInt()
+  @Min(2)
+  @Max(20)
+  tunnelOptionsPerQuestion?: number;
 }

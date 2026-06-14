@@ -57,6 +57,11 @@ export class AdminSettingsController {
         maxQuestionsPerTest: dto.maxQuestionsPerTest,
         maxTestsPerPackage: dto.maxTestsPerPackage,
         maxLiveQuestions: dto.maxLiveQuestions,
+        maxLayersPerTunnel: dto.maxLayersPerTunnel,
+        minQuestionsPerLayer: dto.minQuestionsPerLayer,
+        maxQuestionsPerLayer: dto.maxQuestionsPerLayer,
+        tunnelAdvanceStreak: dto.tunnelAdvanceStreak,
+        tunnelOptionsPerQuestion: dto.tunnelOptionsPerQuestion,
       },
       ctx,
     );

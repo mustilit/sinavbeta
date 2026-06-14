@@ -166,6 +166,15 @@ import { ListCandidateNotesUseCase } from '../application/use-cases/note/ListCan
 import { GetCandidateNoteFacetsUseCase } from '../application/use-cases/note/GetCandidateNoteFacetsUseCase';
 import { UpdateCandidateNoteUseCase } from '../application/use-cases/note/UpdateCandidateNoteUseCase';
 import { DeleteCandidateNoteUseCase } from '../application/use-cases/note/DeleteCandidateNoteUseCase';
+// Tünel modülü (Faz 1)
+import { TunnelsController } from './controllers/tunnels.controller';
+import { AdminTunnelsController } from './controllers/admin.tunnels.controller';
+import { CreateTunnelUseCase } from '../application/use-cases/tunnel/CreateTunnelUseCase';
+import { SaveTunnelQuestionsUseCase } from '../application/use-cases/tunnel/SaveTunnelQuestionsUseCase';
+import { SubmitTunnelForApprovalUseCase } from '../application/use-cases/tunnel/SubmitTunnelForApprovalUseCase';
+import { GetTunnelUseCase } from '../application/use-cases/tunnel/GetTunnelUseCase';
+import { ListEducatorTunnelsUseCase, ListPendingTunnelsUseCase } from '../application/use-cases/tunnel/ListTunnelsUseCase';
+import { ApproveTunnelUseCase, RejectTunnelUseCase } from '../application/use-cases/tunnel/ReviewTunnelUseCase';
 import { PrismaTestPackageRepository } from '../infrastructure/repositories/PrismaTestPackageRepository';
 import { CreateTestPackageUseCase } from '../application/use-cases/package/CreateTestPackageUseCase';
 import { GetTestPackageUseCase } from '../application/use-cases/package/GetTestPackageUseCase';
@@ -349,6 +358,9 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     DraftsController,
     // Aday kişisel notları
     CandidateNotesController,
+    // Tünel modülü
+    TunnelsController,
+    AdminTunnelsController,
   ],
   providers: [
     SeedService,
@@ -713,6 +725,15 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: GetCandidateNoteFacetsUseCase, useFactory: () => new GetCandidateNoteFacetsUseCase() },
     { provide: UpdateCandidateNoteUseCase, useFactory: () => new UpdateCandidateNoteUseCase() },
     { provide: DeleteCandidateNoteUseCase, useFactory: () => new DeleteCandidateNoteUseCase() },
+    // Tünel modülü
+    { provide: CreateTunnelUseCase, useFactory: () => new CreateTunnelUseCase() },
+    { provide: SaveTunnelQuestionsUseCase, useFactory: () => new SaveTunnelQuestionsUseCase() },
+    { provide: SubmitTunnelForApprovalUseCase, useFactory: () => new SubmitTunnelForApprovalUseCase() },
+    { provide: GetTunnelUseCase, useFactory: () => new GetTunnelUseCase() },
+    { provide: ListEducatorTunnelsUseCase, useFactory: () => new ListEducatorTunnelsUseCase() },
+    { provide: ListPendingTunnelsUseCase, useFactory: () => new ListPendingTunnelsUseCase() },
+    { provide: ApproveTunnelUseCase, useFactory: () => new ApproveTunnelUseCase() },
+    { provide: RejectTunnelUseCase, useFactory: () => new RejectTunnelUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },
     { provide: StartLiveSessionUseCase, useFactory: () => new StartLiveSessionUseCase() },

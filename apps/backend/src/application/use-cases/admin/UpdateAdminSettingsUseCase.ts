@@ -32,6 +32,11 @@ export interface UpdateAdminSettingsInput {
   maxQuestionsPerTest?: number;
   maxTestsPerPackage?: number;
   maxLiveQuestions?: number;
+  maxLayersPerTunnel?: number;
+  minQuestionsPerLayer?: number;
+  maxQuestionsPerLayer?: number;
+  tunnelAdvanceStreak?: number;
+  tunnelOptionsPerQuestion?: number;
 }
 
 /**
@@ -137,6 +142,22 @@ export class UpdateAdminSettingsUseCase {
           UPDATE admin_settings SET "maxLiveQuestions" = ${input.maxLiveQuestions} WHERE id = 1
         `;
       }
+      // Tünel limitleri
+      if (input.maxLayersPerTunnel !== undefined) {
+        await prisma.$executeRaw`UPDATE admin_settings SET "maxLayersPerTunnel" = ${input.maxLayersPerTunnel} WHERE id = 1`;
+      }
+      if (input.minQuestionsPerLayer !== undefined) {
+        await prisma.$executeRaw`UPDATE admin_settings SET "minQuestionsPerLayer" = ${input.minQuestionsPerLayer} WHERE id = 1`;
+      }
+      if (input.maxQuestionsPerLayer !== undefined) {
+        await prisma.$executeRaw`UPDATE admin_settings SET "maxQuestionsPerLayer" = ${input.maxQuestionsPerLayer} WHERE id = 1`;
+      }
+      if (input.tunnelAdvanceStreak !== undefined) {
+        await prisma.$executeRaw`UPDATE admin_settings SET "tunnelAdvanceStreak" = ${input.tunnelAdvanceStreak} WHERE id = 1`;
+      }
+      if (input.tunnelOptionsPerQuestion !== undefined) {
+        await prisma.$executeRaw`UPDATE admin_settings SET "tunnelOptionsPerQuestion" = ${input.tunnelOptionsPerQuestion} WHERE id = 1`;
+      }
     }
 
     // Guncel degerleri raw okuyarak dondur
@@ -195,6 +216,11 @@ export class UpdateAdminSettingsUseCase {
       maxQuestionsPerTest,
       maxTestsPerPackage,
       maxLiveQuestions,
+      maxLayersPerTunnel: (row as any).maxLayersPerTunnel ?? 7,
+      minQuestionsPerLayer: (row as any).minQuestionsPerLayer ?? 10,
+      maxQuestionsPerLayer: (row as any).maxQuestionsPerLayer ?? 50,
+      tunnelAdvanceStreak: (row as any).tunnelAdvanceStreak ?? 10,
+      tunnelOptionsPerQuestion: (row as any).tunnelOptionsPerQuestion ?? 10,
     };
 
     // 2) Audit: degisen alanlari diff'le ve ADMIN_SETTINGS_UPDATED yaz
@@ -253,6 +279,11 @@ export class UpdateAdminSettingsUseCase {
         maxQuestionsPerTest: maxQ,
         maxTestsPerPackage: maxTpp,
         maxLiveQuestions: maxLq,
+        maxLayersPerTunnel: (row as any).maxLayersPerTunnel ?? 7,
+        minQuestionsPerLayer: (row as any).minQuestionsPerLayer ?? 10,
+        maxQuestionsPerLayer: (row as any).maxQuestionsPerLayer ?? 50,
+        tunnelAdvanceStreak: (row as any).tunnelAdvanceStreak ?? 10,
+        tunnelOptionsPerQuestion: (row as any).tunnelOptionsPerQuestion ?? 10,
       };
     } catch (err) {
       // Snapshot fail — audit eksik kalsin ama akis patlamasin
