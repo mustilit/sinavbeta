@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, ArrowRight, Layers, ImagePlus, X, Pencil } from "lucide-react";
+import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, ArrowRight, Layers, ImagePlus, X, Pencil, CheckCircle2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { entities, topics as topicsApi, tunnels as tunnelApi } from "@/api/dalClient";
 import { useServiceStatus } from "@/lib/useServiceStatus";
+import { parseDocxToQuestions, parsePdfToQuestions } from "@/lib/importQuestions";
 import { createPageUrl } from "@/utils";
 
 /** Zorunlu alan yıldızı. */
@@ -497,6 +498,29 @@ function LayerEditor({ layer, optionCount, onChange }) {
     apply({ _imgFile: file, _imgPreview: preview, mediaUrl: "" });
   };
 
+  // DOCX/PDF içe aktarma — normal testle aynı parser (client-side, mammoth/pdfjs).
+  const [importing, setImporting] = useState(null); // 'docx' | 'pdf' | null
+  const runImport = async (file, type) => {
+    if (!file) return;
+    setImporting(type);
+    try {
+      const parsed = type === "pdf"
+        ? await parsePdfToQuestions(file, () => emptyQuestion(optionCount))
+        : await parseDocxToQuestions(file, () => emptyQuestion(optionCount));
+      if (!parsed.length) {
+        toast.error("İçe aktarılacak soru bulunamadı");
+        return;
+      }
+      onChange([...questions, ...parsed]);
+      setOpenIndex(null);
+      toast.success(`${parsed.length} soru içe aktarıldı`);
+    } catch (e) {
+      toast.error("İçe aktarma hatası: " + (e?.message || "bilinmeyen"));
+    } finally {
+      setImporting(null);
+    }
+  };
+
   return (
     <div className="space-y-3">
       {questions.length === 0 && (
@@ -505,31 +529,29 @@ function LayerEditor({ layer, optionCount, onChange }) {
       {questions.map((q, qi) => {
         const qImg = q._imgPreview || q.mediaUrl;
         const isOpen = openIndex === qi;
-        const summary = (q.content || "").trim() || (qImg ? "(görsel soru)" : "(boş soru)");
-        const hasCorrect = q.options?.some((o) => o.isCorrect);
+        const hasContent = !!((q.content || "").trim() || qImg);
+        const filledOpts = q.options.filter((o) => (o.content || "").trim() || o._imgPreview || o.mediaUrl).length;
+        const correctIdx = q.options.findIndex((o) => o.isCorrect);
+        const isComplete = hasContent && filledOpts === optionCount && correctIdx >= 0;
         return (
-          <Card key={qi}>
-            <CardContent className="p-0">
-              {/* Başlık satırı — tıkla aç/kapa + Düzenle + Sil */}
-              <div className="flex items-center justify-between gap-2 p-3">
-                <button
-                  type="button"
-                  onClick={() => setOpenIndex(isOpen ? null : qi)}
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                >
-                  <span className="flex-shrink-0 text-sm font-semibold text-slate-700">Soru {qi + 1}</span>
-                  {!isOpen && <span className="truncate text-sm text-slate-500">{summary}</span>}
-                  {!isOpen && !hasCorrect && (
-                    <span className="flex-shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">doğru şık yok</span>
-                  )}
-                </button>
-                <div className="flex flex-shrink-0 items-center gap-1">
-                  {!isOpen && (
-                    <Button variant="ghost" size="sm" onClick={() => setOpenIndex(qi)}>
-                      <Pencil className="mr-1.5 h-4 w-4" /> Düzenle
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={() => removeQuestion(qi)} aria-label="Soruyu sil">
+          <div key={qi} className={"rounded-lg border " + (isOpen ? "border-indigo-200" : "border-slate-200 hover:bg-slate-50/50")}>
+              {/* Başlık satırı — normal test ile aynı düzen */}
+              <div className="flex flex-wrap items-center gap-3 px-3 py-2">
+                <span className="flex-shrink-0 text-sm font-semibold text-slate-600">Soru {qi + 1}</span>
+                {isComplete
+                  ? <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+                  : <div className="h-4 w-4 flex-shrink-0 rounded-full border-2 border-slate-300" />}
+                {hasContent && (
+                  <span className="flex-shrink-0 rounded-full text-[10px] font-medium text-slate-500">{qImg ? "Görsel" : "Metin"}</span>
+                )}
+                <span className="ml-auto flex-shrink-0 text-xs text-slate-500">
+                  {filledOpts} Seçenekli{correctIdx >= 0 ? ` • Doğru: ${LETTERS[correctIdx]}` : " • Doğru: —"}
+                </span>
+                <div className="flex flex-shrink-0 gap-1">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:bg-slate-100" onClick={() => setOpenIndex(isOpen ? null : qi)} aria-label="Düzenle" title="Düzenle">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-rose-600 hover:bg-rose-50" onClick={() => removeQuestion(qi)} aria-label="Soruyu sil" title="Sil">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -602,13 +624,32 @@ function LayerEditor({ layer, optionCount, onChange }) {
               <p className="text-xs text-slate-400">Doğru şıkkı radyo ile işaretleyin ({optionCount} seçenek). Metin yerine görsel de kullanılabilir.</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </div>
         );
       })}
-      <Button variant="outline" onClick={addQuestion} className="w-full">
-        <Plus className="mr-2 h-4 w-4" /> Soru Ekle
+
+      {/* + Soru Ekle (kesik kenar) */}
+      <Button
+        variant="outline"
+        onClick={addQuestion}
+        className="w-full border-2 border-dashed border-slate-300 text-slate-600 hover:border-indigo-400 hover:bg-indigo-50/50 hover:text-indigo-700"
+      >
+        <Plus className="mr-1 h-4 w-4" /> Soru Ekle
       </Button>
+
+      {/* DOCX / PDF içe aktarma — normal testle aynı */}
+      <div className="flex flex-wrap items-center justify-center gap-6 pt-1">
+        <label className={"inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 " + (importing ? "cursor-default opacity-60" : "cursor-pointer")}>
+          {importing === "docx" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {importing === "docx" ? "Aktarılıyor…" : "DOCX İçeri Aktar"}
+          <input type="file" accept=".docx" className="hidden" disabled={!!importing} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; runImport(f, "docx"); }} />
+        </label>
+        <label className={"inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 " + (importing ? "cursor-default opacity-60" : "cursor-pointer")}>
+          {importing === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {importing === "pdf" ? "Aktarılıyor…" : "PDF İçeri Aktar"}
+          <input type="file" accept=".pdf" className="hidden" disabled={!!importing} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; runImport(f, "pdf"); }} />
+        </label>
+      </div>
     </div>
   );
 }
