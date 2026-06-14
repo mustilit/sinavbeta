@@ -1,0 +1,11 @@
+{
+  "$comment": "Bilinçli kabul edilen high/critical npm audit açıkları. esbuild/vite/vitest yalnız dev/test sunucusunda (üretim bundle'ında yok); xlsx'in npm düzeltmesi yok ve biz yalnız dosya ÜRETİYORUZ (güvensiz dosya PARSE etmiyoruz). reviewBy'da yeniden değerlendir. Detay: docs/security/dependency-audit-sprint-2026-06.md",
+  "allow": [
+    { "id": "GHSA-67mh-4wv8-2f99", "package": "esbuild", "reason": "esbuild dev-server SSRF — yalnız geliştirme sunucusu; üretim derlemesinde/çalışmasında etkisi yok. vite@8 majör ile çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-gv7w-rqvm-qjhr", "package": "esbuild", "reason": "esbuild binary bütünlük — yalnız dev/derleme aracı. vite@8 ile çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-4w7w-66w2-5vf9", "package": "vite", "reason": "vite optimized-deps path traversal — yalnız dev sunucusu (üretimde Vite çalışmaz, nginx statik servis eder). vite@8 ile çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-5xrq-8626-4rwp", "package": "vitest", "reason": "vitest UI sunucusu keyfi dosya erişimi — yalnız yerel test UI (CI/üretimde UI açılmaz). vitest@4 majör ile çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-4r6h-8v6p-xvw6", "package": "xlsx", "reason": "SheetJS prototype pollution — npm'de düzeltme YOK (SheetJS npm yayınını bıraktı). Uygulamada yalnız Excel ÜRETİMİ (export) yapılıyor; güvensiz .xlsx parse edilmiyor → gerçek istismar yüzeyi yok. Bakımlı alternatif (exceljs) değerlendirilecek.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-5pgg-2g8v-p4x9", "package": "xlsx", "reason": "SheetJS ReDoS — npm düzeltmesi yok; yalnız üretim/export kullanımı (parse yok). exceljs geçişi değerlendirilecek.", "reviewBy": "2026-09-14" }
+  ]
+}

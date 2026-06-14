@@ -193,12 +193,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Audit backend
+      # Allowlist gate: yalnız .audit-allowlist.json DIŞI high/critical CI'yı kırar.
+      # Bilinen residual'lar (dev-only araçlar, NestJS 11 gerektirenler, xlsx no-fix)
+      # gerekçeli allowlist'te — YENİ açık eklenirse gate yine kırılır.
+      # Detay: docs/security/dependency-audit-sprint-2026-06.md
+      - name: Audit backend (allowlist gate)
         working-directory: apps/backend
-        run: npm audit --audit-level=high
-      - name: Audit frontend
+        run: node ../../scripts/ci-audit-gate.cjs
+      - name: Audit frontend (allowlist gate)
         working-directory: apps/frontend
-        run: npm audit --audit-level=high
+        run: node ../../scripts/ci-audit-gate.cjs
 
   smoke_public_endpoints:
     name: Smoke - public endpoints static checks

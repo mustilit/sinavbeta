@@ -1,0 +1,13 @@
+{
+  "$comment": "Bilinçli kabul edilen high/critical npm audit açıkları. Hepsi ya yalnız dev/test araçlarında ya da NestJS 10→11 majör geçişi gerektiriyor. reviewBy'da yeniden değerlendir. Detay: docs/security/dependency-audit-sprint-2026-06.md",
+  "allow": [
+    { "id": "GHSA-r5fr-rjxr-66jc", "package": "lodash", "reason": "lodash _.template kod enjeksiyonu — npm'de düzeltme yok; @nestjs/swagger@7 transitive bağımlılığı, yalnız Swagger/OpenAPI üretiminde kullanılır (kullanıcı girdisi geçmez). NestJS 11 + swagger 11 ile çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-f23m-r3pf-42rh", "package": "lodash", "reason": "lodash prototype pollution — @nestjs/swagger@7 transitive. NestJS 11 geçişiyle çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-xxjr-mmjv-4gpg", "package": "lodash", "reason": "lodash prototype pollution — @nestjs/swagger@7 transitive. NestJS 11 geçişiyle çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-xf7r-hgr6-v32p", "package": "multer", "reason": "multer DoS — @nestjs/platform-express@10 multer@1.x bundle'ı. Bağımsız override tree'yi bozuyor; NestJS 10→11 (multer 2.x) geçişiyle çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-v52c-386h-88mc", "package": "multer", "reason": "multer DoS — NestJS 11 geçişiyle çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-5528-5vmv-3xc2", "package": "multer", "reason": "multer DoS — NestJS 11 geçişiyle çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-52f5-9888-hmc6", "package": "tmp", "reason": "tmp dosya yazımı — yalnız @stryker-mutator (mutation testing, dev-only) transitive'i. Üretim/runtime'da yok. Stryker 9 majör ile çözülür.", "reviewBy": "2026-09-14" },
+    { "id": "GHSA-ph9p-34f9-6g65", "package": "tmp", "reason": "tmp path traversal — yalnız @stryker-mutator (dev-only). Üretimde yok.", "reviewBy": "2026-09-14" }
+  ]
+}
