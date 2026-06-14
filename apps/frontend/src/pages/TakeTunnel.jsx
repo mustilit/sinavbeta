@@ -146,7 +146,10 @@ export default function TakeTunnel() {
                     <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-slate-100 text-xs font-semibold text-slate-600">
                       {LETTERS[i]}
                     </span>
-                    <span className="text-slate-800">{o.content}</span>
+                    {o.mediaUrl && (
+                      <img src={o.mediaUrl} alt="" className="h-12 w-12 flex-shrink-0 rounded-md object-cover" />
+                    )}
+                    {o.content && <span className="text-slate-800">{o.content}</span>}
                   </button>
                 );
               })}

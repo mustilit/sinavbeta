@@ -170,6 +170,7 @@ import { DeleteCandidateNoteUseCase } from '../application/use-cases/note/Delete
 import { TunnelsController } from './controllers/tunnels.controller';
 import { AdminTunnelsController } from './controllers/admin.tunnels.controller';
 import { CreateTunnelUseCase } from '../application/use-cases/tunnel/CreateTunnelUseCase';
+import { UpdateTunnelUseCase } from '../application/use-cases/tunnel/UpdateTunnelUseCase';
 import { SaveTunnelQuestionsUseCase } from '../application/use-cases/tunnel/SaveTunnelQuestionsUseCase';
 import { SubmitTunnelForApprovalUseCase } from '../application/use-cases/tunnel/SubmitTunnelForApprovalUseCase';
 import { GetTunnelUseCase } from '../application/use-cases/tunnel/GetTunnelUseCase';
@@ -734,6 +735,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: DeleteCandidateNoteUseCase, useFactory: () => new DeleteCandidateNoteUseCase() },
     // Tünel modülü
     { provide: CreateTunnelUseCase, useFactory: () => new CreateTunnelUseCase() },
+    { provide: UpdateTunnelUseCase, useFactory: () => new UpdateTunnelUseCase() },
     { provide: SaveTunnelQuestionsUseCase, useFactory: () => new SaveTunnelQuestionsUseCase() },
     { provide: SubmitTunnelForApprovalUseCase, useFactory: () => new SubmitTunnelForApprovalUseCase() },
     { provide: GetTunnelUseCase, useFactory: () => new GetTunnelUseCase() },

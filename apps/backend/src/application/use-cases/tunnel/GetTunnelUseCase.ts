@@ -42,6 +42,7 @@ export function serializeTunnelDetail(t: any) {
     id: t.id,
     title: t.title,
     description: t.description,
+    coverImageUrl: t.coverImageUrl ?? null,
     status: t.status,
     priceCents: t.priceCents,
     currency: t.currency,
@@ -65,6 +66,7 @@ export function serializeTunnelDetail(t: any) {
         options: (q.options ?? []).map((o: any) => ({
           id: o.id,
           content: o.content,
+          mediaUrl: o.mediaUrl ?? null,
           isCorrect: o.isCorrect,
           order: o.order,
         })),

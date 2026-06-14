@@ -10,6 +10,7 @@ type Input = {
   examTypeId: string;
   topicId: string;
   priceCents?: number;
+  coverImageUrl?: string | null;
 };
 
 /**
@@ -56,6 +57,7 @@ export class CreateTunnelUseCase {
         topicId: input.topicId,
         title,
         description: (input.description ?? '').trim() || null,
+        coverImageUrl: (input.coverImageUrl ?? '').trim() || null,
         priceCents,
         layerCount,
         optionsPerQuestion,

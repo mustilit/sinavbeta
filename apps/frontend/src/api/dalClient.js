@@ -1837,6 +1837,18 @@ export const tunnels = {
     const { data } = await api.get(`/tunnels/${id}`);
     return data;
   },
+  /** Wizard 1'e dönüş — tünel meta güncelle (başlık/konu/fiyat/kapak). */
+  update: async (id, input) => {
+    const { data } = await api.patch(`/tunnels/${id}`, input);
+    return data;
+  },
+  /** Soru/şık/kapak görseli yükle → URL döner (normal test ile aynı endpoint). */
+  uploadImage: async (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const { data } = await api.post('/upload/image', fd);
+    return data.url || data.fileUrl || data.file_url || '';
+  },
   /** Wizard 2 — katman bazlı soruları kaydet. */
   saveQuestions: async (id, layers) => {
     const { data } = await api.patch(`/tunnels/${id}/questions`, { layers });

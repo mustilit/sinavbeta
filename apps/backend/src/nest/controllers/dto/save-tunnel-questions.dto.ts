@@ -11,6 +11,10 @@ export class SaveTunnelQuestionsDto {
   @IsArray()
   layers!: Array<{
     index: number;
-    questions: Array<{ content: string; mediaUrl?: string; options: Array<{ content: string; isCorrect: boolean }> }>;
+    questions: Array<{
+      content: string;
+      mediaUrl?: string;
+      options: Array<{ content: string; mediaUrl?: string; isCorrect: boolean }>;
+    }>;
   }>;
 }

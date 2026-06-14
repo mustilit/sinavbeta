@@ -28,4 +28,10 @@ export class CreateTunnelDto {
   @IsInt()
   @Min(0)
   priceCents?: number;
+
+  @ApiPropertyOptional({ description: 'Kapak görseli URL' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  coverImageUrl?: string;
 }

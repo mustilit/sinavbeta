@@ -7,7 +7,7 @@ export type QMeta = {
   layerIndex: number;
   content: string;
   mediaUrl: string | null;
-  options: { id: string; content: string }[]; // kanonik
+  options: { id: string; content: string; mediaUrl: string | null }[]; // kanonik
 };
 
 export type PlayData = {
@@ -47,7 +47,7 @@ export async function loadPlayData(tunnelId: string): Promise<PlayData> {
         layerIndex: layer.index,
         content: q.content,
         mediaUrl: q.mediaUrl ?? null,
-        options: q.options.map((o: any) => ({ id: o.id, content: o.content })),
+        options: q.options.map((o: any) => ({ id: o.id, content: o.content, mediaUrl: o.mediaUrl ?? null })),
       });
     }
   }
@@ -103,7 +103,7 @@ export function buildAttemptState(
         id: meta.id,
         content: meta.content,
         mediaUrl: meta.mediaUrl,
-        options: order.map((oid) => ({ id: oid, content: byId.get(oid)?.content ?? '' })),
+        options: order.map((oid) => ({ id: oid, content: byId.get(oid)?.content ?? '', mediaUrl: byId.get(oid)?.mediaUrl ?? null })),
       };
     }
   }

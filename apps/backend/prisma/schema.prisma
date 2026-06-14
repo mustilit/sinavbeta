@@ -1911,6 +1911,9 @@ model Tunnel {
   topicId            String?
   title              String
   description        String?
+  // Eğitici tünel için kapak görseli yükler — pazar kartında/detayda gösterilir.
+  // Boşsa default gradient + ikon (TestPackage deseni).
+  coverImageUrl      String?
   priceCents         Int      @default(0)
   currency           Currency @default(TRY)
   // Oluşturma anında admin ayarından snapshot — admin sonradan değiştirse mevcut tünel bozulmaz.
@@ -1981,6 +1984,7 @@ model TunnelOption {
   id         String   @id @default(uuid())
   questionId String
   content    String
+  mediaUrl   String? // şık görseli (normal test seçeneği gibi)
   isCorrect  Boolean  @default(false) // her soruda tam 1 doğru
   order      Int      @default(0) // kanonik sıra; aday sunumunda karıştırılır (pozisyon ustalığı)
   createdAt  DateTime @default(now())

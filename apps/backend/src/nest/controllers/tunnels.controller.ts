@@ -2,8 +2,10 @@ import { Controller, Get, Post, Patch, Body, Param, Req, Inject } from '@nestjs/
 import { ApiTags, ApiBearerAuth, ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
 import { CreateTunnelDto } from './dto/create-tunnel.dto';
+import { UpdateTunnelDto } from './dto/update-tunnel.dto';
 import { SaveTunnelQuestionsDto } from './dto/save-tunnel-questions.dto';
 import { CreateTunnelUseCase } from '../../application/use-cases/tunnel/CreateTunnelUseCase';
+import { UpdateTunnelUseCase } from '../../application/use-cases/tunnel/UpdateTunnelUseCase';
 import { SaveTunnelQuestionsUseCase } from '../../application/use-cases/tunnel/SaveTunnelQuestionsUseCase';
 import { SubmitTunnelForApprovalUseCase } from '../../application/use-cases/tunnel/SubmitTunnelForApprovalUseCase';
 import { GetTunnelUseCase } from '../../application/use-cases/tunnel/GetTunnelUseCase';
@@ -19,6 +21,7 @@ import { ListEducatorTunnelsUseCase } from '../../application/use-cases/tunnel/L
 export class TunnelsController {
   constructor(
     @Inject(CreateTunnelUseCase) private readonly createUC: CreateTunnelUseCase,
+    @Inject(UpdateTunnelUseCase) private readonly updateUC: UpdateTunnelUseCase,
     @Inject(SaveTunnelQuestionsUseCase) private readonly saveUC: SaveTunnelQuestionsUseCase,
     @Inject(SubmitTunnelForApprovalUseCase) private readonly submitUC: SubmitTunnelForApprovalUseCase,
     @Inject(GetTunnelUseCase) private readonly getUC: GetTunnelUseCase,
@@ -30,7 +33,32 @@ export class TunnelsController {
   @ApiCreatedResponse({ description: 'Tünel oluşturuldu (DRAFT)' })
   async create(@Body() dto: CreateTunnelDto, @Req() req: any) {
     return this.createUC.execute(
-      { title: dto.title, description: dto.description, examTypeId: dto.examTypeId, topicId: dto.topicId, priceCents: dto.priceCents },
+      {
+        title: dto.title,
+        description: dto.description,
+        examTypeId: dto.examTypeId,
+        topicId: dto.topicId,
+        priceCents: dto.priceCents,
+        coverImageUrl: dto.coverImageUrl,
+      },
+      req.user?.id,
+    );
+  }
+
+  @Patch(':id')
+  @Roles('EDUCATOR', 'ADMIN')
+  @ApiOkResponse({ description: 'Tünel meta güncellendi (DRAFT/REJECTED)' })
+  async update(@Param('id') id: string, @Body() dto: UpdateTunnelDto, @Req() req: any) {
+    return this.updateUC.execute(
+      id,
+      {
+        title: dto.title,
+        description: dto.description,
+        examTypeId: dto.examTypeId,
+        topicId: dto.topicId,
+        priceCents: dto.priceCents,
+        coverImageUrl: dto.coverImageUrl,
+      },
       req.user?.id,
     );
   }

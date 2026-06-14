@@ -6,6 +6,7 @@ function summary(t: any) {
     id: t.id,
     title: t.title,
     status: t.status,
+    coverImageUrl: t.coverImageUrl ?? null,
     priceCents: t.priceCents,
     currency: t.currency,
     layerCount: t.layerCount,

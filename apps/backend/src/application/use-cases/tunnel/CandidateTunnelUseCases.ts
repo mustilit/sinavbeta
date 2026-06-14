@@ -6,6 +6,7 @@ function pubSummary(t: any) {
     id: t.id,
     title: t.title,
     description: t.description ?? null,
+    coverImageUrl: t.coverImageUrl ?? null,
     priceCents: t.priceCents,
     currency: t.currency,
     layerCount: t.layerCount,

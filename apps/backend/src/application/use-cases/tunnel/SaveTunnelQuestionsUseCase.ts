@@ -1,9 +1,13 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 
-type OptionInput = { content: string; isCorrect: boolean };
+type OptionInput = { content: string; mediaUrl?: string | null; isCorrect: boolean };
 type QuestionInput = { content: string; mediaUrl?: string | null; options: OptionInput[] };
 type LayerInput = { index: number; questions: QuestionInput[] };
+
+/** İçerik VEYA görsel varsa "dolu" sayılır (normal test gibi görsel-only şık/soru). */
+const filled = (text?: string | null, media?: string | null) =>
+  !!(text ?? '').trim() || !!(media ?? '').trim();
 
 const EDITABLE: ReadonlySet<string> = new Set(['DRAFT', 'REJECTED']);
 
@@ -35,13 +39,13 @@ export class SaveTunnelQuestionsUseCase {
       if (!layerByIndex.has(layer.index))
         throw new AppError('INVALID_LAYER', `Geçersiz katman: ${layer.index}`, 400);
       for (const q of layer.questions ?? []) {
-        if (!(q.content ?? '').trim())
-          throw new AppError('QUESTION_EMPTY', `Katman ${layer.index}: soru metni boş`, 400);
+        if (!filled(q.content, q.mediaUrl))
+          throw new AppError('QUESTION_EMPTY', `Katman ${layer.index}: soru metni veya görseli gerekli`, 400);
         const opts = q.options ?? [];
         if (opts.length !== opc)
           throw new AppError('OPTION_COUNT', `Her soru tam ${opc} seçenek içermeli`, 400);
-        if (opts.some((o) => !(o.content ?? '').trim()))
-          throw new AppError('OPTION_EMPTY', 'Seçenek metni boş olamaz', 400);
+        if (opts.some((o) => !filled(o.content, o.mediaUrl)))
+          throw new AppError('OPTION_EMPTY', 'Seçenek metni veya görseli gerekli', 400);
         if (opts.filter((o) => o.isCorrect).length !== 1)
           throw new AppError('ONE_CORRECT', 'Her soruda tam 1 doğru seçenek olmalı', 400);
       }
@@ -63,7 +67,8 @@ export class SaveTunnelQuestionsUseCase {
               order: order++,
               options: {
                 create: q.options.map((o, i) => ({
-                  content: o.content.trim(),
+                  content: (o.content ?? '').trim(),
+                  mediaUrl: (o.mediaUrl ?? '').trim() || null,
                   isCorrect: !!o.isCorrect,
                   order: i + 1,
                 })),

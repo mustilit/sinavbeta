@@ -96,6 +96,9 @@ export default function AdminTunnels() {
             <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
           ) : (
             <div className="space-y-4">
+              {detail.coverImageUrl && (
+                <img src={detail.coverImageUrl} alt="" className="h-32 w-full rounded-lg object-cover" />
+              )}
               <div className="text-xs text-slate-500">
                 {detail.examType?.name} · {detail.topic?.name} · {detail.layerCount} katman · {detail.optionsPerQuestion} seçenek
               </div>
@@ -106,10 +109,12 @@ export default function AdminTunnels() {
                     {l.questions.map((q, qi) => (
                       <li key={q.id} className="text-sm">
                         <div className="font-medium text-slate-800">{qi + 1}. {q.content}</div>
+                        {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mt-1 max-h-40 rounded-md object-contain" />}
                         <ul className="mt-1 grid grid-cols-1 gap-0.5 sm:grid-cols-2">
                           {q.options.map((o) => (
-                            <li key={o.id} className={"text-xs " + (o.isCorrect ? "font-semibold text-emerald-600" : "text-slate-500")}>
-                              {o.isCorrect ? "✓ " : "• "}{o.content}
+                            <li key={o.id} className={"flex items-center gap-1.5 text-xs " + (o.isCorrect ? "font-semibold text-emerald-600" : "text-slate-500")}>
+                              <span>{o.isCorrect ? "✓ " : "• "}{o.content}</span>
+                              {o.mediaUrl && <img src={o.mediaUrl} alt="" className="h-8 w-8 rounded object-cover" />}
                             </li>
                           ))}
                         </ul>

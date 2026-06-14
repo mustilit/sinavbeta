@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Layers, Loader2, Play, ShoppingCart, CheckCircle2 } from "lucide-react";
+import { Layers, Loader2, Play, ShoppingCart, CheckCircle2, FileText, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { candidateTunnels as api } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
@@ -57,23 +57,51 @@ export default function Tunnels() {
       ) : items.length === 0 ? (
         <p className="py-16 text-center text-sm text-slate-500">Şu an yayınlanmış tünel yok.</p>
       ) : (
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((t) => (
             <li key={t.id}>
-              <Card>
-                <CardContent className="flex h-full flex-col p-4">
-                  <div className="flex-1">
-                    <div className="font-semibold text-slate-900">{t.title}</div>
-                    {t.description && <p className="mt-1 line-clamp-2 text-xs text-slate-500">{t.description}</p>}
-                    <div className="mt-2 flex flex-wrap gap-x-3 text-xs text-slate-500">
-                      {t.examTypeName && <span>{t.examTypeName}</span>}
-                      {t.topicName && <span>· {t.topicName}</span>}
-                      <span>· {t.layerCount} katman</span>
-                      {t.educatorUsername && <span>· {t.educatorUsername}</span>}
+              <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50">
+                {/* Kapak */}
+                <div className="relative h-40 overflow-hidden" style={{ backgroundColor: t.coverImageUrl ? "transparent" : "#0000CD" }}>
+                  {t.coverImageUrl ? (
+                    <img src={t.coverImageUrl} alt={t.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Layers className="h-16 w-16 text-white/30" />
                     </div>
+                  )}
+                  {/* Tünel etiketi */}
+                  <div className="absolute left-3 top-3">
+                    <Badge className="bg-indigo-600/95 text-white backdrop-blur-sm hover:bg-indigo-600">
+                      <Layers className="mr-1 h-3 w-3" /> Tünel
+                    </Badge>
                   </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="font-bold text-slate-800">
+                  {t.examTypeName && (
+                    <div className="absolute right-3 top-3">
+                      <Badge className="bg-white/90 text-slate-700 backdrop-blur-sm hover:bg-white">{t.examTypeName}</Badge>
+                    </div>
+                  )}
+                </div>
+
+                {/* Gövde */}
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="line-clamp-2 text-lg font-semibold text-slate-900">{t.title}</h3>
+                  {t.topicName && <p className="mt-1 text-sm text-slate-500">{t.topicName}</p>}
+                  {t.educatorUsername && (
+                    <span className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
+                      <User className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{t.educatorUsername}</span>
+                    </span>
+                  )}
+                  <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                    <span className="flex items-center gap-1"><Layers className="h-4 w-4" /> {t.layerCount} katman</span>
+                    {t.questionCount > 0 && (
+                      <span className="flex items-center gap-1"><FileText className="h-4 w-4" /> {t.questionCount} soru</span>
+                    )}
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                    <span className="text-2xl font-bold text-slate-900">
                       {t.priceCents > 0 ? `₺${(t.priceCents / 100).toFixed(0)}` : "Ücretsiz"}
                     </span>
                     {t.purchased ? (
@@ -90,8 +118,8 @@ export default function Tunnels() {
                       </Button>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </li>
           ))}
         </ul>
