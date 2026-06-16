@@ -3,9 +3,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, Trophy, ArrowLeft, Layers, AlertTriangle, Save, Pencil, Eraser, Clock, ChevronLeft, ChevronRight, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ReportQuestionModal from "@/components/test/ReportQuestionModal";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
 import { TestWatermark } from "@/components/test/TestWatermark";
 import { useAuth } from "@/lib/AuthContext";
@@ -45,8 +44,6 @@ export default function TakeTunnel() {
 
   // Hata bildirimi
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportReason, setReportReason] = useState("");
-  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     try { localStorage.setItem("dal_exam_theme", examTheme); } catch { /* yoksay */ }
@@ -121,15 +118,14 @@ export default function TakeTunnel() {
     [answering, tunnelId, state],
   );
 
-  const submitReport = () => {
-    const reason = reportReason.trim();
-    if (!reason) return;
-    setReporting(true);
+  // Normal test ekranıyla aynı yapı: ReportQuestionModal { report_type, description }.
+  const submitReport = (data) => {
+    const reason =
+      (data?.description || "").trim() || `Hata türü: ${data?.report_type || "diğer"}`;
     const viewing = viewIndex < answered.length ? answered[viewIndex].q : state?.currentQuestion;
     api.report(tunnelId, { questionId: viewing?.id, reason })
-      .then(() => { toast.success("Hata bildirimi gönderildi"); setReportOpen(false); setReportReason(""); })
-      .catch((e) => toast.error(e?.message || "Bildirim gönderilemedi"))
-      .finally(() => setReporting(false));
+      .then(() => { toast.success("Hata bildirimi gönderildi"); setReportOpen(false); })
+      .catch((e) => toast.error(e?.message || "Bildirim gönderilemedi"));
   };
 
   if (loading) {
@@ -294,24 +290,13 @@ export default function TakeTunnel() {
         </>
       )}
 
-      {/* Hata bildirimi modalı */}
-      <Dialog open={reportOpen} onOpenChange={(o) => !o && setReportOpen(false)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-600" /> Hata Bildirimi</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm text-slate-600">Bu soruyla ilgili bir sorun mu var? Eğitici/yönetici inceleyecek.</p>
-            <Textarea value={reportReason} onChange={(e) => setReportReason(e.target.value)} rows={3} maxLength={1000} placeholder="Sorunu kısaca açıkla…" />
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setReportOpen(false)} disabled={reporting}>Vazgeç</Button>
-              <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={submitReport} disabled={!reportReason.trim() || reporting}>
-                {reporting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-1.5 h-4 w-4" />} Gönder
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Hata bildirimi — normal test ekranıyla aynı bileşen (tutarlılık) */}
+      <ReportQuestionModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        onSubmit={submitReport}
+        questionNumber={viewIndex < answered.length ? viewIndex + 1 : answered.length + 1}
+      />
     </div>
   );
 }
