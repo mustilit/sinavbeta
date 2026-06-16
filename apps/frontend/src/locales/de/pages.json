@@ -1840,9 +1840,9 @@
     "normalDesc": "Feste Fragen. Du löst ihn einmal und siehst am Ende deine Punktzahl.",
     "tunnelLabel": "Tunnel",
     "tunnelDesc": "Ebenen von leicht nach schwer. Jede Frage hat 5 Optionen; die richtige Antwort ist immer dabei, aber ihre Position ändert sich.",
-    "point1": "Beantworte eine Frage in 3 verschiedenen Optionspositionen richtig, dann gilt sie als 'gemeistert' – echtes Verständnis, kein Auswendiglernen.",
-    "point2": "Mehrere richtige Antworten in Folge schalten die nächste (schwerere) Ebene frei; ein Fehler bei einer Basisfrage wirft dich zurück.",
-    "point3": "Wenn du alle Ebenen abschließt, endet der Tunnel. Verfolge deinen Fortschritt auf der Seite 'Meine Ergebnisse'.",
+    "point1": "Wenn du eine Frage in wiederholten Darstellungen mit unterschiedlichen Optionsanordnungen richtig beantwortest, gilt sie als 'gemeistert'. Diese Wiederholungen zielen durch Festigung auf echtes Verständnis ab.",
+    "point2": "Sobald du bei den Fragen jeder Stufe Erfolg zeigst, siehst du Fragen der nächsten Stufe.",
+    "point3": "Wenn du alle Stufen abschließt, endet der Tunnel und das Thema gilt als gelernt. Ein Tunnel ist für das vertiefte Lernen eines einzelnen Themas gedacht.",
     "gotIt": "Verstanden",
     "trigger": "Was ist ein Tunnel?"
   }

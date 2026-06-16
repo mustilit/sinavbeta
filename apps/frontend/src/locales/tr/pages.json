@@ -1840,9 +1840,9 @@
     "normalDesc": "Sabit sorular. Bir kez çözersin, sonunda skorunu görürsün.",
     "tunnelLabel": "Tünel",
     "tunnelDesc": "Kolaydan zora katmanlar. Her soru 5 şıkla gelir; doğru cevap hep içindedir ama yeri değişir.",
-    "point1": "Bir soruyu 3 farklı şık pozisyonunda doğru bilirsen o soru 'öğrenildi' sayılır — ezber değil gerçek kavrayış.",
-    "point2": "Üst üste doğru cevaplarsan bir üst (daha zor) katman açılır; taban soruda yanlış yaparsan geri düşersin.",
-    "point3": "Tüm katmanları tamamlayınca tünel biter. İlerlemeni 'Sonuçlarım' sayfasından takip edersin.",
+    "point1": "Bir soruyu farklı şık seçenekleri ile tekrarlanan gösterimlerde doğru bilirsen o soru 'öğrenildi' sayılır. Bu şekilde pekiştirmeler ile gerçek kavrayış amaçlanır.",
+    "point2": "Her seviyedeki sorular için başarım gösterilmesi halinde bir sonraki aşamadan sorular görmeye başlarsınız.",
+    "point3": "Tüm seviyeleri tamamladığınızda tünel biter ve konu öğrenilmiş kabul edilir. Tünel tek bir konuda derinlemesine öğrenim amacıyla kullanılmalıdır.",
     "gotIt": "Anladım",
     "trigger": "Tünel nedir?"
   }
