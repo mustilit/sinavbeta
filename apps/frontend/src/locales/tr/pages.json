@@ -1844,6 +1844,7 @@
     "point2": "Her seviyedeki sorular için başarım gösterilmesi halinde bir sonraki aşamadan sorular görmeye başlarsınız.",
     "point3": "Tüm seviyeleri tamamladığınızda tünel biter ve konu öğrenilmiş kabul edilir. Tünel tek bir konuda derinlemesine öğrenim amacıyla kullanılmalıdır.",
     "gotIt": "Anladım",
-    "trigger": "Tünel nedir?"
+    "trigger": "Tünel nedir?",
+    "point4": "Tünel bir defaya mahsus tamamlanır. Göstermiş olduğunuz ilerleme geri alınamaz."
   }
 }

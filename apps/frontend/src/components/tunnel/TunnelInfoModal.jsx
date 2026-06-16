@@ -67,7 +67,7 @@ export function TunnelInfoModal({ open, onClose }) {
 
           {/* Nasıl çalışır */}
           <ul className="space-y-2">
-            {["point1", "point2", "point3"].map((k) => (
+            {["point1", "point2", "point3", "point4"].map((k) => (
               <li key={k} className="flex items-start gap-2 text-sm text-slate-600">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" aria-hidden="true" />
                 <span>{t(`pages:tunnelInfo.${k}`)}</span>

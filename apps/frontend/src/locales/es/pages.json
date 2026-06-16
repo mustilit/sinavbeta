@@ -1847,6 +1847,7 @@
     "point2": "Una vez que demuestras éxito en las preguntas de cada nivel, empiezas a ver preguntas de la siguiente etapa.",
     "point3": "Cuando completas todos los niveles, el túnel termina y el tema se considera aprendido. Un túnel está pensado para el aprendizaje profundo de un único tema.",
     "gotIt": "Entendido",
-    "trigger": "¿Qué es un túnel?"
+    "trigger": "¿Qué es un túnel?",
+    "point4": "Un túnel se completa una sola vez. El progreso que has logrado no se puede deshacer."
   }
 }

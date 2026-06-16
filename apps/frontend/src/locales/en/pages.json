@@ -1844,6 +1844,7 @@
     "point2": "Once you show success on the questions of each level, you start seeing questions from the next stage.",
     "point3": "When you complete all levels, the tunnel ends and the topic is considered learned. A tunnel is meant for in-depth learning of a single topic.",
     "gotIt": "Got it",
-    "trigger": "What is a tunnel?"
+    "trigger": "What is a tunnel?",
+    "point4": "A tunnel is completed only once. The progress you have made cannot be undone."
   }
 }

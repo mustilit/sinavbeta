@@ -1844,6 +1844,7 @@
     "point2": "Sobald du bei den Fragen jeder Stufe Erfolg zeigst, siehst du Fragen der nächsten Stufe.",
     "point3": "Wenn du alle Stufen abschließt, endet der Tunnel und das Thema gilt als gelernt. Ein Tunnel ist für das vertiefte Lernen eines einzelnen Themas gedacht.",
     "gotIt": "Verstanden",
-    "trigger": "Was ist ein Tunnel?"
+    "trigger": "Was ist ein Tunnel?",
+    "point4": "Ein Tunnel wird nur einmal abgeschlossen. Der von dir erzielte Fortschritt kann nicht rückgängig gemacht werden."
   }
 }
