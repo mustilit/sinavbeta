@@ -22,8 +22,13 @@ export default function ReportQuestionModal({ open, onClose, onSubmit, questionN
   const [reportType, setReportType] = useState("");
   const [description, setDescription] = useState("");
 
+  // Backend (Objection) reason için en az 5 karakter ister; modalda da zorla ki
+  // gönderim sessizce reddedilip modal açık kalmasın.
+  const MIN_DESC = 5;
+  const descValid = description.trim().length >= MIN_DESC;
+
   const handleSubmit = () => {
-    if (!reportType || !description.trim()) return;
+    if (!reportType || !descValid) return;
     onSubmit({ report_type: reportType, description });
     setReportType("");
     setDescription("");
@@ -58,13 +63,16 @@ export default function ReportQuestionModal({ open, onClose, onSubmit, questionN
               placeholder="Hatayı detaylı şekilde açıklayın..."
               rows={4}
             />
+            {description.trim().length > 0 && !descValid && (
+              <p className="text-xs text-rose-600">Açıklama en az {MIN_DESC} karakter olmalı.</p>
+            )}
           </div>
 
           <div className="flex gap-3 justify-end pt-4">
             <Button variant="outline" onClick={onClose}>İptal</Button>
-            <Button 
+            <Button
               onClick={handleSubmit}
-              disabled={!reportType || !description.trim()}
+              disabled={!reportType || !descValid}
               className="bg-rose-600 hover:bg-rose-700"
             >
               Bildir

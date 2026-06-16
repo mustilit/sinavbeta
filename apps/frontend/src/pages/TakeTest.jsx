@@ -393,6 +393,23 @@ export default function TakeTest() {
       toast.success("Hata bildirimi gönderildi");
       setShowReportModal(false);
     },
+    onError: (err) => {
+      const code = err?.response?.data?.error?.code || err?.code;
+      const messages = {
+        REASON_TOO_SHORT: "Açıklama en az 5 karakter olmalı.",
+        OBJECTION_ALREADY_EXISTS: "Bu soru için zaten bir hata bildirimi gönderdiniz.",
+        OBJECTION_LIMIT_EXCEEDED: "Bu test için en fazla hata bildirimi sayısına ulaştınız.",
+        FORBIDDEN_NOT_OWNER: "Bu denemeye erişiminiz yok.",
+        QUESTION_NOT_IN_TEST: "Soru bu testle eşleşmiyor.",
+        ATTEMPT_NOT_FOUND: "Deneme bulunamadı.",
+        QUESTION_NOT_FOUND: "Soru bulunamadı.",
+      };
+      toast.error(messages[code] || extractErrorMessage(err, "Hata bildirimi gönderilemedi."));
+      // Düzeltilemez hatalarda modalı kapat (kullanıcı modalda bir şey değiştiremez).
+      if (code === "OBJECTION_ALREADY_EXISTS" || code === "OBJECTION_LIMIT_EXCEEDED") {
+        setShowReportModal(false);
+      }
+    },
   });
 
   // Backend hatalarından anlamlı mesaj çıkar — Nest filtre çıktısı veya plain Axios
