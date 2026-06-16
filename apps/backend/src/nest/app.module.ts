@@ -185,6 +185,7 @@ import { StartTunnelAttemptUseCase, GetTunnelAttemptStateUseCase } from '../appl
 import { SubmitTunnelAnswerUseCase } from '../application/use-cases/tunnel/SubmitTunnelAnswerUseCase';
 import { ReportTunnelQuestionUseCase } from '../application/use-cases/tunnel/ReportTunnelQuestionUseCase';
 import { GetCandidateTunnelReportsUseCase } from '../application/use-cases/tunnel/GetCandidateTunnelReportsUseCase';
+import { ListMyTunnelQuestionReportsUseCase } from '../application/use-cases/tunnel/ListMyTunnelQuestionReportsUseCase';
 import { UpsertTunnelReviewUseCase, ListTunnelReviewsUseCase, GetMyTunnelReviewUseCase } from '../application/use-cases/tunnel/TunnelReviewUseCases';
 import { PrismaTestPackageRepository } from '../infrastructure/repositories/PrismaTestPackageRepository';
 import { CreateTestPackageUseCase } from '../application/use-cases/package/CreateTestPackageUseCase';
@@ -757,6 +758,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: SubmitTunnelAnswerUseCase, useFactory: () => new SubmitTunnelAnswerUseCase() },
     { provide: ReportTunnelQuestionUseCase, useFactory: () => new ReportTunnelQuestionUseCase() },
     { provide: GetCandidateTunnelReportsUseCase, useFactory: () => new GetCandidateTunnelReportsUseCase() },
+    { provide: ListMyTunnelQuestionReportsUseCase, useFactory: () => new ListMyTunnelQuestionReportsUseCase() },
     { provide: UpsertTunnelReviewUseCase, useFactory: () => new UpsertTunnelReviewUseCase() },
     { provide: ListTunnelReviewsUseCase, useFactory: () => new ListTunnelReviewsUseCase() },
     { provide: GetMyTunnelReviewUseCase, useFactory: () => new GetMyTunnelReviewUseCase() },
