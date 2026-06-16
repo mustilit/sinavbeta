@@ -31,6 +31,10 @@
     "s5": {
       "title": "Toma notas, todo en un lugar 🗒️",
       "description": "Mientras resuelves, toca el botón azul \"+ Nota\" abajo a la derecha para anotar tus ideas. Las notas se etiquetan por examen, tema y tipo de examen; fíltralas y revísalas en la página \"Mis notas\"."
+    },
+    "s6": {
+      "title": "Túneles: Maestría Adaptativa 🧩",
+      "description": "Un Túnel es diferente de un test normal. Avanzas por capas de fácil a difícil; cada pregunta aparece con 5 opciones (la correcta siempre está, pero su posición cambia). Responde correctamente una pregunta en 3 posiciones distintas y se considera 'dominada' — el objetivo es la maestría real, no memorizar. Descúbrelos en la pestaña 'Túneles'."
     }
   },
   "candidateTest": {

@@ -178,6 +178,37 @@ const IllustrationNotes = () => (
   </div>
 );
 
+const IllustrationTunnel = () => (
+  <div className="w-full max-w-xs space-y-2">
+    {/* Katmanlar: kolay → zor */}
+    {[
+      { label: "Katman 1 · Kolay", color: "emerald", w: "w-full" },
+      { label: "Katman 2 · Orta", color: "amber", w: "w-5/6" },
+      { label: "Katman 3 · Zor", color: "rose", w: "w-2/3" },
+    ].map((l) => (
+      <MockCard key={l.label} className="flex items-center gap-2 !p-2">
+        <MockBadge label={l.label} color={l.color} />
+        <div className="flex-1">
+          <MockBar className={`${l.w} text-slate-400`} />
+        </div>
+      </MockCard>
+    ))}
+    {/* 5 şık — doğru cevap hep içinde, yeri değişken (yeşil) */}
+    <div className="flex justify-center gap-1.5 pt-1">
+      {["A", "B", "C", "D", "E"].map((o, i) => (
+        <div
+          key={o}
+          className={`w-6 h-6 rounded-md text-[9px] font-bold flex items-center justify-center ${
+            i === 2 ? "bg-emerald-500 text-white shadow" : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          {o}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 // NOT: title ve description i18n key'leridir; OnboardingTour.jsx t() ile çözer.
 // Bu sayede tüm tur içerikleri 5 dilde (tr/en/es/zh/de) görüntülenir.
 export const CANDIDATE_WELCOME_STEPS = [
@@ -220,6 +251,11 @@ export const CANDIDATE_WELCOME_STEPS = [
     title: "onboarding:candidateWelcome.s5.title",
     description: "onboarding:candidateWelcome.s5.description",
     illustration: <IllustrationNotes />,
+  },
+  {
+    title: "onboarding:candidateWelcome.s6.title",
+    description: "onboarding:candidateWelcome.s6.description",
+    illustration: <IllustrationTunnel />,
   },
 ];
 

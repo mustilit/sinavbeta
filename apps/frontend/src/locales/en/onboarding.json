@@ -31,6 +31,10 @@
     "s5": {
       "title": "Take Notes, All in One Place 🗒️",
       "description": "While solving, tap the blue \"+ Note\" at the bottom-right to jot down your thoughts. Notes are tagged by test, topic and exam type — filter and review them all on the \"My Notes\" page."
+    },
+    "s6": {
+      "title": "Tunnels: Adaptive Mastery 🧩",
+      "description": "A Tunnel is different from a normal test. You progress through layers from easy to hard; every question appears with 5 options (the correct one is always there, but its position changes). Answer a question correctly in 3 different positions and it counts as 'mastered' — the goal is real mastery, not memorization. Discover them in the 'Tunnels' tab."
     }
   },
   "candidateTest": {

@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import TestPackageCard from "@/components/ui/TestPackageCard";
 import { TunnelGrid } from "@/components/tunnel/TunnelGrid";
-import { Search, SlidersHorizontal, X, Star, ArrowUpDown } from "lucide-react";
+import { TunnelInfoModal, useTunnelIntro } from "@/components/tunnel/TunnelInfoModal";
+import { Search, SlidersHorizontal, X, Star, ArrowUpDown, HelpCircle } from "lucide-react";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 
 export default function Explore() {
@@ -31,6 +32,7 @@ export default function Explore() {
   // Sıralama — filtreden bağımsız: "recommended" (varsayılan) / "rating" / "popular"
   const [sortBy, setSortBy] = useState("recommended");
   const [contentTab, setContentTab] = useState("tests"); // "tests" | "tunnels"
+  const tunnelIntro = useTunnelIntro(contentTab === "tunnels");
   const contentTabBtn = (key) =>
     "inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 min-h-10 text-sm font-medium transition-colors " +
     (contentTab === key ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900");
@@ -196,10 +198,21 @@ export default function Explore() {
       </div>
 
       {/* İçerik sekmeleri: Testler | Tüneller (site standardı alt-çizgi stili) */}
-      <div className="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
+      <div className="mb-6 flex flex-wrap items-center gap-1 border-b border-slate-200">
         <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
         <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
+        {contentTab === "tunnels" && (
+          <button
+            type="button"
+            onClick={() => tunnelIntro.setOpen(true)}
+            className="ml-auto inline-flex items-center gap-1 px-2 py-1 min-h-10 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            <HelpCircle className="h-4 w-4" aria-hidden="true" /> {t("pages:tunnelInfo.trigger")}
+          </button>
+        )}
       </div>
+
+      <TunnelInfoModal open={tunnelIntro.open} onClose={() => tunnelIntro.setOpen(false)} />
 
       {contentTab === "tunnels" ? (
         <TunnelGrid mode="discover" />

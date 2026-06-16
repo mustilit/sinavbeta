@@ -31,6 +31,10 @@
     "s5": {
       "title": "Notizen machen, alles an einem Ort 🗒️",
       "description": "Tippe beim Lösen unten rechts auf das blaue \"+ Notiz\", um Gedanken festzuhalten. Notizen werden nach Test, Thema und Prüfungstyp markiert — filtere und sieh sie alle auf der Seite \"Meine Notizen\"."
+    },
+    "s6": {
+      "title": "Tunnel: Adaptive Meisterschaft 🧩",
+      "description": "Ein Tunnel unterscheidet sich von einem normalen Test. Du arbeitest dich durch Ebenen von leicht nach schwer; jede Frage erscheint mit 5 Optionen (die richtige ist immer dabei, aber ihre Position ändert sich). Beantworte eine Frage in 3 verschiedenen Positionen richtig, dann gilt sie als 'gemeistert' — das Ziel ist echte Meisterschaft, kein Auswendiglernen. Entdecke sie im Tab 'Tunnel'."
     }
   },
   "candidateTest": {

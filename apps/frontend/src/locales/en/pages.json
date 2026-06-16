@@ -1832,5 +1832,18 @@
       "questionLabel": "Question {{order}}",
       "addressGeneral": "General"
     }
+  },
+  "tunnelInfo": {
+    "title": "What Is a Tunnel?",
+    "intro": "A Tunnel is different from a classic test — it is an adaptive mastery-learning module.",
+    "normalLabel": "Normal Test",
+    "normalDesc": "Fixed questions. You solve it once and see your score at the end.",
+    "tunnelLabel": "Tunnel",
+    "tunnelDesc": "Layers from easy to hard. Every question has 5 options; the correct answer is always there, but its position changes.",
+    "point1": "Answer a question correctly in 3 different option positions and it counts as 'mastered' — real understanding, not memorization.",
+    "point2": "Answer correctly in a row and the next (harder) layer unlocks; a wrong answer on a base question drops you back.",
+    "point3": "When you complete all layers, the tunnel ends. Track your progress on the 'My Results' page.",
+    "gotIt": "Got it",
+    "trigger": "What is a tunnel?"
   }
 }

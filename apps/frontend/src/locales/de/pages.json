@@ -1832,5 +1832,18 @@
       "questionLabel": "Frage {{order}}",
       "addressGeneral": "Allgemein"
     }
+  },
+  "tunnelInfo": {
+    "title": "Was ist ein Tunnel?",
+    "intro": "Ein Tunnel unterscheidet sich von einem klassischen Test – er ist ein adaptives Modul zum Meistern von Inhalten.",
+    "normalLabel": "Normaler Test",
+    "normalDesc": "Feste Fragen. Du löst ihn einmal und siehst am Ende deine Punktzahl.",
+    "tunnelLabel": "Tunnel",
+    "tunnelDesc": "Ebenen von leicht nach schwer. Jede Frage hat 5 Optionen; die richtige Antwort ist immer dabei, aber ihre Position ändert sich.",
+    "point1": "Beantworte eine Frage in 3 verschiedenen Optionspositionen richtig, dann gilt sie als 'gemeistert' – echtes Verständnis, kein Auswendiglernen.",
+    "point2": "Mehrere richtige Antworten in Folge schalten die nächste (schwerere) Ebene frei; ein Fehler bei einer Basisfrage wirft dich zurück.",
+    "point3": "Wenn du alle Ebenen abschließt, endet der Tunnel. Verfolge deinen Fortschritt auf der Seite 'Meine Ergebnisse'.",
+    "gotIt": "Verstanden",
+    "trigger": "Was ist ein Tunnel?"
   }
 }

@@ -31,6 +31,10 @@
     "s5": {
       "title": "Not Al, Tek Yerde Topla 🗒️",
       "description": "Soru çözerken sağ-alttaki mavi \"+ Not\" ile aklındakini hemen kaydet. Notların test, konu ve sınav türüne göre adreslenir; \"Notlarım\" sayfasından filtreleyip tek yerde görürsün."
+    },
+    "s6": {
+      "title": "Tünel: Adaptif Ustalık 🧩",
+      "description": "Tünel, normal testten farklıdır. Kolaydan zora katmanlarda ilerlersin; her soru 5 şıkla gelir (doğru cevap hep içinde, yeri değişir). Bir soruyu 3 farklı pozisyonda doğru bilince 'öğrenildi' sayılır — amaç ezber değil gerçek ustalık. 'Tüneller' sekmesinden keşfet."
     }
   },
   "candidateTest": {

@@ -1835,5 +1835,18 @@
       "questionLabel": "Pregunta {{order}}",
       "addressGeneral": "General"
     }
+  },
+  "tunnelInfo": {
+    "title": "¿Qué es un Túnel?",
+    "intro": "Un Túnel es diferente de un test clásico: es un módulo de aprendizaje de maestría adaptativo.",
+    "normalLabel": "Test Normal",
+    "normalDesc": "Preguntas fijas. Lo resuelves una vez y ves tu puntuación al final.",
+    "tunnelLabel": "Túnel",
+    "tunnelDesc": "Capas de fácil a difícil. Cada pregunta tiene 5 opciones; la respuesta correcta siempre está, pero su posición cambia.",
+    "point1": "Responde correctamente una pregunta en 3 posiciones distintas y se considera 'dominada': comprensión real, no memorización.",
+    "point2": "Si aciertas varias seguidas, se desbloquea la siguiente capa (más difícil); un error en una pregunta base te hace retroceder.",
+    "point3": "Cuando completas todas las capas, el túnel termina. Sigue tu progreso en la página 'Mis Resultados'.",
+    "gotIt": "Entendido",
+    "trigger": "¿Qué es un túnel?"
   }
 }
