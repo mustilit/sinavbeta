@@ -2004,24 +2004,24 @@ enum TunnelAttemptStatus {
 
 /// Tünel satın alma (paket gibi; Purchase.testId zorunlu olduğu için ayrı model).
 model TunnelPurchase {
-  id                  String         @id @default(uuid())
-  tenantId            String
-  tunnelId            String
-  candidateId         String
-  amountCents         Int            @default(0)
-  currency            Currency       @default(TRY)
-  status              PurchaseStatus @default(ACTIVE)
+  id                            String         @id @default(uuid())
+  tenantId                      String
+  tunnelId                      String
+  candidateId                   String
+  amountCents                   Int            @default(0)
+  currency                      Currency       @default(TRY)
+  status                        PurchaseStatus @default(ACTIVE)
   // İndirim snapshot (FK yok — kod silinse de kanıt korunur; Purchase deseni)
-  discountCodeId      String?
-  discountAmountCents Int?
-  paymentProvider     String?
+  discountCodeId                String?
+  discountAmountCents           Int?
+  paymentProvider               String?
   // Mesafeli satış sözleşmesi kanıt zinciri (TKHK — Purchase ile aynı desen)
   distanceSaleContractId        String?
   distanceSaleAcceptedAt        DateTime?
   distanceSaleAcceptedIp        String?
   distanceSaleAcceptedUserAgent String?
-  createdAt           DateTime       @default(now())
-  refundedAt          DateTime?
+  createdAt                     DateTime       @default(now())
+  refundedAt                    DateTime?
 
   tenant    Tenant @relation(fields: [tenantId], references: [id])
   tunnel    Tunnel @relation(fields: [tunnelId], references: [id], onDelete: Cascade)
@@ -2115,4 +2115,204 @@ model TunnelQuestionReport {
 
   @@index([tunnelId, status])
   @@map("tunnel_question_reports")
+}
+
+/// ═══════════════════════════════════════════════════════════════════════════
+/// YAZILI TEST (Written Test) — açık-uçlu sınav modülü.
+/// Mevcut Sınav modülünün şıksız versiyonu: aday her soruya METİN cevabı yazar,
+/// doğru/yanlış puanlama YOK, çözüm zorunlu (submit sonrası aday kendi cevabını
+/// çözümle kendisi kıyaslar). Tünel deseninde AYRI modül. Modül-dışı id'ler
+/// (tenantId/educatorId/candidateId/examTypeId/topicId) SCALAR tutulur — mevcut
+/// User/Tenant/ExamType/Topic modellerine dokunmamak için (TunnelReview deseni).
+/// Paylaşılan enum'lar: TestStatus / AttemptStatus / PurchaseStatus / Currency.
+/// ═══════════════════════════════════════════════════════════════════════════
+
+/// Satılabilir birim (TestPackage deseni). Aday paketi satın alır, içindeki
+/// yazılı testleri çözer.
+model WrittenPackage {
+  id            String    @id @default(cuid())
+  tenantId      String
+  educatorId    String?
+  title         String
+  description   String?
+  coverImageUrl String?
+  priceCents    Int       @default(0)
+  currency      Currency  @default(TRY)
+  difficulty    String    @default("medium")
+  isActive      Boolean   @default(true)
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tests     WrittenTest[]
+  purchases WrittenPurchase[]
+
+  @@index([tenantId])
+  @@index([educatorId])
+  @@index([publishedAt])
+  @@map("written_packages")
+}
+
+/// Paket içi yazılı test (ExamTest deseni; fiyat pakettedir).
+model WrittenTest {
+  id            String     @id @default(uuid())
+  tenantId      String
+  packageId     String?
+  educatorId    String?
+  examTypeId    String?
+  topicId       String?
+  title         String
+  isTimed       Boolean    @default(false)
+  duration      Int? // dakika
+  questionCount Int?
+  // Yazılıda çözüm her zaman vardır; submit sonrası öz-kıyas için gösterilir.
+  hasSolutions  Boolean    @default(true)
+  status        TestStatus @default(DRAFT)
+  publishedAt   DateTime?
+  metadata      Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
+  deletedAt     DateTime?
+
+  package   WrittenPackage?   @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  questions WrittenQuestion[]
+  attempts  WrittenAttempt[]
+
+  @@index([tenantId])
+  @@index([packageId])
+  @@index([educatorId])
+  @@index([publishedAt])
+  @@map("written_tests")
+}
+
+/// Yazılı soru — ŞIK YOK. solutionText create/publish use-case'te zorunlu (öz-kıyas için).
+model WrittenQuestion {
+  id               String   @id @default(uuid())
+  testId           String
+  content          String
+  mediaUrl         String?
+  order            Int      @default(0)
+  // Zorunlu (use-case'te enforce); draft esnekliği için schema'da nullable.
+  solutionText     String?
+  solutionMediaUrl String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  test    WrittenTest     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers WrittenAnswer[]
+
+  @@index([testId])
+  @@map("written_questions")
+}
+
+/// Aday çözme oturumu (TestAttempt deseni). SCORE YOK — yazılıda puanlama yapılmaz.
+model WrittenAttempt {
+  id                String        @id @default(uuid())
+  tenantId          String
+  testId            String
+  candidateId       String
+  attemptNumber     Int           @default(1)
+  startedAt         DateTime      @default(now())
+  completedAt       DateTime?
+  submittedAt       DateTime?
+  status            AttemptStatus @default(IN_PROGRESS)
+  metadata          Json?
+  lastResumedAt     DateTime?
+  pausedAt          DateTime?
+  finishedAt        DateTime?
+  remainingSec      Int?
+  overtimeSeconds   Int?
+  // Başlangıç anındaki soru+çözüm snapshot'ı (şık yok). Eğitici sonradan
+  // güncellese bile bu attempt orijinalden beslenir.
+  questionsSnapshot Json?
+
+  test    WrittenTest     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers WrittenAnswer[]
+
+  @@unique([testId, candidateId, attemptNumber])
+  @@index([candidateId])
+  @@index([testId])
+  @@map("written_attempts")
+}
+
+/// Aday metin cevabı (AttemptAnswer deseni; selectedOptionId yerine textAnswer).
+model WrittenAnswer {
+  id         String   @id @default(uuid())
+  attemptId  String
+  questionId String
+  textAnswer String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  attempt  WrittenAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question WrittenQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId], name: "attemptId_questionId")
+  @@map("written_answers")
+}
+
+/// Yazılı paket satın alma (TunnelPurchase/Purchase deseni). candidate+package tek satır.
+model WrittenPurchase {
+  id                            String         @id @default(uuid())
+  tenantId                      String
+  packageId                     String
+  candidateId                   String
+  amountCents                   Int?
+  currency                      Currency       @default(TRY)
+  amountUsdCents                Int?
+  status                        PurchaseStatus @default(ACTIVE)
+  discountCodeId                String?
+  discountAmountCents           Int?
+  paymentProvider               String?
+  // Mesafeli satış sözleşmesi kanıt zinciri (TKHK — Purchase deseni)
+  distanceSaleContractId        String?
+  distanceSaleAcceptedAt        DateTime?
+  distanceSaleAcceptedIp        String?
+  distanceSaleAcceptedUserAgent String?
+  // Satın alma anındaki test+soru+çözüm snapshot'ı (şık yok).
+  testsSnapshot                 Json?
+  attemptsResetAt               DateTime?
+  createdAt                     DateTime       @default(now())
+  updatedAt                     DateTime       @updatedAt
+  refundedAt                    DateTime?
+  expiredAt                     DateTime?
+  deletedAt                     DateTime?
+
+  package WrittenPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, packageId])
+  @@index([tenantId])
+  @@index([packageId])
+  @@map("written_purchases")
+}
+
+/// Aday değerlendirmesi (TunnelReview deseni — scalar-only). Paket başına tek (upsert).
+model WrittenReview {
+  id          String   @id @default(uuid())
+  tenantId    String
+  packageId   String
+  candidateId String
+  rating      Int // 1-5
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([packageId, candidateId])
+  @@index([packageId])
+  @@map("written_reviews")
+}
+
+/// Aday hata bildirimi (TunnelQuestionReport deseni — scalar-only, hafif).
+model WrittenQuestionReport {
+  id          String   @id @default(uuid())
+  tenantId    String
+  testId      String?
+  questionId  String?
+  candidateId String
+  reason      String
+  status      String   @default("OPEN") // OPEN | RESOLVED
+  createdAt   DateTime @default(now())
+
+  @@index([testId, status])
+  @@map("written_question_reports")
 }
