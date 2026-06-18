@@ -186,6 +186,22 @@ import {
   UpdateWrittenQuestionUseCase,
   DeleteWrittenQuestionUseCase,
 } from '../application/use-cases/written/WrittenQuestionUseCases';
+import { PurchaseWrittenPackageUseCase, ValidateWrittenDiscountUseCase } from '../application/use-cases/written/WrittenPurchaseUseCases';
+import {
+  StartWrittenAttemptUseCase,
+  SubmitWrittenAnswerUseCase,
+  GetWrittenAttemptStateUseCase,
+  SubmitWrittenAttemptUseCase,
+  TimeoutWrittenAttemptUseCase,
+  GetWrittenQuestionSolutionUseCase,
+} from '../application/use-cases/written/WrittenAttemptUseCases';
+import { ReportWrittenQuestionUseCase } from '../application/use-cases/written/ReportWrittenQuestionUseCase';
+import { ListMyWrittenQuestionReportsUseCase } from '../application/use-cases/written/ListMyWrittenQuestionReportsUseCase';
+import {
+  ListPublishedWrittenPackagesUseCase,
+  GetPublishedWrittenPackageUseCase,
+} from '../application/use-cases/written/CandidateWrittenUseCases';
+import { CandidateWrittenController } from './controllers/candidate-written.controller';
 // Tünel modülü (Faz 1)
 import { TunnelsController } from './controllers/tunnels.controller';
 import { AdminTunnelsController } from './controllers/admin.tunnels.controller';
@@ -397,6 +413,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     // Yazılı Test modülü
     WrittenTestsController,
     WrittenTestsItemController,
+    CandidateWrittenController,
   ],
   providers: [
     SeedService,
@@ -798,6 +815,18 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: CreateWrittenQuestionUseCase, useFactory: () => new CreateWrittenQuestionUseCase() },
     { provide: UpdateWrittenQuestionUseCase, useFactory: () => new UpdateWrittenQuestionUseCase() },
     { provide: DeleteWrittenQuestionUseCase, useFactory: () => new DeleteWrittenQuestionUseCase() },
+    { provide: PurchaseWrittenPackageUseCase, useFactory: () => new PurchaseWrittenPackageUseCase() },
+    { provide: ValidateWrittenDiscountUseCase, useFactory: () => new ValidateWrittenDiscountUseCase() },
+    { provide: StartWrittenAttemptUseCase, useFactory: () => new StartWrittenAttemptUseCase() },
+    { provide: SubmitWrittenAnswerUseCase, useFactory: () => new SubmitWrittenAnswerUseCase() },
+    { provide: GetWrittenAttemptStateUseCase, useFactory: () => new GetWrittenAttemptStateUseCase() },
+    { provide: SubmitWrittenAttemptUseCase, useFactory: () => new SubmitWrittenAttemptUseCase() },
+    { provide: TimeoutWrittenAttemptUseCase, useFactory: () => new TimeoutWrittenAttemptUseCase() },
+    { provide: GetWrittenQuestionSolutionUseCase, useFactory: () => new GetWrittenQuestionSolutionUseCase() },
+    { provide: ReportWrittenQuestionUseCase, useFactory: () => new ReportWrittenQuestionUseCase() },
+    { provide: ListMyWrittenQuestionReportsUseCase, useFactory: () => new ListMyWrittenQuestionReportsUseCase() },
+    { provide: ListPublishedWrittenPackagesUseCase, useFactory: () => new ListPublishedWrittenPackagesUseCase() },
+    { provide: GetPublishedWrittenPackageUseCase, useFactory: () => new GetPublishedWrittenPackageUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },
     { provide: StartLiveSessionUseCase, useFactory: () => new StartLiveSessionUseCase() },
