@@ -166,6 +166,26 @@ import { ListCandidateNotesUseCase } from '../application/use-cases/note/ListCan
 import { GetCandidateNoteFacetsUseCase } from '../application/use-cases/note/GetCandidateNoteFacetsUseCase';
 import { UpdateCandidateNoteUseCase } from '../application/use-cases/note/UpdateCandidateNoteUseCase';
 import { DeleteCandidateNoteUseCase } from '../application/use-cases/note/DeleteCandidateNoteUseCase';
+// Yazılı Test modülü
+import { WrittenTestsController, WrittenTestsItemController } from './controllers/written-tests.controller';
+import {
+  CreateWrittenPackageUseCase,
+  UpdateWrittenPackageUseCase,
+  PublishWrittenPackageUseCase,
+  UnpublishWrittenPackageUseCase,
+  ListEducatorWrittenPackagesUseCase,
+  GetWrittenPackageUseCase,
+} from '../application/use-cases/written/WrittenPackageUseCases';
+import {
+  CreateWrittenTestUseCase,
+  UpdateWrittenTestUseCase,
+  DeleteWrittenTestUseCase,
+} from '../application/use-cases/written/WrittenTestUseCases';
+import {
+  CreateWrittenQuestionUseCase,
+  UpdateWrittenQuestionUseCase,
+  DeleteWrittenQuestionUseCase,
+} from '../application/use-cases/written/WrittenQuestionUseCases';
 // Tünel modülü (Faz 1)
 import { TunnelsController } from './controllers/tunnels.controller';
 import { AdminTunnelsController } from './controllers/admin.tunnels.controller';
@@ -374,6 +394,9 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     TunnelsController,
     AdminTunnelsController,
     CandidateTunnelsController,
+    // Yazılı Test modülü
+    WrittenTestsController,
+    WrittenTestsItemController,
   ],
   providers: [
     SeedService,
@@ -762,6 +785,19 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: UpsertTunnelReviewUseCase, useFactory: () => new UpsertTunnelReviewUseCase() },
     { provide: ListTunnelReviewsUseCase, useFactory: () => new ListTunnelReviewsUseCase() },
     { provide: GetMyTunnelReviewUseCase, useFactory: () => new GetMyTunnelReviewUseCase() },
+    // Yazılı Test modülü
+    { provide: CreateWrittenPackageUseCase, useFactory: () => new CreateWrittenPackageUseCase() },
+    { provide: UpdateWrittenPackageUseCase, useFactory: () => new UpdateWrittenPackageUseCase() },
+    { provide: PublishWrittenPackageUseCase, useFactory: () => new PublishWrittenPackageUseCase() },
+    { provide: UnpublishWrittenPackageUseCase, useFactory: () => new UnpublishWrittenPackageUseCase() },
+    { provide: ListEducatorWrittenPackagesUseCase, useFactory: () => new ListEducatorWrittenPackagesUseCase() },
+    { provide: GetWrittenPackageUseCase, useFactory: () => new GetWrittenPackageUseCase() },
+    { provide: CreateWrittenTestUseCase, useFactory: () => new CreateWrittenTestUseCase() },
+    { provide: UpdateWrittenTestUseCase, useFactory: () => new UpdateWrittenTestUseCase() },
+    { provide: DeleteWrittenTestUseCase, useFactory: () => new DeleteWrittenTestUseCase() },
+    { provide: CreateWrittenQuestionUseCase, useFactory: () => new CreateWrittenQuestionUseCase() },
+    { provide: UpdateWrittenQuestionUseCase, useFactory: () => new UpdateWrittenQuestionUseCase() },
+    { provide: DeleteWrittenQuestionUseCase, useFactory: () => new DeleteWrittenQuestionUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },
     { provide: StartLiveSessionUseCase, useFactory: () => new StartLiveSessionUseCase() },
