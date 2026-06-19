@@ -161,6 +161,58 @@ async function upsertUser(u) {
   return user;
 }
 
+/**
+ * Yazılı Test modülü e2e seed — yayımlı bir WrittenPackage (demo educator) +
+ * 1 test + 2 çözümlü soru + aday@demo.com için ACTIVE satın alma. Idempotent
+ * (sabit başlıkla aranır). e2e written-test-flow.spec.ts buna bağlıdır.
+ */
+async function seedWrittenTestModule() {
+  const TITLE = 'E2E Yazılı Test Paketi';
+  const educator = await prisma.user.findFirst({ where: { email: 'educator@demo.com' }, select: { id: true, tenantId: true } });
+  const aday = await prisma.user.findFirst({ where: { email: 'aday@demo.com' }, select: { id: true, tenantId: true } });
+  if (!educator) { console.log('  ! yazılı seed atlandı (educator@demo.com yok)'); return; }
+  const tenantId = educator.tenantId;
+
+  let pkg = await prisma.writtenPackage.findFirst({ where: { title: TITLE, educatorId: educator.id } });
+  if (!pkg) {
+    pkg = await prisma.writtenPackage.create({
+      data: {
+        tenantId, educatorId: educator.id, title: TITLE,
+        description: 'E2E için yayımlanmış açık uçlu test paketi.',
+        priceCents: 0, difficulty: 'medium', isActive: true, publishedAt: new Date(),
+      },
+    });
+    const test = await prisma.writtenTest.create({
+      data: {
+        tenantId, packageId: pkg.id, educatorId: educator.id, title: 'E2E Yazılı Test',
+        isTimed: false, questionCount: 2, hasSolutions: true, status: 'PUBLISHED', publishedAt: new Date(),
+      },
+    });
+    await prisma.writtenQuestion.createMany({
+      data: [
+        { testId: test.id, content: 'Fotosentezi kısaca açıklayın.', order: 0, solutionText: 'Bitkilerin ışık enerjisiyle CO2 ve sudan glikoz üretmesidir.' },
+        { testId: test.id, content: 'Newton’un 1. yasasını yazın.', order: 1, solutionText: 'Bir cisim dengedeyse kuvvet etki etmedikçe durumunu korur (eylemsizlik).' },
+      ],
+    });
+    console.log(`  ✓ yazılı paket oluşturuldu (${pkg.id})`);
+  } else {
+    console.log(`  ✓ yazılı paket mevcut (${pkg.id})`);
+  }
+
+  // aday için ACTIVE satın alma (idempotent) — çözme akışı seed'li gelsin
+  if (aday) {
+    const existing = await prisma.writtenPurchase.findUnique({
+      where: { candidateId_packageId: { candidateId: aday.id, packageId: pkg.id } },
+    }).catch(() => null);
+    if (!existing) {
+      await prisma.writtenPurchase.create({
+        data: { tenantId, packageId: pkg.id, candidateId: aday.id, amountCents: 0, status: 'ACTIVE' },
+      });
+      console.log('  ✓ aday için yazılı satın alma oluşturuldu');
+    }
+  }
+}
+
 (async () => {
   let ok = 0;
   for (const u of USERS) {
@@ -173,6 +225,7 @@ async function upsertUser(u) {
     }
   }
   console.log(`Seed-e2e: ${ok}/${USERS.length} kullanıcı hazır.`);
+  try { await seedWrittenTestModule(); } catch (e) { console.error(`  ✗ yazılı seed: ${e.message}`); }
   await prisma.$disconnect();
   if (ok < USERS.length) process.exit(1);
 })().catch(async (e) => {

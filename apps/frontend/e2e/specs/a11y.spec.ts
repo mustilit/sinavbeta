@@ -15,7 +15,7 @@
  */
 
 import { test, expect } from '../fixtures/axe';
-import { loginAsAdmin, loginAsEducator } from '../fixtures/auth';
+import { loginAsAdmin, loginAsEducator, loginAsCandidate } from '../fixtures/auth';
 
 // ---------------------------------------------------------------------------
 // Yardımcı: violations varsa okunabilir log
@@ -261,6 +261,40 @@ test.describe('a11y — educator moderasyon sayfası (WCAG 2.1 AA)', () => {
     await page.goto('/MyModerationStatus');
     await page.waitForLoadState('networkidle');
 
+    const results = await makeAxeBuilder({ page }).analyze();
+    reportViolations(results.violations);
+    expect(results.violations).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Yazılı Test modülü — eğitici (oluştur/yönet) + aday (keşfet sekmesi)
+// ---------------------------------------------------------------------------
+test.describe('a11y — Yazılı Test sayfaları (WCAG 2.1 AA)', () => {
+  test('ManageWrittenTests — eğitici yazılı paket listesi', async ({ page, makeAxeBuilder }) => {
+    await loginAsEducator(page);
+    await page.goto('/ManageWrittenTests');
+    await page.waitForLoadState('networkidle');
+    const results = await makeAxeBuilder({ page }).analyze();
+    reportViolations(results.violations);
+    expect(results.violations).toEqual([]);
+  });
+
+  test('CreateWrittenTest — eğitici yazılı paket oluşturma', async ({ page, makeAxeBuilder }) => {
+    await loginAsEducator(page);
+    await page.goto('/CreateWrittenTest');
+    await page.waitForLoadState('networkidle');
+    const results = await makeAxeBuilder({ page }).analyze();
+    reportViolations(results.violations);
+    expect(results.violations).toEqual([]);
+  });
+
+  test('Explore "Yazılı Testler" sekmesi — aday', async ({ page, makeAxeBuilder }) => {
+    await loginAsCandidate(page);
+    await page.goto('/Explore');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Yazılı Testler' }).click();
+    await page.waitForTimeout(800); // grid query
     const results = await makeAxeBuilder({ page }).analyze();
     reportViolations(results.violations);
     expect(results.violations).toEqual([]);
