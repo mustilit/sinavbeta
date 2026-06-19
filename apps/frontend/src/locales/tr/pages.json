@@ -2059,7 +2059,8 @@
     "free": "Ücretsiz",
     "typeBadge": "Yazılı",
     "testsSuffix": "test",
-    "tab": "Yazılı Testler"
+    "tab": "Yazılı Testler",
+    "purchasedLabel": "Satın alındı"
   },
   "writtenResults": {
     "completed": "Tamamlandı",

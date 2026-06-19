@@ -2059,7 +2059,8 @@
     "free": "Free",
     "typeBadge": "Open-Ended",
     "testsSuffix": "tests",
-    "tab": "Open-Ended Tests"
+    "tab": "Open-Ended Tests",
+    "purchasedLabel": "Purchased"
   },
   "writtenResults": {
     "completed": "Completed",

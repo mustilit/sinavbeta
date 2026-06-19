@@ -94,12 +94,22 @@ export class ListPublishedWrittenPackagesUseCase {
         difficulty: true,
         publishedAt: true,
         educatorId: true,
-        _count: { select: { tests: true } },
+        tests: { where: { deletedAt: null }, select: { questionCount: true } },
       },
     });
     const hasMore = rows.length > take;
     const items = hasMore ? rows.slice(0, -1) : rows;
-    const educators = await resolveEducators(items.map((p) => p.educatorId ?? ''));
+    const [educators, ratings] = await Promise.all([
+      resolveEducators(items.map((p) => p.educatorId ?? '')),
+      items.length
+        ? prisma.writtenReview.groupBy({
+            by: ['packageId'],
+            where: { packageId: { in: items.map((p) => p.id) } },
+            _avg: { rating: true },
+          })
+        : Promise.resolve([] as { packageId: string; _avg: { rating: number | null } }[]),
+    ]);
+    const ratingByPkg = new Map(ratings.map((r) => [r.packageId, r._avg.rating]));
     return {
       items: items.map((p) => ({
         id: p.id,
@@ -109,7 +119,9 @@ export class ListPublishedWrittenPackagesUseCase {
         priceCents: p.priceCents,
         currency: p.currency,
         difficulty: p.difficulty,
-        testCount: p._count.tests,
+        testCount: p.tests.length,
+        totalQuestions: p.tests.reduce((s, t) => s + (t.questionCount ?? 0), 0),
+        avgRating: ratingByPkg.get(p.id) != null ? Math.round((ratingByPkg.get(p.id) as number) * 10) / 10 : null,
         educatorId: p.educatorId,
         educatorName: p.educatorId ? educators.get(p.educatorId) ?? null : null,
       })),

@@ -2059,7 +2059,8 @@
     "free": "Kostenlos",
     "typeBadge": "Offen",
     "testsSuffix": "Tests",
-    "tab": "Offene Tests"
+    "tab": "Offene Tests",
+    "purchasedLabel": "Gekauft"
   },
   "writtenResults": {
     "completed": "Abgeschlossen",
