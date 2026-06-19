@@ -99,7 +99,8 @@
       "questionReports": "Issue Reports",
       "settings": "Profile Settings",
       "moderationStatus": "Content Status",
-      "myTunnels": "My Tunnels"
+      "myTunnels": "My Tunnels",
+      "myWrittenTests": "My Written Tests"
     },
     "admin": {
       "dashboard": "Admin Panel",

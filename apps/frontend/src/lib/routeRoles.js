@@ -70,6 +70,10 @@ export const PAGE_ROLES = {
   QuestionReports: [ROLES.EDUCATOR],
   CreateTest: [ROLES.EDUCATOR],
   EditTest: [ROLES.EDUCATOR],
+  // Yazılı test modülü — eğitici
+  CreateWrittenTest: [ROLES.EDUCATOR],
+  EditWrittenTest: [ROLES.EDUCATOR],
+  ManageWrittenTests: [ROLES.EDUCATOR],
   EducatorRefunds: [ROLES.EDUCATOR],
   // Canlı test: Educator oturum oluşturur ve yönetir
   MyLiveSessions: [ROLES.EDUCATOR],

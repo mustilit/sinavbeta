@@ -1846,5 +1846,148 @@
     "gotIt": "明白了",
     "trigger": "什么是隧道？",
     "point4": "隧道只能完成一次。你所取得的进度无法撤销。"
+  },
+  "writtenTestForm": {
+    "steps": {
+      "package": "套餐",
+      "tests": "测试",
+      "preview": "预览"
+    },
+    "nav": {
+      "back": "返回",
+      "next": "继续",
+      "previewNext": "预览"
+    },
+    "package": {
+      "sectionTitle": "套餐信息",
+      "titleLabel": "套餐标题",
+      "titlePlaceholder": "例如：TYT 数学笔试套餐",
+      "descLabel": "描述",
+      "descPlaceholder": "简要介绍该套餐",
+      "examTypeLabel": "考试类型",
+      "examTypePlaceholder": "选择考试类型",
+      "examTypeNone": "未指定",
+      "priceLabel": "价格 (TL)",
+      "pricePlaceholder": "0 = 免费"
+    },
+    "testsStep": {
+      "title": "测试与题目",
+      "subtitle": "为每个测试添加标题和题目",
+      "addTest": "添加测试",
+      "maxTestsReached": "最多可添加 {{max}} 个测试",
+      "validateAtLeastOne": "至少需添加一个测试和一道有效题目"
+    },
+    "testCard": {
+      "indexLabel": "测试 {{index}}",
+      "titlePlaceholder": "输入测试标题",
+      "questionsSuffix": "题",
+      "completedSuffix": "含解析",
+      "addQuestion": "添加题目",
+      "maxQuestionsReached": "最多可添加 {{max}} 道题目"
+    },
+    "question": {
+      "editDialogTitle": "题目 {{n}}",
+      "contentLabel": "题目内容",
+      "contentPlaceholder": "在此输入题目...",
+      "imageLabel": "题目图片",
+      "selectImage": "选择图片",
+      "clearImage": "移除",
+      "topicLabel": "主题",
+      "topicPlaceholder": "选择主题",
+      "topicNone": "无主题",
+      "topicSearchPlaceholder": "搜索主题...",
+      "topicEmpty": "未找到主题",
+      "solutionLabel": "解析（必填）",
+      "solutionPlaceholder": "输入解析说明...",
+      "solutionImageSelect": "选择解析图片",
+      "errorMissingContent": "题目内容或图片为必填",
+      "errorMissingSolution": "解析内容为必填",
+      "untitled": "（空题目）",
+      "hasSolution": "含解析",
+      "noSolution": "无解析"
+    },
+    "dialog": {
+      "cancel": "取消",
+      "saveAndNew": "保存并新增",
+      "saving": "保存中...",
+      "complete": "完成",
+      "genericError": "发生错误"
+    },
+    "preview": {
+      "sectionTitle": "预览",
+      "packageTitleLabel": "套餐标题",
+      "priceLabel": "价格",
+      "free": "免费",
+      "summary": "摘要",
+      "testsCount": "{{count}} 个测试",
+      "validQuestions": "{{count}} 道有效题目",
+      "testsListTitle": "测试"
+    },
+    "validations": {
+      "titleRequired": "套餐标题为必填"
+    },
+    "createPage": {
+      "title": "新建笔试套餐",
+      "subtitle": "创建由开放式题目组成的测试套餐",
+      "publishing": "发布中...",
+      "saving": "保存中...",
+      "saveAsDraft": "存为草稿",
+      "createAndPublish": "创建并发布"
+    },
+    "editPage": {
+      "title": "编辑笔试套餐",
+      "subtitle": "更新套餐信息、测试和题目",
+      "notFound": "未找到套餐",
+      "publishedBadge": "已发布",
+      "saving": "保存中...",
+      "publishing": "发布中...",
+      "unpublishing": "下架中...",
+      "saveChanges": "保存更改",
+      "saveAndPublish": "保存并发布",
+      "unpublish": "取消发布",
+      "saved": "更改已保存",
+      "savedAndPublished": "已保存并发布",
+      "unpublished": "已取消发布",
+      "saveFailed": "保存失败",
+      "packagePublishedError": "已发布的套餐无法执行此操作",
+      "cannotDeletePublished": "已作答的题目无法删除"
+    }
+  },
+  "manageWrittenTests": {
+    "title": "我的笔试",
+    "subtitle": "管理你的笔试套餐",
+    "createNew": "新建笔试",
+    "searchPlaceholder": "搜索套餐...",
+    "loadError": "加载套餐失败",
+    "testsSuffix": "个测试",
+    "questionsSuffix": "题",
+    "free": "免费",
+    "noFilterResults": "没有符合筛选条件的套餐",
+    "filter": {
+      "statusPlaceholder": "状态",
+      "allStatuses": "全部状态",
+      "published": "已发布",
+      "draft": "草稿",
+      "examTypePlaceholder": "考试类型",
+      "allExamTypes": "全部类型",
+      "clear": "清除"
+    },
+    "badge": {
+      "published": "已发布",
+      "draft": "草稿"
+    },
+    "actions": {
+      "publish": "发布",
+      "unpublish": "取消发布",
+      "edit": "编辑"
+    },
+    "empty": {
+      "title": "你还没有笔试套餐",
+      "desc": "创建你的第一个笔试套餐并分享你的教学内容"
+    },
+    "toasts": {
+      "statusUpdated": "发布状态已更新",
+      "actionFailed": "操作失败"
+    }
   }
 }

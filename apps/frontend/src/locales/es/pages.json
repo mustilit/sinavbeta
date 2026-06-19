@@ -1849,5 +1849,148 @@
     "gotIt": "Entendido",
     "trigger": "¿Qué es un túnel?",
     "point4": "Un túnel se completa una sola vez. El progreso que has logrado no se puede deshacer."
+  },
+  "writtenTestForm": {
+    "steps": {
+      "package": "Paquete",
+      "tests": "Tests",
+      "preview": "Vista previa"
+    },
+    "nav": {
+      "back": "Atrás",
+      "next": "Continuar",
+      "previewNext": "Vista previa"
+    },
+    "package": {
+      "sectionTitle": "Información del paquete",
+      "titleLabel": "Título del paquete",
+      "titlePlaceholder": "p. ej. Set de examen escrito de Matemáticas",
+      "descLabel": "Descripción",
+      "descPlaceholder": "Describe brevemente el paquete",
+      "examTypeLabel": "Tipo de examen",
+      "examTypePlaceholder": "Selecciona el tipo",
+      "examTypeNone": "Sin especificar",
+      "priceLabel": "Precio (TL)",
+      "pricePlaceholder": "0 = gratis"
+    },
+    "testsStep": {
+      "title": "Tests y preguntas",
+      "subtitle": "Añade un título y preguntas para cada test",
+      "addTest": "Añadir test",
+      "maxTestsReached": "Se pueden añadir como máximo {{max}} tests",
+      "validateAtLeastOne": "Debes añadir al menos un test y una pregunta válida"
+    },
+    "testCard": {
+      "indexLabel": "Test {{index}}",
+      "titlePlaceholder": "Introduce el título del test",
+      "questionsSuffix": "preguntas",
+      "completedSuffix": "con solución",
+      "addQuestion": "Añadir pregunta",
+      "maxQuestionsReached": "Se pueden añadir como máximo {{max}} preguntas"
+    },
+    "question": {
+      "editDialogTitle": "Pregunta {{n}}",
+      "contentLabel": "Texto de la pregunta",
+      "contentPlaceholder": "Escribe la pregunta aquí...",
+      "imageLabel": "Imagen de la pregunta",
+      "selectImage": "Seleccionar imagen",
+      "clearImage": "Quitar",
+      "topicLabel": "Tema",
+      "topicPlaceholder": "Selecciona el tema",
+      "topicNone": "Sin tema",
+      "topicSearchPlaceholder": "Buscar tema...",
+      "topicEmpty": "No se encontró tema",
+      "solutionLabel": "Solución (Obligatoria)",
+      "solutionPlaceholder": "Escribe la explicación de la solución...",
+      "solutionImageSelect": "Seleccionar imagen de solución",
+      "errorMissingContent": "El texto o la imagen de la pregunta es obligatorio",
+      "errorMissingSolution": "El texto de la solución es obligatorio",
+      "untitled": "(Pregunta vacía)",
+      "hasSolution": "Con solución",
+      "noSolution": "Sin solución"
+    },
+    "dialog": {
+      "cancel": "Cancelar",
+      "saveAndNew": "Guardar y añadir nueva",
+      "saving": "Guardando...",
+      "complete": "Listo",
+      "genericError": "Ocurrió un error"
+    },
+    "preview": {
+      "sectionTitle": "Vista previa",
+      "packageTitleLabel": "Título del paquete",
+      "priceLabel": "Precio",
+      "free": "Gratis",
+      "summary": "Resumen",
+      "testsCount": "{{count}} tests",
+      "validQuestions": "{{count}} preguntas válidas",
+      "testsListTitle": "Tests"
+    },
+    "validations": {
+      "titleRequired": "El título del paquete es obligatorio"
+    },
+    "createPage": {
+      "title": "Nuevo paquete de test escrito",
+      "subtitle": "Crea un paquete de preguntas abiertas",
+      "publishing": "Publicando...",
+      "saving": "Guardando...",
+      "saveAsDraft": "Guardar como borrador",
+      "createAndPublish": "Crear y publicar"
+    },
+    "editPage": {
+      "title": "Editar paquete de test escrito",
+      "subtitle": "Actualiza la información, los tests y las preguntas",
+      "notFound": "Paquete no encontrado",
+      "publishedBadge": "Publicado",
+      "saving": "Guardando...",
+      "publishing": "Publicando...",
+      "unpublishing": "Quitando...",
+      "saveChanges": "Guardar cambios",
+      "saveAndPublish": "Guardar y publicar",
+      "unpublish": "Despublicar",
+      "saved": "Cambios guardados",
+      "savedAndPublished": "Guardado y publicado",
+      "unpublished": "Despublicado",
+      "saveFailed": "Error al guardar",
+      "packagePublishedError": "Esta acción no se puede hacer en un paquete publicado",
+      "cannotDeletePublished": "No se puede eliminar una pregunta respondida"
+    }
+  },
+  "manageWrittenTests": {
+    "title": "Mis tests escritos",
+    "subtitle": "Gestiona tus paquetes de test escrito",
+    "createNew": "Nuevo test escrito",
+    "searchPlaceholder": "Buscar paquete...",
+    "loadError": "No se pudieron cargar los paquetes",
+    "testsSuffix": "tests",
+    "questionsSuffix": "preguntas",
+    "free": "Gratis",
+    "noFilterResults": "Ningún paquete coincide con el filtro",
+    "filter": {
+      "statusPlaceholder": "Estado",
+      "allStatuses": "Todos los estados",
+      "published": "Publicado",
+      "draft": "Borrador",
+      "examTypePlaceholder": "Tipo de examen",
+      "allExamTypes": "Todos los tipos",
+      "clear": "Limpiar"
+    },
+    "badge": {
+      "published": "Publicado",
+      "draft": "Borrador"
+    },
+    "actions": {
+      "publish": "Publicar",
+      "unpublish": "Despublicar",
+      "edit": "Editar"
+    },
+    "empty": {
+      "title": "Aún no tienes paquetes de test escrito",
+      "desc": "Crea tu primer paquete de test escrito y comparte tu contenido educativo"
+    },
+    "toasts": {
+      "statusUpdated": "Estado de publicación actualizado",
+      "actionFailed": "La acción falló"
+    }
   }
 }

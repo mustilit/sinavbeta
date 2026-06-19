@@ -1941,5 +1941,76 @@ export const candidateTunnels = {
   },
 };
 
+// --- Written Tests (Yazılı Test — eğitici modülü) ---
+export const writtenTests = {
+  /** Yeni yazılı test paketi oluştur */
+  createPackage: async (body) => {
+    const { data } = await api.post('/written-packages', body);
+    return data;
+  },
+  /** Paketi güncelle (PATCH) */
+  updatePackage: async (id, body) => {
+    const { data } = await api.patch(`/written-packages/${id}`, body);
+    return data;
+  },
+  /** Eğiticinin kendi yazılı paketlerini listele */
+  listMine: async () => {
+    const { data } = await api.get('/written-packages/mine');
+    return data;
+  },
+  /** Tek paket detayı (testler + sorular dahil) */
+  getPackage: async (id) => {
+    const { data } = await api.get(`/written-packages/${id}`);
+    return data;
+  },
+  /** Paketi yayınla */
+  publishPackage: async (id) => {
+    const { data } = await api.put(`/written-packages/${id}/publish`);
+    return data;
+  },
+  /** Paketi yayından kaldır */
+  unpublishPackage: async (id) => {
+    const { data } = await api.put(`/written-packages/${id}/unpublish`);
+    return data;
+  },
+  /** Pakete yeni test ekle */
+  createTest: async (packageId, body) => {
+    const { data } = await api.post(`/written-packages/${packageId}/tests`, body);
+    return data;
+  },
+  /** Testi güncelle */
+  updateTest: async (testId, body) => {
+    const { data } = await api.patch(`/written-tests/${testId}`, body);
+    return data;
+  },
+  /** Testi sil */
+  deleteTest: async (testId) => {
+    const { data } = await api.delete(`/written-tests/${testId}`);
+    return data;
+  },
+  /** Teste soru ekle */
+  createQuestion: async (testId, body) => {
+    const { data } = await api.post(`/written-tests/${testId}/questions`, body);
+    return data;
+  },
+  /** Soruyu güncelle */
+  updateQuestion: async (testId, questionId, body) => {
+    const { data } = await api.patch(`/written-tests/${testId}/questions/${questionId}`, body);
+    return data;
+  },
+  /** Soruyu sil */
+  deleteQuestion: async (testId, questionId) => {
+    const { data } = await api.delete(`/written-tests/${testId}/questions/${questionId}`);
+    return data;
+  },
+  /** Görsel yükle (soru/çözüm) */
+  uploadImage: async (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const { data } = await api.post('/upload/image', fd);
+    return data;
+  },
+};
+
 export default api;
 export { api };

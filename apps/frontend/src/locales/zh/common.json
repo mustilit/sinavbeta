@@ -99,7 +99,8 @@
       "questionReports": "错误报告",
       "settings": "个人设置",
       "moderationStatus": "内容状态",
-      "myTunnels": "我的隧道"
+      "myTunnels": "我的隧道",
+      "myWrittenTests": "我的笔试"
     },
     "admin": {
       "dashboard": "管理面板",

@@ -1846,5 +1846,148 @@
     "gotIt": "Anladım",
     "trigger": "Tünel nedir?",
     "point4": "Tünel bir defaya mahsus tamamlanır. Göstermiş olduğunuz ilerleme geri alınamaz."
+  },
+  "writtenTestForm": {
+    "steps": {
+      "package": "Paket",
+      "tests": "Testler",
+      "preview": "Onizleme"
+    },
+    "nav": {
+      "back": "Geri",
+      "next": "Devam",
+      "previewNext": "Onizleme"
+    },
+    "package": {
+      "sectionTitle": "Paket Bilgileri",
+      "titleLabel": "Paket Basligi",
+      "titlePlaceholder": "Ornegin: TYT Matematik Yazili Sinav Seti",
+      "descLabel": "Aciklama",
+      "descPlaceholder": "Paketi kisaca tanitin",
+      "examTypeLabel": "Sinav Turu",
+      "examTypePlaceholder": "Sinav turu secin",
+      "examTypeNone": "Belirtilmemis",
+      "priceLabel": "Fiyat (TL)",
+      "pricePlaceholder": "0 = ucretsiz"
+    },
+    "testsStep": {
+      "title": "Testler ve Sorular",
+      "subtitle": "Her test icin baslik ve sorulari ekleyin",
+      "addTest": "Test Ekle",
+      "maxTestsReached": "En fazla {{max}} test eklenebilir",
+      "validateAtLeastOne": "En az bir test ve gecerli bir soru eklemelisiniz"
+    },
+    "testCard": {
+      "indexLabel": "Test {{index}}",
+      "titlePlaceholder": "Test basligini girin",
+      "questionsSuffix": "soru",
+      "completedSuffix": "cozumlu",
+      "addQuestion": "Soru Ekle",
+      "maxQuestionsReached": "En fazla {{max}} soru eklenebilir"
+    },
+    "question": {
+      "editDialogTitle": "Soru {{n}}",
+      "contentLabel": "Soru Metni",
+      "contentPlaceholder": "Soruyu buraya yazin...",
+      "imageLabel": "Soru Gorseli",
+      "selectImage": "Gorsel Sec",
+      "clearImage": "Kaldir",
+      "topicLabel": "Konu",
+      "topicPlaceholder": "Konu secin",
+      "topicNone": "Konu yok",
+      "topicSearchPlaceholder": "Konu ara...",
+      "topicEmpty": "Konu bulunamadi",
+      "solutionLabel": "Cozum (Zorunlu)",
+      "solutionPlaceholder": "Cozum aciklamasini yazin...",
+      "solutionImageSelect": "Cozum Gorseli Sec",
+      "errorMissingContent": "Soru metni veya gorseli zorunludur",
+      "errorMissingSolution": "Cozum metni zorunludur",
+      "untitled": "(Bos soru)",
+      "hasSolution": "Cozumlu",
+      "noSolution": "Cozumsuz"
+    },
+    "dialog": {
+      "cancel": "Iptal",
+      "saveAndNew": "Kaydet ve Yeni Ekle",
+      "saving": "Kaydediliyor...",
+      "complete": "Tamam",
+      "genericError": "Bir hata olustu"
+    },
+    "preview": {
+      "sectionTitle": "Onizleme",
+      "packageTitleLabel": "Paket Basligi",
+      "priceLabel": "Fiyat",
+      "free": "Ucretsiz",
+      "summary": "Ozet",
+      "testsCount": "{{count}} test",
+      "validQuestions": "{{count}} gecerli soru",
+      "testsListTitle": "Testler"
+    },
+    "validations": {
+      "titleRequired": "Paket basligi zorunludur"
+    },
+    "createPage": {
+      "title": "Yeni Yazili Test Paketi",
+      "subtitle": "Acik uclu sorulardan olusan bir test paketi olusturun",
+      "publishing": "Yayimlanıyor...",
+      "saving": "Kaydediliyor...",
+      "saveAsDraft": "Taslak Olarak Kaydet",
+      "createAndPublish": "Olustur ve Yayimla"
+    },
+    "editPage": {
+      "title": "Yazili Test Paketini Duzenle",
+      "subtitle": "Paket bilgilerini, testleri ve sorulari guncelleyin",
+      "notFound": "Paket bulunamadi",
+      "publishedBadge": "Yayinda",
+      "saving": "Kaydediliyor...",
+      "publishing": "Yayimlanıyor...",
+      "unpublishing": "Kaldiriliyor...",
+      "saveChanges": "Degisiklikleri Kaydet",
+      "saveAndPublish": "Kaydet ve Yayimla",
+      "unpublish": "Yayindan Kaldir",
+      "saved": "Degisiklikler kaydedildi",
+      "savedAndPublished": "Kaydedildi ve yayimlandi",
+      "unpublished": "Yayindan kaldirildi",
+      "saveFailed": "Kaydetme basarisiz oldu",
+      "packagePublishedError": "Yayindaki pakette bu islem yapilamaz",
+      "cannotDeletePublished": "Cevaplanmis soru silinemez"
+    }
+  },
+  "manageWrittenTests": {
+    "title": "Yazili Testlerim",
+    "subtitle": "Yazili test paketlerinizi yonetin",
+    "createNew": "Yeni Yazili Test",
+    "searchPlaceholder": "Paket ara...",
+    "loadError": "Paketler yuklenemedi",
+    "testsSuffix": "test",
+    "questionsSuffix": "soru",
+    "free": "Ucretsiz",
+    "noFilterResults": "Filtreye uygun paket bulunamadi",
+    "filter": {
+      "statusPlaceholder": "Durum",
+      "allStatuses": "Tum durumlar",
+      "published": "Yayinda",
+      "draft": "Taslak",
+      "examTypePlaceholder": "Sinav turu",
+      "allExamTypes": "Tum turler",
+      "clear": "Temizle"
+    },
+    "badge": {
+      "published": "Yayinda",
+      "draft": "Taslak"
+    },
+    "actions": {
+      "publish": "Yayimla",
+      "unpublish": "Yayindan kaldir",
+      "edit": "Duzenle"
+    },
+    "empty": {
+      "title": "Henuz yazili test paketiniz yok",
+      "desc": "Ilk yazili test paketinizi olusturun ve egitim iceriklerinizi paylasın"
+    },
+    "toasts": {
+      "statusUpdated": "Yayin durumu guncellendi",
+      "actionFailed": "Islem basarisiz oldu"
+    }
   }
 }

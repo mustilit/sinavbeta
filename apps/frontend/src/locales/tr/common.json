@@ -99,7 +99,8 @@
       "questionReports": "Hata Bildirimleri",
       "settings": "Profil Ayarları",
       "moderationStatus": "İçerik Durumum",
-      "myTunnels": "Tünellerim"
+      "myTunnels": "Tünellerim",
+      "myWrittenTests": "Yazılı Testlerim"
     },
     "admin": {
       "dashboard": "Yönetim Paneli",

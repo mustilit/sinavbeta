@@ -1846,5 +1846,148 @@
     "gotIt": "Got it",
     "trigger": "What is a tunnel?",
     "point4": "A tunnel is completed only once. The progress you have made cannot be undone."
+  },
+  "writtenTestForm": {
+    "steps": {
+      "package": "Package",
+      "tests": "Tests",
+      "preview": "Preview"
+    },
+    "nav": {
+      "back": "Back",
+      "next": "Continue",
+      "previewNext": "Preview"
+    },
+    "package": {
+      "sectionTitle": "Package Info",
+      "titleLabel": "Package Title",
+      "titlePlaceholder": "e.g. TYT Math Written Exam Set",
+      "descLabel": "Description",
+      "descPlaceholder": "Briefly describe the package",
+      "examTypeLabel": "Exam Type",
+      "examTypePlaceholder": "Select exam type",
+      "examTypeNone": "Unspecified",
+      "priceLabel": "Price (TL)",
+      "pricePlaceholder": "0 = free"
+    },
+    "testsStep": {
+      "title": "Tests and Questions",
+      "subtitle": "Add a title and questions for each test",
+      "addTest": "Add Test",
+      "maxTestsReached": "At most {{max}} tests can be added",
+      "validateAtLeastOne": "You must add at least one test and one valid question"
+    },
+    "testCard": {
+      "indexLabel": "Test {{index}}",
+      "titlePlaceholder": "Enter test title",
+      "questionsSuffix": "questions",
+      "completedSuffix": "with solution",
+      "addQuestion": "Add Question",
+      "maxQuestionsReached": "At most {{max}} questions can be added"
+    },
+    "question": {
+      "editDialogTitle": "Question {{n}}",
+      "contentLabel": "Question Text",
+      "contentPlaceholder": "Write the question here...",
+      "imageLabel": "Question Image",
+      "selectImage": "Select Image",
+      "clearImage": "Remove",
+      "topicLabel": "Topic",
+      "topicPlaceholder": "Select topic",
+      "topicNone": "No topic",
+      "topicSearchPlaceholder": "Search topic...",
+      "topicEmpty": "No topic found",
+      "solutionLabel": "Solution (Required)",
+      "solutionPlaceholder": "Write the solution explanation...",
+      "solutionImageSelect": "Select Solution Image",
+      "errorMissingContent": "Question text or image is required",
+      "errorMissingSolution": "Solution text is required",
+      "untitled": "(Empty question)",
+      "hasSolution": "With solution",
+      "noSolution": "No solution"
+    },
+    "dialog": {
+      "cancel": "Cancel",
+      "saveAndNew": "Save and Add New",
+      "saving": "Saving...",
+      "complete": "Done",
+      "genericError": "An error occurred"
+    },
+    "preview": {
+      "sectionTitle": "Preview",
+      "packageTitleLabel": "Package Title",
+      "priceLabel": "Price",
+      "free": "Free",
+      "summary": "Summary",
+      "testsCount": "{{count}} tests",
+      "validQuestions": "{{count}} valid questions",
+      "testsListTitle": "Tests"
+    },
+    "validations": {
+      "titleRequired": "Package title is required"
+    },
+    "createPage": {
+      "title": "New Written Test Package",
+      "subtitle": "Create a test package of open-ended questions",
+      "publishing": "Publishing...",
+      "saving": "Saving...",
+      "saveAsDraft": "Save as Draft",
+      "createAndPublish": "Create and Publish"
+    },
+    "editPage": {
+      "title": "Edit Written Test Package",
+      "subtitle": "Update package info, tests and questions",
+      "notFound": "Package not found",
+      "publishedBadge": "Published",
+      "saving": "Saving...",
+      "publishing": "Publishing...",
+      "unpublishing": "Removing...",
+      "saveChanges": "Save Changes",
+      "saveAndPublish": "Save and Publish",
+      "unpublish": "Unpublish",
+      "saved": "Changes saved",
+      "savedAndPublished": "Saved and published",
+      "unpublished": "Unpublished",
+      "saveFailed": "Save failed",
+      "packagePublishedError": "This action can't be done on a published package",
+      "cannotDeletePublished": "An answered question can't be deleted"
+    }
+  },
+  "manageWrittenTests": {
+    "title": "My Written Tests",
+    "subtitle": "Manage your written test packages",
+    "createNew": "New Written Test",
+    "searchPlaceholder": "Search package...",
+    "loadError": "Failed to load packages",
+    "testsSuffix": "tests",
+    "questionsSuffix": "questions",
+    "free": "Free",
+    "noFilterResults": "No package matches the filter",
+    "filter": {
+      "statusPlaceholder": "Status",
+      "allStatuses": "All statuses",
+      "published": "Published",
+      "draft": "Draft",
+      "examTypePlaceholder": "Exam type",
+      "allExamTypes": "All types",
+      "clear": "Clear"
+    },
+    "badge": {
+      "published": "Published",
+      "draft": "Draft"
+    },
+    "actions": {
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "edit": "Edit"
+    },
+    "empty": {
+      "title": "You don't have any written test packages yet",
+      "desc": "Create your first written test package and share your educational content"
+    },
+    "toasts": {
+      "statusUpdated": "Publish status updated",
+      "actionFailed": "Action failed"
+    }
   }
 }

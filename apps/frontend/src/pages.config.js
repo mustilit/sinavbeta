@@ -145,6 +145,10 @@ const MyModerationStatus = lazy(() => import('./pages/MyModerationStatus'));
 const RiskyContent = lazy(() => import('./pages/RiskyContent'));
 // Yedekleme Yönetimi
 const BackupManagement = lazy(() => import('./pages/BackupManagement'));
+// Yazılı test modülü — eğitici
+const CreateWrittenTest = lazy(() => import('./pages/CreateWrittenTest'));
+const EditWrittenTest = lazy(() => import('./pages/EditWrittenTest'));
+const ManageWrittenTests = lazy(() => import('./pages/ManageWrittenTests'));
 
 
 export const PAGES = {
@@ -236,6 +240,9 @@ export const PAGES = {
     "MyModerationStatus": MyModerationStatus,
     "RiskyContent": RiskyContent,
     "BackupManagement": BackupManagement,
+    "CreateWrittenTest": CreateWrittenTest,
+    "EditWrittenTest": EditWrittenTest,
+    "ManageWrittenTests": ManageWrittenTests,
 }
 
 export const pagesConfig = {

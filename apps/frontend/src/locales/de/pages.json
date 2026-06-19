@@ -1846,5 +1846,148 @@
     "gotIt": "Verstanden",
     "trigger": "Was ist ein Tunnel?",
     "point4": "Ein Tunnel wird nur einmal abgeschlossen. Der von dir erzielte Fortschritt kann nicht rückgängig gemacht werden."
+  },
+  "writtenTestForm": {
+    "steps": {
+      "package": "Paket",
+      "tests": "Tests",
+      "preview": "Vorschau"
+    },
+    "nav": {
+      "back": "Zurück",
+      "next": "Weiter",
+      "previewNext": "Vorschau"
+    },
+    "package": {
+      "sectionTitle": "Paketinformationen",
+      "titleLabel": "Pakettitel",
+      "titlePlaceholder": "z. B. TYT Mathe Schriftliche Prüfung",
+      "descLabel": "Beschreibung",
+      "descPlaceholder": "Beschreibe das Paket kurz",
+      "examTypeLabel": "Prüfungstyp",
+      "examTypePlaceholder": "Prüfungstyp wählen",
+      "examTypeNone": "Nicht angegeben",
+      "priceLabel": "Preis (TL)",
+      "pricePlaceholder": "0 = kostenlos"
+    },
+    "testsStep": {
+      "title": "Tests und Fragen",
+      "subtitle": "Füge für jeden Test einen Titel und Fragen hinzu",
+      "addTest": "Test hinzufügen",
+      "maxTestsReached": "Es können höchstens {{max}} Tests hinzugefügt werden",
+      "validateAtLeastOne": "Du musst mindestens einen Test und eine gültige Frage hinzufügen"
+    },
+    "testCard": {
+      "indexLabel": "Test {{index}}",
+      "titlePlaceholder": "Testtitel eingeben",
+      "questionsSuffix": "Fragen",
+      "completedSuffix": "mit Lösung",
+      "addQuestion": "Frage hinzufügen",
+      "maxQuestionsReached": "Es können höchstens {{max}} Fragen hinzugefügt werden"
+    },
+    "question": {
+      "editDialogTitle": "Frage {{n}}",
+      "contentLabel": "Fragetext",
+      "contentPlaceholder": "Schreibe die Frage hier...",
+      "imageLabel": "Fragebild",
+      "selectImage": "Bild wählen",
+      "clearImage": "Entfernen",
+      "topicLabel": "Thema",
+      "topicPlaceholder": "Thema wählen",
+      "topicNone": "Kein Thema",
+      "topicSearchPlaceholder": "Thema suchen...",
+      "topicEmpty": "Kein Thema gefunden",
+      "solutionLabel": "Lösung (Pflicht)",
+      "solutionPlaceholder": "Schreibe die Lösungserklärung...",
+      "solutionImageSelect": "Lösungsbild wählen",
+      "errorMissingContent": "Fragetext oder -bild ist erforderlich",
+      "errorMissingSolution": "Lösungstext ist erforderlich",
+      "untitled": "(Leere Frage)",
+      "hasSolution": "Mit Lösung",
+      "noSolution": "Ohne Lösung"
+    },
+    "dialog": {
+      "cancel": "Abbrechen",
+      "saveAndNew": "Speichern und neu",
+      "saving": "Speichern...",
+      "complete": "Fertig",
+      "genericError": "Ein Fehler ist aufgetreten"
+    },
+    "preview": {
+      "sectionTitle": "Vorschau",
+      "packageTitleLabel": "Pakettitel",
+      "priceLabel": "Preis",
+      "free": "Kostenlos",
+      "summary": "Zusammenfassung",
+      "testsCount": "{{count}} Tests",
+      "validQuestions": "{{count}} gültige Fragen",
+      "testsListTitle": "Tests"
+    },
+    "validations": {
+      "titleRequired": "Pakettitel ist erforderlich"
+    },
+    "createPage": {
+      "title": "Neues schriftliches Testpaket",
+      "subtitle": "Erstelle ein Paket aus offenen Fragen",
+      "publishing": "Wird veröffentlicht...",
+      "saving": "Speichern...",
+      "saveAsDraft": "Als Entwurf speichern",
+      "createAndPublish": "Erstellen und veröffentlichen"
+    },
+    "editPage": {
+      "title": "Schriftliches Testpaket bearbeiten",
+      "subtitle": "Aktualisiere Paketinfos, Tests und Fragen",
+      "notFound": "Paket nicht gefunden",
+      "publishedBadge": "Veröffentlicht",
+      "saving": "Speichern...",
+      "publishing": "Wird veröffentlicht...",
+      "unpublishing": "Wird entfernt...",
+      "saveChanges": "Änderungen speichern",
+      "saveAndPublish": "Speichern und veröffentlichen",
+      "unpublish": "Veröffentlichung zurückziehen",
+      "saved": "Änderungen gespeichert",
+      "savedAndPublished": "Gespeichert und veröffentlicht",
+      "unpublished": "Veröffentlichung zurückgezogen",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "packagePublishedError": "Diese Aktion ist bei einem veröffentlichten Paket nicht möglich",
+      "cannotDeletePublished": "Eine beantwortete Frage kann nicht gelöscht werden"
+    }
+  },
+  "manageWrittenTests": {
+    "title": "Meine schriftlichen Tests",
+    "subtitle": "Verwalte deine schriftlichen Testpakete",
+    "createNew": "Neuer schriftlicher Test",
+    "searchPlaceholder": "Paket suchen...",
+    "loadError": "Pakete konnten nicht geladen werden",
+    "testsSuffix": "Tests",
+    "questionsSuffix": "Fragen",
+    "free": "Kostenlos",
+    "noFilterResults": "Kein Paket entspricht dem Filter",
+    "filter": {
+      "statusPlaceholder": "Status",
+      "allStatuses": "Alle Status",
+      "published": "Veröffentlicht",
+      "draft": "Entwurf",
+      "examTypePlaceholder": "Prüfungstyp",
+      "allExamTypes": "Alle Typen",
+      "clear": "Zurücksetzen"
+    },
+    "badge": {
+      "published": "Veröffentlicht",
+      "draft": "Entwurf"
+    },
+    "actions": {
+      "publish": "Veröffentlichen",
+      "unpublish": "Zurückziehen",
+      "edit": "Bearbeiten"
+    },
+    "empty": {
+      "title": "Du hast noch keine schriftlichen Testpakete",
+      "desc": "Erstelle dein erstes schriftliches Testpaket und teile deine Lerninhalte"
+    },
+    "toasts": {
+      "statusUpdated": "Veröffentlichungsstatus aktualisiert",
+      "actionFailed": "Aktion fehlgeschlagen"
+    }
   }
 }

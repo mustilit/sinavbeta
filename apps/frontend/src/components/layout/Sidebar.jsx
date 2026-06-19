@@ -112,6 +112,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     { name: t("sidebar.educator.myTestPackages"), page: "MyTestPackages", icon: BookOpen },
     { name: t("sidebar.educator.createTest"), page: "CreateTest", icon: Plus },
     { name: t("sidebar.educator.myTunnels"), page: "ManageTunnels", icon: Layers },
+    { name: t("sidebar.educator.myWrittenTests"), page: "ManageWrittenTests", icon: FileText },
     { name: t("sidebar.educator.mySales"), page: "MySales", icon: ShoppingBag },
     { name: t("sidebar.educator.myDiscountCodes"), page: "MyDiscountCodes", icon: Award },
     { name: t("sidebar.educator.myAds"), page: "MyAds", icon: Megaphone },
