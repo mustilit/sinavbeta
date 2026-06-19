@@ -11,4 +11,10 @@ export class SubmitWrittenAnswerDto {
   @IsString()
   @MaxLength(10000)
   textAnswer?: string;
+
+  @ApiPropertyOptional({ description: 'Kalem çizimi URL (/upload/image) — cevaba dahil' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  drawingUrl?: string;
 }

@@ -2019,7 +2019,8 @@
     "reportFailed": "No se pudo enviar el reporte",
     "saveError": "No se pudo guardar la respuesta",
     "genericError": "Ocurrió un error",
-    "timeUp": "Se acabó el tiempo"
+    "timeUp": "Se acabó el tiempo",
+    "yourDrawing": "Tu dibujo"
   },
   "writtenDetail": {
     "notFound": "Paquete no encontrado",

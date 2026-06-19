@@ -2016,7 +2016,8 @@
     "reportFailed": "Could not send report",
     "saveError": "Could not save answer",
     "genericError": "An error occurred",
-    "timeUp": "Time is up"
+    "timeUp": "Time is up",
+    "yourDrawing": "Your Drawing"
   },
   "writtenDetail": {
     "notFound": "Package not found",

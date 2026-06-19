@@ -1045,6 +1045,9 @@ model AdminSettings {
   minQuestionsPerTest              Int       @default(1) // Test başına minimum soru sayısı
   maxQuestionsPerTest              Int       @default(100) // Test başına maksimum soru sayısı
   maxTestsPerPackage               Int       @default(10) // Paket başına maksimum test sayısı
+  maxWrittenTestsPerPackage        Int       @default(10) // Yazılı paket başına maksimum yazılı test
+  minQuestionsPerWrittenTest       Int       @default(1)  // Yazılı test başına minimum soru
+  maxQuestionsPerWrittenTest       Int       @default(50) // Yazılı test başına maksimum soru
   maxLiveQuestions                 Int       @default(50) // Canlı oturum başına maksimum soru sayısı
   // ── Tünel limitleri (Test Yönetimi) ───────────────────────────────────────
   maxLayersPerTunnel               Int       @default(7) // Tünel başına katman sayısı
@@ -2241,6 +2244,7 @@ model WrittenAnswer {
   attemptId  String
   questionId String
   textAnswer String?
+  drawingUrl String? // aday kalem çizimi (PNG, /upload/image) — açık uçlu cevaba dahil
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

@@ -102,7 +102,7 @@ describe('StartWrittenAttemptUseCase', () => {
 describe('SubmitWrittenAnswerUseCase', () => {
   it('boş metin → cevabı siler (blank)', async () => {
     p.writtenAttempt.findUnique.mockResolvedValue({ id: 'a1', candidateId: 'u1', status: 'IN_PROGRESS' });
-    const out = await new SubmitWrittenAnswerUseCase().execute('a1', 'q1', '   ', 'u1');
+    const out = await new SubmitWrittenAnswerUseCase().execute('a1', 'q1', { textAnswer: '   ' }, 'u1');
     expect(out).toMatchObject({ cleared: true });
     expect(p.writtenAnswer.deleteMany).toHaveBeenCalled();
     expect(p.writtenAnswer.upsert).not.toHaveBeenCalled();
@@ -110,8 +110,24 @@ describe('SubmitWrittenAnswerUseCase', () => {
 
   it('dolu metin → upsert', async () => {
     p.writtenAttempt.findUnique.mockResolvedValue({ id: 'a1', candidateId: 'u1', status: 'IN_PROGRESS' });
-    await new SubmitWrittenAnswerUseCase().execute('a1', 'q1', 'cevabım', 'u1');
+    await new SubmitWrittenAnswerUseCase().execute('a1', 'q1', { textAnswer: 'cevabım' }, 'u1');
     expect(p.writtenAnswer.upsert).toHaveBeenCalled();
+  });
+
+  it('SADECE çizim (metin boş) → upsert (drawingUrl cevaba dahil, silinmez)', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue({ id: 'a1', candidateId: 'u1', status: 'IN_PROGRESS' });
+    await new SubmitWrittenAnswerUseCase().execute('a1', 'q1', { textAnswer: '', drawingUrl: '/uploads/d.png' }, 'u1');
+    expect(p.writtenAnswer.deleteMany).not.toHaveBeenCalled();
+    const arg = p.writtenAnswer.upsert.mock.calls[0][0];
+    expect(arg.create.drawingUrl).toBe('/uploads/d.png');
+    expect(arg.create.textAnswer).toBeNull();
+  });
+
+  it('metin VE çizim boş → cevabı siler', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue({ id: 'a1', candidateId: 'u1', status: 'IN_PROGRESS' });
+    const out = await new SubmitWrittenAnswerUseCase().execute('a1', 'q1', { textAnswer: '', drawingUrl: '' }, 'u1');
+    expect(out).toMatchObject({ cleared: true });
+    expect(p.writtenAnswer.deleteMany).toHaveBeenCalled();
   });
 });
 

@@ -7,6 +7,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     writtenTest: { findUnique: jest.fn() },
     writtenQuestion: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), delete: jest.fn(), count: jest.fn() },
     writtenPackage: { findUnique: jest.fn() },
+    adminSettings: { findFirst: jest.fn() },
   },
 }));
 

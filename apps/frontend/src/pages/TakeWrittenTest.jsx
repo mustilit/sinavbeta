@@ -45,8 +45,12 @@ function TakeWrittenTest() {
   });
   const [isDrawing, setIsDrawing] = useState(false);
   const [, setHasDrawings] = useState(false);
+  const [drawings, setDrawings] = useState({}); // questionId -> drawingUrl
   const canvasRef = useRef(null);
   const saveTimers = useRef({});
+  const drawingDirty = useRef(false);
+
+  const handleHasDrawings = (v) => { setHasDrawings(v); if (v) drawingDirty.current = true; };
 
   useEffect(() => {
     try { localStorage.setItem("dal_exam_theme", examTheme); } catch { /* yoksay */ }
@@ -59,8 +63,13 @@ function TakeWrittenTest() {
     const st = await api.getState(aid);
     setState(st);
     const a = {};
-    for (const q of st.questions) a[q.id] = q.textAnswer ?? "";
+    const dr = {};
+    for (const q of st.questions) {
+      a[q.id] = q.textAnswer ?? "";
+      if (q.drawingUrl) dr[q.id] = q.drawingUrl;
+    }
     setAnswers(a);
+    setDrawings(dr);
     setRemaining(st.timing?.remainingSeconds ?? null);
     return st;
   }, []);
@@ -107,11 +116,50 @@ function TakeWrittenTest() {
     setAnswers((prev) => ({ ...prev, [qid]: val }));
     clearTimeout(saveTimers.current[qid]);
     saveTimers.current[qid] = setTimeout(() => {
-      api.submitAnswer(attemptId, { questionId: qid, textAnswer: val }).catch(() =>
+      // drawingUrl korunur (yoksa null → metin-only)
+      api.submitAnswer(attemptId, { questionId: qid, textAnswer: val, drawingUrl: drawings[qid] }).catch(() =>
         toast.error(t("pages:takeWritten.saveError")),
       );
     }, 800);
   };
+
+  // Kalem çizimini yakala (yalnız değiştiyse) → yükle → cevaba drawingUrl olarak kaydet.
+  // Dönüş: yeni URL veya null.
+  const captureCurrentDrawing = useCallback(async () => {
+    if (submitted || !attemptId || !q || !drawingDirty.current) return null;
+    const dataUrl = canvasRef.current?.toDataURL?.();
+    drawingDirty.current = false;
+    if (!dataUrl) return null; // boş çizim
+    try {
+      const { url } = await api.uploadDrawing(dataUrl);
+      if (!url) return null;
+      setDrawings((prev) => ({ ...prev, [q.id]: url }));
+      await api.submitAnswer(attemptId, { questionId: q.id, textAnswer: answers[q.id] ?? "", drawingUrl: url });
+      return url;
+    } catch {
+      toast.error(t("pages:takeWritten.saveError"));
+      return null;
+    }
+  }, [submitted, attemptId, q, answers, t]);
+
+  // Soru değiştir: önce mevcut çizimi yakala, sonra geç.
+  const goTo = async (idx) => {
+    await captureCurrentDrawing();
+    setShowSolution(false);
+    setCurrent(idx);
+  };
+
+  // Soru değişince kayıtlı çizimi geri yükle (canvas questionId değişiminde temizlenir → sonra yükle).
+  useEffect(() => {
+    if (!q || submitted) return;
+    const url = drawings[q.id];
+    drawingDirty.current = false;
+    const id = setTimeout(() => {
+      if (url && canvasRef.current?.loadDataUrl) canvasRef.current.loadDataUrl(url);
+    }, 60);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, attemptId, submitted]);
 
   const toggleSolution = async () => {
     if (!showSolution && q && !submitted && !solutions[q.id]) {
@@ -135,10 +183,14 @@ function TakeWrittenTest() {
     if (!window.confirm(t("pages:takeWritten.submitConfirm"))) return;
     setSubmitting(true);
     try {
-      // bekleyen autosave'leri zorla
+      // bekleyen autosave'leri zorla + mevcut çizimi yakala
       Object.values(saveTimers.current).forEach(clearTimeout);
+      const capturedUrl = await captureCurrentDrawing();
+      const localDrawings = { ...drawings, ...(capturedUrl && q ? { [q.id]: capturedUrl } : {}) };
       await Promise.all(
-        questions.map((qq) => api.submitAnswer(attemptId, { questionId: qq.id, textAnswer: answers[qq.id] ?? "" }).catch(() => {})),
+        questions.map((qq) =>
+          api.submitAnswer(attemptId, { questionId: qq.id, textAnswer: answers[qq.id] ?? "", drawingUrl: localDrawings[qq.id] }).catch(() => {}),
+        ),
       );
       await api.finish(attemptId);
       await loadState(attemptId);
@@ -189,7 +241,7 @@ function TakeWrittenTest() {
         {/* Soru kartı */}
         <div className="relative rounded-2xl border border-slate-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
           <TestWatermark identity={{ name: user?.full_name || user?.username || user?.email, email: user?.email }} />
-          <QuestionCanvas ref={canvasRef} isActive={isDrawing} questionId={q.id} onHasDrawings={setHasDrawings} />
+          <QuestionCanvas ref={canvasRef} isActive={isDrawing} questionId={q.id} onHasDrawings={handleHasDrawings} />
           <div className="mb-2 text-xs font-semibold text-indigo-600">{t("pages:takeWritten.questionNav", { n: current + 1 })} / {questions.length}</div>
           {q.content && <p className="whitespace-pre-wrap text-slate-900 dark:text-gray-100">{q.content}</p>}
           {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mt-3 max-h-72 rounded-lg object-contain" />}
@@ -216,7 +268,14 @@ function TakeWrittenTest() {
                 {submitted && (
                   <div className="mb-3 rounded-lg bg-white p-3 text-sm dark:bg-gray-900">
                     <div className="mb-1 text-xs font-semibold text-slate-500">{t("pages:takeWritten.yourAnswer")}</div>
-                    <div className="whitespace-pre-wrap text-slate-800 dark:text-gray-100">{(answers[q.id] ?? "").trim() || <span className="italic text-slate-400">{t("pages:takeWritten.noAnswer")}</span>}</div>
+                    {(answers[q.id] ?? "").trim() || drawings[q.id] ? (
+                      <>
+                        {(answers[q.id] ?? "").trim() && <div className="whitespace-pre-wrap text-slate-800 dark:text-gray-100">{answers[q.id]}</div>}
+                        {drawings[q.id] && <img src={drawings[q.id]} alt={t("pages:takeWritten.yourDrawing")} className="mt-2 max-h-72 rounded border border-slate-200 object-contain" />}
+                      </>
+                    ) : (
+                      <span className="italic text-slate-400">{t("pages:takeWritten.noAnswer")}</span>
+                    )}
                   </div>
                 )}
                 <div className="text-xs font-semibold text-indigo-700">{t("pages:takeWritten.solutionTitle")}</div>
@@ -229,16 +288,16 @@ function TakeWrittenTest() {
 
         {/* Navigasyon */}
         <div className="mt-4 flex items-center justify-between gap-2">
-          <Button variant="outline" size="sm" disabled={current === 0} onClick={() => { setCurrent((c) => Math.max(0, c - 1)); setShowSolution(false); }}><ChevronLeft className="h-4 w-4" />{t("pages:takeWritten.prev")}</Button>
+          <Button variant="outline" size="sm" disabled={current === 0} onClick={() => goTo(Math.max(0, current - 1))}><ChevronLeft className="h-4 w-4" />{t("pages:takeWritten.prev")}</Button>
           <div className="flex flex-wrap justify-center gap-1">
             {questions.map((qq, i) => (
-              <button key={qq.id} type="button" onClick={() => { setCurrent(i); setShowSolution(false); }}
-                className={`h-8 w-8 rounded-md text-xs font-semibold ${i === current ? "bg-indigo-600 text-white" : (answers[qq.id] ?? "").trim() ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+              <button key={qq.id} type="button" onClick={() => goTo(i)}
+                className={`h-8 w-8 rounded-md text-xs font-semibold ${i === current ? "bg-indigo-600 text-white" : ((answers[qq.id] ?? "").trim() || drawings[qq.id]) ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                 {i + 1}
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm" disabled={current === questions.length - 1} onClick={() => { setCurrent((c) => Math.min(questions.length - 1, c + 1)); setShowSolution(false); }}>{t("pages:takeWritten.next")}<ChevronRight className="h-4 w-4" /></Button>
+          <Button variant="outline" size="sm" disabled={current === questions.length - 1} onClick={() => goTo(Math.min(questions.length - 1, current + 1))}>{t("pages:takeWritten.next")}<ChevronRight className="h-4 w-4" /></Button>
         </div>
 
         {/* Teslim */}

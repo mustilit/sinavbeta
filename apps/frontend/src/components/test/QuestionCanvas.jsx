@@ -22,6 +22,37 @@ const QuestionCanvas = forwardRef(function QuestionCanvas(
       c.getContext("2d").clearRect(0, 0, c.width, c.height);
       onHasDrawings?.(false);
     },
+    /** Boş mu? (hiç çizilmemiş — tüm pikseller şeffaf) */
+    isBlank() {
+      const c = canvasRef.current;
+      if (!c || !c.width || !c.height) return true;
+      const data = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+      for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return false;
+      return true;
+    },
+    /** Çizimi PNG dataURL olarak ver (boşsa null). */
+    toDataURL() {
+      const c = canvasRef.current;
+      if (!c) return null;
+      const data = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+      let blank = true;
+      for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) { blank = false; break; }
+      return blank ? null : c.toDataURL("image/png");
+    },
+    /** Kayıtlı çizimi geri yükle (resume / öz-kıyas). */
+    loadDataUrl(url) {
+      const c = canvasRef.current;
+      if (!c || !url) return;
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const ctx = c.getContext("2d");
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        onHasDrawings?.(true);
+      };
+      img.src = url;
+    },
   }));
 
   // Soru değişince çizgileri sıfırla

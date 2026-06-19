@@ -118,6 +118,12 @@ export type AdminSettings = {
   maxQuestionsPerTest: number;
   /** Paket başına maksimum test sayısı. Pakete test eklerken kontrol edilir. */
   maxTestsPerPackage: number;
+  /** Yazılı paket başına maksimum yazılı test. */
+  maxWrittenTestsPerPackage?: number;
+  /** Yazılı test başına minimum soru (yayında kontrol edilir). */
+  minQuestionsPerWrittenTest?: number;
+  /** Yazılı test başına maksimum soru (soru eklerken kontrol edilir). */
+  maxQuestionsPerWrittenTest?: number;
   /** Canlı oturum başına maksimum soru sayısı. Oturum oluştururken kontrol edilir. */
   maxLiveQuestions: number;
   /** Tünel başına katman sayısı (oluşturmada snapshot'lanır). */

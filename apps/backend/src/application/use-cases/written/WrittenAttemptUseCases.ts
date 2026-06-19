@@ -100,21 +100,28 @@ async function loadOwnedAttempt(attemptId: string, candidateId: string) {
 
 /** Metin cevabı kaydet/güncelle (boş → sil). Sadece IN_PROGRESS (süre aşımında da kabul). */
 export class SubmitWrittenAnswerUseCase {
-  async execute(attemptId: string, questionId: string, textAnswerRaw: string | null | undefined, actorId?: string | null) {
+  async execute(
+    attemptId: string,
+    questionId: string,
+    payload: { textAnswer?: string | null; drawingUrl?: string | null },
+    actorId?: string | null,
+  ) {
     if (!actorId) throw new AppError('UNAUTHORIZED', 'Giriş gerekli', 401);
     const attempt = await loadOwnedAttempt(attemptId, actorId);
     if (attempt.status !== 'IN_PROGRESS')
       throw new AppError('ATTEMPT_NOT_IN_PROGRESS', 'Deneme aktif değil', 409);
 
-    const text = (textAnswerRaw ?? '').trim().slice(0, MAX_ANSWER);
-    if (!text) {
+    const text = (payload?.textAnswer ?? '').trim().slice(0, MAX_ANSWER);
+    const drawingUrl = (payload?.drawingUrl ?? '').trim() || null;
+    // Metin VE çizim boşsa cevabı sil (blank). Kalem çizimi de cevaba dahildir.
+    if (!text && !drawingUrl) {
       await prisma.writtenAnswer.deleteMany({ where: { attemptId, questionId } });
       return { ok: true, cleared: true };
     }
     await prisma.writtenAnswer.upsert({
       where: { attemptId_questionId: { attemptId, questionId } },
-      create: { attemptId, questionId, textAnswer: text },
-      update: { textAnswer: text },
+      create: { attemptId, questionId, textAnswer: text || null, drawingUrl },
+      update: { textAnswer: text || null, drawingUrl },
     });
     return { ok: true };
   }
@@ -134,21 +141,24 @@ export class GetWrittenAttemptStateUseCase {
     const snap = (attempt.questionsSnapshot as SnapQuestion[] | null) ?? [];
     const answers = await prisma.writtenAnswer.findMany({
       where: { attemptId },
-      select: { questionId: true, textAnswer: true },
+      select: { questionId: true, textAnswer: true, drawingUrl: true },
     });
-    const answerByQ = new Map(answers.map((a) => [a.questionId, a.textAnswer]));
+    const answerByQ = new Map(answers.map((a) => [a.questionId, a]));
     const submitted = attempt.status === 'SUBMITTED' || attempt.status === 'TIMEOUT';
 
     const questions = snap.map((q, i) => {
-      const textAnswer = answerByQ.get(q.id) ?? null;
+      const ans = answerByQ.get(q.id);
+      const textAnswer = ans?.textAnswer ?? null;
+      const drawingUrl = ans?.drawingUrl ?? null;
       return {
         id: q.id,
         index: i,
         order: q.order,
         content: q.content,
         mediaUrl: q.mediaUrl,
-        answered: textAnswer != null && textAnswer.length > 0,
+        answered: (textAnswer != null && textAnswer.length > 0) || drawingUrl != null,
         textAnswer,
+        drawingUrl,
         // Çözüm sızıntısı engeli: yalnız teslim sonrası inline döner (öz-kıyas).
         ...(submitted ? { solutionText: q.solutionText, solutionMediaUrl: q.solutionMediaUrl } : {}),
       };

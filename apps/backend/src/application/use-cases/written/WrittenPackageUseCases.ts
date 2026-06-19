@@ -142,11 +142,23 @@ export class PublishWrittenPackageUseCase {
       throw new AppError('NO_TESTS', 'Paket en az bir test içermeli', 400);
     }
 
+    // Admin limiti: yazılı test başına min/max soru
+    const settings = await prisma.adminSettings.findFirst({ where: { id: 1 } });
+    const minQ = (settings as any)?.minQuestionsPerWrittenTest ?? 1;
+    const maxQ = (settings as any)?.maxQuestionsPerWrittenTest ?? 50;
+
     for (const test of tests) {
-      if (test.questions.length === 0) {
+      if (test.questions.length < minQ) {
         throw new AppError(
           'TEST_HAS_NO_QUESTIONS',
-          `"${test.title}" testi en az bir soru içermeli`,
+          `"${test.title}" testi en az ${minQ} soru içermeli`,
+          400,
+        );
+      }
+      if (test.questions.length > maxQ) {
+        throw new AppError(
+          'TEST_TOO_MANY_QUESTIONS',
+          `"${test.title}" testi en fazla ${maxQ} soru içerebilir`,
           400,
         );
       }

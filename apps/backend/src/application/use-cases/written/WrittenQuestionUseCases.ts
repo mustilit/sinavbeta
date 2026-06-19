@@ -114,6 +114,14 @@ export class CreateWrittenQuestionUseCase {
     }
     assertNotPublished(pkg);
 
+    // Admin limiti: yazılı test başına maksimum soru
+    const settings = await prisma.adminSettings.findFirst({ where: { id: 1 } });
+    const maxQ = (settings as any)?.maxQuestionsPerWrittenTest ?? 50;
+    const currentQ = await prisma.writtenQuestion.count({ where: { testId: test.id } });
+    if (currentQ >= maxQ) {
+      throw new AppError('QUESTION_LIMIT_EXCEEDED', `Bu yazılı teste en fazla ${maxQ} soru eklenebilir`, 400);
+    }
+
     const question = await prisma.writtenQuestion.create({
       data: {
         testId: test.id,

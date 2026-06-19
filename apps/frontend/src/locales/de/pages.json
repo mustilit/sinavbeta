@@ -2016,7 +2016,8 @@
     "reportFailed": "Meldung konnte nicht gesendet werden",
     "saveError": "Antwort konnte nicht gespeichert werden",
     "genericError": "Ein Fehler ist aufgetreten",
-    "timeUp": "Die Zeit ist um"
+    "timeUp": "Die Zeit ist um",
+    "yourDrawing": "Deine Zeichnung"
   },
   "writtenDetail": {
     "notFound": "Paket nicht gefunden",

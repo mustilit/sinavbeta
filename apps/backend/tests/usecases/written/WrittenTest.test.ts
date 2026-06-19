@@ -5,7 +5,8 @@
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     writtenPackage: { findUnique: jest.fn() },
-    writtenTest: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+    writtenTest: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), count: jest.fn() },
+    adminSettings: { findFirst: jest.fn() },
   },
 }));
 
@@ -100,6 +101,16 @@ describe('CreateWrittenTestUseCase', () => {
     expect(createCall.isTimed).toBe(true);
     expect(createCall.duration).toBe(60);
     expect(createCall.status).toBe('DRAFT');
+  });
+
+  it('admin limiti aşılırsa → PACKAGE_FULL', async () => {
+    p.writtenPackage.findUnique.mockResolvedValue(makePkg());
+    p.adminSettings.findFirst.mockResolvedValue({ maxWrittenTestsPerPackage: 2 });
+    p.writtenTest.count.mockResolvedValue(2);
+    await expect(
+      new CreateWrittenTestUseCase().execute({ packageId: 'pkg1', title: 'T' }, 'edu1'),
+    ).rejects.toMatchObject({ code: 'PACKAGE_FULL' });
+    expect(p.writtenTest.create).not.toHaveBeenCalled();
   });
 });
 

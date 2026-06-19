@@ -2016,7 +2016,8 @@
     "reportFailed": "无法发送报告",
     "saveError": "无法保存答案",
     "genericError": "发生错误",
-    "timeUp": "时间到"
+    "timeUp": "时间到",
+    "yourDrawing": "你的手绘"
   },
   "writtenDetail": {
     "notFound": "未找到套餐",

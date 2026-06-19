@@ -2077,6 +2077,14 @@ export const candidateWritten = {
     const { data } = await api.post(`/candidate-written/tests/${testId}/report`, { questionId, reason });
     return data;
   },
+  /** Kalem çizimini (PNG dataURL) yükle → { url } (cevaba drawingUrl olarak eklenir) */
+  uploadDrawing: async (dataUrl) => {
+    const blob = await (await fetch(dataUrl)).blob();
+    const fd = new FormData();
+    fd.append('file', new File([blob], 'drawing.png', { type: 'image/png' }));
+    const { data } = await api.post('/upload/image', fd);
+    return data;
+  },
 };
 
 export default api;

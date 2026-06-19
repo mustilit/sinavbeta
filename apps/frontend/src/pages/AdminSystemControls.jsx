@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   ShoppingCart,
   Package,
+  FileText,
   Radio,
   PlayCircle,
   Megaphone,
@@ -294,6 +295,9 @@ export default function AdminSystemControls() {
     minQuestionsPerTest: "",
     maxQuestionsPerTest: "",
     maxTestsPerPackage: "",
+    maxWrittenTestsPerPackage: "",
+    minQuestionsPerWrittenTest: "",
+    maxQuestionsPerWrittenTest: "",
     maxLiveQuestions: "",
     maxLayersPerTunnel: "",
     minQuestionsPerLayer: "",
@@ -759,6 +763,75 @@ export default function AdminSystemControls() {
                 {savingTc === "maxTestsPerPackage" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 Kaydet
               </button>
+            </div>
+          </div>
+
+          {/* Yazılı paket başına test limiti */}
+          <div className="p-5 bg-white border border-slate-200 rounded-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0">
+                <Package className="w-5 h-5 text-violet-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Yazılı Paket Başına Maksimum Yazılı Test</p>
+                <p className="text-sm text-slate-500">
+                  Bir yazılı test paketine eklenebilecek maksimum yazılı test sayısı.
+                  Mevcut: <strong className="text-slate-700">{settings?.maxWrittenTestsPerPackage ?? 10} yazılı</strong>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <input type="number" min="1" placeholder={`${settings?.maxWrittenTestsPerPackage ?? 10}`}
+                value={tcInputs.maxWrittenTestsPerPackage}
+                onChange={(e) => setTcInputs((p) => ({ ...p, maxWrittenTestsPerPackage: e.target.value }))}
+                className="flex-1 max-w-xs px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+              <button onClick={() => handleTcSave("maxWrittenTestsPerPackage", 1)}
+                disabled={!tcInputs.maxWrittenTestsPerPackage || savingTc === "maxWrittenTestsPerPackage"}
+                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                {savingTc === "maxWrittenTestsPerPackage" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Kaydet
+              </button>
+            </div>
+          </div>
+
+          {/* Yazılı test başına min/max soru limiti */}
+          <div className="p-5 bg-white border border-slate-200 rounded-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-violet-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Yazılı Test Başına Soru Limiti</p>
+                <p className="text-sm text-slate-500">
+                  Mevcut: <strong className="text-slate-700">min {settings?.minQuestionsPerWrittenTest ?? 1} / max {settings?.maxQuestionsPerWrittenTest ?? 50} soru</strong>
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 w-8">Min</span>
+                <input type="number" min="1" placeholder={`${settings?.minQuestionsPerWrittenTest ?? 1}`}
+                  value={tcInputs.minQuestionsPerWrittenTest}
+                  onChange={(e) => setTcInputs((p) => ({ ...p, minQuestionsPerWrittenTest: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+                <button onClick={() => handleTcSave("minQuestionsPerWrittenTest", 1)}
+                  disabled={!tcInputs.minQuestionsPerWrittenTest || savingTc === "minQuestionsPerWrittenTest"}
+                  className="px-3 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg flex items-center gap-1">
+                  {savingTc === "minQuestionsPerWrittenTest" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}Kaydet
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 w-8">Max</span>
+                <input type="number" min="1" placeholder={`${settings?.maxQuestionsPerWrittenTest ?? 50}`}
+                  value={tcInputs.maxQuestionsPerWrittenTest}
+                  onChange={(e) => setTcInputs((p) => ({ ...p, maxQuestionsPerWrittenTest: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+                <button onClick={() => handleTcSave("maxQuestionsPerWrittenTest", 1)}
+                  disabled={!tcInputs.maxQuestionsPerWrittenTest || savingTc === "maxQuestionsPerWrittenTest"}
+                  className="px-3 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg flex items-center gap-1">
+                  {savingTc === "maxQuestionsPerWrittenTest" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}Kaydet
+                </button>
+              </div>
             </div>
           </div>
 

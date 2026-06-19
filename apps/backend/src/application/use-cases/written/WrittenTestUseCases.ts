@@ -76,6 +76,14 @@ export class CreateWrittenTestUseCase {
     }
     assertNotPublished(pkg);
 
+    // Admin limiti: paket başına maksimum yazılı test
+    const settings = await prisma.adminSettings.findFirst({ where: { id: 1 } });
+    const maxTests = (settings as any)?.maxWrittenTestsPerPackage ?? 10;
+    const currentTests = await prisma.writtenTest.count({ where: { packageId: pkg.id, deletedAt: null } });
+    if (currentTests >= maxTests) {
+      throw new AppError('PACKAGE_FULL', `Pakete en fazla ${maxTests} yazılı test eklenebilir`, 400);
+    }
+
     return prisma.writtenTest.create({
       data: {
         tenantId: pkg.tenantId,

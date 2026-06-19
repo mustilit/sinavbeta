@@ -2016,7 +2016,8 @@
     "reportFailed": "Bildirim gönderilemedi",
     "saveError": "Cevap kaydedilemedi",
     "genericError": "Bir hata oluştu",
-    "timeUp": "Süre doldu"
+    "timeUp": "Süre doldu",
+    "yourDrawing": "Çizimin"
   },
   "writtenDetail": {
     "notFound": "Paket bulunamadı",

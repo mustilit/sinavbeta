@@ -98,7 +98,7 @@ export class CandidateWrittenController {
   @Post('attempts/:id/answer')
   @Roles('CANDIDATE')
   async answer(@Param('id') id: string, @Body() dto: SubmitWrittenAnswerDto, @Req() req: any) {
-    return this.answerUC.execute(id, dto.questionId, dto.textAnswer, req.user?.id);
+    return this.answerUC.execute(id, dto.questionId, { textAnswer: dto.textAnswer, drawingUrl: dto.drawingUrl }, req.user?.id);
   }
 
   @Post('attempts/:id/finish')

@@ -32,6 +32,9 @@ export interface UpdateAdminSettingsInput {
   minQuestionsPerTest?: number;
   maxQuestionsPerTest?: number;
   maxTestsPerPackage?: number;
+  maxWrittenTestsPerPackage?: number;
+  minQuestionsPerWrittenTest?: number;
+  maxQuestionsPerWrittenTest?: number;
   maxLiveQuestions?: number;
   maxLayersPerTunnel?: number;
   minQuestionsPerLayer?: number;
@@ -143,6 +146,15 @@ export class UpdateAdminSettingsUseCase {
           UPDATE admin_settings SET "maxTestsPerPackage" = ${input.maxTestsPerPackage} WHERE id = 1
         `;
       }
+      if (input.maxWrittenTestsPerPackage !== undefined) {
+        await prisma.$executeRaw`UPDATE admin_settings SET "maxWrittenTestsPerPackage" = ${input.maxWrittenTestsPerPackage} WHERE id = 1`;
+      }
+      if (input.minQuestionsPerWrittenTest !== undefined) {
+        await prisma.$executeRaw`UPDATE admin_settings SET "minQuestionsPerWrittenTest" = ${input.minQuestionsPerWrittenTest} WHERE id = 1`;
+      }
+      if (input.maxQuestionsPerWrittenTest !== undefined) {
+        await prisma.$executeRaw`UPDATE admin_settings SET "maxQuestionsPerWrittenTest" = ${input.maxQuestionsPerWrittenTest} WHERE id = 1`;
+      }
       if (input.maxLiveQuestions !== undefined) {
         await prisma.$executeRaw`
           UPDATE admin_settings SET "maxLiveQuestions" = ${input.maxLiveQuestions} WHERE id = 1
@@ -222,6 +234,9 @@ export class UpdateAdminSettingsUseCase {
       minQuestionsPerTest,
       maxQuestionsPerTest,
       maxTestsPerPackage,
+      maxWrittenTestsPerPackage: input.maxWrittenTestsPerPackage ?? (row as any).maxWrittenTestsPerPackage ?? 10,
+      minQuestionsPerWrittenTest: input.minQuestionsPerWrittenTest ?? (row as any).minQuestionsPerWrittenTest ?? 1,
+      maxQuestionsPerWrittenTest: input.maxQuestionsPerWrittenTest ?? (row as any).maxQuestionsPerWrittenTest ?? 50,
       maxLiveQuestions,
       maxLayersPerTunnel: (row as any).maxLayersPerTunnel ?? 7,
       minQuestionsPerLayer: (row as any).minQuestionsPerLayer ?? 10,

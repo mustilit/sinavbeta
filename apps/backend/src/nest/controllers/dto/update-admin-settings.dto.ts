@@ -99,6 +99,24 @@ export class UpdateAdminSettingsDto {
   @Min(1)
   maxTestsPerPackage?: number;
 
+  @ApiPropertyOptional({ example: 10, description: 'Yazılı paket başına maksimum yazılı test' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxWrittenTestsPerPackage?: number;
+
+  @ApiPropertyOptional({ example: 1, description: 'Yazılı test başına minimum soru' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  minQuestionsPerWrittenTest?: number;
+
+  @ApiPropertyOptional({ example: 50, description: 'Yazılı test başına maksimum soru' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxQuestionsPerWrittenTest?: number;
+
   @ApiPropertyOptional({ example: 50, description: 'Canlı oturum başına maksimum soru sayısı' })
   @IsOptional()
   @IsInt()
