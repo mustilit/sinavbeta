@@ -1989,5 +1989,56 @@
       "statusUpdated": "发布状态已更新",
       "actionFailed": "操作失败"
     }
+  },
+  "takeWritten": {
+    "loadError": "测试加载失败",
+    "notFound": "未找到测试",
+    "back": "返回",
+    "themeToggle": "阅读模式",
+    "penToggle": "画笔",
+    "report": "报告错误",
+    "submittedBanner": "测试已完成",
+    "selfEvalNote": "本测试不评分；请自行将你的答案与解析对照。",
+    "questionNav": "第 {{n}} 题",
+    "answerLabel": "你的答案",
+    "answerPlaceholder": "在此输入你的答案...",
+    "showSolution": "查看解析",
+    "hideSolution": "隐藏解析",
+    "solutionTitle": "解析",
+    "yourAnswer": "你的答案",
+    "noAnswer": "（留空）",
+    "prev": "上一题",
+    "next": "下一题",
+    "submit": "结束测试",
+    "submitting": "提交中...",
+    "submitConfirm": "确定要结束吗？结束后可将你的答案与解析对照。",
+    "reportSent": "错误报告已发送",
+    "reportFailed": "无法发送报告",
+    "saveError": "无法保存答案",
+    "genericError": "发生错误",
+    "timeUp": "时间到"
+  },
+  "writtenDetail": {
+    "notFound": "未找到套餐",
+    "free": "免费",
+    "back": "返回",
+    "review": "查看",
+    "continue": "继续",
+    "start": "开始",
+    "typeBadge": "笔试",
+    "priceLabel": "价格",
+    "buy": "购买",
+    "testsTitle": "测试",
+    "questionsSuffix": "题",
+    "locked": "已锁定"
+  },
+  "writtenGrid": {
+    "loadError": "加载套餐失败",
+    "emptyMine": "你还没有购买笔试。",
+    "emptyDiscover": "暂无已发布的笔试。",
+    "free": "免费",
+    "typeBadge": "笔试",
+    "testsSuffix": "个测试",
+    "tab": "笔试"
   }
 }

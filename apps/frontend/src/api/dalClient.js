@@ -2012,5 +2012,72 @@ export const writtenTests = {
   },
 };
 
+/** Aday yazılı test akışı (pazar / satın alma / çözme). */
+export const candidateWritten = {
+  /** Yayımlanmış yazılı paketler (pazar) */
+  listPackages: async ({ limit = 20, cursor } = {}) => {
+    const qs = new URLSearchParams();
+    if (limit) qs.set('limit', String(limit));
+    if (cursor) qs.set('cursor', cursor);
+    const { data } = await api.get(`/candidate-written/packages?${qs.toString()}`);
+    return data;
+  },
+  /** Paket detay (çözüm sızdırmaz) */
+  getPackage: async (id) => {
+    const { data } = await api.get(`/candidate-written/packages/${id}`);
+    return data;
+  },
+  /** Adayın satın aldığı yazılı paketler (test + deneme durumu) */
+  myPackages: async () => {
+    const { data } = await api.get('/candidate-written/my-packages');
+    return data;
+  },
+  /** İndirim kodu önizleme */
+  validateDiscount: async (id, code) => {
+    const { data } = await api.post(`/candidate-written/packages/${id}/validate-discount`, { code });
+    return data;
+  },
+  /** Paket satın al */
+  purchase: async (id, body = {}) => {
+    const { data } = await api.post(`/candidate-written/packages/${id}/purchase`, body);
+    return data;
+  },
+  /** Test çözmeye başla / sürdür → { attemptId, resumed } */
+  start: async (testId) => {
+    const { data } = await api.post(`/candidate-written/tests/${testId}/start`, {});
+    return data;
+  },
+  /** Deneme durumu */
+  getState: async (attemptId) => {
+    const { data } = await api.get(`/candidate-written/attempts/${attemptId}/state`);
+    return data;
+  },
+  /** Metin cevap kaydet (boş → sil) */
+  submitAnswer: async (attemptId, { questionId, textAnswer }) => {
+    const { data } = await api.post(`/candidate-written/attempts/${attemptId}/answer`, { questionId, textAnswer });
+    return data;
+  },
+  /** Denemeyi teslim et */
+  finish: async (attemptId) => {
+    const { data } = await api.post(`/candidate-written/attempts/${attemptId}/finish`, {});
+    return data;
+  },
+  /** Süre aşımı teslimi */
+  timeout: async (attemptId) => {
+    const { data } = await api.post(`/candidate-written/attempts/${attemptId}/timeout`, {});
+    return data;
+  },
+  /** Soru çözümünü getir (çözümü gör) */
+  getSolution: async (attemptId, questionId) => {
+    const { data } = await api.get(`/candidate-written/attempts/${attemptId}/questions/${questionId}/solution`);
+    return data;
+  },
+  /** Hata bildirimi */
+  report: async (testId, { questionId, reason }) => {
+    const { data } = await api.post(`/candidate-written/tests/${testId}/report`, { questionId, reason });
+    return data;
+  },
+};
+
 export default api;
 export { api };

@@ -1989,5 +1989,56 @@
       "statusUpdated": "Veröffentlichungsstatus aktualisiert",
       "actionFailed": "Aktion fehlgeschlagen"
     }
+  },
+  "takeWritten": {
+    "loadError": "Test konnte nicht geladen werden",
+    "notFound": "Test nicht gefunden",
+    "back": "Zurück",
+    "themeToggle": "Lesemodus",
+    "penToggle": "Stift",
+    "report": "Fehler melden",
+    "submittedBanner": "Test abgeschlossen",
+    "selfEvalNote": "Dieser Test wird nicht bewertet; vergleiche deine Antwort selbst mit der Lösung.",
+    "questionNav": "Frage {{n}}",
+    "answerLabel": "Deine Antwort",
+    "answerPlaceholder": "Schreibe deine Antwort hier...",
+    "showSolution": "Lösung anzeigen",
+    "hideSolution": "Lösung ausblenden",
+    "solutionTitle": "Lösung",
+    "yourAnswer": "Deine Antwort",
+    "noAnswer": "(leer gelassen)",
+    "prev": "Zurück",
+    "next": "Weiter",
+    "submit": "Test beenden",
+    "submitting": "Wird gesendet...",
+    "submitConfirm": "Möchtest du den Test wirklich beenden? Danach kannst du deine Antwort mit der Lösung vergleichen.",
+    "reportSent": "Fehlermeldung gesendet",
+    "reportFailed": "Meldung konnte nicht gesendet werden",
+    "saveError": "Antwort konnte nicht gespeichert werden",
+    "genericError": "Ein Fehler ist aufgetreten",
+    "timeUp": "Die Zeit ist um"
+  },
+  "writtenDetail": {
+    "notFound": "Paket nicht gefunden",
+    "free": "Kostenlos",
+    "back": "Zurück",
+    "review": "Ansehen",
+    "continue": "Fortsetzen",
+    "start": "Starten",
+    "typeBadge": "Schriftlich",
+    "priceLabel": "Preis",
+    "buy": "Kaufen",
+    "testsTitle": "Tests",
+    "questionsSuffix": "Fragen",
+    "locked": "Gesperrt"
+  },
+  "writtenGrid": {
+    "loadError": "Pakete konnten nicht geladen werden",
+    "emptyMine": "Du hast noch keine schriftlichen Tests gekauft.",
+    "emptyDiscover": "Noch keine veröffentlichten schriftlichen Tests.",
+    "free": "Kostenlos",
+    "typeBadge": "Schriftlich",
+    "testsSuffix": "Tests",
+    "tab": "Schriftliche Tests"
   }
 }

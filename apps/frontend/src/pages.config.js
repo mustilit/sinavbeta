@@ -108,6 +108,8 @@ const ManageTunnels = lazy(() => import('./pages/ManageTunnels'));
 const AdminTunnels = lazy(() => import('./pages/AdminTunnels'));
 const TakeTunnel = lazy(() => import('./pages/TakeTunnel'));
 const TunnelDetail = lazy(() => import('./pages/TunnelDetail'));
+const TakeWrittenTest = lazy(() => import('./pages/TakeWrittenTest'));
+const WrittenTestDetail = lazy(() => import('./pages/WrittenTestDetail'));
 const SelectExamTypes = lazy(() => import('./pages/SelectExamTypes'));
 const Support = lazy(() => import('./pages/Support'));
 const TakeTest = lazy(() => import('./pages/TakeTest'));
@@ -209,6 +211,8 @@ export const PAGES = {
     "AdminTunnels": AdminTunnels,
     "TakeTunnel": TakeTunnel,
     "TunnelDetail": TunnelDetail,
+    "TakeWrittenTest": TakeWrittenTest,
+    "WrittenTestDetail": WrittenTestDetail,
     "SelectExamTypes": SelectExamTypes,
     "Support": Support,
     "TakeTest": TakeTest,

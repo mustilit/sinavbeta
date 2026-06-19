@@ -200,6 +200,7 @@ import { ListMyWrittenQuestionReportsUseCase } from '../application/use-cases/wr
 import {
   ListPublishedWrittenPackagesUseCase,
   GetPublishedWrittenPackageUseCase,
+  ListMyWrittenPurchasesUseCase,
 } from '../application/use-cases/written/CandidateWrittenUseCases';
 import { CandidateWrittenController } from './controllers/candidate-written.controller';
 // Tünel modülü (Faz 1)
@@ -827,6 +828,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: ListMyWrittenQuestionReportsUseCase, useFactory: () => new ListMyWrittenQuestionReportsUseCase() },
     { provide: ListPublishedWrittenPackagesUseCase, useFactory: () => new ListPublishedWrittenPackagesUseCase() },
     { provide: GetPublishedWrittenPackageUseCase, useFactory: () => new GetPublishedWrittenPackageUseCase() },
+    { provide: ListMyWrittenPurchasesUseCase, useFactory: () => new ListMyWrittenPurchasesUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },
     { provide: StartLiveSessionUseCase, useFactory: () => new StartLiveSessionUseCase() },

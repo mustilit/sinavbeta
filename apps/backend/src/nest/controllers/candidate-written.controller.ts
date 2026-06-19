@@ -9,6 +9,7 @@ import { ReportWrittenQuestionDto } from './dto/report-written-question.dto';
 import {
   ListPublishedWrittenPackagesUseCase,
   GetPublishedWrittenPackageUseCase,
+  ListMyWrittenPurchasesUseCase,
 } from '../../application/use-cases/written/CandidateWrittenUseCases';
 import { PurchaseWrittenPackageUseCase, ValidateWrittenDiscountUseCase } from '../../application/use-cases/written/WrittenPurchaseUseCases';
 import {
@@ -32,6 +33,7 @@ export class CandidateWrittenController {
   constructor(
     @Inject(ListPublishedWrittenPackagesUseCase) private readonly listUC: ListPublishedWrittenPackagesUseCase,
     @Inject(GetPublishedWrittenPackageUseCase) private readonly detailUC: GetPublishedWrittenPackageUseCase,
+    @Inject(ListMyWrittenPurchasesUseCase) private readonly myPackagesUC: ListMyWrittenPurchasesUseCase,
     @Inject(PurchaseWrittenPackageUseCase) private readonly purchaseUC: PurchaseWrittenPackageUseCase,
     @Inject(ValidateWrittenDiscountUseCase) private readonly validateDiscountUC: ValidateWrittenDiscountUseCase,
     @Inject(StartWrittenAttemptUseCase) private readonly startUC: StartWrittenAttemptUseCase,
@@ -48,6 +50,13 @@ export class CandidateWrittenController {
   @ApiOkResponse({ description: 'Yayımlanmış yazılı paketler (pazar)' })
   async list(@Query('limit') limit?: string, @Query('cursor') cursor?: string) {
     return this.listUC.execute({ limit: limit ? Number(limit) : undefined, cursor: cursor || null });
+  }
+
+  @Get('my-packages')
+  @Roles('CANDIDATE')
+  @ApiOkResponse({ description: 'Adayın satın aldığı yazılı paketler (test + deneme durumu)' })
+  async myPackages(@Req() req: any) {
+    return this.myPackagesUC.execute(req.user?.id);
   }
 
   @Get('packages/:id')

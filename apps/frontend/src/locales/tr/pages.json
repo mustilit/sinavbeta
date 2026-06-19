@@ -1989,5 +1989,56 @@
       "statusUpdated": "Yayin durumu guncellendi",
       "actionFailed": "Islem basarisiz oldu"
     }
+  },
+  "takeWritten": {
+    "loadError": "Test yüklenemedi",
+    "notFound": "Test bulunamadı",
+    "back": "Geri",
+    "themeToggle": "Okuma modu",
+    "penToggle": "Kalem",
+    "report": "Hata Bildir",
+    "submittedBanner": "Test tamamlandı",
+    "selfEvalNote": "Bu test puanlanmaz; cevabını çözümle kendin kıyasla.",
+    "questionNav": "Soru {{n}}",
+    "answerLabel": "Cevabınız",
+    "answerPlaceholder": "Cevabınızı buraya yazın...",
+    "showSolution": "Çözümü Gör",
+    "hideSolution": "Çözümü Gizle",
+    "solutionTitle": "Çözüm",
+    "yourAnswer": "Senin Cevabın",
+    "noAnswer": "(boş bıraktın)",
+    "prev": "Önceki",
+    "next": "Sonraki",
+    "submit": "Testi Bitir",
+    "submitting": "Gönderiliyor...",
+    "submitConfirm": "Testi bitirmek istediğine emin misin? Bittikten sonra cevabını çözümle karşılaştırabilirsin.",
+    "reportSent": "Hata bildirimi gönderildi",
+    "reportFailed": "Bildirim gönderilemedi",
+    "saveError": "Cevap kaydedilemedi",
+    "genericError": "Bir hata oluştu",
+    "timeUp": "Süre doldu"
+  },
+  "writtenDetail": {
+    "notFound": "Paket bulunamadı",
+    "free": "Ücretsiz",
+    "back": "Geri",
+    "review": "İncele",
+    "continue": "Devam Et",
+    "start": "Başla",
+    "typeBadge": "Yazılı",
+    "priceLabel": "Fiyat",
+    "buy": "Satın Al",
+    "testsTitle": "Testler",
+    "questionsSuffix": "soru",
+    "locked": "Kilitli"
+  },
+  "writtenGrid": {
+    "loadError": "Paketler yüklenemedi",
+    "emptyMine": "Henüz satın aldığın yazılı test yok.",
+    "emptyDiscover": "Henüz yayımlanmış yazılı test yok.",
+    "free": "Ücretsiz",
+    "typeBadge": "Yazılı",
+    "testsSuffix": "test",
+    "tab": "Yazılı Testler"
   }
 }

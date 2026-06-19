@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import TestPackageCard from "@/components/ui/TestPackageCard";
 import { TunnelGrid } from "@/components/tunnel/TunnelGrid";
 import { TunnelInfoModal, useTunnelIntro } from "@/components/tunnel/TunnelInfoModal";
+import { WrittenPackageGrid } from "@/components/written/WrittenPackageGrid";
 import PaginationBar from "@/components/ui/PaginationBar";
 import { Search, ShoppingBag, X, HelpCircle } from "lucide-react";
 
@@ -248,6 +249,7 @@ export default function MyTests() {
       <div className="mb-6 flex flex-wrap items-center gap-1 border-b border-slate-200">
         <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
         <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
+        <button type="button" onClick={() => setContentTab("written")} className={contentTabBtn("written")}>{t("pages:writtenGrid.tab")}</button>
         {contentTab === "tunnels" && (
           <button
             type="button"
@@ -263,6 +265,8 @@ export default function MyTests() {
 
       {contentTab === "tunnels" ? (
         <TunnelGrid mode="mine" />
+      ) : contentTab === "written" ? (
+        <WrittenPackageGrid mode="mine" />
       ) : (
       <>
       {!isLoading && purchases.length > 0 && (

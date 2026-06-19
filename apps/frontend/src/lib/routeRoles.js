@@ -53,6 +53,8 @@ export const PAGE_ROLES = {
   // Aday tünel pazarı + çözme
   TakeTunnel: [ROLES.CANDIDATE],
   TunnelDetail: [ROLES.CANDIDATE],
+  TakeWrittenTest: [ROLES.CANDIDATE],
+  WrittenTestDetail: [ROLES.CANDIDATE],
   ProfileSettings: [ROLES.CANDIDATE],
   TakeTest: [ROLES.CANDIDATE],
   CompleteProfile: [ROLES.CANDIDATE],

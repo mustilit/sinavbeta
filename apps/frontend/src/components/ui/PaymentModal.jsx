@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { entities, contracts as contractsApi, discounts as discountsApi, candidateTunnels as tunnelsApi } from "@/api/dalClient";
+import { entities, contracts as contractsApi, discounts as discountsApi, candidateTunnels as tunnelsApi, candidateWritten as writtenApi } from "@/api/dalClient";
 import {
   Dialog,
   DialogContent,
@@ -227,6 +227,7 @@ function DistanceSaleCheckbox({ checked, onChange, available }) {
  */
 export function PaymentModal({ isOpen, onClose, test, discountCode, kind = "package", onPurchased }) {
   const isTunnel = kind === "tunnel";
+  const isWritten = kind === "written";
   // "select" | "card" | "processing" | "success" | "error"
   const [step, setStep] = useState("select");
   const [selectedProvider, setSelectedProvider] = useState(null);
@@ -300,6 +301,8 @@ export function PaymentModal({ isOpen, onClose, test, discountCode, kind = "pack
       const basePrice = Math.round((test?.price ?? 0) * 100); // ₺ → cents
       const result = isTunnel
         ? await tunnelsApi.validateDiscount(test.id, code)
+        : isWritten
+        ? await writtenApi.validateDiscount(test.id, code)
         : await discountsApi.validate(code, test.id, basePrice);
       setAppliedDiscount(result);
     } catch (err) {
@@ -345,6 +348,14 @@ export function PaymentModal({ isOpen, onClose, test, discountCode, kind = "pack
         });
         return;
       }
+      if (isWritten) {
+        await writtenApi.purchase(test.id, {
+          discountCode: appliedDiscount?.code || discountCode || undefined,
+          paymentProvider: selectedProvider,
+          acceptedDistanceSaleContractId: distanceSaleContract?.id,
+        });
+        return;
+      }
       await entities.Purchase.create({
         test_package_id: test.id,
         discount_code: appliedDiscount?.code || discountCode || undefined,
@@ -357,9 +368,10 @@ export function PaymentModal({ isOpen, onClose, test, discountCode, kind = "pack
         queryClient.invalidateQueries({ queryKey: ["purchases"] }),
         queryClient.invalidateQueries({ queryKey: ["myPurchases"] }),
         queryClient.invalidateQueries({ queryKey: ["candidateTunnels"] }),
+        queryClient.invalidateQueries({ queryKey: ["candidateWritten"] }),
       ]);
-      // Tünelde başarı ekranı yerine doğrudan çözmeye yönlendir (parent karar verir).
-      if (isTunnel && onPurchased) {
+      // Tünel/yazılıda başarı ekranı yerine doğrudan akışa yönlendir (parent karar verir).
+      if ((isTunnel || isWritten) && onPurchased) {
         onPurchased();
         return;
       }

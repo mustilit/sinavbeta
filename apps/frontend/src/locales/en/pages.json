@@ -1989,5 +1989,56 @@
       "statusUpdated": "Publish status updated",
       "actionFailed": "Action failed"
     }
+  },
+  "takeWritten": {
+    "loadError": "Failed to load test",
+    "notFound": "Test not found",
+    "back": "Back",
+    "themeToggle": "Reading mode",
+    "penToggle": "Pen",
+    "report": "Report Error",
+    "submittedBanner": "Test completed",
+    "selfEvalNote": "This test is not graded; compare your answer with the solution yourself.",
+    "questionNav": "Question {{n}}",
+    "answerLabel": "Your Answer",
+    "answerPlaceholder": "Write your answer here...",
+    "showSolution": "Show Solution",
+    "hideSolution": "Hide Solution",
+    "solutionTitle": "Solution",
+    "yourAnswer": "Your Answer",
+    "noAnswer": "(left blank)",
+    "prev": "Previous",
+    "next": "Next",
+    "submit": "Finish Test",
+    "submitting": "Submitting...",
+    "submitConfirm": "Are you sure you want to finish? Afterwards you can compare your answer with the solution.",
+    "reportSent": "Error report sent",
+    "reportFailed": "Could not send report",
+    "saveError": "Could not save answer",
+    "genericError": "An error occurred",
+    "timeUp": "Time is up"
+  },
+  "writtenDetail": {
+    "notFound": "Package not found",
+    "free": "Free",
+    "back": "Back",
+    "review": "Review",
+    "continue": "Continue",
+    "start": "Start",
+    "typeBadge": "Written",
+    "priceLabel": "Price",
+    "buy": "Buy",
+    "testsTitle": "Tests",
+    "questionsSuffix": "questions",
+    "locked": "Locked"
+  },
+  "writtenGrid": {
+    "loadError": "Failed to load packages",
+    "emptyMine": "You haven't purchased any written tests yet.",
+    "emptyDiscover": "No published written tests yet.",
+    "free": "Free",
+    "typeBadge": "Written",
+    "testsSuffix": "tests",
+    "tab": "Written Tests"
   }
 }

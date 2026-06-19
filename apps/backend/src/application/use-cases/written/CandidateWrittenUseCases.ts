@@ -9,6 +9,72 @@ async function resolveEducators(educatorIds: string[]) {
   return new Map(users.map((u) => [u.id, u.username || 'Eğitici']));
 }
 
+/** Adayın satın aldığı yazılı paketler (Satın Alınanlar sekmesi) — test + deneme durumu. */
+export class ListMyWrittenPurchasesUseCase {
+  async execute(actorId?: string | null) {
+    if (!actorId) throw new AppError('UNAUTHORIZED', 'Giriş gerekli', 401);
+    const purchases = await prisma.writtenPurchase.findMany({
+      where: { candidateId: actorId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, packageId: true, createdAt: true },
+    });
+    if (!purchases.length) return { items: [] };
+
+    const packageIds = purchases.map((p) => p.packageId);
+    const packages = await prisma.writtenPackage.findMany({
+      where: { id: { in: packageIds } },
+      select: {
+        id: true, title: true, description: true, coverImageUrl: true, difficulty: true, educatorId: true,
+        tests: { where: { deletedAt: null }, orderBy: { createdAt: 'asc' }, select: { id: true, title: true, isTimed: true, duration: true, questionCount: true } },
+      },
+    });
+    const testIds = packages.flatMap((p) => p.tests.map((t) => t.id));
+    const attempts = testIds.length
+      ? await prisma.writtenAttempt.findMany({
+          where: { candidateId: actorId, testId: { in: testIds } },
+          orderBy: { attemptNumber: 'desc' },
+          select: { id: true, testId: true, status: true },
+        })
+      : [];
+    // test başına EN SON deneme durumu
+    const stateByTest = new Map<string, { attemptId: string; status: string }>();
+    for (const a of attempts) if (!stateByTest.has(a.testId)) stateByTest.set(a.testId, { attemptId: a.id, status: a.status });
+
+    const educators = await resolveEducators(packages.map((p) => p.educatorId ?? ''));
+    const pkgById = new Map(packages.map((p) => [p.id, p]));
+
+    return {
+      items: purchases
+        .map((pur) => {
+          const p = pkgById.get(pur.packageId);
+          if (!p) return null;
+          return {
+            packageId: p.id,
+            title: p.title,
+            description: p.description,
+            coverImageUrl: p.coverImageUrl,
+            difficulty: p.difficulty,
+            educatorName: p.educatorId ? educators.get(p.educatorId) ?? null : null,
+            purchasedAt: pur.createdAt,
+            tests: p.tests.map((t) => {
+              const st = stateByTest.get(t.id);
+              return {
+                id: t.id,
+                title: t.title,
+                isTimed: t.isTimed,
+                duration: t.duration,
+                questionCount: t.questionCount ?? 0,
+                attemptId: st?.attemptId ?? null,
+                state: st?.status ?? null, // null=başlanmadı | IN_PROGRESS | SUBMITTED | TIMEOUT
+              };
+            }),
+          };
+        })
+        .filter(Boolean),
+    };
+  }
+}
+
 /** Yayımlanmış yazılı paketler (pazar listesi — kart alanları). */
 export class ListPublishedWrittenPackagesUseCase {
   async execute(params?: { limit?: number; cursor?: string | null }) {

@@ -1992,5 +1992,56 @@
       "statusUpdated": "Estado de publicación actualizado",
       "actionFailed": "La acción falló"
     }
+  },
+  "takeWritten": {
+    "loadError": "No se pudo cargar el test",
+    "notFound": "Test no encontrado",
+    "back": "Atrás",
+    "themeToggle": "Modo lectura",
+    "penToggle": "Lápiz",
+    "report": "Reportar error",
+    "submittedBanner": "Test completado",
+    "selfEvalNote": "Este test no se califica; compara tu respuesta con la solución tú mismo.",
+    "questionNav": "Pregunta {{n}}",
+    "answerLabel": "Tu respuesta",
+    "answerPlaceholder": "Escribe tu respuesta aquí...",
+    "showSolution": "Ver solución",
+    "hideSolution": "Ocultar solución",
+    "solutionTitle": "Solución",
+    "yourAnswer": "Tu respuesta",
+    "noAnswer": "(en blanco)",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "submit": "Finalizar test",
+    "submitting": "Enviando...",
+    "submitConfirm": "¿Seguro que quieres finalizar? Luego podrás comparar tu respuesta con la solución.",
+    "reportSent": "Reporte de error enviado",
+    "reportFailed": "No se pudo enviar el reporte",
+    "saveError": "No se pudo guardar la respuesta",
+    "genericError": "Ocurrió un error",
+    "timeUp": "Se acabó el tiempo"
+  },
+  "writtenDetail": {
+    "notFound": "Paquete no encontrado",
+    "free": "Gratis",
+    "back": "Atrás",
+    "review": "Revisar",
+    "continue": "Continuar",
+    "start": "Empezar",
+    "typeBadge": "Escrito",
+    "priceLabel": "Precio",
+    "buy": "Comprar",
+    "testsTitle": "Tests",
+    "questionsSuffix": "preguntas",
+    "locked": "Bloqueado"
+  },
+  "writtenGrid": {
+    "loadError": "No se pudieron cargar los paquetes",
+    "emptyMine": "Aún no has comprado tests escritos.",
+    "emptyDiscover": "Aún no hay tests escritos publicados.",
+    "free": "Gratis",
+    "typeBadge": "Escrito",
+    "testsSuffix": "tests",
+    "tab": "Tests escritos"
   }
 }

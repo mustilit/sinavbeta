@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import TestPackageCard from "@/components/ui/TestPackageCard";
 import { TunnelGrid } from "@/components/tunnel/TunnelGrid";
 import { TunnelInfoModal, useTunnelIntro } from "@/components/tunnel/TunnelInfoModal";
+import { WrittenPackageGrid } from "@/components/written/WrittenPackageGrid";
 import { Search, SlidersHorizontal, X, Star, ArrowUpDown, HelpCircle } from "lucide-react";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 
@@ -201,6 +202,7 @@ export default function Explore() {
       <div className="mb-6 flex flex-wrap items-center gap-1 border-b border-slate-200">
         <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
         <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
+        <button type="button" onClick={() => setContentTab("written")} className={contentTabBtn("written")}>{t("pages:writtenGrid.tab")}</button>
         {contentTab === "tunnels" && (
           <button
             type="button"
@@ -216,6 +218,8 @@ export default function Explore() {
 
       {contentTab === "tunnels" ? (
         <TunnelGrid mode="discover" />
+      ) : contentTab === "written" ? (
+        <WrittenPackageGrid mode="discover" />
       ) : (
       <>
       {/* Search & Filters */}
