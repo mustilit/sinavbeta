@@ -221,6 +221,27 @@ Gamified ustalık-öğrenme modülü. Eğitici **katmanlı** (kolaydan zora) bir
 **Frontend sayfaları:** `Explore`/`MyTests` (Tüneller sekmesi — `TunnelGrid`), `TunnelDetail`, `TakeTunnel`, `MyResults` (rapor), eğitici `CreateTunnel`/`EditTunnel`, admin onay. dalClient: `candidateTunnels` namespace.
 **Anti-kopya:** `TakeTunnel` normal sınavla aynı koruma — metin kopyalama/screenshot engeli + `TestWatermark` + bej okuma modu.
 
+### WrittenTest — Yazılı Test (Açık Uçlu, Öz-Değerlendirmeli)
+
+Mevcut Sınav modülünün **şıksız** versiyonu. Aday her soruya **METİN** cevap yazar; **doğru/yanlış puanlama YOK**; **çözüm zorunlu**; aday teslim sonrası kendi cevabını çözümle **kendisi kıyaslar** (öz-değerlendirme). **TestPackage'dan tamamen AYRI modül** (Tünel deseni). Paylaşılan UI bileşenleri import edilerek reuse (TestWatermark, QuestionCanvas, ReportQuestionModal, PaymentModal, ResponsiveImage).
+
+**8 Prisma modeli** (`written_*` tabloları; modül-dışı id'ler tenantId/educatorId/candidateId/examTypeId/topicId **SCALAR** — User/Tenant/ExamType/Topic'e relation YOK):
+- **WrittenPackage** — satılabilir birim (TestPackage deseni): `title, description, coverImageUrl, priceCents, currency, difficulty, isActive, publishedAt`. Yayın = `publishedAt != null && isActive`.
+- **WrittenTest** — paket içi test: `packageId, title, isTimed, duration, questionCount, hasSolutions(=true), status (TestStatus), publishedAt`.
+- **WrittenQuestion** — **ŞIK YOK**: `testId, content, mediaUrl?, order, solutionText?, solutionMediaUrl?`. `solutionText`/`solutionMediaUrl` **use-case'te zorunlu** (SOLUTION_REQUIRED) — schema'da nullable (taslak esnekliği).
+- **WrittenAttempt** — çözme oturumu: `testId, candidateId, attemptNumber, status (AttemptStatus), timing alanları, questionsSnapshot`. **`score` ALANI YOK** (puanlama yapılmaz).
+- **WrittenAnswer** — `attemptId, questionId, textAnswer?`. `@@unique([attemptId, questionId])`. (selectedOptionId/isCorrect YOK — metin cevap.)
+- **WrittenPurchase** — `@@unique([candidateId, packageId])`. İndirim snapshot (%50 eğitici clamp) + mesafeli satış (TKHK) + `testsSnapshot` (ŞIKSIZ).
+- **WrittenReview** — `@@unique([packageId, candidateId])` (scalar-only).
+- **WrittenQuestionReport** — hata bildirimi (scalar-only); MyObjections'a 3. kaynak olarak merge edilir ("Yazılı:" etiketi).
+
+**Akış:** Eğitici paket+test+soru (çözüm zorunlu) oluşturur → yayımlar (publish validation: ≥1 test, her test ≥1 soru, her soru çözümlü). Aday **Keşfet/Satın Alınanlar'da 3. sekme "Yazılı Testler"** → satın alır → metinle çözer (süre/kalem/tema/watermark/çözümü gör/hata bildirimi) → teslim eder → **cevap ↔ çözüm öz-kıyas** (puan yok). Yayımlı pakette yapı kilidi (PACKAGE_PUBLISHED).
+
+**Use-case domain:** `application/use-cases/written/` (WrittenPackage/Test/Question CRUD+publish; Purchase+ValidateDiscount; Attempt: Start/SubmitAnswer/GetState/Submit/Timeout/GetSolution; Report; ListMyWrittenQuestionReports; Candidate liste/detay/my-packages).
+**Controller:** eğitici `written-tests.controller` (`/written-packages`, `/written-tests`); aday `candidate-written.controller` (`/candidate-written/*`).
+**Frontend:** `CreateWrittenTest`/`EditWrittenTest`/`ManageWrittenTests` (eğitici), `WrittenTestDetail`/`TakeWrittenTest` (aday), `WrittenPackageGrid` (Explore+MyTests 3. sekme), `MyResults` yazılı sekmesi. dalClient: `writtenTests` (eğitici) + `candidateWritten` (aday) namespace.
+**Önemli fark:** Tünel adaptif/şıklı; Yazılı şıksız/metin/öz-değerlendirme. İkisi de TestPackage'dan ayrı.
+
 ## İş Kuralları
 
 **Yayımlama**

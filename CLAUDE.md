@@ -306,6 +306,15 @@ Gamified, **TestPackage'dan ayrı** satış+çözme modülü. Eğitici katmanlı
 - **Frontend:** Keşfet & Satın Aldıklarım'da **Tüneller sekmesi** (paylaşılan `TunnelGrid`, tek-satır filtre), TestDetail uyumlu `TunnelDetail` (Eğitici kartı + Özellikler + satış sayısı + yorum/puan), `TakeTunnel` (anti-kopya + filigran + tek güneş ikonlu bej mod), `MyResults` tünel raporu. dalClient `candidateTunnels` namespace.
 - **Test:** tünel use-case kapsamı **%82** (engine + review + meta + discount + play + CRUD; `tests/usecases/tunnel/` 8 suite). Domain tek-kaynak: `exam-domain` skill.
 
+### Yazılı Test modülü — açık uçlu (öz-değerlendirmeli) sınav
+
+Mevcut Sınav modülünün **şıksız** versiyonu. Aday her soruya **metin** cevap yazar; **doğru/yanlış puanlama YOK**; **çözüm zorunlu**; aday teslim sonrası kendi cevabını çözümle **kendisi kıyaslar** (öz-değerlendirme). **TestPackage'dan AYRI modül** (Tünel deseni); paylaşılan UI (TestWatermark/QuestionCanvas/ReportQuestionModal/PaymentModal) reuse.
+
+- **8 Prisma modeli** (`written_*`): WrittenPackage (satılabilir birim) · WrittenTest · WrittenQuestion (şık YOK, solutionText zorunlu) · WrittenAttempt (**score YOK**) · WrittenAnswer (textAnswer) · WrittenPurchase · WrittenReview · WrittenQuestionReport. Modül-dışı id'ler scalar (User/Tenant/ExamType/Topic'e relation yok). Enum reuse (TestStatus/AttemptStatus/PurchaseStatus). Migration: `20260615120000_written_test_module`.
+- **Backend:** `use-cases/written/`; eğitici `written-tests.controller` (`/written-packages`,`/written-tests`), aday `candidate-written.controller` (`/candidate-written/*`). Publish validation (≥1 test, her test ≥1 soru, her soru çözümlü), yayın kilidi (PACKAGE_PUBLISHED), satın alma idempotent + indirim %50 clamp + mesafeli satış + testsSnapshot, çözme PUANSIZ, çözüm yalnız teslim sonrası state'te.
+- **Frontend:** `CreateWrittenTest`/`EditWrittenTest`/`ManageWrittenTests` (eğitici, sidebar "Yazılı Testlerim"), `WrittenTestDetail`/`TakeWrittenTest` (aday), `WrittenPackageGrid` → Keşfet + Satın Alınanlar + Sonuçlarım'da **3. sekme "Yazılı Testler"**. dalClient: `writtenTests` (eğitici) + `candidateWritten` (aday). i18n 5 dil.
+- **Hata bildirimi:** WrittenQuestionReport → MyObjections'a 3. kaynak ("Yazılı:" etiketi). Domain tek-kaynak: `exam-domain` skill.
+
 ## Delege Rehberi
 
 | Task tipi | Agent |
