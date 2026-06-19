@@ -144,7 +144,18 @@ export class GetPublishedWrittenPackageUseCase {
     if (!pkg || !pkg.publishedAt || !pkg.isActive)
       throw new AppError('WRITTEN_PACKAGE_NOT_FOUND', 'Paket bulunamadı', 404);
 
-    const educators = await resolveEducators([pkg.educatorId ?? '']);
+    const [educators, ratingAgg, salesCount] = await Promise.all([
+      resolveEducators([pkg.educatorId ?? '']),
+      prisma.writtenReview.aggregate({ where: { packageId: pkg.id }, _avg: { rating: true }, _count: { _all: true } }),
+      prisma.writtenPurchase.count({ where: { packageId: pkg.id, status: 'ACTIVE' } }),
+    ]);
+    const tests = pkg.tests.map((t) => ({
+      id: t.id,
+      title: t.title,
+      isTimed: t.isTimed,
+      duration: t.duration,
+      questionCount: t.questionCount ?? 0,
+    }));
     return {
       id: pkg.id,
       title: pkg.title,
@@ -155,13 +166,13 @@ export class GetPublishedWrittenPackageUseCase {
       difficulty: pkg.difficulty,
       educatorId: pkg.educatorId,
       educatorName: pkg.educatorId ? educators.get(pkg.educatorId) ?? null : null,
-      tests: pkg.tests.map((t) => ({
-        id: t.id,
-        title: t.title,
-        isTimed: t.isTimed,
-        duration: t.duration,
-        questionCount: t.questionCount ?? 0,
-      })),
+      educatorUsername: pkg.educatorId ? educators.get(pkg.educatorId) ?? null : null,
+      testCount: tests.length,
+      totalQuestions: tests.reduce((s, t) => s + (t.questionCount ?? 0), 0),
+      salesCount,
+      avgRating: ratingAgg._avg.rating != null ? Math.round(ratingAgg._avg.rating * 10) / 10 : null,
+      reviewCount: ratingAgg._count._all,
+      tests,
     };
   }
 }

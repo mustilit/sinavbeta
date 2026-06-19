@@ -1927,7 +1927,7 @@
       "titleRequired": "Pakettitel ist erforderlich"
     },
     "createPage": {
-      "title": "Neues schriftliches Testpaket",
+      "title": "Neues offenes Testpaket",
       "subtitle": "Erstelle ein Paket aus offenen Fragen",
       "publishing": "Wird veröffentlicht...",
       "saving": "Speichern...",
@@ -1935,7 +1935,7 @@
       "createAndPublish": "Erstellen und veröffentlichen"
     },
     "editPage": {
-      "title": "Schriftliches Testpaket bearbeiten",
+      "title": "Offenes Testpaket bearbeiten",
       "subtitle": "Aktualisiere Paketinfos, Tests und Fragen",
       "notFound": "Paket nicht gefunden",
       "publishedBadge": "Veröffentlicht",
@@ -1954,9 +1954,9 @@
     }
   },
   "manageWrittenTests": {
-    "title": "Meine schriftlichen Tests",
+    "title": "Meine offenen Tests",
     "subtitle": "Verwalte deine schriftlichen Testpakete",
-    "createNew": "Neuer schriftlicher Test",
+    "createNew": "Neuer offener Test",
     "searchPlaceholder": "Paket suchen...",
     "loadError": "Pakete konnten nicht geladen werden",
     "testsSuffix": "Tests",
@@ -2026,21 +2026,40 @@
     "review": "Ansehen",
     "continue": "Fortsetzen",
     "start": "Starten",
-    "typeBadge": "Schriftlich",
+    "typeBadge": "Offen",
     "priceLabel": "Preis",
     "buy": "Kaufen",
     "testsTitle": "Tests",
     "questionsSuffix": "Fragen",
-    "locked": "Gesperrt"
+    "locked": "Gesperrt",
+    "featuresTitle": "Merkmale",
+    "sales": "Verkäufe",
+    "difficultyLabel": "Schwierigkeit",
+    "questionsTotal": "Fragen gesamt",
+    "reviewsTitle": "Bewertungen",
+    "noReviews": "Noch keine Bewertungen.",
+    "rate": "Bewerten",
+    "editRate": "Bewertung bearbeiten",
+    "commentPlaceholder": "Dein Kommentar (optional)",
+    "submitReview": "Senden",
+    "reviewSaved": "Deine Bewertung wurde gespeichert",
+    "ratingRequired": "Bitte gib eine Bewertung ab",
+    "reviewFailed": "Bewertung konnte nicht gespeichert werden",
+    "educatorTitle": "Dozent",
+    "viewEducator": "Profil ansehen",
+    "selfEvalNote": "Dieser Test wird nicht benotet; nach dem Absenden vergleichst du deine Antwort selbst mit der Lösung.",
+    "diffEasy": "Einfach",
+    "diffMedium": "Mittel",
+    "diffHard": "Schwer"
   },
   "writtenGrid": {
     "loadError": "Pakete konnten nicht geladen werden",
     "emptyMine": "Du hast noch keine schriftlichen Tests gekauft.",
     "emptyDiscover": "Noch keine veröffentlichten schriftlichen Tests.",
     "free": "Kostenlos",
-    "typeBadge": "Schriftlich",
+    "typeBadge": "Offen",
     "testsSuffix": "Tests",
-    "tab": "Schriftliche Tests"
+    "tab": "Offene Tests"
   },
   "writtenResults": {
     "completed": "Abgeschlossen",

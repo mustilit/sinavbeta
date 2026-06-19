@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, Req, Inject } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/roles.decorator';
+import { Public } from '../decorators/public.decorator';
 import { SubmitTunnelAnswerDto } from './dto/submit-tunnel-answer.dto';
 import { PurchaseTunnelDto, ValidateTunnelDiscountDto } from './dto/purchase-tunnel.dto';
 import { ReportTunnelQuestionDto, UpsertTunnelReviewDto } from './dto/report-tunnel-question.dto';
@@ -37,8 +38,8 @@ export class CandidateTunnelsController {
   ) {}
 
   @Get()
-  @Roles('CANDIDATE')
-  @ApiOkResponse({ description: 'Yayınlanmış tüneller' })
+  @Public()
+  @ApiOkResponse({ description: 'Yayınlanmış tüneller (herkese açık — gezinme)' })
   async list(@Req() req: any, @Query('examTypeId') examTypeId?: string, @Query('topicId') topicId?: string) {
     return this.listUC.execute({ examTypeId, topicId }, req.user?.id);
   }
@@ -51,8 +52,8 @@ export class CandidateTunnelsController {
   }
 
   @Get(':id')
-  @Roles('CANDIDATE')
-  @ApiOkResponse({ description: 'Tünel meta + satın alma/ilerleme durumu' })
+  @Public()
+  @ApiOkResponse({ description: 'Tünel meta + satın alma/ilerleme durumu (herkese açık — gezinme)' })
   async meta(@Param('id') id: string, @Req() req: any) {
     return this.metaUC.execute(id, req.user?.id);
   }
@@ -105,8 +106,8 @@ export class CandidateTunnelsController {
   }
 
   @Get(':id/reviews')
-  @Roles('CANDIDATE')
-  @ApiOkResponse({ description: 'Tünel değerlendirmeleri (ortalama + liste)' })
+  @Public()
+  @ApiOkResponse({ description: 'Tünel değerlendirmeleri (ortalama + liste, herkese açık)' })
   async reviews(@Param('id') id: string, @Query('limit') limit?: string, @Query('offset') offset?: string) {
     return this.listReviewsUC.execute(id, { limit: limit ? Number(limit) : undefined, offset: offset ? Number(offset) : undefined });
   }

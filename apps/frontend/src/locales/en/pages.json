@@ -1927,7 +1927,7 @@
       "titleRequired": "Package title is required"
     },
     "createPage": {
-      "title": "New Written Test Package",
+      "title": "New Open-Ended Test Package",
       "subtitle": "Create a test package of open-ended questions",
       "publishing": "Publishing...",
       "saving": "Saving...",
@@ -1935,7 +1935,7 @@
       "createAndPublish": "Create and Publish"
     },
     "editPage": {
-      "title": "Edit Written Test Package",
+      "title": "Edit Open-Ended Test Package",
       "subtitle": "Update package info, tests and questions",
       "notFound": "Package not found",
       "publishedBadge": "Published",
@@ -1954,9 +1954,9 @@
     }
   },
   "manageWrittenTests": {
-    "title": "My Written Tests",
+    "title": "My Open-Ended Tests",
     "subtitle": "Manage your written test packages",
-    "createNew": "New Written Test",
+    "createNew": "New Open-Ended Test",
     "searchPlaceholder": "Search package...",
     "loadError": "Failed to load packages",
     "testsSuffix": "tests",
@@ -2026,21 +2026,40 @@
     "review": "Review",
     "continue": "Continue",
     "start": "Start",
-    "typeBadge": "Written",
+    "typeBadge": "Open-Ended",
     "priceLabel": "Price",
     "buy": "Buy",
     "testsTitle": "Tests",
     "questionsSuffix": "questions",
-    "locked": "Locked"
+    "locked": "Locked",
+    "featuresTitle": "Features",
+    "sales": "Sales",
+    "difficultyLabel": "Difficulty",
+    "questionsTotal": "Total Questions",
+    "reviewsTitle": "Reviews",
+    "noReviews": "No reviews yet.",
+    "rate": "Rate",
+    "editRate": "Edit Your Review",
+    "commentPlaceholder": "Your comment (optional)",
+    "submitReview": "Submit",
+    "reviewSaved": "Your review was saved",
+    "ratingRequired": "Please give a rating",
+    "reviewFailed": "Could not save review",
+    "educatorTitle": "Educator",
+    "viewEducator": "View Profile",
+    "selfEvalNote": "This test is not graded; after submitting you compare your answer with the solution yourself.",
+    "diffEasy": "Easy",
+    "diffMedium": "Medium",
+    "diffHard": "Hard"
   },
   "writtenGrid": {
     "loadError": "Failed to load packages",
     "emptyMine": "You haven't purchased any written tests yet.",
     "emptyDiscover": "No published written tests yet.",
     "free": "Free",
-    "typeBadge": "Written",
+    "typeBadge": "Open-Ended",
     "testsSuffix": "tests",
-    "tab": "Written Tests"
+    "tab": "Open-Ended Tests"
   },
   "writtenResults": {
     "completed": "Completed",

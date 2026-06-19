@@ -33,7 +33,11 @@ function ManageWrittenTests() {
 
   const { data: packages = [], isLoading, isError } = useQuery({
     queryKey: ["writtenPackagesMine", user?.id],
-    queryFn: () => writtenTests.listMine(),
+    // Endpoint { items: [...] } döner — diziye indir.
+    queryFn: async () => {
+      const res = await writtenTests.listMine();
+      return Array.isArray(res) ? res : res?.items ?? [];
+    },
     enabled: !!user,
   });
 

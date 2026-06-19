@@ -202,6 +202,11 @@ import {
   GetPublishedWrittenPackageUseCase,
   ListMyWrittenPurchasesUseCase,
 } from '../application/use-cases/written/CandidateWrittenUseCases';
+import {
+  UpsertWrittenReviewUseCase,
+  ListWrittenReviewsUseCase,
+  GetMyWrittenReviewUseCase,
+} from '../application/use-cases/written/WrittenReviewUseCases';
 import { CandidateWrittenController } from './controllers/candidate-written.controller';
 // Tünel modülü (Faz 1)
 import { TunnelsController } from './controllers/tunnels.controller';
@@ -829,6 +834,9 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     { provide: ListPublishedWrittenPackagesUseCase, useFactory: () => new ListPublishedWrittenPackagesUseCase() },
     { provide: GetPublishedWrittenPackageUseCase, useFactory: () => new GetPublishedWrittenPackageUseCase() },
     { provide: ListMyWrittenPurchasesUseCase, useFactory: () => new ListMyWrittenPurchasesUseCase() },
+    { provide: UpsertWrittenReviewUseCase, useFactory: () => new UpsertWrittenReviewUseCase() },
+    { provide: ListWrittenReviewsUseCase, useFactory: () => new ListWrittenReviewsUseCase() },
+    { provide: GetMyWrittenReviewUseCase, useFactory: () => new GetMyWrittenReviewUseCase() },
     { provide: JoinLiveSessionUseCase, useFactory: () => new JoinLiveSessionUseCase() },
     { provide: SubmitLiveAnswerUseCase, useFactory: () => new SubmitLiveAnswerUseCase() },
     { provide: StartLiveSessionUseCase, useFactory: () => new StartLiveSessionUseCase() },

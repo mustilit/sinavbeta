@@ -2085,6 +2085,21 @@ export const candidateWritten = {
     const { data } = await api.post('/upload/image', fd);
     return data;
   },
+  /** Paket değerlendirmeleri → { avg, count, items } */
+  reviews: async (id, { limit = 5, offset = 0 } = {}) => {
+    const { data } = await api.get(`/candidate-written/packages/${id}/reviews`, { params: { limit, offset } });
+    return data ?? { avg: null, count: 0, items: [] };
+  },
+  /** Adayın kendi değerlendirmesi → { rating, comment } | null */
+  myReview: async (id) => {
+    const { data } = await api.get(`/candidate-written/packages/${id}/my-review`);
+    return data;
+  },
+  /** Değerlendirme oluştur/güncelle */
+  upsertReview: async (id, { rating, comment }) => {
+    const { data } = await api.post(`/candidate-written/packages/${id}/review`, { rating, comment });
+    return data;
+  },
 };
 
 export default api;

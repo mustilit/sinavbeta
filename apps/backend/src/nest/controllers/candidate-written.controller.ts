@@ -21,6 +21,12 @@ import {
   GetWrittenQuestionSolutionUseCase,
 } from '../../application/use-cases/written/WrittenAttemptUseCases';
 import { ReportWrittenQuestionUseCase } from '../../application/use-cases/written/ReportWrittenQuestionUseCase';
+import {
+  UpsertWrittenReviewUseCase,
+  ListWrittenReviewsUseCase,
+  GetMyWrittenReviewUseCase,
+} from '../../application/use-cases/written/WrittenReviewUseCases';
+import { UpsertWrittenReviewDto } from './dto/upsert-written-review.dto';
 
 /**
  * Aday yazılı test akışı — pazar listesi/detay (public, çözüm sızdırmaz), satın alma,
@@ -43,6 +49,9 @@ export class CandidateWrittenController {
     @Inject(TimeoutWrittenAttemptUseCase) private readonly timeoutUC: TimeoutWrittenAttemptUseCase,
     @Inject(GetWrittenQuestionSolutionUseCase) private readonly solutionUC: GetWrittenQuestionSolutionUseCase,
     @Inject(ReportWrittenQuestionUseCase) private readonly reportUC: ReportWrittenQuestionUseCase,
+    @Inject(UpsertWrittenReviewUseCase) private readonly upsertReviewUC: UpsertWrittenReviewUseCase,
+    @Inject(ListWrittenReviewsUseCase) private readonly listReviewsUC: ListWrittenReviewsUseCase,
+    @Inject(GetMyWrittenReviewUseCase) private readonly myReviewUC: GetMyWrittenReviewUseCase,
   ) {}
 
   @Get('packages')
@@ -123,5 +132,24 @@ export class CandidateWrittenController {
   @Roles('CANDIDATE')
   async report(@Param('id') id: string, @Body() dto: ReportWrittenQuestionDto, @Req() req: any) {
     return this.reportUC.execute(id, { questionId: dto.questionId, reason: dto.reason }, req.user?.id);
+  }
+
+  @Get('packages/:id/reviews')
+  @Public()
+  @ApiOkResponse({ description: 'Paket değerlendirmeleri (ortalama + liste, herkese açık)' })
+  async reviews(@Param('id') id: string, @Query('limit') limit?: string, @Query('offset') offset?: string) {
+    return this.listReviewsUC.execute(id, { limit: limit ? Number(limit) : undefined, offset: offset ? Number(offset) : undefined });
+  }
+
+  @Get('packages/:id/my-review')
+  @Roles('CANDIDATE')
+  async myReview(@Param('id') id: string, @Req() req: any) {
+    return this.myReviewUC.execute(id, req.user?.id);
+  }
+
+  @Post('packages/:id/review')
+  @Roles('CANDIDATE')
+  async upsertReview(@Param('id') id: string, @Body() dto: UpsertWrittenReviewDto, @Req() req: any) {
+    return this.upsertReviewUC.execute(id, req.user?.id, { rating: dto.rating, comment: dto.comment });
   }
 }

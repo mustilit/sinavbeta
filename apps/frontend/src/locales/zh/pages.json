@@ -1927,7 +1927,7 @@
       "titleRequired": "套餐标题为必填"
     },
     "createPage": {
-      "title": "新建笔试套餐",
+      "title": "新建开放式测验套餐",
       "subtitle": "创建由开放式题目组成的测试套餐",
       "publishing": "发布中...",
       "saving": "保存中...",
@@ -1935,7 +1935,7 @@
       "createAndPublish": "创建并发布"
     },
     "editPage": {
-      "title": "编辑笔试套餐",
+      "title": "编辑开放式测验套餐",
       "subtitle": "更新套餐信息、测试和题目",
       "notFound": "未找到套餐",
       "publishedBadge": "已发布",
@@ -1954,9 +1954,9 @@
     }
   },
   "manageWrittenTests": {
-    "title": "我的笔试",
+    "title": "我的开放式测验",
     "subtitle": "管理你的笔试套餐",
-    "createNew": "新建笔试",
+    "createNew": "新建开放式测验",
     "searchPlaceholder": "搜索套餐...",
     "loadError": "加载套餐失败",
     "testsSuffix": "个测试",
@@ -2026,21 +2026,40 @@
     "review": "查看",
     "continue": "继续",
     "start": "开始",
-    "typeBadge": "笔试",
+    "typeBadge": "开放式",
     "priceLabel": "价格",
     "buy": "购买",
     "testsTitle": "测试",
     "questionsSuffix": "题",
-    "locked": "已锁定"
+    "locked": "已锁定",
+    "featuresTitle": "特性",
+    "sales": "销量",
+    "difficultyLabel": "难度",
+    "questionsTotal": "题目总数",
+    "reviewsTitle": "评价",
+    "noReviews": "暂无评价。",
+    "rate": "评价",
+    "editRate": "修改你的评价",
+    "commentPlaceholder": "你的评论（可选）",
+    "submitReview": "提交",
+    "reviewSaved": "你的评价已保存",
+    "ratingRequired": "请给出评分",
+    "reviewFailed": "无法保存评价",
+    "educatorTitle": "讲师",
+    "viewEducator": "查看主页",
+    "selfEvalNote": "本测验不评分；提交后你自行将答案与解析对照。",
+    "diffEasy": "简单",
+    "diffMedium": "中等",
+    "diffHard": "困难"
   },
   "writtenGrid": {
     "loadError": "加载套餐失败",
     "emptyMine": "你还没有购买笔试。",
     "emptyDiscover": "暂无已发布的笔试。",
     "free": "免费",
-    "typeBadge": "笔试",
+    "typeBadge": "开放式",
     "testsSuffix": "个测试",
-    "tab": "笔试"
+    "tab": "开放式测验"
   },
   "writtenResults": {
     "completed": "已完成",
