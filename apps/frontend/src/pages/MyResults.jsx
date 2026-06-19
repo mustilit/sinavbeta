@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 // Sprint 12 #1 — html2canvas (~250 KB) lazy: handleShare içinde dynamic import.
-import { entities, candidateTunnels } from "@/api/dalClient";
+import { entities, candidateTunnels, candidateWritten } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { Layers, CheckCircle2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { buildPageUrl } from "@/lib/navigation";
+import { Layers, CheckCircle2, FileText, PlayCircle } from "lucide-react";
 import { format, startOfWeek, endOfWeek, subWeeks } from "date-fns";
 import { tr } from "date-fns/locale";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -286,9 +288,12 @@ export default function MyResults() {
       <div className="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
         <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
         <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
+        <button type="button" onClick={() => setContentTab("written")} className={contentTabBtn("written")}>{t("pages:writtenGrid.tab")}</button>
       </div>
 
-      {contentTab === "tunnels" ? (
+      {contentTab === "written" ? (
+        <WrittenResultsTab />
+      ) : contentTab === "tunnels" ? (
         <TunnelReportsTab />
       ) : (
       <>
@@ -674,6 +679,57 @@ export default function MyResults() {
 }
 
 /** Tünel raporları sekmesi — satın alınan tünellerde ilerleme + durum (hafif). */
+/** Yazılı test raporu — satın alınan yazılı paketler + test deneme durumu (puansız). */
+function WrittenResultsTab() {
+  const { t } = useTranslation(["pages"]);
+  const { data, isLoading } = useQuery({
+    queryKey: ["candidateWritten", "mine"],
+    queryFn: () => candidateWritten.myPackages(),
+    staleTime: 30_000,
+  });
+  const items = data?.items ?? [];
+
+  if (isLoading) {
+    return <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" /></div>;
+  }
+  if (items.length === 0) {
+    return <p className="py-16 text-center text-sm text-slate-500">{t("pages:writtenGrid.emptyMine")}</p>;
+  }
+
+  const stateBadge = (st) => {
+    if (st === "SUBMITTED" || st === "TIMEOUT") return <Badge className="bg-emerald-100 text-emerald-700"><CheckCircle2 className="mr-1 h-3 w-3" />{t("pages:writtenResults.completed")}</Badge>;
+    if (st === "IN_PROGRESS") return <Badge className="bg-amber-100 text-amber-700">{t("pages:writtenResults.inProgress")}</Badge>;
+    return <Badge className="bg-slate-100 text-slate-600">{t("pages:writtenResults.notStarted")}</Badge>;
+  };
+
+  return (
+    <ul className="space-y-3">
+      {items.map((p) => (
+        <li key={p.packageId} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-2 flex items-center gap-2">
+            <FileText className="h-4 w-4 flex-shrink-0 text-indigo-600" />
+            <span className="font-semibold text-slate-900 dark:text-gray-100">{p.title}</span>
+          </div>
+          <ul className="space-y-1.5">
+            {p.tests.map((test) => (
+              <li key={test.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-gray-800">
+                <span className="min-w-0 truncate text-slate-700 dark:text-gray-200">{test.title}</span>
+                <div className="flex items-center gap-2">
+                  {stateBadge(test.state)}
+                  <Link to={`${buildPageUrl("TakeWrittenTest")}?testId=${test.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
+                    <PlayCircle className="h-3.5 w-3.5" />
+                    {test.state === "SUBMITTED" || test.state === "TIMEOUT" ? t("pages:writtenDetail.review") : test.state === "IN_PROGRESS" ? t("pages:writtenDetail.continue") : t("pages:writtenDetail.start")}
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function TunnelReportsTab() {
   const { data, isLoading } = useQuery({
     queryKey: ["candidateTunnelReports"],

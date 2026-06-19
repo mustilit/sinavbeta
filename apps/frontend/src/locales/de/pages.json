@@ -2040,5 +2040,10 @@
     "typeBadge": "Schriftlich",
     "testsSuffix": "Tests",
     "tab": "Schriftliche Tests"
+  },
+  "writtenResults": {
+    "completed": "Abgeschlossen",
+    "inProgress": "Läuft",
+    "notStarted": "Nicht begonnen"
   }
 }

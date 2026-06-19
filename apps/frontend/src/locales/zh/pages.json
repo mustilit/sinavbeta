@@ -2040,5 +2040,10 @@
     "typeBadge": "笔试",
     "testsSuffix": "个测试",
     "tab": "笔试"
+  },
+  "writtenResults": {
+    "completed": "已完成",
+    "inProgress": "进行中",
+    "notStarted": "未开始"
   }
 }

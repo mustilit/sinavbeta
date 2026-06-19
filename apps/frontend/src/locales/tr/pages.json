@@ -2040,5 +2040,10 @@
     "typeBadge": "Yazılı",
     "testsSuffix": "test",
     "tab": "Yazılı Testler"
+  },
+  "writtenResults": {
+    "completed": "Tamamlandı",
+    "inProgress": "Devam Ediyor",
+    "notStarted": "Başlanmadı"
   }
 }

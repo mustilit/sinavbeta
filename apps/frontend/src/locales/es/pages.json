@@ -2043,5 +2043,10 @@
     "typeBadge": "Escrito",
     "testsSuffix": "tests",
     "tab": "Tests escritos"
+  },
+  "writtenResults": {
+    "completed": "Completado",
+    "inProgress": "En curso",
+    "notStarted": "No iniciado"
   }
 }
