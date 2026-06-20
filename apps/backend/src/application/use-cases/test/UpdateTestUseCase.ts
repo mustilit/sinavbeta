@@ -35,6 +35,7 @@ export class UpdateTestUseCase {
       campaignValidFrom?: Date | null;
       campaignValidUntil?: Date | null;
       coverImageUrl?: string | null;
+      gradeLevelId?: string | null;
     },
     actorId?: string,
   ) {
@@ -78,6 +79,7 @@ export class UpdateTestUseCase {
       campaignValidFrom: updates.campaignValidFrom,
       campaignValidUntil: updates.campaignValidUntil,
       coverImageUrl: updates.coverImageUrl,
+      gradeLevelId: updates.gradeLevelId,
     });
     if (!updated) {
       // Failure path da loglanır — "olmadı" olayı "oldu" kadar önemlidir (observability skill).

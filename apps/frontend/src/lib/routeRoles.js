@@ -28,6 +28,7 @@ export const PAGE_ROLES = {
   Support: [ROLES.PUBLIC],
   Educators: [ROLES.PUBLIC],
   ExamTypes: [ROLES.PUBLIC],
+  GradeLevels: [ROLES.PUBLIC],
   EducatorProfile: [ROLES.PUBLIC],
   ForgotPassword: [ROLES.PUBLIC],
   // DeviceVerify: e-postadaki "Cihazı doğrula" linki — public erişim

@@ -47,4 +47,9 @@ export class UpdateTestDto {
   @IsOptional()
   @IsString()
   coverImageUrl?: string | null;
+
+  @ApiPropertyOptional({ description: 'Grade level (Sınıf) ID' })
+  @IsOptional()
+  @IsString()
+  gradeLevelId?: string | null;
 }

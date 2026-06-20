@@ -83,6 +83,7 @@ export class TestsController {
     return await this.updateTestUC.execute(id, {
       title: body.title,
       priceCents: body.priceCents,
+      gradeLevelId: body.gradeLevelId,
       duration: body.duration,
       isTimed: body.isTimed,
       hasSolutions: body.hasSolutions,

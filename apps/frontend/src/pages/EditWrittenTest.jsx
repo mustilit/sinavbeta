@@ -527,6 +527,15 @@ function EditWrittenTest() {
     staleTime: 300_000,
   });
 
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["gradeLevels", "active"],
+    queryFn: async () => {
+      const res = await entities.GradeLevel.filter({ is_active: true });
+      return res ?? [];
+    },
+    staleTime: 300_000,
+  });
+
   const { data: topicList = [] } = useQuery({
     queryKey: ["topics"],
     queryFn: () => topicsApi.list(),
@@ -554,6 +563,7 @@ function EditWrittenTest() {
       title: pkgDetail.title ?? "",
       description: pkgDetail.description ?? "",
       examTypeId: pkgDetail.examTypeId ?? "",
+      gradeLevelId: pkgDetail.gradeLevelId ?? "",
       priceCents: pkgDetail.priceCents != null ? pkgDetail.priceCents / 100 : 0,
       coverImageUrl: pkgDetail.cover_image ?? pkgDetail.coverImageUrl ?? "",
     });
@@ -575,6 +585,7 @@ function EditWrittenTest() {
         title: pkgData.title.trim(),
         description: pkgData.description.trim() || null,
         examTypeId: pkgData.examTypeId || undefined,
+        gradeLevelId: pkgData.gradeLevelId || undefined,
         priceCents: Math.round((pkgData.priceCents || 0) * 100),
         coverImageUrl: pkgData.coverImageUrl || null,
       });
@@ -784,6 +795,24 @@ function EditWrittenTest() {
                     <SelectItem value="__none">{t("pages:writtenTestForm.package.examTypeNone")}</SelectItem>
                     {examTypes.map((et) => (
                       <SelectItem key={et.id} value={et.id}>{et.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("pages:writtenTestForm.package.gradeLevelLabel", { defaultValue: "Sınıf" })}</Label>
+                <Select
+                  value={pkgData.gradeLevelId || "__none"}
+                  onValueChange={(v) => setPkgData((p) => ({ ...p, gradeLevelId: v === "__none" ? "" : v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("pages:writtenTestForm.package.gradeLevelPlaceholder", { defaultValue: "Genel" })} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">{t("pages:writtenTestForm.package.gradeLevelNone", { defaultValue: "Genel" })}</SelectItem>
+                    {gradeLevels.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

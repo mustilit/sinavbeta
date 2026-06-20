@@ -733,6 +733,11 @@ export default function EditTest() {
     queryFn:  () => entities.ExamType.filter({ is_active: true }),
   });
 
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["gradeLevels", "active"],
+    queryFn:  () => entities.GradeLevel.filter({ is_active: true }),
+  });
+
   const { data: topicList = [] } = useQuery({
     queryKey: ["topicsFlat"],
     queryFn:  async () => { try { return await topicsApi.flat(undefined); } catch { return []; } },
@@ -746,6 +751,7 @@ export default function EditTest() {
       description:   pkgDetail.description  ?? "",
       priceCents:    pkgDetail.priceCents != null ? pkgDetail.priceCents / 100 : 0,
       examTypeId:    pkgDetail.examTypeId   ?? "",
+      gradeLevelId:  (pkgDetail.tests ?? []).find(tt => tt.gradeLevelId)?.gradeLevelId ?? "",
       difficulty:    pkgDetail.difficulty   ?? "medium",
       coverImageUrl: pkgDetail.cover_image  ?? pkgDetail.coverImageUrl ?? "",
     });
@@ -805,11 +811,13 @@ export default function EditTest() {
         if (examTestId) {
           await api.patch(`/tests/${examTestId}`, {
             title: testData.title, isTimed: testData.isTimed,
+            gradeLevelId: pkgData.gradeLevelId || null,
             duration: testData.isTimed ? testData.duration : undefined,
           });
         } else {
           const { data: created } = await api.post("/tests", {
             title: testData.title, examTypeId: testData.examTypeId || undefined,
+            gradeLevelId: pkgData.gradeLevelId || undefined,
             price: 0, isTimed: testData.isTimed, duration: testData.isTimed ? testData.duration : undefined,
           });
           await api.post(`/packages/${packageId}/tests`, { testId: created.id });
@@ -1037,6 +1045,17 @@ export default function EditTest() {
                   <SelectItem value="none">{t("pages:testForm.package.examTypeNone")}</SelectItem>
                   {/* exam.name user-generated — çevrilmez */}
                   {examTypes.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("pages:testForm.package.gradeLevelLabel", { defaultValue: "Sınıf" })}</Label>
+              <Select value={pkgData.gradeLevelId || "none"} onValueChange={v => setPkgData({ ...pkgData, gradeLevelId: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder={t("pages:testForm.package.gradeLevelPlaceholder", { defaultValue: "Genel" })} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t("pages:testForm.package.gradeLevelNone", { defaultValue: "Genel" })}</SelectItem>
+                  {/* grade.name user-generated — çevrilmez */}
+                  {gradeLevels.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

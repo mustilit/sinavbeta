@@ -50,6 +50,7 @@ export interface IExamRepository {
       campaignValidFrom?: Date | null;
       campaignValidUntil?: Date | null;
       coverImageUrl?: string | null;
+      gradeLevelId?: string | null;
     },
   ): Promise<ExamWithQuestions | null>;
 }

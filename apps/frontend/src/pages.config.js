@@ -73,6 +73,7 @@ const EducatorRefunds = lazy(() => import('./pages/EducatorRefunds'));
 const EducatorSettings = lazy(() => import('./pages/EducatorSettings'));
 const Educators = lazy(() => import('./pages/Educators'));
 const ExamTypes = lazy(() => import('./pages/ExamTypes'));
+const GradeLevels = lazy(() => import('./pages/GradeLevels'));
 const Explore = lazy(() => import('./pages/Explore'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Home = lazy(() => import('./pages/Home'));
@@ -178,6 +179,7 @@ export const PAGES = {
     "EducatorSettings": EducatorSettings,
     "Educators": Educators,
     "ExamTypes": ExamTypes,
+    "GradeLevels": GradeLevels,
     "Explore": Explore,
     "ForgotPassword": ForgotPassword,
     "Home": Home,

@@ -301,10 +301,12 @@ export class PrismaExamRepository implements IExamRepository {
       campaignValidFrom?: Date | null;
       campaignValidUntil?: Date | null;
       coverImageUrl?: string | null;
+      gradeLevelId?: string | null;
     },
   ): Promise<ExamWithQuestions | null> {
     const data: Record<string, unknown> = {};
     if (updates.title !== undefined) data.title = updates.title;
+    if (updates.gradeLevelId !== undefined) data.gradeLevelId = updates.gradeLevelId;
     if (updates.priceCents !== undefined) data.priceCents = updates.priceCents;
     if (updates.duration !== undefined) data.duration = updates.duration;
     if (updates.isTimed !== undefined) data.isTimed = updates.isTimed;

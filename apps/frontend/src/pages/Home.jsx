@@ -315,7 +315,7 @@ function GradeLevelsCarousel({ gradeLevels, t }) {
 
   return (
     <section>
-      <SectionHeader title={title} isPersonalized={false} linkTo={createPageUrl("Explore")} />
+      <SectionHeader title={title} isPersonalized={false} linkTo={createPageUrl("GradeLevels")} />
       <div
         className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
         onMouseEnter={() => setPaused(true)}
