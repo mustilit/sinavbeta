@@ -915,17 +915,47 @@ function EditWrittenTest() {
               </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-4">
               <p className="text-xs text-slate-500">{t("pages:writtenTestForm.preview.testsListTitle")}</p>
-              {tests.filter((te) => te.title.trim()).map((te) => (
-                <div key={te._k} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                  <BookOpen className="w-4 h-4 text-slate-400" />
-                  <span>{te.title}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {te.questions.filter(isQComplete).length} {t("pages:writtenTestForm.testCard.questionsSuffix")}
-                  </Badge>
-                </div>
-              ))}
+              {tests.filter((te) => te.title.trim()).map((te) => {
+                const qs = te.questions.filter(isQComplete);
+                return (
+                  <div key={te._k} className="rounded-lg border border-slate-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <BookOpen className="w-4 h-4 text-slate-400" />
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{te.title}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {qs.length} {t("pages:writtenTestForm.testCard.questionsSuffix")}
+                      </Badge>
+                    </div>
+                    <ol className="space-y-4">
+                      {qs.map((q, qi) => (
+                        <li key={q._k ?? qi} className="text-sm">
+                          <p className="font-medium text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                            {qi + 1}. {q.content}
+                          </p>
+                          {(q.mediaUrl || q._imgPreview) && (
+                            <img src={q._imgPreview || q.mediaUrl} alt="" className="mt-2 max-h-56 rounded border border-slate-200 dark:border-gray-700" />
+                          )}
+                          {(q.solutionText || q.solutionMediaUrl || q._solutionImgPreview) && (
+                            <div className="mt-2 rounded-md bg-emerald-50 dark:bg-emerald-900/20 p-3">
+                              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
+                                {t("pages:writtenTestForm.preview.solutionLabel", { defaultValue: "Çözüm" })}
+                              </p>
+                              {q.solutionText && (
+                                <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{q.solutionText}</p>
+                              )}
+                              {(q.solutionMediaUrl || q._solutionImgPreview) && (
+                                <img src={q._solutionImgPreview || q.solutionMediaUrl} alt="" className="mt-2 max-h-56 rounded border border-slate-200 dark:border-gray-700" />
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="flex flex-wrap justify-between gap-3 pt-4 border-t dark:border-gray-700">

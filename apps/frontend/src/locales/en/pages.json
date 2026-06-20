@@ -1931,7 +1931,8 @@
       "summary": "Summary",
       "testsCount": "{{count}} tests",
       "validQuestions": "{{count}} valid questions",
-      "testsListTitle": "Tests"
+      "testsListTitle": "Tests",
+      "solutionLabel": "Solution"
     },
     "validations": {
       "titleRequired": "Package title is required"

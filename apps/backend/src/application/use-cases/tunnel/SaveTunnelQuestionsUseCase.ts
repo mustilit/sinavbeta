@@ -1,5 +1,9 @@
+import { Logger } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
+
+const moderationLogger = new Logger('TunnelQuestionModeration');
 
 type OptionInput = { content: string; mediaUrl?: string | null; isCorrect: boolean };
 type QuestionInput = { content: string; mediaUrl?: string | null; options: OptionInput[] };
@@ -19,6 +23,8 @@ const EDITABLE: ReadonlySet<string> = new Set(['DRAFT', 'REJECTED']);
  * sayısı asıl SubmitTunnelForApproval'da zorlanır (taslak yarım kaydedilebilsin).
  */
 export class SaveTunnelQuestionsUseCase {
+  constructor(private readonly moderate?: ModerateTextContentUseCase) {}
+
   async execute(tunnelId: string, layers: LayerInput[], actorId?: string | null) {
     if (!actorId) throw new AppError('UNAUTHORIZED', 'Giriş gerekli', 401);
 
@@ -79,6 +85,30 @@ export class SaveTunnelQuestionsUseCase {
       }
       await tx.tunnel.update({ where: { id: tunnelId }, data: { updatedAt: new Date() } });
     });
+
+    // Best-effort eğitici içerik moderasyonu (metin) — akışı bloke etmez.
+    if (this.moderate) {
+      const moderate = this.moderate;
+      setImmediate(async () => {
+        try {
+          const text = (layers ?? [])
+            .flatMap((l) => (l.questions ?? []).flatMap((q) => [q.content, ...(q.options ?? []).map((o) => o.content)]))
+            .filter((s) => (s ?? '').trim())
+            .join('\n');
+          if (!text.trim()) return;
+          await moderate.execute({
+            entityType: 'TunnelQuestion',
+            entityId: tunnelId,
+            userId: tunnel.educatorId ?? '',
+            tenantId: tunnel.tenantId ?? '',
+            text,
+            isEducatorContent: true,
+          });
+        } catch (err: any) {
+          moderationLogger.warn(`tunnel.question.moderation_failed ${err?.message} tid=${tunnelId}`);
+        }
+      });
+    }
 
     return { ok: true };
   }

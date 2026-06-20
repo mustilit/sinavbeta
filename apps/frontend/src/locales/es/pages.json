@@ -1934,7 +1934,8 @@
       "summary": "Resumen",
       "testsCount": "{{count}} tests",
       "validQuestions": "{{count}} preguntas válidas",
-      "testsListTitle": "Tests"
+      "testsListTitle": "Tests",
+      "solutionLabel": "Solución"
     },
     "validations": {
       "titleRequired": "El título del paquete es obligatorio"

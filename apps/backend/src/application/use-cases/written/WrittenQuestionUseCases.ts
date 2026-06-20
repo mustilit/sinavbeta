@@ -3,8 +3,40 @@
  * ŞIK YOK. solutionText VEYA solutionMediaUrl zorunlu (create'de).
  * Yayın kilidi: package.publishedAt != null → içerik değiştirilemez.
  */
+import { Logger } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
+
+const moderationLogger = new Logger('WrittenQuestionModeration');
+
+/** Best-effort eğitici içerik moderasyonu (metin) — yazma sonrası, akışı bloke etmez. */
+function moderateWrittenQuestion(
+  moderate: ModerateTextContentUseCase | undefined,
+  params: { questionId: string; testId: string; content: string; solutionText: string },
+) {
+  if (!moderate) return;
+  setImmediate(async () => {
+    try {
+      const test = await prisma.writtenTest.findUnique({
+        where: { id: params.testId },
+        select: { tenantId: true, educatorId: true },
+      });
+      const text = [params.content, params.solutionText].filter(Boolean).join('\n\n');
+      if (!text.trim()) return;
+      await moderate.execute({
+        entityType: 'WrittenQuestion',
+        entityId: params.questionId,
+        userId: test?.educatorId ?? '',
+        tenantId: test?.tenantId ?? '',
+        text,
+        isEducatorContent: true,
+      });
+    } catch (err: any) {
+      moderationLogger.warn(`written.question.moderation_failed ${err?.message} qid=${params.questionId}`);
+    }
+  });
+}
 
 // ─────────────────────────────────────────────────────────────
 // Yardımcılar
@@ -49,10 +81,11 @@ async function resolveQuestionForActor(
   return { question: { id: question.id }, test: { id: test.id, packageId: test.packageId }, pkg };
 }
 
-function assertNotPublished(pkg: { publishedAt: Date | null } | null) {
-  if (pkg?.publishedAt) {
-    throw new AppError('PACKAGE_PUBLISHED', 'Yayımlanmış paketin içeriği değiştirilemez', 409);
-  }
+// Yayın kilidi KALDIRILDI: yazılı içerik snapshot ile korunur — mevcut alıcılar
+// satın alma anındaki testsSnapshot'ı çözer, yeni alıcılar güncel içeriği alır
+// (TestPackage deseni). Bu yüzden yayındaki paket de düzenlenebilir.
+function assertNotPublished(_pkg: { publishedAt: Date | null } | null) {
+  // no-op
 }
 
 async function recountQuestions(testId: string) {
@@ -78,6 +111,8 @@ type CreateInput = {
 };
 
 export class CreateWrittenQuestionUseCase {
+  constructor(private readonly moderate?: ModerateTextContentUseCase) {}
+
   async execute(input: CreateInput, actorId?: string | null, actorRole?: string | null) {
     if (!actorId) throw new AppError('UNAUTHORIZED', 'Giriş gerekli', 401);
 
@@ -136,6 +171,8 @@ export class CreateWrittenQuestionUseCase {
 
     await recountQuestions(test.id);
 
+    moderateWrittenQuestion(this.moderate, { questionId: question.id, testId: test.id, content, solutionText });
+
     return question;
   }
 }
@@ -153,6 +190,8 @@ type UpdateInput = {
 };
 
 export class UpdateWrittenQuestionUseCase {
+  constructor(private readonly moderate?: ModerateTextContentUseCase) {}
+
   async execute(
     testId: string,
     questionId: string,
@@ -178,10 +217,19 @@ export class UpdateWrittenQuestionUseCase {
       return prisma.writtenQuestion.findUnique({ where: { id: questionId } });
     }
 
-    return prisma.writtenQuestion.update({
+    const updated = await prisma.writtenQuestion.update({
       where: { id: questionId },
       data,
     });
+
+    moderateWrittenQuestion(this.moderate, {
+      questionId,
+      testId,
+      content: (updated.content ?? '').trim(),
+      solutionText: (updated.solutionText ?? '').trim(),
+    });
+
+    return updated;
   }
 }
 

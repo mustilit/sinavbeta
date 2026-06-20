@@ -1,5 +1,6 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import type { ModerateTextContentUseCase } from '../moderation/ModerateTextContentUseCase';
 
 async function requireActivePurchase(candidateId: string, packageId: string) {
   const p = await prisma.writtenPurchase.findUnique({
@@ -12,6 +13,8 @@ async function requireActivePurchase(candidateId: string, packageId: string) {
 
 /** Aday yazılı paket değerlendirmesi (yalnız satın alan). Paket başına tek (upsert). */
 export class UpsertWrittenReviewUseCase {
+  constructor(private readonly moderate?: ModerateTextContentUseCase) {}
+
   async execute(packageId: string, actorId: string | null | undefined, input: { rating: number; comment?: string | null }) {
     if (!actorId) throw new AppError('UNAUTHORIZED', 'Giriş gerekli', 401);
     const rating = Math.round(Number(input.rating));
@@ -19,6 +22,20 @@ export class UpsertWrittenReviewUseCase {
       throw new AppError('INVALID_RATING', 'Puan 1-5 arası olmalı', 400);
     const purchase = await requireActivePurchase(actorId, packageId);
     const comment = (input.comment ?? '').trim().slice(0, 2000) || null;
+
+    // İçerik moderasyonu — uygunsuz yorum SERT BLOK (aday yorumu, paket review deseni).
+    if (this.moderate && comment) {
+      const verdict = await this.moderate.execute({
+        entityType: 'WrittenReview',
+        entityId: `${packageId}:${actorId}`,
+        userId: actorId,
+        tenantId: purchase.tenantId ?? '',
+        text: comment,
+        isEducatorContent: false,
+      });
+      if (!verdict.allowed)
+        throw new AppError('COMMENT_REJECTED', verdict.message ?? 'Yorumunuz uygunsuz içerik nedeniyle reddedildi.', 400);
+    }
 
     const existing = await prisma.writtenReview.findUnique({
       where: { packageId_candidateId: { packageId, candidateId: actorId } },

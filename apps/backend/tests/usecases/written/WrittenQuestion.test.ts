@@ -103,16 +103,18 @@ describe('CreateWrittenQuestionUseCase', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
-  it('paket yayımlıysa → PACKAGE_PUBLISHED', async () => {
+  it('paket yayımlı olsa bile soru eklenebilir (snapshot korur)', async () => {
     p.writtenTest.findUnique.mockResolvedValue(
       makeTest({ package: { id: 'pkg1', educatorId: 'edu1', publishedAt: new Date() } }),
     );
-    await expect(
-      new CreateWrittenQuestionUseCase().execute(
-        { testId: 'tst1', content: 'Soru', solutionText: 'Çözüm' },
-        'edu1',
-      ),
-    ).rejects.toMatchObject({ code: 'PACKAGE_PUBLISHED' });
+    p.writtenQuestion.create.mockResolvedValue({ id: 'q1', testId: 'tst1' });
+    p.writtenQuestion.count.mockResolvedValue(1);
+    p.writtenTest.update = jest.fn().mockResolvedValue({ id: 'tst1', questionCount: 1 });
+    const result = await new CreateWrittenQuestionUseCase().execute(
+      { testId: 'tst1', content: 'Soru', solutionText: 'Çözüm' },
+      'edu1',
+    );
+    expect(result).toMatchObject({ id: 'q1' });
   });
 
   it('admin başka eğiticinin testine soru ekleyebilir', async () => {
@@ -182,14 +184,14 @@ describe('UpdateWrittenQuestionUseCase', () => {
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
-  it('paket yayımlıysa → PACKAGE_PUBLISHED', async () => {
+  it('paket yayımlı olsa bile güncellenebilir (snapshot korur)', async () => {
     p.writtenTest.findUnique.mockResolvedValue(
       makeTest({ package: { id: 'pkg1', educatorId: 'edu1', publishedAt: new Date() } }),
     );
     p.writtenQuestion.findUnique.mockResolvedValue({ id: 'q1', testId: 'tst1' });
-    await expect(
-      new UpdateWrittenQuestionUseCase().execute('tst1', 'q1', { solutionText: 'X' }, 'edu1'),
-    ).rejects.toMatchObject({ code: 'PACKAGE_PUBLISHED' });
+    p.writtenQuestion.update.mockResolvedValue({ id: 'q1', solutionText: 'X' });
+    const result = await new UpdateWrittenQuestionUseCase().execute('tst1', 'q1', { solutionText: 'X' }, 'edu1');
+    expect(result).toMatchObject({ id: 'q1' });
   });
 
   it('soru başka teste ait → QUESTION_NOT_FOUND', async () => {
@@ -240,14 +242,16 @@ describe('DeleteWrittenQuestionUseCase', () => {
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
-  it('paket yayımlıysa → PACKAGE_PUBLISHED', async () => {
+  it('paket yayımlı olsa bile silinebilir (snapshot korur)', async () => {
     p.writtenTest.findUnique.mockResolvedValue(
       makeTest({ package: { id: 'pkg1', educatorId: 'edu1', publishedAt: new Date() } }),
     );
     p.writtenQuestion.findUnique.mockResolvedValue({ id: 'q1', testId: 'tst1' });
-    await expect(
-      new DeleteWrittenQuestionUseCase().execute('tst1', 'q1', 'edu1'),
-    ).rejects.toMatchObject({ code: 'PACKAGE_PUBLISHED' });
+    p.writtenQuestion.delete.mockResolvedValue({ id: 'q1' });
+    p.writtenQuestion.count.mockResolvedValue(0);
+    (p.writtenTest as any).update = jest.fn().mockResolvedValue({ id: 'tst1', questionCount: 0 });
+    const result = await new DeleteWrittenQuestionUseCase().execute('tst1', 'q1', 'edu1');
+    expect(result).toMatchObject({ ok: true });
   });
 
   it('başarılı silme + recount', async () => {

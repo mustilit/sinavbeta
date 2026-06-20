@@ -1931,7 +1931,8 @@
       "summary": "Ozet",
       "testsCount": "{{count}} test",
       "validQuestions": "{{count}} gecerli soru",
-      "testsListTitle": "Testler"
+      "testsListTitle": "Testler",
+      "solutionLabel": "Çözüm"
     },
     "validations": {
       "titleRequired": "Paket basligi zorunludur"

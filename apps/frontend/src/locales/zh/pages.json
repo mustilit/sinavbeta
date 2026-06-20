@@ -1931,7 +1931,8 @@
       "summary": "摘要",
       "testsCount": "{{count}} 个测试",
       "validQuestions": "{{count}} 道有效题目",
-      "testsListTitle": "测试"
+      "testsListTitle": "测试",
+      "solutionLabel": "解答"
     },
     "validations": {
       "titleRequired": "套餐标题为必填"

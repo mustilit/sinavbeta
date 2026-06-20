@@ -8,7 +8,11 @@ export type EntityType =
   | 'ExamTest'
   | 'Review'
   | 'EducatorProfile'
-  | 'LiveQuestion';
+  | 'LiveQuestion'
+  | 'WrittenQuestion'
+  | 'WrittenReview'
+  | 'TunnelQuestion'
+  | 'TunnelReview';
 
 export interface ModerationInput {
   entityType: EntityType;

@@ -69,11 +69,11 @@ describe('CreateWrittenTestUseCase', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
-  it('yayımlanmış paket → PACKAGE_PUBLISHED', async () => {
+  it('yayımlanmış pakete de test eklenebilir (snapshot korur)', async () => {
     p.writtenPackage.findUnique.mockResolvedValue(makePkg({ publishedAt: new Date() }));
-    await expect(
-      new CreateWrittenTestUseCase().execute({ packageId: 'pkg1', title: 'T' }, 'edu1'),
-    ).rejects.toMatchObject({ code: 'PACKAGE_PUBLISHED' });
+    p.writtenTest.create.mockResolvedValue({ id: 'tst1', title: 'T', status: 'DRAFT' });
+    const result = await new CreateWrittenTestUseCase().execute({ packageId: 'pkg1', title: 'T' }, 'edu1');
+    expect(result).toMatchObject({ id: 'tst1' });
   });
 
   it('admin başka eğiticinin paketine test ekleyebilir', async () => {
@@ -139,13 +139,13 @@ describe('UpdateWrittenTestUseCase', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
-  it('yayımlanmış paket → PACKAGE_PUBLISHED', async () => {
+  it('yayımlanmış pakette de test güncellenebilir (snapshot korur)', async () => {
     p.writtenTest.findUnique.mockResolvedValue(
       makeTest({ package: { id: 'pkg1', educatorId: 'edu1', publishedAt: new Date() } }),
     );
-    await expect(
-      new UpdateWrittenTestUseCase().execute('tst1', { title: 'X' }, 'edu1'),
-    ).rejects.toMatchObject({ code: 'PACKAGE_PUBLISHED' });
+    p.writtenTest.update.mockResolvedValue({ id: 'tst1', title: 'X' });
+    const result = await new UpdateWrittenTestUseCase().execute('tst1', { title: 'X' }, 'edu1');
+    expect(result).toMatchObject({ id: 'tst1' });
   });
 
   it('başarılı güncelleme', async () => {
@@ -167,13 +167,13 @@ describe('DeleteWrittenTestUseCase', () => {
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
-  it('yayımlanmış paket → PACKAGE_PUBLISHED', async () => {
+  it('yayımlanmış pakette de test silinebilir (snapshot korur)', async () => {
     p.writtenTest.findUnique.mockResolvedValue(
       makeTest({ package: { id: 'pkg1', educatorId: 'edu1', publishedAt: new Date() } }),
     );
-    await expect(
-      new DeleteWrittenTestUseCase().execute('tst1', 'edu1'),
-    ).rejects.toMatchObject({ code: 'PACKAGE_PUBLISHED' });
+    p.writtenTest.update.mockResolvedValue({ id: 'tst1', deletedAt: new Date() });
+    const result = await new DeleteWrittenTestUseCase().execute('tst1', 'edu1');
+    expect(result).toMatchObject({ id: 'tst1' });
   });
 
   it('başarılı soft delete', async () => {

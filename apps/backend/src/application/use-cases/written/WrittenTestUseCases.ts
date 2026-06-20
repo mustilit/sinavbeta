@@ -37,10 +37,11 @@ async function resolveTestForActor(
   return { id: test.id, packageId: test.packageId, pkg };
 }
 
-function assertNotPublished(pkg: { publishedAt: Date | null } | null) {
-  if (pkg?.publishedAt) {
-    throw new AppError('PACKAGE_PUBLISHED', 'Yayımlanmış paketin içeriği değiştirilemez', 409);
-  }
+// Yayın kilidi KALDIRILDI: yazılı içerik snapshot ile korunur (mevcut alıcılar
+// satın alma anındaki testsSnapshot'ı çözer; yeni alıcılar güncel içeriği alır —
+// TestPackage deseni). Yayındaki paket de düzenlenebilir.
+function assertNotPublished(_pkg: { publishedAt: Date | null } | null) {
+  // no-op
 }
 
 // ─────────────────────────────────────────────────────────────
