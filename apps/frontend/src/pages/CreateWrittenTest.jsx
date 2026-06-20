@@ -561,10 +561,10 @@ function CreateWrittenTest() {
     staleTime: 300_000,
   });
 
-  // Konu listesi
+  // Konu listesi — düz liste (TopicCombobox text-search'i bunu kullanır)
   const { data: topicList = [] } = useQuery({
-    queryKey: ["topics"],
-    queryFn: () => topicsApi.list(),
+    queryKey: ["topicsFlat"],
+    queryFn: async () => { try { return await topicsApi.flat(undefined); } catch { return []; } },
     staleTime: 300_000,
   });
 
