@@ -1962,7 +1962,8 @@
       "saveFailed": "Save failed",
       "packagePublishedError": "This action can't be done on a published package",
       "cannotDeletePublished": "An answered question can't be deleted"
-    }
+    },
+    "draftRestore": "An unsaved draft was found. Restore it?"
   },
   "manageWrittenTests": {
     "title": "My Open-Ended Tests",
@@ -2028,7 +2029,9 @@
     "saveError": "Could not save answer",
     "genericError": "An error occurred",
     "timeUp": "Time is up",
-    "yourDrawing": "Your Drawing"
+    "yourDrawing": "Your Drawing",
+    "saveExit": "Save & Exit",
+    "savedExit": "Your progress was saved"
   },
   "writtenDetail": {
     "notFound": "Package not found",
@@ -2075,7 +2078,8 @@
     "typeBadge": "Open-Ended",
     "testsSuffix": "tests",
     "tab": "Open-Ended Tests",
-    "purchasedLabel": "Purchased"
+    "purchasedLabel": "Purchased",
+    "testsLabel": "{{count}} Test"
   },
   "writtenResults": {
     "completed": "Completed",

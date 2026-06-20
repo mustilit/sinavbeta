@@ -269,9 +269,11 @@ export default function MySales() {
                         <div className="flex items-center gap-1.5">
                           <span className={
                             "flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold " +
-                            (sale.kind === "tunnel" ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-500")
+                            (sale.kind === "tunnel" ? "bg-indigo-50 text-indigo-600"
+                              : sale.kind === "written" ? "bg-amber-50 text-amber-700"
+                              : "bg-slate-100 text-slate-500")
                           }>
-                            {sale.kind === "tunnel" ? "Tünel" : "Paket"}
+                            {sale.kind === "tunnel" ? "Tünel" : sale.kind === "written" ? "Yazılı" : "Paket"}
                           </span>
                           {/* test_package_title user-generated */}
                           <span className="truncate">{sale.test_package_title}</span>

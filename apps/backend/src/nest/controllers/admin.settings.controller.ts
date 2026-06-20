@@ -51,6 +51,8 @@ export class AdminSettingsController {
         adPurchasesEnabled: dto.adPurchasesEnabled,
         twoFactorSystemEnabled: dto.twoFactorSystemEnabled,
         minPackagePriceCents: dto.minPackagePriceCents,
+        minTunnelPriceCents: dto.minTunnelPriceCents,
+        minWrittenPriceCents: dto.minWrittenPriceCents,
         maxDiscountPercent: dto.maxDiscountPercent,
         googleClientId: dto.googleClientId,
         minQuestionsPerTest: dto.minQuestionsPerTest,

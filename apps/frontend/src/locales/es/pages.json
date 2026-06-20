@@ -1965,7 +1965,8 @@
       "saveFailed": "Error al guardar",
       "packagePublishedError": "Esta acción no se puede hacer en un paquete publicado",
       "cannotDeletePublished": "No se puede eliminar una pregunta respondida"
-    }
+    },
+    "draftRestore": "Se encontró un borrador sin guardar. ¿Restaurarlo?"
   },
   "manageWrittenTests": {
     "title": "Mis exámenes abiertos",
@@ -2031,7 +2032,9 @@
     "saveError": "No se pudo guardar la respuesta",
     "genericError": "Ocurrió un error",
     "timeUp": "Se acabó el tiempo",
-    "yourDrawing": "Tu dibujo"
+    "yourDrawing": "Tu dibujo",
+    "saveExit": "Guardar y salir",
+    "savedExit": "Tu progreso se guardó"
   },
   "writtenDetail": {
     "notFound": "Paquete no encontrado",
@@ -2078,7 +2081,8 @@
     "typeBadge": "Abierto",
     "testsSuffix": "tests",
     "tab": "Exámenes abiertos",
-    "purchasedLabel": "Comprado"
+    "purchasedLabel": "Comprado",
+    "testsLabel": "{{count}} Test"
   },
   "writtenResults": {
     "completed": "Completado",

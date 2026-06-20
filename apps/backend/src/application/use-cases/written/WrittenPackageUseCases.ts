@@ -59,6 +59,10 @@ export class CreateWrittenPackageUseCase {
     if (!educator) throw new AppError('UNAUTHORIZED', 'Kullanıcı bulunamadı', 401);
 
     const priceCents = Math.max(0, Math.floor(input.priceCents ?? 0));
+    const settings = await prisma.adminSettings.findFirst({ where: { id: 1 }, select: { minWrittenPriceCents: true } });
+    const minPrice = (settings as any)?.minWrittenPriceCents ?? 0;
+    if (priceCents > 0 && priceCents < minPrice)
+      throw new AppError('WRITTEN_PRICE_TOO_LOW', `Yazılı paket fiyatı en az ${(minPrice / 100).toFixed(2)} ₺ olmalı`, 400);
 
     // Sınıf (GradeLevel): seçilmediyse "Genel" fallback. (scalar — relation yok)
     let gradeLevelId: string | null = input.gradeLevelId ?? null;
@@ -112,7 +116,14 @@ export class UpdateWrittenPackageUseCase {
       data.title = title;
     }
     if (input.description !== undefined) data.description = (input.description ?? '').trim() || null;
-    if (input.priceCents !== undefined) data.priceCents = Math.max(0, Math.floor(input.priceCents));
+    if (input.priceCents !== undefined) {
+      const priceCents = Math.max(0, Math.floor(input.priceCents));
+      const settings = await prisma.adminSettings.findFirst({ where: { id: 1 }, select: { minWrittenPriceCents: true } });
+      const minPrice = (settings as any)?.minWrittenPriceCents ?? 0;
+      if (priceCents > 0 && priceCents < minPrice)
+        throw new AppError('WRITTEN_PRICE_TOO_LOW', `Yazılı paket fiyatı en az ${(minPrice / 100).toFixed(2)} ₺ olmalı`, 400);
+      data.priceCents = priceCents;
+    }
     if (input.difficulty !== undefined) data.difficulty = (input.difficulty ?? '').trim() || 'medium';
     if (input.gradeLevelId !== undefined) data.gradeLevelId = input.gradeLevelId || null;
     if (input.coverImageUrl !== undefined) data.coverImageUrl = (input.coverImageUrl ?? '').trim() || null;

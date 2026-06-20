@@ -1962,7 +1962,8 @@
       "saveFailed": "Speichern fehlgeschlagen",
       "packagePublishedError": "Diese Aktion ist bei einem veröffentlichten Paket nicht möglich",
       "cannotDeletePublished": "Eine beantwortete Frage kann nicht gelöscht werden"
-    }
+    },
+    "draftRestore": "Ein ungespeicherter Entwurf wurde gefunden. Wiederherstellen?"
   },
   "manageWrittenTests": {
     "title": "Meine offenen Tests",
@@ -2028,7 +2029,9 @@
     "saveError": "Antwort konnte nicht gespeichert werden",
     "genericError": "Ein Fehler ist aufgetreten",
     "timeUp": "Die Zeit ist um",
-    "yourDrawing": "Deine Zeichnung"
+    "yourDrawing": "Deine Zeichnung",
+    "saveExit": "Speichern & Verlassen",
+    "savedExit": "Dein Fortschritt wurde gespeichert"
   },
   "writtenDetail": {
     "notFound": "Paket nicht gefunden",
@@ -2075,7 +2078,8 @@
     "typeBadge": "Offen",
     "testsSuffix": "Tests",
     "tab": "Offene Tests",
-    "purchasedLabel": "Gekauft"
+    "purchasedLabel": "Gekauft",
+    "testsLabel": "{{count}} Test"
   },
   "writtenResults": {
     "completed": "Abgeschlossen",

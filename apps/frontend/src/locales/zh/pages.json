@@ -1962,7 +1962,8 @@
       "saveFailed": "保存失败",
       "packagePublishedError": "已发布的套餐无法执行此操作",
       "cannotDeletePublished": "已作答的题目无法删除"
-    }
+    },
+    "draftRestore": "发现未保存的草稿。要恢复吗？"
   },
   "manageWrittenTests": {
     "title": "我的开放式测验",
@@ -2028,7 +2029,9 @@
     "saveError": "无法保存答案",
     "genericError": "发生错误",
     "timeUp": "时间到",
-    "yourDrawing": "你的手绘"
+    "yourDrawing": "你的手绘",
+    "saveExit": "保存并退出",
+    "savedExit": "你的进度已保存"
   },
   "writtenDetail": {
     "notFound": "未找到套餐",
@@ -2075,7 +2078,8 @@
     "typeBadge": "开放式",
     "testsSuffix": "个测试",
     "tab": "开放式测验",
-    "purchasedLabel": "已购买"
+    "purchasedLabel": "已购买",
+    "testsLabel": "{{count}} Test"
   },
   "writtenResults": {
     "completed": "已完成",

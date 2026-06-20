@@ -59,6 +59,12 @@ export class UpdateAdminSettingsDto {
   @Min(0)
   minTunnelPriceCents?: number;
 
+  @ApiPropertyOptional({ example: 0, description: 'Minimum yazılı paket fiyatı (kuruş; 0 = ücretsiz serbest)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  minWrittenPriceCents?: number;
+
   @ApiPropertyOptional({ example: 50, description: 'Eğiticinin tanımlayabileceği maksimum indirim oranı (1-100)' })
   @IsOptional()
   @IsInt()

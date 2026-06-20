@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import api from "@/lib/api/apiClient";
 import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, ArrowRight, Layers, ImagePlus, X, Pencil, CheckCircle2, Upload, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -734,6 +735,23 @@ function LayerEditor({ layer, optionCount, onChange }) {
     setOpenIndex((cur) => (cur === qi ? null : cur != null && cur > qi ? cur - 1 : cur));
   };
   const setQ = (qi, patch) => onChange(questions.map((q, i) => (i === qi ? { ...q, ...patch } : q)));
+  // Kopya soru kontrolü — yalnız tünel soru havuzu içinde (blur).
+  const checkDup = async (qi, text) => {
+    const t = (text || "").trim();
+    if (t.length < 15 || questions[qi]?._dup) return;
+    try {
+      const { data } = await api.post("/educators/me/questions/check-duplicate-tunnel", {
+        content: t,
+        excludeQuestionId: questions[qi]?.id ?? null,
+      });
+      if (data?.isDuplicate) {
+        setQ(qi, { _dup: data });
+        toast.warning("Benzer bir tünel sorusu mevcut (aynılık kontrolü).");
+      }
+    } catch {
+      // sessiz
+    }
+  };
   const setOpt = (qi, oi, patch) =>
     setQ(qi, { options: questions[qi].options.map((o, i) => (i === oi ? { ...o, ...patch } : o)) });
   const setCorrect = (qi, oi) =>
@@ -817,10 +835,17 @@ function LayerEditor({ layer, optionCount, onChange }) {
                 <div className="space-y-2 border-t border-slate-100 p-4 pt-3">
               <Textarea
                 value={q.content}
-                onChange={(e) => setQ(qi, { content: e.target.value })}
+                onChange={(e) => setQ(qi, { content: e.target.value, _dup: null })}
+                onBlur={(e) => checkDup(qi, e.target.value)}
                 rows={2}
                 placeholder="Soru metni (görsel-only soru için boş bırakılabilir)"
               />
+              {q._dup?.isDuplicate && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs">
+                  <p className="font-medium text-amber-900">Bu soru mevcut bir tünel sorunuza çok benziyor.</p>
+                  <p className="mt-0.5 text-amber-700">Benzerlik: %{Math.round((q._dup.similarity || 0) * 100)}</p>
+                </div>
+              )}
               {/* Soru görseli */}
               <div className="flex flex-wrap items-center gap-2">
                 <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">

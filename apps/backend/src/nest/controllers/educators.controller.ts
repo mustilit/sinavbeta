@@ -16,6 +16,8 @@ import { GetMyEducatorRatingUseCase } from '../../application/use-cases/review/G
 import { UpdateEducatorProfileUseCase } from '../../application/use-cases/educator/UpdateEducatorProfileUseCase';
 import { getSharedModerateTextContentUseCase } from '../../application/services/content-safety/sharedModeration';
 import { CheckDuplicateQuestionUseCase } from '../../application/use-cases/question/CheckDuplicateQuestionUseCase';
+import { CheckDuplicateWrittenQuestionUseCase } from '../../application/use-cases/written/CheckDuplicateWrittenQuestionUseCase';
+import { CheckDuplicateTunnelQuestionUseCase } from '../../application/use-cases/tunnel/CheckDuplicateTunnelQuestionUseCase';
 import { CheckDuplicateQuestionDto } from './dto/check-duplicate-question.dto';
 import { CreateDiscountCodeUseCase } from '../../application/use-cases/discount/CreateDiscountCodeUseCase';
 import { ListEducatorDiscountCodesUseCase } from '../../application/use-cases/discount/ListEducatorDiscountCodesUseCase';
@@ -84,6 +86,24 @@ export class EducatorsController {
   async checkDuplicateQuestion(@Body() dto: CheckDuplicateQuestionDto, @Req() req: any) {
     const educatorId = (req as any).user?.id;
     const uc = new CheckDuplicateQuestionUseCase();
+    return uc.execute(educatorId, dto.content, dto.excludeQuestionId ?? null);
+  }
+
+  /** Yazılı modülü kopya soru tespiti — yalnız eğiticinin yazılı soru havuzu. */
+  @Post('me/questions/check-duplicate-written')
+  @Roles('EDUCATOR', 'ADMIN')
+  async checkDuplicateWrittenQuestion(@Body() dto: CheckDuplicateQuestionDto, @Req() req: any) {
+    const educatorId = (req as any).user?.id;
+    const uc = new CheckDuplicateWrittenQuestionUseCase();
+    return uc.execute(educatorId, dto.content, dto.excludeQuestionId ?? null);
+  }
+
+  /** Tünel modülü kopya soru tespiti — yalnız eğiticinin tünel soru havuzu. */
+  @Post('me/questions/check-duplicate-tunnel')
+  @Roles('EDUCATOR', 'ADMIN')
+  async checkDuplicateTunnelQuestion(@Body() dto: CheckDuplicateQuestionDto, @Req() req: any) {
+    const educatorId = (req as any).user?.id;
+    const uc = new CheckDuplicateTunnelQuestionUseCase();
     return uc.execute(educatorId, dto.content, dto.excludeQuestionId ?? null);
   }
 

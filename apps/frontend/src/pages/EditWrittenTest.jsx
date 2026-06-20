@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { writtenTests } from "@/api/dalClient";
 import { entities, topics as topicsApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useAutoSave } from "@/lib/useAutoSave";
 import api from "@/lib/api/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,24 @@ function emptyQuestion() {
 
 function emptyTest() {
   return { _k: uid(), id: null, title: "", questions: [emptyQuestion()] };
+}
+
+/** Taslak anlık görüntüsü — geçici alanlar hariç JSON-güvenli. */
+function buildWrittenSnapshot(m) {
+  const pkg = m?.pkgData ?? {};
+  return {
+    pkgData: {
+      title: pkg.title ?? "", description: pkg.description ?? "", examTypeId: pkg.examTypeId ?? "",
+      gradeLevelId: pkg.gradeLevelId ?? "", priceCents: pkg.priceCents ?? "", coverImageUrl: pkg.coverImageUrl ?? "",
+    },
+    tests: (m?.tests ?? []).map((te) => ({
+      _k: te._k, id: te.id ?? null, title: te.title ?? "",
+      questions: (te.questions ?? []).map((q) => ({
+        _k: q._k, id: q.id ?? null, content: q.content ?? "", mediaUrl: q.mediaUrl ?? "",
+        solutionText: q.solutionText ?? "", solutionMediaUrl: q.solutionMediaUrl ?? "", topicId: q.topicId ?? null,
+      })),
+    })),
+  };
 }
 
 function apiQToLocal(q) {
@@ -132,6 +151,28 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
   }));
   const [submitting, setSubmitting] = useState(false);
   const [dialogErrors, setDialogErrors] = useState({});
+  const [duplicateLoading, setDuplicateLoading] = useState(false);
+
+  const handleContentBlur = async () => {
+    const text = (local.content ?? "").trim();
+    if (text.length >= 15 && !local.duplicateWarning) {
+      setDuplicateLoading(true);
+      try {
+        const { data } = await api.post("/educators/me/questions/check-duplicate-written", {
+          content: text,
+          excludeQuestionId: local.id ?? null,
+        });
+        if (data?.isDuplicate) {
+          setLocal((prev) => ({ ...prev, duplicateWarning: data }));
+          toast.warning(t("pages:testForm.createPage.questionDialog.duplicateToast"));
+        }
+      } catch {
+        // sessiz
+      } finally {
+        setDuplicateLoading(false);
+      }
+    }
+  };
 
   const prepareAndUpload = async () => {
     let mediaUrl = local.mediaUrl || "";
@@ -140,7 +181,8 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
     if (local._solutionImgFile) solutionMediaUrl = await doUpload(local._solutionImgFile);
     if (local._imgPreview) URL.revokeObjectURL(local._imgPreview);
     if (local._solutionImgPreview) URL.revokeObjectURL(local._solutionImgPreview);
-    const { _imgFile, _imgPreview, _solutionImgFile, _solutionImgPreview, ...rest } = local;
+    const { _imgFile, _imgPreview, _solutionImgFile, _solutionImgPreview, duplicateWarning, ...rest } = local;
+    void duplicateWarning;
     return { ...rest, mediaUrl, solutionMediaUrl };
   };
 
@@ -201,9 +243,11 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
               placeholder={t("pages:writtenTestForm.question.contentPlaceholder")}
               value={local.content}
               onChange={(e) => {
-                setLocal((prev) => ({ ...prev, content: e.target.value }));
+                setLocal((prev) => ({ ...prev, content: e.target.value, duplicateWarning: null }));
                 setDialogErrors((p) => ({ ...p, content: "" }));
               }}
+              onBlur={handleContentBlur}
+              disabled={duplicateLoading}
               rows={4}
               className={dialogErrors.content ? "border-rose-500 focus-visible:ring-rose-500" : ""}
             />
@@ -211,6 +255,20 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
               <p className="text-xs text-rose-500 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />{dialogErrors.content}
               </p>
+            )}
+            {duplicateLoading && (
+              <p className="text-xs text-slate-500 flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                {t("pages:testForm.createPage.questionDialog.duplicateLoading")}
+              </p>
+            )}
+            {local.duplicateWarning && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                <p className="font-medium text-amber-900">{t("pages:testForm.createPage.questionDialog.duplicateWarning")}</p>
+                <p className="text-amber-700 mt-1 text-xs">
+                  {t("pages:testForm.question.duplicateSimilarity", { pct: Math.round(local.duplicateWarning.similarity * 100) })}
+                </p>
+              </div>
             )}
           </div>
 
@@ -578,6 +636,37 @@ function EditWrittenTest() {
     setInitialized(true);
   }, [pkgDetail, initialized]);
 
+  // ─── Taslak otomatik kaydetme (düzenlemeyi yarıda bırakınca korunur) ────────
+  const draftKey = user?.id && packageId ? `editWrittenTest_${user.id}_${packageId}` : null;
+  const getFormData = useCallback(() => buildWrittenSnapshot({ pkgData, tests }), [pkgData, tests]);
+  const { scheduleSave, loadDraft, clearDraft } = useAutoSave(draftKey ?? "__noop__", getFormData, { enabled: !!draftKey && initialized });
+  useEffect(() => { if (draftKey && initialized) scheduleSave(); }, [getFormData, draftKey, initialized, scheduleSave]);
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (!draftKey || !initialized || restoredRef.current) return;
+    restoredRef.current = true;
+    (async () => {
+      const draft = await loadDraft();
+      const d = draft?.data;
+      if (!d) return;
+      // Sunucudan yüklenen halle aynıysa sorma; farklıysa kullanıcıya bırak.
+      const current = JSON.stringify(buildWrittenSnapshot({ pkgData, tests }));
+      if (JSON.stringify(d) === current) return;
+      if (!window.confirm(t("pages:writtenTestForm.draftRestore", { defaultValue: "Bu pakette kaydedilmemiş değişiklikler bulundu. Geri yüklensin mi?" }))) {
+        clearDraft();
+        return;
+      }
+      if (d.pkgData) setPkgData((p) => ({ ...(p ?? {}), ...d.pkgData }));
+      if (Array.isArray(d.tests) && d.tests.length) {
+        setTests(d.tests.map((te) => ({
+          _k: te._k ?? uid(), id: te.id ?? null, title: te.title ?? "",
+          questions: (te.questions ?? []).map((q) => ({ ...emptyQuestion(), ...q, _k: q._k ?? uid() })),
+        })));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey, initialized]);
+
   const isPublished = !!pkgDetail?.publishedAt;
 
   // ─── Kaydet mutasyonu ──────────────────────────────────────────────────────
@@ -649,6 +738,7 @@ function EditWrittenTest() {
       return { publish };
     },
     onSuccess: ({ publish }) => {
+      clearDraft();
       queryClient.invalidateQueries({ queryKey: ["editWrittenPackage", packageId] });
       queryClient.invalidateQueries({ queryKey: ["writtenPackagesMine"] });
       if (publish === true) toast.success(t("pages:writtenTestForm.editPage.savedAndPublished"));

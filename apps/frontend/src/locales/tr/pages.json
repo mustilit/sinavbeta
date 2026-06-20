@@ -1867,15 +1867,15 @@
     },
     "package": {
       "sectionTitle": "Paket Bilgileri",
-      "titleLabel": "Paket Basligi",
-      "titlePlaceholder": "Ornegin: TYT Matematik Yazili Sinav Seti",
-      "descLabel": "Aciklama",
-      "descPlaceholder": "Paketi kisaca tanitin",
-      "examTypeLabel": "Sinav Turu",
-      "examTypePlaceholder": "Sinav turu secin",
-      "examTypeNone": "Belirtilmemis",
+      "titleLabel": "Paket Başlığı",
+      "titlePlaceholder": "Örneğin: TYT Matematik Yazılı Sınav Seti",
+      "descLabel": "Açıklama",
+      "descPlaceholder": "Paketi kısaca tanıtın",
+      "examTypeLabel": "Sınav Türü",
+      "examTypePlaceholder": "Sınav türü seçin",
+      "examTypeNone": "Belirtilmemiş",
       "priceLabel": "Fiyat (TL)",
-      "pricePlaceholder": "0 = ucretsiz",
+      "pricePlaceholder": "0 = ücretsiz",
       "gradeLevelLabel": "Sınıf",
       "gradeLevelPlaceholder": "Genel",
       "gradeLevelNone": "Genel"
@@ -1891,37 +1891,37 @@
       "indexLabel": "Yazılı {{index}}",
       "titlePlaceholder": "Yazılı başlığını girin",
       "questionsSuffix": "soru",
-      "completedSuffix": "cozumlu",
+      "completedSuffix": "çözümlü",
       "addQuestion": "Soru Ekle",
       "maxQuestionsReached": "En fazla {{max}} soru eklenebilir"
     },
     "question": {
       "editDialogTitle": "Soru {{n}}",
       "contentLabel": "Soru Metni",
-      "contentPlaceholder": "Soruyu buraya yazin...",
-      "imageLabel": "Soru Gorseli",
-      "selectImage": "Gorsel Sec",
-      "clearImage": "Kaldir",
+      "contentPlaceholder": "Soruyu buraya yazın...",
+      "imageLabel": "Soru Görseli",
+      "selectImage": "Görsel Seç",
+      "clearImage": "Kaldır",
       "topicLabel": "Konu",
-      "topicPlaceholder": "Konu secin",
+      "topicPlaceholder": "Konu seçin",
       "topicNone": "Konu yok",
       "topicSearchPlaceholder": "Konu ara...",
-      "topicEmpty": "Konu bulunamadi",
-      "solutionLabel": "Cozum (Zorunlu)",
-      "solutionPlaceholder": "Cozum aciklamasini yazin...",
-      "solutionImageSelect": "Cozum Gorseli Sec",
-      "errorMissingContent": "Soru metni veya gorseli zorunludur",
-      "errorMissingSolution": "Cozum metni zorunludur",
-      "untitled": "(Bos soru)",
-      "hasSolution": "Cozumlu",
-      "noSolution": "Cozumsuz"
+      "topicEmpty": "Konu bulunamadı",
+      "solutionLabel": "Çözüm (Zorunlu)",
+      "solutionPlaceholder": "Çözüm açıklamasını yazın...",
+      "solutionImageSelect": "Çözüm Görseli Seç",
+      "errorMissingContent": "Soru metni veya görseli zorunludur",
+      "errorMissingSolution": "Çözüm metni zorunludur",
+      "untitled": "(Boş soru)",
+      "hasSolution": "Çözümlü",
+      "noSolution": "Çözümsüz"
     },
     "dialog": {
-      "cancel": "Iptal",
+      "cancel": "İptal",
       "saveAndNew": "Kaydet ve Yeni Ekle",
       "saving": "Kaydediliyor...",
       "complete": "Tamam",
-      "genericError": "Bir hata olustu"
+      "genericError": "Bir hata oluştu"
     },
     "preview": {
       "sectionTitle": "Ön izleme",
@@ -1935,70 +1935,71 @@
       "solutionLabel": "Çözüm"
     },
     "validations": {
-      "titleRequired": "Paket basligi zorunludur"
+      "titleRequired": "Paket başlığı zorunludur"
     },
     "createPage": {
       "title": "Yeni Yazılı Paket",
       "subtitle": "Açık uçlu sorulardan oluşan bir yazılı paketi oluşturun",
-      "publishing": "Yayimlanıyor...",
+      "publishing": "Yayımlanıyor...",
       "saving": "Kaydediliyor...",
       "saveAsDraft": "Taslak Olarak Kaydet",
-      "createAndPublish": "Olustur ve Yayimla"
+      "createAndPublish": "Oluştur ve Yayımla"
     },
     "editPage": {
       "title": "Yazılı Paketini Düzenle",
       "subtitle": "Paket bilgilerini, yazılıları ve soruları güncelleyin",
-      "notFound": "Paket bulunamadi",
-      "publishedBadge": "Yayinda",
+      "notFound": "Paket bulunamadı",
+      "publishedBadge": "Yayında",
       "saving": "Kaydediliyor...",
-      "publishing": "Yayimlanıyor...",
-      "unpublishing": "Kaldiriliyor...",
+      "publishing": "Yayımlanıyor...",
+      "unpublishing": "Kaldırılıyor...",
       "saveChanges": "Değişiklikleri Kaydet",
       "saveAndPublish": "Kaydet ve Yayımla",
-      "unpublish": "Yayindan Kaldir",
+      "unpublish": "Yayından Kaldır",
       "saved": "Değişiklikler kaydedildi",
       "savedAndPublished": "Kaydedildi ve yayımlandı",
-      "unpublished": "Yayindan kaldirildi",
+      "unpublished": "Yayından kaldırıldı",
       "saveFailed": "Kaydetme başarısız oldu",
-      "packagePublishedError": "Yayindaki pakette bu islem yapilamaz",
-      "cannotDeletePublished": "Cevaplanmis soru silinemez"
-    }
+      "packagePublishedError": "Yayındaki pakette bu işlem yapılamaz",
+      "cannotDeletePublished": "Cevaplanmış soru silinemez"
+    },
+    "draftRestore": "Kaydedilmemiş bir yazılı taslağı bulundu. Geri yüklensin mi?"
   },
   "manageWrittenTests": {
-    "title": "Yazili Testlerim",
-    "subtitle": "Yazili test paketlerinizi yonetin",
-    "createNew": "Yeni Yazili Test",
+    "title": "Yazılı Testlerim",
+    "subtitle": "Yazılı test paketlerinizi yönetin",
+    "createNew": "Yeni Yazılı",
     "searchPlaceholder": "Paket ara...",
-    "loadError": "Paketler yuklenemedi",
-    "testsSuffix": "test",
+    "loadError": "Paketler yüklenemedi",
+    "testsSuffix": "yazılı",
     "questionsSuffix": "soru",
-    "free": "Ucretsiz",
-    "noFilterResults": "Filtreye uygun paket bulunamadi",
+    "free": "Ücretsiz",
+    "noFilterResults": "Filtreye uygun paket bulunamadı",
     "filter": {
       "statusPlaceholder": "Durum",
-      "allStatuses": "Tum durumlar",
-      "published": "Yayinda",
+      "allStatuses": "Tüm durumlar",
+      "published": "Yayında",
       "draft": "Taslak",
-      "examTypePlaceholder": "Sinav turu",
-      "allExamTypes": "Tum turler",
+      "examTypePlaceholder": "Sınav türü",
+      "allExamTypes": "Tüm türler",
       "clear": "Temizle"
     },
     "badge": {
-      "published": "Yayinda",
+      "published": "Yayında",
       "draft": "Taslak"
     },
     "actions": {
-      "publish": "Yayimla",
-      "unpublish": "Yayindan kaldir",
-      "edit": "Duzenle"
+      "publish": "Yayımla",
+      "unpublish": "Yayından kaldır",
+      "edit": "Düzenle"
     },
     "empty": {
-      "title": "Henuz yazili test paketiniz yok",
-      "desc": "Ilk yazili test paketinizi olusturun ve egitim iceriklerinizi paylasın"
+      "title": "Henüz yazılı test paketiniz yok",
+      "desc": "İlk yazılı test paketinizi oluşturun ve eğitim içeriklerinizi paylaşın"
     },
     "toasts": {
-      "statusUpdated": "Yayin durumu guncellendi",
-      "actionFailed": "Islem basarisiz oldu"
+      "statusUpdated": "Yayın durumu güncellendi",
+      "actionFailed": "İşlem başarısız oldu"
     }
   },
   "takeWritten": {
@@ -2008,7 +2009,7 @@
     "themeToggle": "Okuma modu",
     "penToggle": "Kalem",
     "report": "Hata Bildir",
-    "submittedBanner": "Test tamamlandı",
+    "submittedBanner": "Yazılı tamamlandı",
     "selfEvalNote": "Bu test puanlanmaz; cevabını çözümle kendin kıyasla.",
     "questionNav": "Soru {{n}}",
     "answerLabel": "Cevabınız",
@@ -2020,15 +2021,17 @@
     "noAnswer": "(boş bıraktın)",
     "prev": "Önceki",
     "next": "Sonraki",
-    "submit": "Testi Bitir",
+    "submit": "Yazılıyı Bitir",
     "submitting": "Gönderiliyor...",
-    "submitConfirm": "Testi bitirmek istediğine emin misin? Bittikten sonra cevabını çözümle karşılaştırabilirsin.",
+    "submitConfirm": "Yazılıyı bitirmek istediğine emin misin? Bittikten sonra cevabını çözümle karşılaştırabilirsin.",
     "reportSent": "Hata bildirimi gönderildi",
     "reportFailed": "Bildirim gönderilemedi",
     "saveError": "Cevap kaydedilemedi",
     "genericError": "Bir hata oluştu",
     "timeUp": "Süre doldu",
-    "yourDrawing": "Çizimin"
+    "yourDrawing": "Çizimin",
+    "saveExit": "Kaydet ve Çık",
+    "savedExit": "İlerlemeniz kaydedildi"
   },
   "writtenDetail": {
     "notFound": "Paket bulunamadı",
@@ -2075,7 +2078,8 @@
     "typeBadge": "Yazılı",
     "testsSuffix": "yazılı",
     "tab": "Yazılılar",
-    "purchasedLabel": "Satın alındı"
+    "purchasedLabel": "Satın alındı",
+    "testsLabel": "{{count}} Yazılı"
   },
   "writtenResults": {
     "completed": "Tamamlandı",

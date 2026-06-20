@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, AlertTriangle, Pencil, Clock, ChevronLeft, ChevronRight, Sun, CheckCircle2, BookOpen } from "lucide-react";
+import { Loader2, ArrowLeft, AlertTriangle, Pencil, Clock, ChevronLeft, ChevronRight, Sun, CheckCircle2, BookOpen, LogOut, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReportQuestionModal from "@/components/test/ReportQuestionModal";
@@ -203,6 +203,27 @@ function TakeWrittenTest() {
     }
   };
 
+  // Kaydet ve Çık — mevcut cevapları kaydeder, yazılıyı BİTİRMEZ (IN_PROGRESS kalır, sürdürülebilir).
+  const saveAndExit = async () => {
+    if (!attemptId) { navigate("/MyTests?tab=written"); return; }
+    setSubmitting(true);
+    try {
+      Object.values(saveTimers.current).forEach(clearTimeout);
+      const capturedUrl = await captureCurrentDrawing();
+      const localDrawings = { ...drawings, ...(capturedUrl && q ? { [q.id]: capturedUrl } : {}) };
+      await Promise.all(
+        questions.map((qq) =>
+          api.submitAnswer(attemptId, { questionId: qq.id, textAnswer: answers[qq.id] ?? "", drawingUrl: localDrawings[qq.id] }).catch(() => {}),
+        ),
+      );
+      toast.success(t("pages:takeWritten.savedExit", { defaultValue: "İlerlemeniz kaydedildi" }));
+      setTimeout(() => navigate("/MyTests?tab=written"), 600);
+    } catch (e) {
+      toast.error(e?.message || t("pages:takeWritten.genericError"));
+      setSubmitting(false);
+    }
+  };
+
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-indigo-500" /></div>;
   if (!state || !q) return <div className="mx-auto max-w-xl px-4 py-16 text-center text-slate-500">{t("pages:takeWritten.notFound")}</div>;
 
@@ -300,13 +321,21 @@ function TakeWrittenTest() {
           <Button variant="outline" size="sm" disabled={current === questions.length - 1} onClick={() => goTo(Math.min(questions.length - 1, current + 1))}>{t("pages:takeWritten.next")}<ChevronRight className="h-4 w-4" /></Button>
         </div>
 
-        {/* Teslim */}
+        {/* Teslim — konum/görselleştirme test çözüm ekranı ile aynı:
+            sol eylem butonları (Yazılıyı Bitir + Kaydet ve Çık), sağ ilerleme. */}
         {!submitted && (
-          <div className="mt-6 flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+          <div className="mt-6 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <LogOut className="mr-1.5 h-4 w-4" />}
+                {t("pages:takeWritten.submit")}
+              </Button>
+              <Button variant="ghost" className="text-slate-600 hover:bg-slate-100" onClick={saveAndExit} disabled={submitting}>
+                <Save className="mr-1.5 h-4 w-4" />
+                {t("pages:takeWritten.saveExit", { defaultValue: "Kaydet ve Çık" })}
+              </Button>
+            </div>
             <span className="text-sm text-slate-600 dark:text-gray-300">{answeredCount}/{questions.length}</span>
-            <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />{t("pages:takeWritten.submitting")}</> : t("pages:takeWritten.submit")}
-            </Button>
           </div>
         )}
       </div>

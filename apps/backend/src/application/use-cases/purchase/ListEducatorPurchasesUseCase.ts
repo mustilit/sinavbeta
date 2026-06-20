@@ -13,7 +13,7 @@ export interface EducatorPurchaseItem {
   amountCents: number | null;
   status: string;
   createdAt: Date;
-  kind: 'package' | 'tunnel'; // satış türü — UI rozet + ayrıştırma
+  kind: 'package' | 'tunnel' | 'written'; // satış türü — UI rozet + ayrıştırma
 }
 
 export class ListEducatorPurchasesUseCase {
@@ -78,7 +78,35 @@ export class ListEducatorPurchasesUseCase {
       kind: 'tunnel',
     }));
 
-    // En yeni satış üstte (iki kaynağı birleştirip sırala)
-    return [...packageItems, ...tunnelItems].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Yazılı paket satışları (written modülü scalar — candidate relation yok, ayrı çözülür)
+    const writtenPackages = await prisma.writtenPackage.findMany({ where: { educatorId }, select: { id: true, title: true } });
+    const writtenTitleById = new Map(writtenPackages.map((p) => [p.id, p.title]));
+    const writtenPurchases = writtenPackages.length
+      ? await prisma.writtenPurchase.findMany({
+          where: { packageId: { in: writtenPackages.map((p) => p.id) } },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, packageId: true, candidateId: true, amountCents: true, status: true, createdAt: true },
+        })
+      : [];
+    const wCandidateIds = [...new Set(writtenPurchases.map((p) => p.candidateId))];
+    const wCandidates = wCandidateIds.length
+      ? await prisma.user.findMany({ where: { id: { in: wCandidateIds } }, select: { id: true, email: true, username: true } })
+      : [];
+    const wCandById = new Map(wCandidates.map((u) => [u.id, u]));
+    const writtenItems: EducatorPurchaseItem[] = writtenPurchases.map((wp) => ({
+      id: wp.id,
+      testId: wp.packageId,
+      testTitle: writtenTitleById.get(wp.packageId) ?? '',
+      candidateId: wp.candidateId,
+      candidateEmail: wCandById.get(wp.candidateId)?.email ?? '',
+      candidateName: wCandById.get(wp.candidateId)?.username ?? null,
+      amountCents: wp.amountCents,
+      status: wp.status,
+      createdAt: wp.createdAt,
+      kind: 'written',
+    }));
+
+    // En yeni satış üstte (üç kaynağı birleştirip sırala)
+    return [...packageItems, ...tunnelItems, ...writtenItems].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 }

@@ -107,6 +107,8 @@ export type AdminSettings = {
   minPackagePriceCents: number;
   /** Minimum tünel fiyatı (kuruş; 0 = ücretsiz serbest). */
   minTunnelPriceCents: number;
+  /** Minimum yazılı paket fiyatı (kuruş; 0 = ücretsiz serbest). */
+  minWrittenPriceCents: number;
   /** Eğiticinin tanımlayabileceği maksimum indirim oranı (% 1-100). */
   maxDiscountPercent: number;
   /** Google OAuth 2.0 Client ID — admin panelinden yönetilir; boşsa Google ile giriş kapalı. */

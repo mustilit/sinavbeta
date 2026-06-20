@@ -25,7 +25,7 @@ export default function MyTests() {
   const [selectedEducator, setSelectedEducator] = useState("all");
   const [completionFilter, setCompletionFilter] = useState("all");
   const [sp] = useSearchParams();
-  const [contentTab, setContentTab] = useState(sp.get("tab") === "tunnels" ? "tunnels" : "tests"); // "tests" | "tunnels"
+  const [contentTab, setContentTab] = useState(["tunnels", "written"].includes(sp.get("tab")) ? sp.get("tab") : "tests"); // "tests" | "written" | "tunnels"
   const tunnelIntro = useTunnelIntro(contentTab === "tunnels");
   const contentTabBtn = (key) =>
     "inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 min-h-10 text-sm font-medium transition-colors " +

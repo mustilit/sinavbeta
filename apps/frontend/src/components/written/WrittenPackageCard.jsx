@@ -63,7 +63,7 @@ export default function WrittenPackageCard({ pkg, onBuy, purchased = false }) {
 
         <div className="flex items-center gap-4 mt-4 text-sm text-slate-500 flex-wrap">
           {testCount > 0 && (
-            <div className="flex items-center gap-1"><BookOpen className="w-4 h-4" /><span>{t("pages:testCard.testsLabel", { count: testCount })}</span></div>
+            <div className="flex items-center gap-1"><BookOpen className="w-4 h-4" /><span>{t("pages:writtenGrid.testsLabel", { count: testCount })}</span></div>
           )}
           <div className="flex items-center gap-1"><FileText className="w-4 h-4" /><span>{t("pages:testCard.questionsLabel", { count: questionCount })}</span></div>
           {pkg.avgRating > 0 && (
