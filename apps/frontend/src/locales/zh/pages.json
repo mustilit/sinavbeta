@@ -2063,7 +2063,9 @@
     "diffMedium": "中等",
     "diffHard": "困难",
     "featuresCount": "数量",
-    "testsListTitle": "开放式测验"
+    "testsListTitle": "开放式测验",
+    "aboutTitle": "关于此测试",
+    "aboutNoDescription": "此测试套餐尚未添加说明。"
   },
   "writtenGrid": {
     "loadError": "加载套餐失败",

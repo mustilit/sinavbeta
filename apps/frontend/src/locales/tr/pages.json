@@ -1881,15 +1881,15 @@
       "gradeLevelNone": "Genel"
     },
     "testsStep": {
-      "title": "Testler ve Sorular",
-      "subtitle": "Her test icin baslik ve sorulari ekleyin",
-      "addTest": "Test Ekle",
-      "maxTestsReached": "En fazla {{max}} test eklenebilir",
-      "validateAtLeastOne": "En az bir test ve gecerli bir soru eklemelisiniz"
+      "title": "Yazılılar ve Sorular",
+      "subtitle": "Her yazılı için başlık ve soruları ekleyin",
+      "addTest": "Yazılı Ekle",
+      "maxTestsReached": "En fazla {{max}} yazılı eklenebilir",
+      "validateAtLeastOne": "En az bir yazılı ve geçerli bir soru eklemelisiniz"
     },
     "testCard": {
-      "indexLabel": "Test {{index}}",
-      "titlePlaceholder": "Test basligini girin",
+      "indexLabel": "Yazılı {{index}}",
+      "titlePlaceholder": "Yazılı başlığını girin",
       "questionsSuffix": "soru",
       "completedSuffix": "cozumlu",
       "addQuestion": "Soru Ekle",
@@ -1938,15 +1938,15 @@
       "titleRequired": "Paket basligi zorunludur"
     },
     "createPage": {
-      "title": "Yeni Yazili Test Paketi",
-      "subtitle": "Acik uclu sorulardan olusan bir test paketi olusturun",
+      "title": "Yeni Yazılı Paket",
+      "subtitle": "Açık uçlu sorulardan oluşan bir yazılı paketi oluşturun",
       "publishing": "Yayimlanıyor...",
       "saving": "Kaydediliyor...",
       "saveAsDraft": "Taslak Olarak Kaydet",
       "createAndPublish": "Olustur ve Yayimla"
     },
     "editPage": {
-      "title": "Yazılı Test Paketini Düzenle",
+      "title": "Yazılı Paketini Düzenle",
       "subtitle": "Paket bilgilerini, yazılıları ve soruları güncelleyin",
       "notFound": "Paket bulunamadi",
       "publishedBadge": "Yayinda",
@@ -2040,7 +2040,7 @@
     "typeBadge": "Yazılı",
     "priceLabel": "Fiyat",
     "buy": "Satın Al",
-    "testsTitle": "Testler",
+    "testsTitle": "Yazılılar",
     "questionsSuffix": "soru",
     "locked": "Kilitli",
     "featuresTitle": "Özellikler",
@@ -2058,12 +2058,14 @@
     "reviewFailed": "Değerlendirme kaydedilemedi",
     "educatorTitle": "Eğitici",
     "viewEducator": "Profili Gör",
-    "selfEvalNote": "Bu testte puanlama yoktur; teslim sonrası cevabını çözümle kendin kıyaslarsın.",
+    "selfEvalNote": "Bu yazılıda puanlama yoktur; teslim sonrası cevabını çözümle kendin kıyaslarsın.",
     "diffEasy": "Kolay",
     "diffMedium": "Orta",
     "diffHard": "Zor",
     "featuresCount": "Yazılı Sayısı",
-    "testsListTitle": "Yazılılar"
+    "testsListTitle": "Yazılılar",
+    "aboutTitle": "Yazılı Hakkında",
+    "aboutNoDescription": "Bu yazılı paketi hakkında henüz bir açıklama eklenmemiş."
   },
   "writtenGrid": {
     "loadError": "Paketler yüklenemedi",
@@ -2071,7 +2073,7 @@
     "emptyDiscover": "Henüz yayımlanmış yazılı test yok.",
     "free": "Ücretsiz",
     "typeBadge": "Yazılı",
-    "testsSuffix": "test",
+    "testsSuffix": "yazılı",
     "tab": "Yazılılar",
     "purchasedLabel": "Satın alındı"
   },

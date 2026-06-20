@@ -2063,7 +2063,9 @@
     "diffMedium": "Medium",
     "diffHard": "Hard",
     "featuresCount": "Open-Ended Count",
-    "testsListTitle": "Open-Ended Tests"
+    "testsListTitle": "Open-Ended Tests",
+    "aboutTitle": "About This Test",
+    "aboutNoDescription": "No description has been added for this test package yet."
   },
   "writtenGrid": {
     "loadError": "Failed to load packages",

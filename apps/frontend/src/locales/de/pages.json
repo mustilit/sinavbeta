@@ -2063,7 +2063,9 @@
     "diffMedium": "Mittel",
     "diffHard": "Schwer",
     "featuresCount": "Anzahl",
-    "testsListTitle": "Tests"
+    "testsListTitle": "Tests",
+    "aboutTitle": "Über diesen Test",
+    "aboutNoDescription": "Für dieses Testpaket wurde noch keine Beschreibung hinzugefügt."
   },
   "writtenGrid": {
     "loadError": "Pakete konnten nicht geladen werden",

@@ -2066,7 +2066,9 @@
     "diffMedium": "Medio",
     "diffHard": "Difícil",
     "featuresCount": "Nº de exámenes",
-    "testsListTitle": "Exámenes"
+    "testsListTitle": "Exámenes",
+    "aboutTitle": "Sobre este examen",
+    "aboutNoDescription": "Aún no se ha añadido una descripción para este paquete de exámenes."
   },
   "writtenGrid": {
     "loadError": "No se pudieron cargar los paquetes",
