@@ -153,7 +153,7 @@ function WrittenTestDetail() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
                 <BookOpen className="w-5 h-5 text-indigo-600" />
-                <div><p className="text-sm text-slate-500">{t("pages:testDetail.features.testCount")}</p><p className="font-semibold text-slate-900">{pkg.testCount ?? tests.length}</p></div>
+                <div><p className="text-sm text-slate-500">{t("pages:writtenDetail.featuresCount")}</p><p className="font-semibold text-slate-900">{pkg.testCount ?? tests.length}</p></div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
                 <FileText className="w-5 h-5 text-indigo-600" />
@@ -183,7 +183,7 @@ function WrittenTestDetail() {
 
             {isPurchased ? (
               <div className="space-y-3">
-                <h3 className="font-semibold text-slate-900 mb-3">{t("pages:testDetail.purchase.testsListTitle")}</h3>
+                <h3 className="font-semibold text-slate-900 mb-3">{t("pages:writtenDetail.testsListTitle")}</h3>
                 {tests.map((testItem) => {
                   const completed = testItem.state === "SUBMITTED" || testItem.state === "TIMEOUT";
                   const inProgress = testItem.state === "IN_PROGRESS";

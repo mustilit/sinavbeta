@@ -2050,7 +2050,9 @@
     "selfEvalNote": "Dieser Test wird nicht benotet; nach dem Absenden vergleichst du deine Antwort selbst mit der Lösung.",
     "diffEasy": "Einfach",
     "diffMedium": "Mittel",
-    "diffHard": "Schwer"
+    "diffHard": "Schwer",
+    "featuresCount": "Anzahl",
+    "testsListTitle": "Tests"
   },
   "writtenGrid": {
     "loadError": "Pakete konnten nicht geladen werden",

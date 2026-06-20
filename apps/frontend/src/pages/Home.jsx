@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 import api from "@/lib/api/apiClient";
-import { entities } from "@/api/dalClient";
+import { entities, candidateWritten } from "@/api/dalClient";
 // Test paket kartı — Explore sayfasıyla görsel tutarlılık için aynı bileşen
 import TestPackageCard from "@/components/ui/TestPackageCard";
 import {
@@ -411,6 +411,37 @@ export default function Home() {
     staleTime: 60 * 1000,
   });
 
+  // Yazılı (açık uçlu) paketlerden bu turda etkin olanlar — Devam Et'e dahil edilir.
+  const { data: writtenContinue = [] } = useQuery({
+    queryKey: ["home-written-continue", user?.id],
+    queryFn: async () => {
+      const res = await candidateWritten.myPackages();
+      const items = res?.items ?? [];
+      return items
+        .map((p) => {
+          const states = (p.tests ?? []).map((tt) => tt.state);
+          const hasInProgress = states.includes("IN_PROGRESS");
+          const hasCompleted = states.some((s) => s === "SUBMITTED" || s === "TIMEOUT");
+          return {
+            id: p.packageId,
+            title: p.title,
+            educatorUsername: p.educatorName ?? null,
+            hasInProgress,
+            hasCompleted,
+            isCompleted: !hasInProgress && hasCompleted,
+            kind: "written",
+          };
+        })
+        .filter((p) => p.hasInProgress || p.hasCompleted)
+        .sort((a, b) => Number(a.isCompleted) - Number(b.isCompleted));
+    },
+    enabled: isCandidate && !!user,
+    staleTime: 60 * 1000,
+  });
+
+  // Devam Et = normal test paketleri + yazılı paketler (kind ile link ayrışır).
+  const continueItems = [...ownedPackages.map((p) => ({ ...p, kind: "test" })), ...writtenContinue];
+
   // Satın alınan paketleri öneri listesinden çıkar — Home "Test Paketleri" yalnızca
   // YENİ keşif önerir. Satın alınanlar "Satın Alınan Testler" sayfasında görünür.
   const ownedPackageIds = new Set(ownedPackages.map((p) => p.id));
@@ -529,7 +560,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 py-16">
 
         {/* ── 0. Devam Et ───────────────────────────────────────────────── */}
-        {isCandidate && ownedPackages.length > 0 && (
+        {isCandidate && continueItems.length > 0 && (
           <section>
             <SectionHeader
               title={t("pages:home.sections.continue")}
@@ -537,10 +568,10 @@ export default function Home() {
               linkTo={createPageUrl("MyTests")}
             />
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ownedPackages.slice(0, 6).map((pkg) => (
+              {continueItems.slice(0, 6).map((pkg) => (
                 <Link
-                  key={pkg.id}
-                  to={createPageUrl("TestDetail") + `?id=${pkg.id}`}
+                  key={`${pkg.kind}-${pkg.id}`}
+                  to={createPageUrl(pkg.kind === "written" ? "WrittenTestDetail" : "TestDetail") + `?id=${pkg.id}`}
                   className="group flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-100 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-300"
                 >
                   <div

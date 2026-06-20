@@ -2050,7 +2050,9 @@
     "selfEvalNote": "本测验不评分；提交后你自行将答案与解析对照。",
     "diffEasy": "简单",
     "diffMedium": "中等",
-    "diffHard": "困难"
+    "diffHard": "困难",
+    "featuresCount": "数量",
+    "testsListTitle": "开放式测验"
   },
   "writtenGrid": {
     "loadError": "加载套餐失败",

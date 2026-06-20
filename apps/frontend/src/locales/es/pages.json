@@ -2053,7 +2053,9 @@
     "selfEvalNote": "Este test no se califica; tras enviar, comparas tu respuesta con la solución tú mismo.",
     "diffEasy": "Fácil",
     "diffMedium": "Medio",
-    "diffHard": "Difícil"
+    "diffHard": "Difícil",
+    "featuresCount": "Nº de exámenes",
+    "testsListTitle": "Exámenes"
   },
   "writtenGrid": {
     "loadError": "No se pudieron cargar los paquetes",

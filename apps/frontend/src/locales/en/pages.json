@@ -2050,7 +2050,9 @@
     "selfEvalNote": "This test is not graded; after submitting you compare your answer with the solution yourself.",
     "diffEasy": "Easy",
     "diffMedium": "Medium",
-    "diffHard": "Hard"
+    "diffHard": "Hard",
+    "featuresCount": "Open-Ended Count",
+    "testsListTitle": "Open-Ended Tests"
   },
   "writtenGrid": {
     "loadError": "Failed to load packages",

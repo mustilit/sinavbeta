@@ -2050,7 +2050,9 @@
     "selfEvalNote": "Bu testte puanlama yoktur; teslim sonrası cevabını çözümle kendin kıyaslarsın.",
     "diffEasy": "Kolay",
     "diffMedium": "Orta",
-    "diffHard": "Zor"
+    "diffHard": "Zor",
+    "featuresCount": "Yazılı Sayısı",
+    "testsListTitle": "Yazılılar"
   },
   "writtenGrid": {
     "loadError": "Paketler yüklenemedi",
@@ -2059,7 +2061,7 @@
     "free": "Ücretsiz",
     "typeBadge": "Yazılı",
     "testsSuffix": "test",
-    "tab": "Yazılı Testler",
+    "tab": "Yazılılar",
     "purchasedLabel": "Satın alındı"
   },
   "writtenResults": {
