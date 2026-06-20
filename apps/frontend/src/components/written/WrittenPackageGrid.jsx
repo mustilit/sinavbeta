@@ -32,7 +32,8 @@ export function WrittenPackageGrid({ mode = "discover" }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Test bölümüyle birebir aynı grid: auto-fill, min 280px → satır başı kart sayısı eşit */}
+      <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
         {items.map((pkg) => (
           <WrittenPackageCard
             key={pkg.id ?? pkg.packageId}
