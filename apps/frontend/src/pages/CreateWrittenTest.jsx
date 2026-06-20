@@ -435,7 +435,8 @@ function TestCard({ test, testIndex, topicList, onUpdate, onDelete, maxQuestions
   const saveAndNewQuestion = (idx, saved) => {
     const qs = [...test.questions];
     qs[idx] = { ...saved, _k: qs[idx]._k };
-    const nq = emptyQuestion();
+    // Yeni boş soru — Konu (topicId) korunur, diğer alanlar temizlenir.
+    const nq = { ...emptyQuestion(), topicId: saved.topicId ?? null };
     qs.push(nq);
     onUpdate({ ...test, questions: qs });
     setAutoOpenKey(nq._k);
@@ -511,6 +512,7 @@ function TestCard({ test, testIndex, topicList, onUpdate, onDelete, maxQuestions
 
           {editingIdx !== null && test.questions[editingIdx] && (
             <QuestionEditDialog
+              key={test.questions[editingIdx]._k}
               question={test.questions[editingIdx]}
               questionIndex={editingIdx}
               topicList={topicList}
