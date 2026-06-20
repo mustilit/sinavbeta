@@ -195,4 +195,106 @@ export class ModerateTextContentUseCase {
         : 'İçerik topluluk kurallarına aykırı ifadeler içerdiği için reddedildi. Lütfen düzenleyip tekrar deneyin.',
     };
   }
+
+  /**
+   * Görsel moderasyonu (NSFW) — URL'i buffer'a indirip ContentSafetyService'e verir,
+   * sonucu jenerik ModerationResult/Violation tablolarına kaydeder. Best-effort:
+   * akışı bloke ETMEZ (eğitici soru görselleri için post-write hook'tan çağrılır).
+   * nsfwjs paketi yoksa graceful degrade → MANUAL_REVIEW (admin kuyruğu).
+   */
+  async moderateImage(params: Omit<ModerateTextParams, 'text'> & { imageUrl: string }): Promise<void> {
+    const url = (params.imageUrl ?? '').trim();
+    if (!/^https?:\/\//i.test(url)) return; // yalnız mutlak URL (yüklenen /uploads tam URL döner)
+
+    const settings = await prisma.adminSettings.findFirst({ where: { id: 1 } });
+    if (settings && settings.moderationEnabled === false) return;
+
+    let buffer: Buffer;
+    let mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg';
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const ct = (res.headers.get('content-type') ?? '').toLowerCase();
+      if (ct.includes('png')) mediaType = 'image/png';
+      else if (ct.includes('gif')) mediaType = 'image/gif';
+      else if (ct.includes('webp')) mediaType = 'image/webp';
+      buffer = Buffer.from(await res.arrayBuffer());
+      if (!buffer.length) return;
+    } catch (err: any) {
+      logger.warn('[ModerateImage] Görsel indirilemedi (best-effort)', { error: err?.message, entityId: params.entityId });
+      return;
+    }
+
+    const outcome = await this.contentSafety.moderate(
+      {
+        entityType: params.entityType,
+        entityId: params.entityId,
+        userId: params.userId,
+        tenantId: params.tenantId,
+        imageBuffer: buffer,
+        imageMediaType: mediaType,
+      },
+      {
+        moderationEnabled: settings?.moderationEnabled ?? true,
+        moderationClaudeEnabled: settings?.moderationClaudeEnabled ?? true,
+        moderationModelText: settings?.moderationModelText ?? 'claude-haiku-4-5',
+        moderationModelVision: settings?.moderationModelVision ?? 'claude-sonnet-4-6',
+      },
+    );
+    if (outcome.skipped) return;
+
+    const categories = outcome.layer1Result?.categories ?? [];
+    const matchedTerms = outcome.layer1Result?.matchedTerms ?? [];
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        const result = await tx.moderationResult.create({
+          data: {
+            tenantId: params.tenantId,
+            userId: params.userId,
+            entityType: params.entityType,
+            entityId: params.entityId,
+            provider: 'RULE_BASED' as ModerationProvider,
+            status: outcome.status,
+            score: outcome.layer1Result?.maxSeverity ? outcome.layer1Result.maxSeverity / 5 : null,
+            categories,
+            matchedTerms,
+            flaggedContent: url.substring(0, 500),
+          },
+          select: { id: true },
+        });
+        if (outcome.decision === 'REJECTED' && outcome.layer1Result) {
+          await tx.moderationViolation.create({
+            data: {
+              tenantId: params.tenantId,
+              userId: params.userId,
+              moderationResultId: result.id,
+              category: categories[0] ?? ('OTHER' as ModerationCategory),
+              severity: outcome.layer1Result.maxSeverity ?? 3,
+              entityType: params.entityType,
+              entityId: params.entityId,
+              status: 'OPEN',
+            },
+          });
+        }
+      });
+    } catch (err: any) {
+      logger.warn('[ModerateImage] Sonuç kaydı başarısız (best-effort)', { error: err?.message, entityId: params.entityId });
+    }
+
+    if (outcome.decision === 'REJECTED' && params.isEducatorContent && outcome.layer1Result) {
+      try {
+        await this.recordViolation.execute({
+          tenantId: params.tenantId,
+          userId: params.userId,
+          category: categories[0] ?? ('OTHER' as ModerationCategory),
+          severity: outcome.layer1Result.maxSeverity ?? 3,
+          entityType: params.entityType,
+          entityId: params.entityId,
+        });
+      } catch (err: any) {
+        logger.warn('[ModerateImage] Risk skoru hesaplama başarısız', { error: err?.message, userId: params.userId });
+      }
+    }
+  }
 }

@@ -91,19 +91,23 @@ export class SaveTunnelQuestionsUseCase {
       const moderate = this.moderate;
       setImmediate(async () => {
         try {
-          const text = (layers ?? [])
-            .flatMap((l) => (l.questions ?? []).flatMap((q) => [q.content, ...(q.options ?? []).map((o) => o.content)]))
-            .filter((s) => (s ?? '').trim())
-            .join('\n');
-          if (!text.trim()) return;
-          await moderate.execute({
-            entityType: 'TunnelQuestion',
+          const base = {
+            entityType: 'TunnelQuestion' as const,
             entityId: tunnelId,
             userId: tunnel.educatorId ?? '',
             tenantId: tunnel.tenantId ?? '',
-            text,
             isEducatorContent: true,
-          });
+          };
+          const qs = (layers ?? []).flatMap((l) => l.questions ?? []);
+          const text = qs
+            .flatMap((q) => [q.content, ...(q.options ?? []).map((o) => o.content)])
+            .filter((s) => (s ?? '').trim())
+            .join('\n');
+          if (text.trim()) await moderate.execute({ ...base, text });
+          const images = qs
+            .flatMap((q) => [q.mediaUrl, ...(q.options ?? []).map((o) => o.mediaUrl)])
+            .filter((u): u is string => !!u && u.trim().length > 0);
+          for (const img of images) await moderate.moderateImage({ ...base, imageUrl: img });
         } catch (err: any) {
           moderationLogger.warn(`tunnel.question.moderation_failed ${err?.message} tid=${tunnelId}`);
         }

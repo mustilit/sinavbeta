@@ -10,10 +10,10 @@ import type { ModerateTextContentUseCase } from '../moderation/ModerateTextConte
 
 const moderationLogger = new Logger('WrittenQuestionModeration');
 
-/** Best-effort eğitici içerik moderasyonu (metin) — yazma sonrası, akışı bloke etmez. */
+/** Best-effort eğitici içerik moderasyonu (metin + görsel) — yazma sonrası, akışı bloke etmez. */
 function moderateWrittenQuestion(
   moderate: ModerateTextContentUseCase | undefined,
-  params: { questionId: string; testId: string; content: string; solutionText: string },
+  params: { questionId: string; testId: string; content: string; solutionText: string; mediaUrl?: string | null; solutionMediaUrl?: string | null },
 ) {
   if (!moderate) return;
   setImmediate(async () => {
@@ -22,16 +22,18 @@ function moderateWrittenQuestion(
         where: { id: params.testId },
         select: { tenantId: true, educatorId: true },
       });
-      const text = [params.content, params.solutionText].filter(Boolean).join('\n\n');
-      if (!text.trim()) return;
-      await moderate.execute({
-        entityType: 'WrittenQuestion',
+      const base = {
+        entityType: 'WrittenQuestion' as const,
         entityId: params.questionId,
         userId: test?.educatorId ?? '',
         tenantId: test?.tenantId ?? '',
-        text,
         isEducatorContent: true,
-      });
+      };
+      const text = [params.content, params.solutionText].filter(Boolean).join('\n\n');
+      if (text.trim()) await moderate.execute({ ...base, text });
+      for (const img of [params.mediaUrl, params.solutionMediaUrl]) {
+        if (img && img.trim()) await moderate.moderateImage({ ...base, imageUrl: img });
+      }
     } catch (err: any) {
       moderationLogger.warn(`written.question.moderation_failed ${err?.message} qid=${params.questionId}`);
     }
@@ -171,7 +173,7 @@ export class CreateWrittenQuestionUseCase {
 
     await recountQuestions(test.id);
 
-    moderateWrittenQuestion(this.moderate, { questionId: question.id, testId: test.id, content, solutionText });
+    moderateWrittenQuestion(this.moderate, { questionId: question.id, testId: test.id, content, solutionText, mediaUrl, solutionMediaUrl });
 
     return question;
   }
@@ -227,6 +229,8 @@ export class UpdateWrittenQuestionUseCase {
       testId,
       content: (updated.content ?? '').trim(),
       solutionText: (updated.solutionText ?? '').trim(),
+      mediaUrl: updated.mediaUrl,
+      solutionMediaUrl: updated.solutionMediaUrl,
     });
 
     return updated;
