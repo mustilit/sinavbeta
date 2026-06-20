@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { buildPageUrl } from "@/lib/navigation";
-import { BookOpen, FileText, Star, User, Play } from "lucide-react";
+import { BookOpen, FileText, Star, User, Play, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -72,14 +72,25 @@ export default function WrittenPackageCard({ pkg, onBuy, purchased = false }) {
         </div>
 
         <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-100 dark:border-gray-800 flex-wrap gap-3">
-          {purchased ? (
-            <>
-              <span className="text-sm font-medium text-emerald-700">{t("pages:writtenGrid.purchasedLabel")}</span>
-              <Link to={detailUrl}>
-                <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-1"><Play className="w-4 h-4" />{t("pages:writtenDetail.start")}</Button>
-              </Link>
-            </>
-          ) : (
+          {purchased ? (() => {
+            // Paket durumu (TestPackageCard deseni): devam eden varsa turuncu "Devam Et";
+            // hepsi tamamlandıysa gri "İncele"; aksi halde mavi "Başla".
+            const states = (pkg.tests ?? []).map((tt) => tt.state);
+            const anyInProgress = states.includes("IN_PROGRESS");
+            const allDone = states.length > 0 && states.every((s) => s === "SUBMITTED" || s === "TIMEOUT");
+            const style = { backgroundColor: anyInProgress ? "#f59e0b" : allDone ? "#64748b" : "#0000CD" };
+            const label = anyInProgress ? t("pages:writtenDetail.continue") : allDone ? t("pages:writtenDetail.review") : t("pages:writtenDetail.start");
+            return (
+              <>
+                <span className="text-sm font-medium text-emerald-700">{t("pages:writtenGrid.purchasedLabel")}</span>
+                <Link to={detailUrl}>
+                  <Button size="sm" style={style} className="text-white hover:opacity-90 flex items-center gap-1">
+                    {allDone ? <Eye className="w-4 h-4" /> : <Play className="w-4 h-4" />}{label}
+                  </Button>
+                </Link>
+              </>
+            );
+          })() : (
             <>
               <div className="min-w-0 text-2xl font-bold text-slate-900 dark:text-gray-100">
                 {pkg.priceCents === 0 ? t("pages:testCard.free") : `₺${(pkg.priceCents / 100).toFixed(0)}`}
