@@ -1,0 +1,10 @@
+{
+  "gradeLevels": [
+    { "slug": "genel", "name": "Genel", "description": "Sınıf belirtilmemiş içerik", "active": true, "icon": "layers" },
+    { "slug": "ilkokul", "name": "İlkokul", "active": true, "icon": "graduation-cap" },
+    { "slug": "ortaokul", "name": "Ortaokul", "active": true, "icon": "graduation-cap" },
+    { "slug": "lise", "name": "Lise", "active": true, "icon": "graduation-cap" },
+    { "slug": "universite", "name": "Üniversite", "active": true, "icon": "graduation-cap" },
+    { "slug": "mezun", "name": "Mezun", "active": true, "icon": "graduation-cap" }
+  ]
+}

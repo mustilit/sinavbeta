@@ -282,6 +282,79 @@ function ExamTypesCarousel({ examTypes, examTypeIds, isPersonalized, t }) {
   );
 }
 
+/** GradeLevelsCarousel — Anasayfa "Sınıflar" bandı (ExamTypesCarousel ile aynı yapı). */
+function GradeLevelsCarousel({ gradeLevels, t }) {
+  const scrollRef = useRef(null);
+  const [paused, setPaused] = useState(false);
+
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
+  useEffect(() => {
+    if (paused || prefersReducedMotion) return;
+    if (!scrollRef.current) return;
+    const tick = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 0) return;
+      const firstCard = el.firstElementChild;
+      const itemWidth = firstCard ? firstCard.offsetWidth : 0;
+      if (itemWidth <= 0) return;
+      const next = el.scrollLeft + itemWidth * CAROUSEL_STEP_ITEMS;
+      if (next >= maxScroll - 1) el.scrollTo({ left: 0, behavior: 'auto' });
+      else el.scrollTo({ left: next, behavior: 'smooth' });
+    };
+    const id = setInterval(tick, CAROUSEL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [paused, prefersReducedMotion]);
+
+  const title = t("pages:home.sections.gradeLevels", { defaultValue: "Sınıflar" });
+
+  return (
+    <section>
+      <SectionHeader title={title} isPersonalized={false} linkTo={createPageUrl("Explore")} />
+      <div
+        className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocusCapture={() => setPaused(true)}
+        onBlurCapture={() => setPaused(false)}
+        role="region"
+        aria-label={title}
+      >
+        <div ref={scrollRef} className="flex overflow-x-auto scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {gradeLevels.map((g) => {
+            const GradeIcon = getExamTypeIcon(g.metadata?.icon);
+            return (
+              <Link
+                key={g.id}
+                to={createPageUrl("Explore") + `?grade_level=${g.id}`}
+                className="group flex-shrink-0 basis-1/2 sm:basis-1/3 lg:basis-1/6 p-6 text-center transition-all border-r last:border-r-0 border-slate-100 hover:bg-slate-50"
+              >
+                <div
+                  className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                  style={{ backgroundColor: "rgba(0,0,205,0.07)" }}
+                >
+                  <GradeIcon className="w-6 h-6" style={{ color: "#0000CD" }} />
+                </div>
+                {/* g.name user-generated — çevrilmez */}
+                <p className="mt-3 font-semibold text-slate-800 text-sm truncate">{g.name}</p>
+                {g.description && (
+                  /* g.description user-generated — çevrilmez */
+                  <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-snug">{g.description}</p>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── main component ──────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -309,6 +382,15 @@ export default function Home() {
     queryKey: ["home-exam-types"],
     queryFn: async () => {
       const { data } = await api.get("/site/exam-types");
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["home-grade-levels"],
+    queryFn: async () => {
+      const { data } = await api.get("/site/grade-levels");
       return Array.isArray(data) ? data : [];
     },
     staleTime: 5 * 60 * 1000,
@@ -613,6 +695,11 @@ export default function Home() {
             isPersonalized={isPersonalized}
             t={t}
           />
+        )}
+
+        {/* ── 1b. Sınıflar band — Sınav Türleri ile aynı yapı ────────────── */}
+        {gradeLevels.length > 0 && (
+          <GradeLevelsCarousel gradeLevels={gradeLevels} t={t} />
         )}
 
         {/* ── 2. Test Paketleri ─────────────────────────────────────────── */}

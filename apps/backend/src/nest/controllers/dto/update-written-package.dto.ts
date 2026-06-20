@@ -27,6 +27,12 @@ export class UpdateWrittenPackageDto {
   @MaxLength(50)
   difficulty?: string;
 
+  @ApiPropertyOptional({ description: 'Sınıf (GradeLevel) ID' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  gradeLevelId?: string;
+
   @ApiPropertyOptional({ description: 'Kapak görseli URL' })
   @IsOptional()
   @IsString()

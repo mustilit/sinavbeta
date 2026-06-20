@@ -36,7 +36,8 @@
       "continue": "继续",
       "examTypes": "考试类型",
       "testPackages": "测试套餐",
-      "educators": "讲师"
+      "educators": "讲师",
+      "gradeLevels": "年级"
     },
     "interestedExamType": "您感兴趣的",
     "continueAria": "继续",
@@ -128,7 +129,8 @@
       "price501to1000": "₺501 – ₺1000",
       "priceOver1000": "₺1000 以上",
       "active": "活动筛选器:",
-      "clear": "清除"
+      "clear": "清除",
+      "gradeLevel": "年级"
     },
     "empty": {
       "title": "未找到结果",
@@ -402,7 +404,10 @@
           "tooBig": "图片大小最多为 5MB",
           "uploadFailed": "图片上传失败,请重试。"
         }
-      }
+      },
+      "gradeLevelLabel": "年级",
+      "gradeLevelPlaceholder": "通用",
+      "gradeLevelNone": "通用"
     },
     "testCard": {
       "titleLabel": "测试标题 *",
@@ -1868,7 +1873,10 @@
       "examTypePlaceholder": "选择考试类型",
       "examTypeNone": "未指定",
       "priceLabel": "价格 (TL)",
-      "pricePlaceholder": "0 = 免费"
+      "pricePlaceholder": "0 = 免费",
+      "gradeLevelLabel": "年级",
+      "gradeLevelPlaceholder": "通用",
+      "gradeLevelNone": "通用"
     },
     "testsStep": {
       "title": "测试与题目",

@@ -190,6 +190,17 @@ const examTypeAdapter = (e) => ({
   iconUrl: e.metadata?.iconUrl ?? e.iconUrl ?? null,
 });
 
+// GradeLevel (Sınıf): GET /site/grade-levels (public) or /admin/grade-levels
+const gradeLevelAdapter = (e) => ({
+  id: e.id,
+  name: e.name,
+  slug: e.slug,
+  description: e.description ?? null,
+  is_active: e.active !== false,
+  icon: e.metadata?.icon ?? e.icon ?? null,
+  iconUrl: e.metadata?.iconUrl ?? e.iconUrl ?? null,
+});
+
 function roleToUserType(role) {
   const r = (role || '').toString().toUpperCase();
   if (r === 'EDUCATOR') return 'educator';
@@ -334,6 +345,38 @@ export const entities = {
     },
     delete: async (id) => {
       await api.delete(`/admin/exam-types/${id}`);
+    },
+  },
+
+  GradeLevel: {
+    filter: async (opts = {}) => {
+      try {
+        const res = await api.get('/site/grade-levels');
+        const data = res?.data ?? res;
+        let list = Array.isArray(data) ? data : (data?.items ?? data?.data ?? []);
+        const mapped = list.map(gradeLevelAdapter);
+        if (opts.is_active === true) return mapped.filter((e) => e.is_active);
+        return mapped;
+      } catch (err) {
+        console.warn('[dalClient] GradeLevel.filter failed:', err?.message || err);
+        return [];
+      }
+    },
+    list: async () => {
+      const { data } = await api.get('/admin/grade-levels?activeOnly=false');
+      let list = Array.isArray(data) ? data : data?.items ?? [];
+      return list.map(gradeLevelAdapter);
+    },
+    create: async (body) => {
+      const { data } = await api.post('/admin/grade-levels', body);
+      return gradeLevelAdapter(data);
+    },
+    update: async (id, body) => {
+      const { data } = await api.patch(`/admin/grade-levels/${id}`, body);
+      return gradeLevelAdapter(data);
+    },
+    delete: async (id) => {
+      await api.delete(`/admin/grade-levels/${id}`);
     },
   },
 
@@ -487,6 +530,8 @@ export const entities = {
             question_count: (pkg.tests ?? []).reduce((s, t) => s + (t.questionCount ?? 0), 0),
             exam_type_id: (pkg.tests ?? []).find((t) => t.examTypeId)?.examTypeId ?? null,
             exam_type_name: (pkg.tests ?? []).find((t) => t.examTypeName)?.examTypeName ?? null,
+            grade_level_id: (pkg.tests ?? []).find((t) => t.gradeLevelId)?.gradeLevelId ?? null,
+            grade_level_name: (pkg.tests ?? []).find((t) => t.gradeLevelName)?.gradeLevelName ?? null,
             total_sales: pkg.saleCount ?? 0,
             average_rating: pkg.ratingAvg ?? null,
             rating_count: pkg.ratingCount ?? 0,
@@ -499,6 +544,7 @@ export const entities = {
       // Yayınlı paket listesi — yeni TestPackage tabanlı endpoint (tek kaynak)
       const params = { limit: limit || 50 };
       if (opts.exam_type_id) params.examTypeId = opts.exam_type_id;
+      if (opts.grade_level_id) params.gradeLevelId = opts.grade_level_id;
       if (opts.q) params.q = opts.q;
       const { data } = await api.get('/marketplace/packages', { params });
       const items = data?.items ?? [];
@@ -512,6 +558,7 @@ export const entities = {
       const payload = {
         title: body.title,
         examTypeId: body.exam_type_id,
+        gradeLevelId: body.grade_level_id,
         topicId: body.topic_id,
         isTimed: body.is_timed ?? false,
         duration: body.duration,
@@ -1075,6 +1122,8 @@ function packageAdapter(pkg) {
     educator_name: pkg.educatorUsername ?? '',
     exam_type_id: pkg.examTypeId ?? null,
     exam_type_name: pkg.examTypeName ?? null,
+    grade_level_id: pkg.gradeLevelId ?? null,
+    grade_level_name: pkg.gradeLevelName ?? null,
     question_count: pkg.questionCount ?? (pkg.tests ?? []).reduce((s, t) => s + (t.questionCount ?? 0), 0),
     test_count: pkg.testCount ?? (pkg.tests ?? []).length,
     price: pkg.priceCents != null ? pkg.priceCents / 100 : 0,

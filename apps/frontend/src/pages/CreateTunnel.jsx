@@ -109,6 +109,7 @@ export default function CreateTunnel() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [examTypeId, setExamTypeId] = useState("");
+  const [gradeLevelId, setGradeLevelId] = useState("");
   const [topicId, setTopicId] = useState("");
   const [priceTL, setPriceTL] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
@@ -126,6 +127,10 @@ export default function CreateTunnel() {
   const { data: examTypes = [] } = useQuery({
     queryKey: ["examTypes"],
     queryFn: () => entities.ExamType.filter({ is_active: true }),
+  });
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["gradeLevels", "active"],
+    queryFn: () => entities.GradeLevel.filter({ is_active: true }),
   });
   const { data: topicList = [] } = useQuery({
     queryKey: ["topicsFlat", examTypeId],
@@ -155,8 +160,8 @@ export default function CreateTunnel() {
   const [draftInfo, setDraftInfo] = useState(null);
 
   const getFormData = useCallback(
-    () => buildTunnelSnapshot({ title, description, examTypeId, topicId, priceTL, coverImageUrl, layers }),
-    [title, description, examTypeId, topicId, priceTL, coverImageUrl, layers],
+    () => buildTunnelSnapshot({ title, description, examTypeId, gradeLevelId, topicId, priceTL, coverImageUrl, layers }),
+    [title, description, examTypeId, gradeLevelId, topicId, priceTL, coverImageUrl, layers],
   );
 
   const { scheduleSave, loadDraft, clearDraft, lastSavedAt } = useAutoSave(
@@ -213,6 +218,7 @@ export default function CreateTunnel() {
     setTitle(d.title || "");
     setDescription(d.description || "");
     setExamTypeId(d.examTypeId || "");
+    setGradeLevelId(d.gradeLevelId || "");
     setTopicId(d.topicId || "");
     setPriceTL(d.priceTL || "");
     setCoverImageUrl(d.coverImageUrl || "");
@@ -290,6 +296,7 @@ export default function CreateTunnel() {
       setTitle(tunnel.title ?? "");
       setDescription(tunnel.description ?? "");
       setExamTypeId(tunnel.examType?.id ?? "");
+      setGradeLevelId(tunnel.gradeLevel?.id ?? "");
       setTopicId(tunnel.topic?.id ?? "");
       setPriceTL(tunnel.priceCents ? String(tunnel.priceCents / 100) : "");
       setCoverImageUrl(tunnel.coverImageUrl ?? "");
@@ -303,6 +310,7 @@ export default function CreateTunnel() {
         title: title.trim(),
         description: description.trim() || undefined,
         examTypeId,
+        gradeLevelId: gradeLevelId || undefined,
         topicId,
         priceCents: Math.round((parseFloat(priceTL) || 0) * 100),
         coverImageUrl: coverImageUrl || undefined,
@@ -323,6 +331,7 @@ export default function CreateTunnel() {
         title: title.trim(),
         description: description.trim() || "",
         examTypeId,
+        gradeLevelId: gradeLevelId || undefined,
         topicId,
         priceCents: Math.round((parseFloat(priceTL) || 0) * 100),
         coverImageUrl: coverImageUrl || "",
@@ -437,6 +446,16 @@ export default function CreateTunnel() {
                   <SelectTrigger><SelectValue placeholder="Seçin" /></SelectTrigger>
                   <SelectContent>
                     {examTypes.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Sınıf</label>
+                <Select value={gradeLevelId || "none"} onValueChange={(v) => setGradeLevelId(v === "none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Genel" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Genel</SelectItem>
+                    {gradeLevels.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

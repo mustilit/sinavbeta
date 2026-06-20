@@ -22,6 +22,7 @@ export class CreateTestUseCase {
     price?: number;
     educatorId?: string;
     examTypeId?: string | null;
+    gradeLevelId?: string | null;
     topicId?: string | null;
     questions?: (ExamQuestion & { options: any[] })[];
   }) {
@@ -79,6 +80,13 @@ export class CreateTestUseCase {
       if (otherTopic) topicId = otherTopic.id;
     }
 
+    // Sınıf (GradeLevel): eğitici seçmediyse "Genel" fallback.
+    let gradeLevelId: string | null = input.gradeLevelId ?? null;
+    if (!gradeLevelId) {
+      const genel = await prisma.gradeLevel.findUnique({ where: { slug: 'genel' } });
+      if (genel) gradeLevelId = genel.id;
+    }
+
     const id = randomUUID();
     const test: ExamTest = {
       id,
@@ -88,6 +96,7 @@ export class CreateTestUseCase {
       status: 'DRAFT',
       educatorId: input.educatorId ?? null,
       examTypeId: examTypeId ?? undefined,
+      gradeLevelId: gradeLevelId ?? undefined,
       topicId: topicId ?? undefined,
       metadata: {},
       price: input.price,

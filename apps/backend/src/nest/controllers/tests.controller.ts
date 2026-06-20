@@ -48,6 +48,7 @@ export class TestsController {
       price: body.price,
       educatorId,
       examTypeId: body.examTypeId ?? null,
+      gradeLevelId: body.gradeLevelId ?? null,
       topicId: body.topicId ?? null,
       questions: body.questions,
     });

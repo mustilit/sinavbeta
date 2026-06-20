@@ -27,6 +27,11 @@ export class CreateTestDto {
   @IsUUID()
   examTypeId?: string;
 
+  @ApiPropertyOptional({ format: 'uuid', description: 'Grade level (Sınıf) ID' })
+  @IsOptional()
+  @IsUUID()
+  gradeLevelId?: string;
+
   @ApiPropertyOptional({ format: 'uuid', description: 'Topic ID (must belong to examTypeId)' })
   @IsOptional()
   @IsUUID()

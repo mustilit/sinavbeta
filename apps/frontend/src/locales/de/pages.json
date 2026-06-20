@@ -36,7 +36,8 @@
       "continue": "Fortsetzen",
       "examTypes": "Testtypen",
       "testPackages": "Testpakete",
-      "educators": "Ausbilder"
+      "educators": "Ausbilder",
+      "gradeLevels": "Klassenstufen"
     },
     "interestedExamType": "Ihr Interesse",
     "continueAria": "Fortsetzen",
@@ -128,7 +129,8 @@
       "price501to1000": "₺501 – ₺1000",
       "priceOver1000": "Über ₺1000",
       "active": "Aktive Filter:",
-      "clear": "Löschen"
+      "clear": "Löschen",
+      "gradeLevel": "Klasse"
     },
     "empty": {
       "title": "Keine Ergebnisse gefunden",
@@ -402,7 +404,10 @@
           "tooBig": "Die Bildgröße darf höchstens 5 MB betragen",
           "uploadFailed": "Bild konnte nicht hochgeladen werden. Bitte erneut versuchen."
         }
-      }
+      },
+      "gradeLevelLabel": "Klasse",
+      "gradeLevelPlaceholder": "Allgemein",
+      "gradeLevelNone": "Allgemein"
     },
     "testCard": {
       "titleLabel": "Testtitel *",
@@ -1868,7 +1873,10 @@
       "examTypePlaceholder": "Prüfungstyp wählen",
       "examTypeNone": "Nicht angegeben",
       "priceLabel": "Preis (TL)",
-      "pricePlaceholder": "0 = kostenlos"
+      "pricePlaceholder": "0 = kostenlos",
+      "gradeLevelLabel": "Klasse",
+      "gradeLevelPlaceholder": "Allgemein",
+      "gradeLevelNone": "Allgemein"
     },
     "testsStep": {
       "title": "Tests und Fragen",

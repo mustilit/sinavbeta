@@ -20,11 +20,13 @@ export default function Explore() {
   const urlParams = new URLSearchParams(window.location.search);
   const initialQuery = urlParams.get("q") || "";
   const initialExamType = urlParams.get("exam_type") || "";
+  const initialGrade = urlParams.get("grade_level") || "";
 
   const { user } = useAuth();
   const navigate = useAppNavigate();
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedExamType, setSelectedExamType] = useState(initialExamType);
+  const [selectedGrade, setSelectedGrade] = useState(initialGrade);
   const [selectedDifficulty, setSelectedDifficulty] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [minRating, setMinRating] = useState(0);
@@ -47,14 +49,20 @@ export default function Explore() {
     queryFn: () => entities.ExamType.filter({ is_active: true }),
   });
 
-  // serverQuery veya examType değiştiğinde sunucuya yeni istek at
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["gradeLevels", "active"],
+    queryFn: () => entities.GradeLevel.filter({ is_active: true }),
+  });
+
+  // serverQuery, examType veya sınıf değiştiğinde sunucuya yeni istek at
   const { data: allTests = [], isLoading } = useQuery({
-    queryKey: ["tests", serverQuery, selectedExamType],
+    queryKey: ["tests", serverQuery, selectedExamType, selectedGrade],
     queryFn: () => entities.TestPackage.filter({
       is_published: true,
       is_active: true,
       ...(serverQuery && { q: serverQuery }),
       ...(selectedExamType && { exam_type_id: selectedExamType }),
+      ...(selectedGrade && { grade_level_id: selectedGrade }),
     }, "-created_date", 100),
     staleTime: 30_000,
   });
@@ -183,13 +191,14 @@ export default function Explore() {
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedExamType("");
+    setSelectedGrade("");
     setSelectedDifficulty("");
     setPriceRange("");
     setMinRating(0);
     setSelectedEducator("");
   };
 
-  const hasActiveFilters = searchQuery || selectedExamType || selectedDifficulty || priceRange || minRating > 0 || selectedEducator;
+  const hasActiveFilters = searchQuery || selectedExamType || selectedGrade || selectedDifficulty || priceRange || minRating > 0 || selectedEducator;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -201,8 +210,8 @@ export default function Explore() {
       {/* İçerik sekmeleri: Testler | Tüneller (site standardı alt-çizgi stili) */}
       <div className="mb-6 flex flex-wrap items-center gap-1 border-b border-slate-200">
         <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
-        <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
         <button type="button" onClick={() => setContentTab("written")} className={contentTabBtn("written")}>{t("pages:writtenGrid.tab")}</button>
+        <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
         {contentTab === "tunnels" && (
           <button
             type="button"
@@ -252,6 +261,19 @@ export default function Explore() {
                 {examTypes.map((exam) => (
                   /* exam.name user-generated — çevrilmez */
                   <SelectItem key={exam.id} value={exam.id}>{exam.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+              <SelectTrigger aria-label={t("pages:explore.filter.gradeLevel", { defaultValue: "Sınıf" })} className="w-full lg:w-44 h-12">
+                <SelectValue placeholder={t("pages:explore.filter.gradeLevel", { defaultValue: "Sınıf" })} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>{t("pages:explore.filter.all")}</SelectItem>
+                {gradeLevels.map((g) => (
+                  /* grade.name user-generated — çevrilmez */
+                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

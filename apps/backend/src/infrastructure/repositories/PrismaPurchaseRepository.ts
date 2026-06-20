@@ -63,6 +63,8 @@ export class PrismaPurchaseRepository implements IPurchaseRepository {
                 title: true,
                 examTypeId: true,
                 examType: { select: { id: true, name: true } },
+                gradeLevelId: true,
+                gradeLevel: { select: { id: true, name: true } },
                 _count: { select: { questions: true } },
               },
             },

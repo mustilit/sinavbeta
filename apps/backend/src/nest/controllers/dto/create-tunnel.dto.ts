@@ -19,6 +19,11 @@ export class CreateTunnelDto {
   @IsUUID()
   examTypeId!: string;
 
+  @ApiPropertyOptional({ description: 'Sınıf (GradeLevel) UUID — boşsa Genel' })
+  @IsOptional()
+  @IsUUID()
+  gradeLevelId?: string;
+
   @ApiProperty({ description: 'Konu UUID' })
   @IsUUID()
   topicId!: string;

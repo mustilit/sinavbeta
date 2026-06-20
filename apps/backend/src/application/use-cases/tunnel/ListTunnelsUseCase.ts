@@ -11,6 +11,8 @@ function summary(t: any) {
     currency: t.currency,
     layerCount: t.layerCount,
     examTypeName: t.examType?.name ?? null,
+    gradeLevelId: t.gradeLevelId ?? null,
+    gradeLevelName: t.gradeLevel?.name ?? null,
     topicName: t.topic?.name ?? null,
     educatorUsername: t.educator?.username ?? null,
     questionCount: t._count?.questions ?? 0,
@@ -22,6 +24,7 @@ function summary(t: any) {
 
 const LIST_INCLUDE = {
   examType: { select: { name: true } },
+  gradeLevel: { select: { name: true } },
   topic: { select: { name: true } },
   educator: { select: { username: true } },
   _count: { select: { questions: true } },

@@ -233,6 +233,7 @@ export class SeedService implements OnApplicationBootstrap {
     // Sınav türleri + konu hiyerarşisi + canlı oturum tier'ları her boot'ta
     // idempotent senkronize edilir
     await this.seedCommonExamTypes();
+    await this.seedGradeLevels();
     await this.seedTopicHierarchy();
     await this.seedLiveSessionTiers();
 
@@ -339,6 +340,27 @@ export class SeedService implements OnApplicationBootstrap {
       });
     }
     console.log(`Seed: ${types.length} sınav türü hazır`);
+  }
+
+  /**
+   * Sınıflar (GradeLevel) — `seed-data/grade-levels.json` üzerinden idempotent upsert.
+   * "Genel" varsayılan sınıf; eğitici seçmezse içerik buna düşer. Logo metadata.icon.
+   */
+  private async seedGradeLevels() {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const data = require('./seed-data/grade-levels.json') as {
+      gradeLevels: Array<{ slug: string; name: string; description?: string | null; active?: boolean; icon?: string }>;
+    };
+    const list = data.gradeLevels ?? [];
+    for (const g of list) {
+      const metadata = g.icon ? { icon: g.icon } : {};
+      await this.prisma.gradeLevel.upsert({
+        where: { slug: g.slug },
+        create: { slug: g.slug, name: g.name, description: g.description ?? null, active: g.active ?? true, metadata },
+        update: { name: g.name, description: g.description ?? null },
+      });
+    }
+    console.log(`Seed: ${list.length} sınıf hazır`);
   }
 
   /**

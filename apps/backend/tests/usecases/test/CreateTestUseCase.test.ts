@@ -19,6 +19,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     adminSettings: { findFirst: (...args: any[]) => mockAdminSettings(...args) },
     examType: { findUnique: (...args: any[]) => mockExamTypeFindUnique(...args) },
+    gradeLevel: { findUnique: jest.fn(async () => ({ id: 'genel-id' })) },
     topic: { findFirst: (...args: any[]) => mockTopicFindFirst(...args) },
   },
 }));

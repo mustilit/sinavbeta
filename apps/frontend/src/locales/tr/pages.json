@@ -36,7 +36,8 @@
       "continue": "Devam Et",
       "examTypes": "Sınav Türleri",
       "testPackages": "Test Paketleri",
-      "educators": "Eğiticiler"
+      "educators": "Eğiticiler",
+      "gradeLevels": "Sınıflar"
     },
     "interestedExamType": "İlgi alanınız",
     "continueAria": "Devam et",
@@ -128,7 +129,8 @@
       "price501to1000": "₺501 – ₺1000",
       "priceOver1000": "₺1000 Üstü",
       "active": "Aktif filtreler:",
-      "clear": "Temizle"
+      "clear": "Temizle",
+      "gradeLevel": "Sınıf"
     },
     "empty": {
       "title": "Sonuç bulunamadı",
@@ -402,7 +404,10 @@
           "tooBig": "Görsel boyutu en fazla 5MB olabilir",
           "uploadFailed": "Görsel yüklenemedi. Lütfen tekrar dene."
         }
-      }
+      },
+      "gradeLevelLabel": "Sınıf",
+      "gradeLevelPlaceholder": "Genel",
+      "gradeLevelNone": "Genel"
     },
     "testCard": {
       "titleLabel": "Test Başlığı *",
@@ -1868,7 +1873,10 @@
       "examTypePlaceholder": "Sinav turu secin",
       "examTypeNone": "Belirtilmemis",
       "priceLabel": "Fiyat (TL)",
-      "pricePlaceholder": "0 = ucretsiz"
+      "pricePlaceholder": "0 = ucretsiz",
+      "gradeLevelLabel": "Sınıf",
+      "gradeLevelPlaceholder": "Genel",
+      "gradeLevelNone": "Genel"
     },
     "testsStep": {
       "title": "Testler ve Sorular",

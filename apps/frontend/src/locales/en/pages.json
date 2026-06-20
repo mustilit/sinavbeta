@@ -36,7 +36,8 @@
       "continue": "Continue",
       "examTypes": "Exam Types",
       "testPackages": "Test Packages",
-      "educators": "Educators"
+      "educators": "Educators",
+      "gradeLevels": "Grades"
     },
     "interestedExamType": "Your interest",
     "continueAria": "Continue",
@@ -128,7 +129,8 @@
       "price501to1000": "₺501 – ₺1000",
       "priceOver1000": "Over ₺1000",
       "active": "Active filters:",
-      "clear": "Clear"
+      "clear": "Clear",
+      "gradeLevel": "Grade"
     },
     "empty": {
       "title": "No results found",
@@ -402,7 +404,10 @@
           "tooBig": "Image size must be at most 5MB",
           "uploadFailed": "Could not upload image. Please try again."
         }
-      }
+      },
+      "gradeLevelLabel": "Grade",
+      "gradeLevelPlaceholder": "General",
+      "gradeLevelNone": "General"
     },
     "testCard": {
       "titleLabel": "Test Title *",
@@ -1868,7 +1873,10 @@
       "examTypePlaceholder": "Select exam type",
       "examTypeNone": "Unspecified",
       "priceLabel": "Price (TL)",
-      "pricePlaceholder": "0 = free"
+      "pricePlaceholder": "0 = free",
+      "gradeLevelLabel": "Grade",
+      "gradeLevelPlaceholder": "General",
+      "gradeLevelNone": "General"
     },
     "testsStep": {
       "title": "Tests and Questions",

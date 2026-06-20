@@ -10,6 +10,7 @@ type Input = {
   title?: string;
   description?: string | null;
   examTypeId?: string;
+  gradeLevelId?: string;
   topicId?: string;
   priceCents?: number;
   coverImageUrl?: string | null;
@@ -51,6 +52,13 @@ export class UpdateTunnelUseCase {
       const et = await prisma.examType.findUnique({ where: { id: input.examTypeId }, select: { id: true } });
       if (!et) throw new AppError('EXAMTYPE_NOT_FOUND', 'Sınav türü bulunamadı', 404);
       data.examTypeId = input.examTypeId;
+    }
+    if (input.gradeLevelId !== undefined) {
+      if (!input.gradeLevelId || !UUID_RE.test(input.gradeLevelId))
+        throw new AppError('INVALID_GRADELEVEL', 'Geçerli bir sınıf seçin', 400);
+      const gl = await prisma.gradeLevel.findUnique({ where: { id: input.gradeLevelId }, select: { id: true } });
+      if (!gl) throw new AppError('GRADELEVEL_NOT_FOUND', 'Sınıf bulunamadı', 404);
+      data.gradeLevelId = input.gradeLevelId;
     }
     if (input.topicId !== undefined) {
       if (!input.topicId || !UUID_RE.test(input.topicId))

@@ -125,7 +125,8 @@
       "riskyContent": "Riskante Inhalte",
       "contracts": "Verträge",
       "backup": "Sicherung",
-      "tunnelApprovals": "Tunnel-Freigaben"
+      "tunnelApprovals": "Tunnel-Freigaben",
+      "gradeLevels": "Klassenstufen"
     },
     "collapseAria": "Seitenleiste einklappen",
     "expandAria": "Seitenleiste ausklappen"

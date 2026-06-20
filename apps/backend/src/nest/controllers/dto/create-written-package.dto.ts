@@ -33,6 +33,12 @@ export class CreateWrittenPackageDto {
   @MaxLength(200)
   examTypeId?: string;
 
+  @ApiPropertyOptional({ description: 'Sınıf (GradeLevel) ID — boşsa Genel' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  gradeLevelId?: string;
+
   @ApiPropertyOptional({ description: 'Kapak görseli URL' })
   @IsOptional()
   @IsString()

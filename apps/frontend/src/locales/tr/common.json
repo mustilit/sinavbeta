@@ -125,7 +125,8 @@
       "riskyContent": "Riskli İçerik",
       "contracts": "Sözleşmeler",
       "backup": "Yedekleme",
-      "tunnelApprovals": "Tünel Onayları"
+      "tunnelApprovals": "Tünel Onayları",
+      "gradeLevels": "Sınıflar"
     },
     "collapseAria": "Yan menüyü kapat",
     "expandAria": "Yan menüyü genişlet"

@@ -21,6 +21,7 @@ export default function MyTests() {
   const { t } = useTranslation(["pages"]);
   const { user } = useAuth();
   const [selectedExamType, setSelectedExamType] = useState("all");
+  const [selectedGrade, setSelectedGrade] = useState("all");
   const [selectedEducator, setSelectedEducator] = useState("all");
   const [completionFilter, setCompletionFilter] = useState("all");
   const [sp] = useSearchParams();
@@ -51,6 +52,7 @@ export default function MyTests() {
       // Yayımı kalkmış paketleri gizle (eski satın alma korunur ama listede yok)
       if (!pkg.publishedAt) continue;
       const firstTestWithType = (pkg.tests ?? []).find((t) => t.examTypeId != null);
+      const firstTestWithGrade = (pkg.tests ?? []).find((t) => t.gradeLevelId != null);
       result.push({
         id: pkg.id,
         title: pkg.title ?? "",
@@ -59,6 +61,8 @@ export default function MyTests() {
         educator_name: pkg.educator?.username ?? "",
         exam_type_id: firstTestWithType?.examTypeId ?? null,
         exam_type_name: firstTestWithType?.examType?.name ?? null,
+        grade_level_id: firstTestWithGrade?.gradeLevelId ?? null,
+        grade_level_name: firstTestWithGrade?.gradeLevel?.name ?? null,
         question_count: (pkg.tests ?? []).reduce(
           (s, t) => s + (t._count?.questions ?? 0),
           0,
@@ -110,6 +114,18 @@ export default function MyTests() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testPackages, purchases.length]);
 
+  // Sınıf filtresi: satın alınan paketlerde geçen sınıflar (deduped + alfabetik)
+  const gradeLevelsList = useMemo(() => {
+    const map = new Map();
+    for (const pkg of testPackages) {
+      if (!purchasedTestIds.has(pkg.id)) continue;
+      if (!pkg.grade_level_id || !pkg.grade_level_name) continue;
+      if (!map.has(pkg.grade_level_id)) map.set(pkg.grade_level_id, { id: pkg.grade_level_id, name: pkg.grade_level_name });
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "tr"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testPackages, purchases.length]);
+
   // testId → attempt map'i: tamamlanan testlerde kullanılan süreyi TestPackageCard'a geçirmek için
   const attemptByTestId = {};
   purchases.forEach((p) => {
@@ -156,7 +172,11 @@ export default function MyTests() {
   if (selectedExamType !== "all") {
     purchasedTests = purchasedTests.filter(t => t.exam_type_id === selectedExamType);
   }
-  
+
+  if (selectedGrade !== "all") {
+    purchasedTests = purchasedTests.filter(t => t.grade_level_id === selectedGrade);
+  }
+
   if (selectedEducator !== "all") {
     purchasedTests = purchasedTests.filter(t => t.educator_email === selectedEducator);
   }
@@ -196,7 +216,7 @@ export default function MyTests() {
 
   // Paging — 10 paket / sayfa. Filtre değişimlerinde 1. sayfaya dön.
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [selectedExamType, selectedEducator, completionFilter]);
+  useEffect(() => { setPage(1); }, [selectedExamType, selectedGrade, selectedEducator, completionFilter]);
   const totalPages = Math.max(1, Math.ceil(purchasedTests.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pagedTests = useMemo(
@@ -204,7 +224,7 @@ export default function MyTests() {
     // purchasedTests her render'da yeni referans olduğu için dep listesine eklenmedi;
     // currentPage + filtreler tetikler.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentPage, selectedExamType, selectedEducator, completionFilter, purchases.length],
+    [currentPage, selectedExamType, selectedGrade, selectedEducator, completionFilter, purchases.length],
   );
 
   // Eğitici filtresi: yalnızca aday'ın satın aldığı paketlere ait eğiticiler.
@@ -226,10 +246,11 @@ export default function MyTests() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testPackages, purchases.length]);
 
-  const hasActiveFilters = selectedExamType !== "all" || selectedEducator !== "all" || completionFilter !== "all";
-  
+  const hasActiveFilters = selectedExamType !== "all" || selectedGrade !== "all" || selectedEducator !== "all" || completionFilter !== "all";
+
   const clearFilters = () => {
     setSelectedExamType("all");
+    setSelectedGrade("all");
     setSelectedEducator("all");
     setCompletionFilter("all");
   };
@@ -248,8 +269,8 @@ export default function MyTests() {
       {/* İçerik sekmeleri: Testler | Tüneller (site standardı alt-çizgi stili) */}
       <div className="mb-6 flex flex-wrap items-center gap-1 border-b border-slate-200">
         <button type="button" onClick={() => setContentTab("tests")} className={contentTabBtn("tests")}>Testler</button>
-        <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
         <button type="button" onClick={() => setContentTab("written")} className={contentTabBtn("written")}>{t("pages:writtenGrid.tab")}</button>
+        <button type="button" onClick={() => setContentTab("tunnels")} className={contentTabBtn("tunnels")}>Tüneller</button>
         {contentTab === "tunnels" && (
           <button
             type="button"
@@ -284,7 +305,7 @@ export default function MyTests() {
               </Button>
             </div>
           )}
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">{t("pages:myTests.filter.examTypeLabel")}</label>
               <Select value={selectedExamType} onValueChange={setSelectedExamType}>
@@ -298,6 +319,21 @@ export default function MyTests() {
                       {/* exam.name user-generated — çevrilmez */}
                       {exam.name}
                     </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">{t("pages:explore.filter.gradeLevel", { defaultValue: "Sınıf" })}</label>
+              <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+                <SelectTrigger aria-label={t("pages:explore.filter.gradeLevel", { defaultValue: "Sınıf" })}>
+                  <SelectValue placeholder={t("pages:myTests.filter.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("pages:myTests.filter.all")}</SelectItem>
+                  {gradeLevelsList.map((g) => (
+                    /* grade.name user-generated — çevrilmez */
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -9,6 +9,7 @@ export interface ExamTest {
   isTimed: boolean;
   duration: number | null; // dakika
   examTypeId?: string | null;
+  gradeLevelId?: string | null;
   topicId?: string | null;
   educatorId?: string | null;
   publishedAt: Date | null;

@@ -57,8 +57,8 @@ export class CandidateWrittenController {
   @Get('packages')
   @Public()
   @ApiOkResponse({ description: 'Yayımlanmış yazılı paketler (pazar)' })
-  async list(@Query('limit') limit?: string, @Query('cursor') cursor?: string) {
-    return this.listUC.execute({ limit: limit ? Number(limit) : undefined, cursor: cursor || null });
+  async list(@Query('limit') limit?: string, @Query('cursor') cursor?: string, @Query('gradeLevelId') gradeLevelId?: string) {
+    return this.listUC.execute({ limit: limit ? Number(limit) : undefined, cursor: cursor || null, gradeLevelId: gradeLevelId || null });
   }
 
   @Get('my-packages')

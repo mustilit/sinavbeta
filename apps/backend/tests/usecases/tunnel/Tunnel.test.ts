@@ -6,6 +6,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     user: { findUnique: jest.fn() },
     examType: { findUnique: jest.fn() },
+    gradeLevel: { findUnique: jest.fn(async () => ({ id: 'genel-id' })) },
     topic: { findUnique: jest.fn() },
     adminSettings: { findFirst: jest.fn() },
     tunnel: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },

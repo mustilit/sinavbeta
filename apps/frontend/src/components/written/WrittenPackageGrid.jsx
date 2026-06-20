@@ -43,6 +43,9 @@ export function WrittenPackageGrid({ mode = "discover" }) {
   const [mineEducator, setMineEducator] = useState("all");
   const [mineCompletion, setMineCompletion] = useState("all");
 
+  // Sınıf filtresi — hem discover hem mine
+  const [selectedGrade, setSelectedGrade] = useState("all");
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["candidateWritten", isMine ? "mine" : "discover"],
     queryFn: () => (isMine ? candidateWritten.myPackages() : candidateWritten.listPackages({ limit: 40 })),
@@ -59,6 +62,10 @@ export function WrittenPackageGrid({ mode = "discover" }) {
     ? [...new Set(allItems.map((p) => p.educatorName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"))
     : [];
 
+  // Sınıf dropdown listesi (benzersiz, alfabetik) — null gradeLevel "Genel" sayılır
+  const gradeNames = [...new Set(allItems.map((p) => p.gradeLevelName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+  const matchesGrade = (p) => selectedGrade === "all" || (p.gradeLevelName || "Genel") === selectedGrade;
+
   // Discover filtreleme (Explore mantığıyla birebir)
   const q = deferredSearch.trim().toLowerCase();
   const eduQ = selectedEducator.trim().toLowerCase();
@@ -66,7 +73,7 @@ export function WrittenPackageGrid({ mode = "discover" }) {
     ? allItems.filter((p) => {
         const matchesEducator = mineEducator === "all" || p.educatorName === mineEducator;
         const matchesCompletion = mineCompletion === "all" || pkgCompletionBucket(p) === mineCompletion;
-        return matchesEducator && matchesCompletion;
+        return matchesEducator && matchesCompletion && matchesGrade(p);
       })
     : allItems.filter((p) => {
         const price = (p.priceCents ?? 0) / 100;
@@ -83,14 +90,26 @@ export function WrittenPackageGrid({ mode = "discover" }) {
         else if (priceRange === "251to500") matchesPrice = price >= 251 && price <= 500;
         else if (priceRange === "501to1000") matchesPrice = price >= 501 && price <= 1000;
         else if (priceRange === "over1000") matchesPrice = price > 1000;
-        return matchesSearch && matchesDifficulty && matchesEducator && matchesRating && matchesPrice;
+        return matchesSearch && matchesDifficulty && matchesEducator && matchesRating && matchesPrice && matchesGrade(p);
       });
 
-  const hasActiveFilters = searchQuery || selectedDifficulty || priceRange || minRating > 0 || selectedEducator;
-  const clearFilters = () => { setSearchQuery(""); setSelectedDifficulty(""); setPriceRange(""); setSelectedEducator(""); setMinRating(0); };
+  const hasActiveFilters = searchQuery || selectedDifficulty || priceRange || minRating > 0 || selectedEducator || selectedGrade !== "all";
+  const clearFilters = () => { setSearchQuery(""); setSelectedDifficulty(""); setPriceRange(""); setSelectedEducator(""); setMinRating(0); setSelectedGrade("all"); };
 
-  const mineHasActiveFilters = mineEducator !== "all" || mineCompletion !== "all";
-  const clearMineFilters = () => { setMineEducator("all"); setMineCompletion("all"); };
+  const mineHasActiveFilters = mineEducator !== "all" || mineCompletion !== "all" || selectedGrade !== "all";
+  const clearMineFilters = () => { setMineEducator("all"); setMineCompletion("all"); setSelectedGrade("all"); };
+
+  const gradeSelect = (
+    <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+      <SelectTrigger aria-label={t("pages:explore.filter.gradeLevel", { defaultValue: "Sınıf" })} className="w-full lg:w-36 h-12">
+        <SelectValue placeholder={t("pages:explore.filter.gradeLevel", { defaultValue: "Sınıf" })} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">{t("pages:explore.filter.all")}</SelectItem>
+        {gradeNames.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
 
   return (
     <>
@@ -133,6 +152,8 @@ export function WrittenPackageGrid({ mode = "discover" }) {
 
               <Input aria-label={t("pages:explore.filter.educatorAria")} placeholder={t("pages:explore.filter.educator")} value={selectedEducator} onChange={(e) => setSelectedEducator(e.target.value)} className="w-full lg:w-44 h-12" />
 
+              {gradeSelect}
+
               <div className="flex items-center gap-2 px-3 h-12 bg-white border rounded-md min-w-[140px]">
                 <Star className="w-4 h-4 text-amber-500" />
                 <span className="text-sm text-slate-600 w-6">{minRating}+</span>
@@ -161,7 +182,11 @@ export function WrittenPackageGrid({ mode = "discover" }) {
               </Button>
             </div>
           )}
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">{t("pages:explore.filter.gradeLevel", { defaultValue: "Sınıf" })}</label>
+              {gradeSelect}
+            </div>
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">{t("pages:myTests.filter.educatorLabel")}</label>
               <Select value={mineEducator} onValueChange={setMineEducator}>

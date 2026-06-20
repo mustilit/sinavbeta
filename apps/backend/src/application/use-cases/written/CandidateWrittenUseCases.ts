@@ -9,6 +9,14 @@ async function resolveEducators(educatorIds: string[]) {
   return new Map(users.map((u) => [u.id, u.username || 'Eğitici']));
 }
 
+/** Sınıf adlarını scalar gradeLevelId'lerden çöz (modül-dışı id; relation yok). */
+async function resolveGradeLevels(gradeLevelIds: (string | null | undefined)[]) {
+  const ids = [...new Set(gradeLevelIds.filter(Boolean) as string[])];
+  if (!ids.length) return new Map<string, string>();
+  const rows = await prisma.gradeLevel.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
+  return new Map(rows.map((g) => [g.id, g.name]));
+}
+
 /** Adayın satın aldığı yazılı paketler (Satın Alınanlar sekmesi) — test + deneme durumu. */
 export class ListMyWrittenPurchasesUseCase {
   async execute(actorId?: string | null) {
@@ -24,7 +32,7 @@ export class ListMyWrittenPurchasesUseCase {
     const packages = await prisma.writtenPackage.findMany({
       where: { id: { in: packageIds } },
       select: {
-        id: true, title: true, description: true, coverImageUrl: true, difficulty: true, educatorId: true,
+        id: true, title: true, description: true, coverImageUrl: true, difficulty: true, educatorId: true, gradeLevelId: true,
         tests: { where: { deletedAt: null }, orderBy: { createdAt: 'asc' }, select: { id: true, title: true, isTimed: true, duration: true, questionCount: true } },
       },
     });
@@ -40,7 +48,10 @@ export class ListMyWrittenPurchasesUseCase {
     const stateByTest = new Map<string, { attemptId: string; status: string }>();
     for (const a of attempts) if (!stateByTest.has(a.testId)) stateByTest.set(a.testId, { attemptId: a.id, status: a.status });
 
-    const educators = await resolveEducators(packages.map((p) => p.educatorId ?? ''));
+    const [educators, gradeLevels] = await Promise.all([
+      resolveEducators(packages.map((p) => p.educatorId ?? '')),
+      resolveGradeLevels(packages.map((p) => p.gradeLevelId)),
+    ]);
     const pkgById = new Map(packages.map((p) => [p.id, p]));
 
     return {
@@ -55,6 +66,8 @@ export class ListMyWrittenPurchasesUseCase {
             coverImageUrl: p.coverImageUrl,
             difficulty: p.difficulty,
             educatorName: p.educatorId ? educators.get(p.educatorId) ?? null : null,
+            gradeLevelId: p.gradeLevelId ?? null,
+            gradeLevelName: p.gradeLevelId ? gradeLevels.get(p.gradeLevelId) ?? null : null,
             purchasedAt: pur.createdAt,
             tests: p.tests.map((t) => {
               const st = stateByTest.get(t.id);
@@ -77,10 +90,10 @@ export class ListMyWrittenPurchasesUseCase {
 
 /** Yayımlanmış yazılı paketler (pazar listesi — kart alanları). */
 export class ListPublishedWrittenPackagesUseCase {
-  async execute(params?: { limit?: number; cursor?: string | null }) {
+  async execute(params?: { limit?: number; cursor?: string | null; gradeLevelId?: string | null }) {
     const take = Math.min(Math.max(params?.limit ?? 20, 1), 100);
     const rows = await prisma.writtenPackage.findMany({
-      where: { isActive: true, publishedAt: { not: null } },
+      where: { isActive: true, publishedAt: { not: null }, ...(params?.gradeLevelId ? { gradeLevelId: params.gradeLevelId } : {}) },
       orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
       take: take + 1,
       ...(params?.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
@@ -94,13 +107,15 @@ export class ListPublishedWrittenPackagesUseCase {
         difficulty: true,
         publishedAt: true,
         educatorId: true,
+        gradeLevelId: true,
         tests: { where: { deletedAt: null }, select: { questionCount: true } },
       },
     });
     const hasMore = rows.length > take;
     const items = hasMore ? rows.slice(0, -1) : rows;
-    const [educators, ratings] = await Promise.all([
+    const [educators, gradeLevels, ratings] = await Promise.all([
       resolveEducators(items.map((p) => p.educatorId ?? '')),
+      resolveGradeLevels(items.map((p) => p.gradeLevelId)),
       items.length
         ? prisma.writtenReview.groupBy({
             by: ['packageId'],
@@ -124,6 +139,8 @@ export class ListPublishedWrittenPackagesUseCase {
         avgRating: ratingByPkg.get(p.id) != null ? Math.round((ratingByPkg.get(p.id) as number) * 10) / 10 : null,
         educatorId: p.educatorId,
         educatorName: p.educatorId ? educators.get(p.educatorId) ?? null : null,
+        gradeLevelId: p.gradeLevelId ?? null,
+        gradeLevelName: p.gradeLevelId ? gradeLevels.get(p.gradeLevelId) ?? null : null,
       })),
       nextCursor: hasMore ? items[items.length - 1]?.id ?? null : null,
     };
@@ -146,6 +163,7 @@ export class GetPublishedWrittenPackageUseCase {
         isActive: true,
         publishedAt: true,
         educatorId: true,
+        gradeLevelId: true,
         tests: {
           where: { deletedAt: null },
           orderBy: { createdAt: 'asc' },
@@ -156,8 +174,9 @@ export class GetPublishedWrittenPackageUseCase {
     if (!pkg || !pkg.publishedAt || !pkg.isActive)
       throw new AppError('WRITTEN_PACKAGE_NOT_FOUND', 'Paket bulunamadı', 404);
 
-    const [educators, ratingAgg, salesCount] = await Promise.all([
+    const [educators, gradeLevels, ratingAgg, salesCount] = await Promise.all([
       resolveEducators([pkg.educatorId ?? '']),
+      resolveGradeLevels([pkg.gradeLevelId]),
       prisma.writtenReview.aggregate({ where: { packageId: pkg.id }, _avg: { rating: true }, _count: { _all: true } }),
       prisma.writtenPurchase.count({ where: { packageId: pkg.id, status: 'ACTIVE' } }),
     ]);
@@ -179,6 +198,8 @@ export class GetPublishedWrittenPackageUseCase {
       educatorId: pkg.educatorId,
       educatorName: pkg.educatorId ? educators.get(pkg.educatorId) ?? null : null,
       educatorUsername: pkg.educatorId ? educators.get(pkg.educatorId) ?? null : null,
+      gradeLevelId: pkg.gradeLevelId ?? null,
+      gradeLevelName: pkg.gradeLevelId ? gradeLevels.get(pkg.gradeLevelId) ?? null : null,
       testCount: tests.length,
       totalQuestions: tests.reduce((s, t) => s + (t.questionCount ?? 0), 0),
       salesCount,

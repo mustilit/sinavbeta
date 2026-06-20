@@ -39,6 +39,7 @@ type CreateInput = {
   priceCents?: number;
   difficulty?: string | null;
   examTypeId?: string | null;
+  gradeLevelId?: string | null;
   coverImageUrl?: string | null;
 };
 
@@ -59,10 +60,18 @@ export class CreateWrittenPackageUseCase {
 
     const priceCents = Math.max(0, Math.floor(input.priceCents ?? 0));
 
+    // Sınıf (GradeLevel): seçilmediyse "Genel" fallback. (scalar — relation yok)
+    let gradeLevelId: string | null = input.gradeLevelId ?? null;
+    if (!gradeLevelId) {
+      const genel = await prisma.gradeLevel.findUnique({ where: { slug: 'genel' }, select: { id: true } });
+      gradeLevelId = genel?.id ?? null;
+    }
+
     return prisma.writtenPackage.create({
       data: {
         tenantId: educator.tenantId,
         educatorId: educator.id,
+        gradeLevelId,
         title,
         description: (input.description ?? '').trim() || null,
         priceCents,
@@ -83,6 +92,7 @@ type UpdateInput = {
   description?: string | null;
   priceCents?: number;
   difficulty?: string | null;
+  gradeLevelId?: string | null;
   coverImageUrl?: string | null;
 };
 
@@ -104,6 +114,7 @@ export class UpdateWrittenPackageUseCase {
     if (input.description !== undefined) data.description = (input.description ?? '').trim() || null;
     if (input.priceCents !== undefined) data.priceCents = Math.max(0, Math.floor(input.priceCents));
     if (input.difficulty !== undefined) data.difficulty = (input.difficulty ?? '').trim() || 'medium';
+    if (input.gradeLevelId !== undefined) data.gradeLevelId = input.gradeLevelId || null;
     if (input.coverImageUrl !== undefined) data.coverImageUrl = (input.coverImageUrl ?? '').trim() || null;
 
     if (Object.keys(data).length === 0) {

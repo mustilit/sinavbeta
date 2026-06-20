@@ -18,6 +18,7 @@ describe('SiteController', () => {
   let mockListExamTypes: { execute: jest.Mock };
   let mockListFeaturedEducators: { execute: jest.Mock };
   let mockGetPopularPackages: { execute: jest.Mock };
+  let mockListGradeLevels: { execute: jest.Mock };
 
   beforeEach(() => {
     mockPrisma = {
@@ -35,6 +36,7 @@ describe('SiteController', () => {
     };
     mockGetSiteSettings = { execute: jest.fn().mockResolvedValue({ siteName: 'Sınav Salonu' }) };
     mockListExamTypes = { execute: jest.fn().mockResolvedValue([{ id: 'et-1', name: 'KPSS', active: true }]) };
+    mockListGradeLevels = { execute: jest.fn().mockResolvedValue([{ id: 'gl-1', name: 'Genel', active: true }]) };
     mockListFeaturedEducators = { execute: jest.fn().mockResolvedValue([{ id: 'edu-1', username: 'hoca1' }]) };
     mockGetPopularPackages = { execute: jest.fn().mockResolvedValue([{ id: 'pkg-1', title: 'Paket A' }]) };
 
@@ -42,6 +44,7 @@ describe('SiteController', () => {
       mockPrisma,
       mockGetSiteSettings as any,
       mockListExamTypes as any,
+      mockListGradeLevels as any,
       mockListFeaturedEducators as any,
       mockGetPopularPackages as any,
     );

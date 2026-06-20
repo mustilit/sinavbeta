@@ -22,6 +22,8 @@ export interface MarketplacePackageDetail {
   educatorUsername: string | null;
   examTypeId: string | null;
   examTypeName: string | null;
+  gradeLevelId: string | null;
+  gradeLevelName: string | null;
   questionCount: number;
   testCount: number;
   tests: MarketplacePackageTestItem[];
@@ -61,6 +63,10 @@ export class GetMarketplacePackageUseCase {
             examType: {
               select: { id: true, name: true },
             },
+            gradeLevelId: true,
+            gradeLevel: {
+              select: { id: true, name: true },
+            },
             _count: {
               select: { questions: true },
             },
@@ -85,6 +91,9 @@ export class GetMarketplacePackageUseCase {
     const firstTestWithType = tests.find((t: any) => t.examTypeId != null);
     const examTypeId: string | null = firstTestWithType?.examTypeId ?? null;
     const examTypeName: string | null = firstTestWithType?.examType?.name ?? null;
+    const firstTestWithGrade = tests.find((t: any) => t.gradeLevelId != null);
+    const gradeLevelId: string | null = firstTestWithGrade?.gradeLevelId ?? null;
+    const gradeLevelName: string | null = firstTestWithGrade?.gradeLevel?.name ?? null;
 
     const testItems: MarketplacePackageTestItem[] = tests.map((t: any) => ({
       id: t.id,
@@ -105,6 +114,8 @@ export class GetMarketplacePackageUseCase {
       educatorUsername: pkg.educator?.username ?? null,
       examTypeId,
       examTypeName,
+      gradeLevelId,
+      gradeLevelName,
       questionCount,
       testCount: tests.length,
       tests: testItems,

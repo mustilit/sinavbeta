@@ -125,7 +125,8 @@
       "riskyContent": "Contenido riesgoso",
       "contracts": "Contratos",
       "backup": "Copia de seguridad",
-      "tunnelApprovals": "Aprobaciones de túnel"
+      "tunnelApprovals": "Aprobaciones de túnel",
+      "gradeLevels": "Cursos"
     },
     "collapseAria": "Cerrar menú lateral",
     "expandAria": "Expandir menú lateral"

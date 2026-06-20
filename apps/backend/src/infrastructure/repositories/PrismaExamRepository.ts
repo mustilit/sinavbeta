@@ -37,6 +37,7 @@ export class PrismaExamRepository implements IExamRepository {
           title: test.title,
           educatorId: (test as any).educatorId ?? null,
           examTypeId: (test as any).examTypeId ?? null,
+          gradeLevelId: (test as any).gradeLevelId ?? null,
           topicId: (test as any).topicId ?? null,
           isTimed: test.isTimed,
           duration: test.duration,

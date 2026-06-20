@@ -11,6 +11,8 @@ function pubSummary(t: any) {
     currency: t.currency,
     layerCount: t.layerCount,
     examTypeName: t.examType?.name ?? null,
+    gradeLevelId: t.gradeLevelId ?? null,
+    gradeLevelName: t.gradeLevel?.name ?? null,
     topicName: t.topic?.name ?? null,
     educatorId: t.educatorId ?? null,
     educatorUsername: t.educator?.username ?? null,
@@ -21,16 +23,18 @@ function pubSummary(t: any) {
 /** Aday: yayınlanmış tünellerin pazar listesi (soru/cevap içermez).
  *  actorId verilirse her tünel için purchased + attemptStatus döner (kart durumu). */
 export class ListPublishedTunnelsUseCase {
-  async execute(filter?: { examTypeId?: string; topicId?: string }, actorId?: string | null) {
+  async execute(filter?: { examTypeId?: string; gradeLevelId?: string; topicId?: string }, actorId?: string | null) {
     const rows = await prisma.tunnel.findMany({
       where: {
         status: 'PUBLISHED',
         ...(filter?.examTypeId ? { examTypeId: filter.examTypeId } : {}),
+        ...(filter?.gradeLevelId ? { gradeLevelId: filter.gradeLevelId } : {}),
         ...(filter?.topicId ? { topicId: filter.topicId } : {}),
       },
       orderBy: [{ publishedAt: 'desc' }],
       include: {
         examType: { select: { name: true } },
+        gradeLevel: { select: { name: true } },
         topic: { select: { name: true } },
         educator: { select: { username: true } },
         _count: { select: { questions: true } },
@@ -72,6 +76,7 @@ export class GetPublishedTunnelMetaUseCase {
       where: { id: tunnelId },
       include: {
         examType: { select: { name: true } },
+        gradeLevel: { select: { name: true } },
         topic: { select: { name: true } },
         educator: { select: { username: true } },
         _count: { select: { questions: true } },

@@ -3,6 +3,7 @@ import { ApiTags, ApiOkResponse } from '@nestjs/swagger';
 import { Public } from '../decorators/public.decorator';
 import { GetSiteSettingsUseCase } from '../../application/use-cases/admin/GetSiteSettingsUseCase';
 import { ListExamTypesUseCase } from '../../application/use-cases/admin/ListExamTypesUseCase';
+import { ListGradeLevelsUseCase } from '../../application/use-cases/admin/GradeLevelUseCases';
 import { ListFeaturedEducatorsUseCase } from '../../application/use-cases/educator/ListFeaturedEducatorsUseCase';
 import { GetPopularPackagesUseCase } from '../../application/use-cases/package/GetPopularPackagesUseCase';
 import { GetPaymentSettingsUseCase } from '../../application/use-cases/admin/GetPaymentSettingsUseCase';
@@ -20,6 +21,7 @@ export class SiteController {
     @Inject('PRISMA') private readonly prisma: PrismaClient,
     @Inject(GetSiteSettingsUseCase) private readonly getSiteSettings: GetSiteSettingsUseCase,
     @Inject(ListExamTypesUseCase) private readonly listExamTypes: ListExamTypesUseCase,
+    @Inject(ListGradeLevelsUseCase) private readonly listGradeLevels: ListGradeLevelsUseCase,
     @Inject(ListFeaturedEducatorsUseCase) private readonly listFeaturedEducators: ListFeaturedEducatorsUseCase,
     @Inject(GetPopularPackagesUseCase) private readonly getPopularPackages: GetPopularPackagesUseCase,
   ) {}
@@ -37,6 +39,13 @@ export class SiteController {
   async getExamTypes() {
     // Ana sayfa: en popüler (türe ait paket + satın alma sayısı) türler önce.
     return this.listExamTypes.execute(true, true);
+  }
+
+  @Get('grade-levels')
+  @Public()
+  @ApiOkResponse({ description: 'Active grade levels for filters and homepage' })
+  async getGradeLevels() {
+    return this.listGradeLevels.execute(true);
   }
 
   @Get('featured-educators')

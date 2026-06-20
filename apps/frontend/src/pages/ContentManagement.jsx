@@ -2,15 +2,17 @@ import { lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslation } from "react-i18next";
-import { Award, BookOpen } from "lucide-react";
+import { Award, BookOpen, Layers } from "lucide-react";
 
-// Var olan iki sayfa tab içeriği olarak kullanılır — kod tekrarı yok.
+// Var olan sayfalar tab içeriği olarak kullanılır — kod tekrarı yok.
 const ManageExamTypes = lazy(() => import("./ManageExamTypes"));
+const ManageGradeLevels = lazy(() => import("./ManageGradeLevels"));
 const ManageTopics = lazy(() => import("./ManageTopics"));
 
 const TABS = [
-  { value: "sinav-turleri", labelKey: "sidebar.admin.examTypes", icon: Award,    Component: ManageExamTypes },
-  { value: "konular",       labelKey: "sidebar.admin.topics",    icon: BookOpen, Component: ManageTopics },
+  { value: "sinav-turleri", labelKey: "sidebar.admin.examTypes",   icon: Award,    Component: ManageExamTypes },
+  { value: "siniflar",      labelKey: "sidebar.admin.gradeLevels", icon: Layers,   Component: ManageGradeLevels },
+  { value: "konular",       labelKey: "sidebar.admin.topics",      icon: BookOpen, Component: ManageTopics },
 ];
 
 function TabFallback() {

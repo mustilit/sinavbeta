@@ -28,6 +28,7 @@ import { EducatorsController } from './controllers/educators.controller';
 import { FollowsController } from './controllers/follows.controller';
 import { CspReportController } from './controllers/csp-report.controller';
 import { AdminExamTypesController } from './controllers/admin.exam-types.controller';
+import { AdminGradeLevelsController } from './controllers/admin.grade-levels.controller';
 import { AdminTopicsController } from './controllers/admin.topics.controller';
 import { AdminEducatorsController } from './controllers/admin.educators.controller';
 import { ObjectionsController } from './controllers/objections.controller';
@@ -54,6 +55,7 @@ import { PrismaAuditLogRepository } from '../infrastructure/repositories/PrismaA
 import { PrismaTopicRepository } from '../infrastructure/repositories/PrismaTopicRepository';
 import { ListExamTypesUseCase } from '../application/use-cases/admin/ListExamTypesUseCase';
 import { CreateExamTypeUseCase } from '../application/use-cases/admin/CreateExamTypeUseCase';
+import { ListGradeLevelsUseCase, CreateGradeLevelUseCase, UpdateGradeLevelUseCase, DeleteGradeLevelUseCase } from '../application/use-cases/admin/GradeLevelUseCases';
 import { UpdateExamTypeUseCase } from '../application/use-cases/admin/UpdateExamTypeUseCase';
 import { DeleteExamTypeUseCase } from '../application/use-cases/admin/DeleteExamTypeUseCase';
 import { ListTopicsByExamTypeUseCase } from '../application/use-cases/admin/ListTopicsByExamTypeUseCase';
@@ -389,7 +391,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     ContractsModule,
     ContentSafetyModule,
   ],
-  controllers: [RootController, HealthController, NotificationsController, AdminDlqController, TestsPerformanceController, HomeController, SiteController, ReviewsController, EducatorsController, FollowsController, CspReportController, AdminExamTypesController, AdminTopicsController, AdminEducatorsController, AdminUsersController, ObjectionsController, EducatorObjectionsController, AdminObjectionsController, AdminRefundsController, AdminSettingsController, AdminSiteSettingsController, AdminContractsController, AdminAuditController, AdminAdPackagesController, AdPackagesController, MeRefundsController, MeObjectionsController, MePurchasesController, MeDevicesController, AdminDiscountCodesController, MePreferencesController, MetricsController, AdminCandidatesController, AdminEducatorReportController, AdminCommissionController, AdminAdReportController, MePerformanceController, MeHeartbeatController, AdminWorkersController, PackagesController, UploadController, AttemptsController, EducatorRefundsController, AdminStatsController, LiveSessionsController,
+  controllers: [RootController, HealthController, NotificationsController, AdminDlqController, TestsPerformanceController, HomeController, SiteController, ReviewsController, EducatorsController, FollowsController, CspReportController, AdminExamTypesController, AdminGradeLevelsController, AdminTopicsController, AdminEducatorsController, AdminUsersController, ObjectionsController, EducatorObjectionsController, AdminObjectionsController, AdminRefundsController, AdminSettingsController, AdminSiteSettingsController, AdminContractsController, AdminAuditController, AdminAdPackagesController, AdPackagesController, MeRefundsController, MeObjectionsController, MePurchasesController, MeDevicesController, AdminDiscountCodesController, MePreferencesController, MetricsController, AdminCandidatesController, AdminEducatorReportController, AdminCommissionController, AdminAdReportController, MePerformanceController, MeHeartbeatController, AdminWorkersController, PackagesController, UploadController, AttemptsController, EducatorRefundsController, AdminStatsController, LiveSessionsController,
     // Aşama 6 — wire-up: yeni controller'lar
     WebhookController,
     BillingController,
@@ -482,6 +484,22 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
       provide: DeleteExamTypeUseCase,
       useFactory: (repo: PrismaExamTypeRepository, audit: PrismaAuditLogRepository) => new DeleteExamTypeUseCase(repo, audit),
       inject: [EXAM_TYPE_REPO, PrismaAuditLogRepository],
+    },
+    { provide: ListGradeLevelsUseCase, useFactory: () => new ListGradeLevelsUseCase() },
+    {
+      provide: CreateGradeLevelUseCase,
+      useFactory: (audit: PrismaAuditLogRepository) => new CreateGradeLevelUseCase(audit),
+      inject: [PrismaAuditLogRepository],
+    },
+    {
+      provide: UpdateGradeLevelUseCase,
+      useFactory: (audit: PrismaAuditLogRepository) => new UpdateGradeLevelUseCase(audit),
+      inject: [PrismaAuditLogRepository],
+    },
+    {
+      provide: DeleteGradeLevelUseCase,
+      useFactory: (audit: PrismaAuditLogRepository) => new DeleteGradeLevelUseCase(audit),
+      inject: [PrismaAuditLogRepository],
     },
     { provide: ListTopicsByExamTypeUseCase, useFactory: () => new ListTopicsByExamTypeUseCase() },
     { provide: CreateTopicUseCase, useFactory: () => new CreateTopicUseCase() },

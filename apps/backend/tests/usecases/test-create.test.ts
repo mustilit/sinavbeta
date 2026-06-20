@@ -5,6 +5,7 @@ jest.mock('../../src/infrastructure/database/prisma', () => ({
     adminSettings: { findFirst: jest.fn(async () => ({ packageCreationEnabled: true })) },
     // "Diğer" fallback (examTypeId/topicId verilmeyince): bulunamadı → null kalır
     examType: { findUnique: jest.fn(async () => null) },
+    gradeLevel: { findUnique: jest.fn(async () => null) },
     topic: { findFirst: jest.fn(async () => null) },
   },
 }));

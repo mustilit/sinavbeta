@@ -14,6 +14,7 @@ export class GetTunnelUseCase {
       where: { id: tunnelId },
       include: {
         examType: { select: { id: true, name: true } },
+        gradeLevel: { select: { id: true, name: true } },
         topic: { select: { id: true, name: true } },
         educator: { select: { id: true, username: true } },
         layers: {
@@ -50,6 +51,8 @@ export function serializeTunnelDetail(t: any) {
     optionsPerQuestion: t.optionsPerQuestion,
     advanceStreak: t.advanceStreak,
     examType: t.examType ? { id: t.examType.id, name: t.examType.name } : null,
+    gradeLevel: t.gradeLevel ? { id: t.gradeLevel.id, name: t.gradeLevel.name } : null,
+    gradeLevelName: t.gradeLevel?.name ?? null,
     topic: t.topic ? { id: t.topic.id, name: t.topic.name } : null,
     educator: t.educator ? { id: t.educator.id, username: t.educator.username } : null,
     reviewNote: t.reviewNote ?? null,

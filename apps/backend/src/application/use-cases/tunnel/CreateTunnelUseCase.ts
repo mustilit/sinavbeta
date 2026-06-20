@@ -8,6 +8,7 @@ type Input = {
   title: string;
   description?: string | null;
   examTypeId: string;
+  gradeLevelId?: string | null;
   topicId: string;
   priceCents?: number;
   coverImageUrl?: string | null;
@@ -42,6 +43,16 @@ export class CreateTunnelUseCase {
     const topic = await prisma.topic.findUnique({ where: { id: input.topicId }, select: { id: true } });
     if (!topic) throw new AppError('TOPIC_NOT_FOUND', 'Konu bulunamadı', 404);
 
+    // Sınıf (GradeLevel): seçilmediyse "Genel" fallback.
+    let gradeLevelId: string | null = input.gradeLevelId ?? null;
+    if (gradeLevelId) {
+      const gl = await prisma.gradeLevel.findUnique({ where: { id: gradeLevelId }, select: { id: true } });
+      if (!gl) throw new AppError('GRADELEVEL_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    } else {
+      const genel = await prisma.gradeLevel.findUnique({ where: { slug: 'genel' }, select: { id: true } });
+      gradeLevelId = genel?.id ?? null;
+    }
+
     const settings = await prisma.adminSettings.findFirst({ where: { id: 1 } });
     const layerCount = settings?.maxLayersPerTunnel ?? 7;
     const optionsPerQuestion = settings?.tunnelOptionsPerQuestion ?? 10;
@@ -57,6 +68,7 @@ export class CreateTunnelUseCase {
         tenantId: educator.tenantId,
         educatorId: educator.id,
         examTypeId: input.examTypeId,
+        gradeLevelId,
         topicId: input.topicId,
         title,
         description: (input.description ?? '').trim() || null,

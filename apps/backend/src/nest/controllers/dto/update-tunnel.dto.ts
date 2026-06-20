@@ -20,6 +20,11 @@ export class UpdateTunnelDto {
   @IsUUID()
   examTypeId?: string;
 
+  @ApiPropertyOptional({ description: 'Sınıf (GradeLevel) UUID' })
+  @IsOptional()
+  @IsUUID()
+  gradeLevelId?: string;
+
   @ApiPropertyOptional({ description: 'Konu UUID' })
   @IsOptional()
   @IsUUID()

@@ -125,7 +125,8 @@
       "riskyContent": "Risky Content",
       "contracts": "Contracts",
       "backup": "Backup",
-      "tunnelApprovals": "Tunnel Approvals"
+      "tunnelApprovals": "Tunnel Approvals",
+      "gradeLevels": "Grades"
     },
     "collapseAria": "Collapse sidebar",
     "expandAria": "Expand sidebar"

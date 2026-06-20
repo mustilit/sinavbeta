@@ -8,6 +8,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     writtenPackage: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn() },
     writtenTest: { findMany: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     writtenQuestion: { count: jest.fn() },
+    gradeLevel: { findUnique: jest.fn(async () => ({ id: 'genel-id' })) },
     adminSettings: { findFirst: jest.fn() },
     $transaction: jest.fn(),
   },

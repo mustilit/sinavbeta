@@ -36,7 +36,8 @@
       "continue": "Continuar",
       "examTypes": "Tipos de examen",
       "testPackages": "Paquetes de exámenes",
-      "educators": "Educadores"
+      "educators": "Educadores",
+      "gradeLevels": "Cursos"
     },
     "interestedExamType": "Tu interés",
     "continueAria": "Continuar",
@@ -128,7 +129,8 @@
       "price501to1000": "₺501 – ₺1000",
       "priceOver1000": "Más de ₺1000",
       "active": "Filtros activos:",
-      "clear": "Limpiar"
+      "clear": "Limpiar",
+      "gradeLevel": "Curso"
     },
     "empty": {
       "title": "No se encontraron resultados",
@@ -405,7 +407,10 @@
           "tooBig": "El tamaño de la imagen debe ser como máximo 5MB",
           "uploadFailed": "No se pudo subir la imagen. Inténtalo de nuevo."
         }
-      }
+      },
+      "gradeLevelLabel": "Curso",
+      "gradeLevelPlaceholder": "General",
+      "gradeLevelNone": "General"
     },
     "testCard": {
       "titleLabel": "Título del examen *",
@@ -1871,7 +1876,10 @@
       "examTypePlaceholder": "Selecciona el tipo",
       "examTypeNone": "Sin especificar",
       "priceLabel": "Precio (TL)",
-      "pricePlaceholder": "0 = gratis"
+      "pricePlaceholder": "0 = gratis",
+      "gradeLevelLabel": "Curso",
+      "gradeLevelPlaceholder": "General",
+      "gradeLevelNone": "General"
     },
     "testsStep": {
       "title": "Tests y preguntas",

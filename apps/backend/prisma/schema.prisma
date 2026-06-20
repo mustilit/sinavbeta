@@ -102,6 +102,9 @@ enum AuditAction {
   REFUND_APPROVED
   REFUND_REJECTED
   REVIEW_UPSERTED
+  GRADELEVEL_CREATED
+  GRADELEVEL_UPDATED
+  GRADELEVEL_DELETED
   EXAMTYPE_CREATED
   TOPIC_CREATED
   CONTRACT_ACCEPTED
@@ -455,6 +458,24 @@ model ExamType {
   @@map("exam_types")
 }
 
+/// Sınıf (Grade/Class level) — ExamType deseni; admin yönetir, eğitici içerik
+/// oluştururken seçer (boşsa "Genel"), aday filtreler. Logo metadata.icon'da.
+model GradeLevel {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  metadata    Json?
+  slug        String   @unique
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tests   ExamTest[]
+  tunnels Tunnel[]
+
+  @@map("grade_levels")
+}
+
 // --- Sınav / Test Modülü ---
 
 model Topic {
@@ -489,6 +510,7 @@ model ExamTest {
   id                 String     @id @default(uuid())
   title              String
   examTypeId         String?
+  gradeLevelId       String?
   topicId            String?
   educatorId         String?
   isTimed            Boolean    @default(false)
@@ -520,6 +542,7 @@ model ExamTest {
   attempts  TestAttempt[]
 
   examType       ExamType?       @relation(fields: [examTypeId], references: [id], onDelete: SetNull)
+  gradeLevel     GradeLevel?     @relation(fields: [gradeLevelId], references: [id], onDelete: SetNull)
   topic          Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
   educator       User?           @relation("educatorTests", fields: [educatorId], references: [id], onDelete: SetNull)
   Purchase       Purchase[]
@@ -1912,6 +1935,7 @@ model Tunnel {
   tenantId           String
   educatorId         String
   examTypeId         String?
+  gradeLevelId       String?
   topicId            String?
   title              String
   description        String?
@@ -1937,6 +1961,7 @@ model Tunnel {
   tenant     Tenant           @relation(fields: [tenantId], references: [id])
   educator   User             @relation("educatorTunnels", fields: [educatorId], references: [id], onDelete: Cascade)
   examType   ExamType?        @relation(fields: [examTypeId], references: [id], onDelete: SetNull)
+  gradeLevel GradeLevel?      @relation(fields: [gradeLevelId], references: [id], onDelete: SetNull)
   topic      Topic?           @relation(fields: [topicId], references: [id], onDelete: SetNull)
   reviewedBy User?            @relation("tunnelReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   layers     TunnelLayer[]
@@ -1947,6 +1972,7 @@ model Tunnel {
   @@index([tenantId, status])
   @@index([educatorId, status])
   @@index([examTypeId])
+  @@index([gradeLevelId])
   @@index([topicId])
   @@map("tunnels")
 }
@@ -2136,6 +2162,7 @@ model WrittenPackage {
   id            String    @id @default(cuid())
   tenantId      String
   educatorId    String?
+  gradeLevelId  String? // SCALAR (modül-dışı id; GradeLevel'e relation YOK)
   title         String
   description   String?
   coverImageUrl String?

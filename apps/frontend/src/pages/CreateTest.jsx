@@ -1004,6 +1004,7 @@ export default function CreateTest() {
     description: "",
     priceCents: 0,
     examTypeId: "",
+    gradeLevelId: "",
     difficulty: "medium",
     coverImageUrl: "",
   });
@@ -1061,6 +1062,11 @@ export default function CreateTest() {
   }, [draftKey, loadDraft]);
 
   // ─── Sorgular ─────────────────────────────────────────────────────
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["gradeLevels", "active"],
+    queryFn: () => entities.GradeLevel.filter({ is_active: true }),
+  });
+
   const { data: examTypes = [] } = useQuery({
     queryKey: ["examTypes"],
     queryFn: () => entities.ExamType.filter({ is_active: true }),
@@ -1094,6 +1100,7 @@ export default function CreateTest() {
         const { data: created } = await api.post("/tests", {
           title: testData.title,
           examTypeId: testData.examTypeId || undefined,
+          gradeLevelId: pkgData.gradeLevelId || undefined,
           price: 0, // Fiyat paket düzeyinde
           isTimed: testData.isTimed,
           duration: testData.isTimed ? testData.duration : undefined,
@@ -1388,6 +1395,18 @@ export default function CreateTest() {
                   <SelectItem value="none">{t("pages:testForm.package.examTypeNone")}</SelectItem>
                   {/* exam.name user-generated — çevrilmez */}
                   {examTypes.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pkg-grade">{t("pages:testForm.package.gradeLevelLabel", { defaultValue: "Sınıf" })}</Label>
+              <Select value={pkgData.gradeLevelId || "none"} onValueChange={(v) => setPkgData({ ...pkgData, gradeLevelId: v === "none" ? "" : v })}>
+                <SelectTrigger id="pkg-grade"><SelectValue placeholder={t("pages:testForm.package.gradeLevelPlaceholder", { defaultValue: "Genel" })} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t("pages:testForm.package.gradeLevelNone", { defaultValue: "Genel" })}</SelectItem>
+                  {/* grade.name user-generated — çevrilmez */}
+                  {gradeLevels.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

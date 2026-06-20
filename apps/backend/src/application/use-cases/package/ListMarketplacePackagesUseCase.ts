@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 
 export interface ListMarketplacePackagesFilters {
   examTypeId?: string;
+  gradeLevelId?: string;
   limit?: number;
   /** Serbest metin araması — tsvector üzerinde çalışır */
   q?: string;
@@ -20,6 +21,8 @@ export interface MarketplacePackageItem {
   educatorUsername: string | null;
   examTypeId: string | null;
   examTypeName: string | null;
+  gradeLevelId: string | null;
+  gradeLevelName: string | null;
   questionCount: number;
   testCount: number;
   ratingAvg: number | null;
@@ -60,6 +63,14 @@ export class ListMarketplacePackagesUseCase {
               AND et2."deletedAt" IS NULL
           )`
         : Prisma.sql``;
+      const gradeLevelClause = filters?.gradeLevelId
+        ? Prisma.sql`AND EXISTS (
+            SELECT 1 FROM exam_tests et3
+            WHERE et3."packageId" = tp.id
+              AND et3."gradeLevelId" = ${filters.gradeLevelId}
+              AND et3."deletedAt" IS NULL
+          )`
+        : Prisma.sql``;
 
       // Arama kapsamı: paket title/description (tsvector) + educator username (ILIKE)
       // + paket içindeki testlerin sınav türü adı (LGS, KPSS, MSÜ vb. shortcode'lar).
@@ -93,13 +104,17 @@ export class ListMarketplacePackagesUseCase {
             )
           )
           ${examTypeClause}
+          ${gradeLevelClause}
         ORDER BY rank DESC, tp."publishedAt" DESC
         LIMIT ${limit}
       `;
     } else {
       // --- Arama yok: mevcut Prisma yaklaşımı ---
-      const testsWhereForFilter = filters?.examTypeId
-        ? { some: { examTypeId: filters.examTypeId, deletedAt: null } }
+      const testsSome: any = {};
+      if (filters?.examTypeId) testsSome.examTypeId = filters.examTypeId;
+      if (filters?.gradeLevelId) testsSome.gradeLevelId = filters.gradeLevelId;
+      const testsWhereForFilter = Object.keys(testsSome).length
+        ? { some: { ...testsSome, deletedAt: null } }
         : undefined;
 
       const pkgs = await (prisma.testPackage as any).findMany({
@@ -146,6 +161,8 @@ export class ListMarketplacePackagesUseCase {
         packageId: true,
         examTypeId: true,
         examType: { select: { id: true, name: true } },
+        gradeLevelId: true,
+        gradeLevel: { select: { id: true, name: true } },
         _count: { select: { questions: true } },
       },
     });
@@ -193,6 +210,9 @@ export class ListMarketplacePackagesUseCase {
       const firstTestWithType = tests.find((t: any) => t.examTypeId != null);
       const examTypeId: string | null = firstTestWithType?.examTypeId ?? null;
       const examTypeName: string | null = firstTestWithType?.examType?.name ?? null;
+      const firstTestWithGrade = tests.find((t: any) => t.gradeLevelId != null);
+      const gradeLevelId: string | null = firstTestWithGrade?.gradeLevelId ?? null;
+      const gradeLevelName: string | null = firstTestWithGrade?.gradeLevel?.name ?? null;
 
       const pkgRating = ratingByPackageId.get(pkg.id);
       const ratingAvg = pkgRating && pkgRating.count > 0 ? pkgRating.avg : null;
@@ -214,6 +234,8 @@ export class ListMarketplacePackagesUseCase {
         educatorUsername: pkg.educatorUsername ?? null,
         examTypeId,
         examTypeName,
+        gradeLevelId,
+        gradeLevelName,
         questionCount,
         testCount: tests.length,
         ratingAvg,

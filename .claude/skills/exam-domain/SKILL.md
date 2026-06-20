@@ -86,6 +86,17 @@ Admin panelinden yönetilen global ayarlar.
 - Komisyon oranı, içerik limitleri (`maxQuestionsPerTest`, `maxTestsPerPackage`), **yedekleme zamanlayıcısı** (saat ve hedef dizin).
 - Tek satır mantığı: upsert pattern.
 
+### GradeLevel (Sınıf)
+
+Admin yönetiminde kategori — **ExamType (Sınav Türü) ile aynı desen**. Eğitici içerik oluştururken seçer (çoktan seçmeli), aday filtreler. Seçilmezse **"Genel"** (seed: `slug='genel'`).
+
+- `id, name, description?, metadata (Json — logo: metadata.icon lucide key), slug (unique), active, createdAt, updatedAt`. Tablo: `grade_levels`.
+- **Bağlanan modeller (`gradeLevelId String?`, onDelete SetNull):** `ExamTest` (relation), `Tunnel` (relation + `@@index`), `WrittenPackage` (**SCALAR** — written modülü deseni, relation YOK; ad `resolveGradeLevels` ile çözülür).
+- **Admin CRUD:** `/admin/grade-levels` (List/Create/Toggle/Delete) — `GradeLevelUseCases.ts` (self-contained, prisma direct + best-effort audit). Public liste: `GET /site/grade-levels`. Audit: `GRADELEVEL_CREATED/UPDATED/DELETED`. "Genel" silinemez (`GRADELEVEL_DEFAULT_PROTECTED`).
+- **Create defaulting:** Test/Tunnel/Written create use-case'leri seçilmezse `slug='genel'` id'sine düşer (ExamType "diger" deseni).
+- **Filtre:** Marketplace paket listesi/detay (`gradeLevelId/gradeLevelName`, test'ten türetilir), Tunnel listesi (`gradeLevelName`), Written paket listesi/detay + my-purchases. Frontend: Explore + MyTests (test sekmesi id-bazlı; TunnelGrid/WrittenPackageGrid isim-bazlı client-side), Home "Sınıflar" bandı (Sınav Türleri altında). Admin: ContentManagement 3. sekme (`ManageGradeLevels`).
+- **dalClient:** `entities.GradeLevel` (filter/list/create/update/delete). Logo havuzu ExamType ile ortak (`examTypeIcons.js`).
+
 ### BackupLog
 
 DB yedekleme audit log.
@@ -230,7 +241,7 @@ Mevcut Sınav modülünün **şıksız** versiyonu. Aday her soruya **METİN** c
 - **WrittenTest** — paket içi test: `packageId, title, isTimed, duration, questionCount, hasSolutions(=true), status (TestStatus), publishedAt`.
 - **WrittenQuestion** — **ŞIK YOK**: `testId, content, mediaUrl?, order, solutionText?, solutionMediaUrl?`. `solutionText`/`solutionMediaUrl` **use-case'te zorunlu** (SOLUTION_REQUIRED) — schema'da nullable (taslak esnekliği).
 - **WrittenAttempt** — çözme oturumu: `testId, candidateId, attemptNumber, status (AttemptStatus), timing alanları, questionsSnapshot`. **`score` ALANI YOK** (puanlama yapılmaz).
-- **WrittenAnswer** — `attemptId, questionId, textAnswer?`. `@@unique([attemptId, questionId])`. (selectedOptionId/isCorrect YOK — metin cevap.)
+- **WrittenAnswer** — `attemptId, questionId, textAnswer?, drawingUrl?`. `@@unique([attemptId, questionId])`. (selectedOptionId/isCorrect YOK.) **Kalem çizimi cevaba dahil**: aday kalemle çizerse canvas PNG olarak `/upload/image`'a yüklenir, `drawingUrl` cevapla saklanır, teslim sonrası öz-kıyasta gösterilir.
 - **WrittenPurchase** — `@@unique([candidateId, packageId])`. İndirim snapshot (%50 eğitici clamp) + mesafeli satış (TKHK) + `testsSnapshot` (ŞIKSIZ).
 - **WrittenReview** — `@@unique([packageId, candidateId])` (scalar-only).
 - **WrittenQuestionReport** — hata bildirimi (scalar-only); MyObjections'a 3. kaynak olarak merge edilir ("Yazılı:" etiketi).
@@ -318,6 +329,8 @@ Kod İngilizce, UI Türkçe. API yanıtları İngilizce alan adlı, frontend'de 
 | Eğitici | Educator | `educator` (AUTHOR DEĞİL) |
 | Aday | Candidate | `candidate` (STUDENT DEĞİL) |
 | Yönetici | Admin | `admin` |
+| Sınav türü | Exam type | `examType` |
+| Sınıf (kademe) | Grade level | `gradeLevel` |
 | İndirim kodu (eğitici→aday, paket) | Discount code | `discountCode` |
 | Platform promo kodu (admin→eğitici, LIVE/AD) | Platform promo code | `platformPromoCode` |
 | Reklam paketi | Ad package | `adPackage` |
