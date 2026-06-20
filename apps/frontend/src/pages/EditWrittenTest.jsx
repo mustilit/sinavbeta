@@ -654,6 +654,8 @@ function EditWrittenTest() {
       if (publish === true) toast.success(t("pages:writtenTestForm.editPage.savedAndPublished"));
       else if (publish === false) toast.success(t("pages:writtenTestForm.editPage.unpublished"));
       else toast.success(t("pages:writtenTestForm.editPage.saved"));
+      // Kaydetme sonrası Yazılılarım sayfasına dön.
+      navigate(buildPageUrl("ManageWrittenTests"));
     },
     onError: (err) => {
       if (err?.response?.status === 409 || err?.status === 409) {

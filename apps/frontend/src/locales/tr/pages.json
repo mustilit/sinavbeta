@@ -1857,13 +1857,13 @@
   "writtenTestForm": {
     "steps": {
       "package": "Paket",
-      "tests": "Testler",
-      "preview": "Onizleme"
+      "tests": "Yazılılar",
+      "preview": "Ön izleme"
     },
     "nav": {
       "back": "Geri",
       "next": "Devam",
-      "previewNext": "Onizleme"
+      "previewNext": "Ön izleme"
     },
     "package": {
       "sectionTitle": "Paket Bilgileri",
@@ -1924,14 +1924,14 @@
       "genericError": "Bir hata olustu"
     },
     "preview": {
-      "sectionTitle": "Onizleme",
-      "packageTitleLabel": "Paket Basligi",
+      "sectionTitle": "Ön izleme",
+      "packageTitleLabel": "Paket Başlığı",
       "priceLabel": "Fiyat",
-      "free": "Ucretsiz",
-      "summary": "Ozet",
-      "testsCount": "{{count}} test",
-      "validQuestions": "{{count}} gecerli soru",
-      "testsListTitle": "Testler",
+      "free": "Ücretsiz",
+      "summary": "Özet",
+      "testsCount": "{{count}} yazılı",
+      "validQuestions": "{{count}} geçerli soru",
+      "testsListTitle": "Yazılılar",
       "solutionLabel": "Çözüm"
     },
     "validations": {
@@ -1946,20 +1946,20 @@
       "createAndPublish": "Olustur ve Yayimla"
     },
     "editPage": {
-      "title": "Yazili Test Paketini Duzenle",
-      "subtitle": "Paket bilgilerini, testleri ve sorulari guncelleyin",
+      "title": "Yazılı Test Paketini Düzenle",
+      "subtitle": "Paket bilgilerini, yazılıları ve soruları güncelleyin",
       "notFound": "Paket bulunamadi",
       "publishedBadge": "Yayinda",
       "saving": "Kaydediliyor...",
       "publishing": "Yayimlanıyor...",
       "unpublishing": "Kaldiriliyor...",
-      "saveChanges": "Degisiklikleri Kaydet",
-      "saveAndPublish": "Kaydet ve Yayimla",
+      "saveChanges": "Değişiklikleri Kaydet",
+      "saveAndPublish": "Kaydet ve Yayımla",
       "unpublish": "Yayindan Kaldir",
-      "saved": "Degisiklikler kaydedildi",
-      "savedAndPublished": "Kaydedildi ve yayimlandi",
+      "saved": "Değişiklikler kaydedildi",
+      "savedAndPublished": "Kaydedildi ve yayımlandı",
       "unpublished": "Yayindan kaldirildi",
-      "saveFailed": "Kaydetme basarisiz oldu",
+      "saveFailed": "Kaydetme başarısız oldu",
       "packagePublishedError": "Yayindaki pakette bu islem yapilamaz",
       "cannotDeletePublished": "Cevaplanmis soru silinemez"
     }
