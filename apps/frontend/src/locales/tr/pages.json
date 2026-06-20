@@ -37,7 +37,8 @@
       "examTypes": "Sınav Türleri",
       "testPackages": "Test Paketleri",
       "educators": "Eğiticiler",
-      "gradeLevels": "Sınıflar"
+      "gradeLevels": "Sınıflar",
+      "writtenPackages": "Yazılı Paketleri"
     },
     "interestedExamType": "İlgi alanınız",
     "continueAria": "Devam et",

@@ -34,7 +34,8 @@ export default function Explore() {
   const [showFilters, setShowFilters] = useState(false);
   // Sıralama — filtreden bağımsız: "recommended" (varsayılan) / "rating" / "popular"
   const [sortBy, setSortBy] = useState("recommended");
-  const [contentTab, setContentTab] = useState("tests"); // "tests" | "tunnels"
+  const initialTab = ["written", "tunnels"].includes(urlParams.get("tab")) ? urlParams.get("tab") : "tests";
+  const [contentTab, setContentTab] = useState(initialTab); // "tests" | "written" | "tunnels"
   const tunnelIntro = useTunnelIntro(contentTab === "tunnels");
   const contentTabBtn = (key) =>
     "inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 min-h-10 text-sm font-medium transition-colors " +

@@ -37,7 +37,8 @@
       "examTypes": "考试类型",
       "testPackages": "测试套餐",
       "educators": "讲师",
-      "gradeLevels": "年级"
+      "gradeLevels": "年级",
+      "writtenPackages": "开放式套餐"
     },
     "interestedExamType": "您感兴趣的",
     "continueAria": "继续",

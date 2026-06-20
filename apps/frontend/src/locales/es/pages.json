@@ -37,7 +37,8 @@
       "examTypes": "Tipos de examen",
       "testPackages": "Paquetes de exámenes",
       "educators": "Educadores",
-      "gradeLevels": "Cursos"
+      "gradeLevels": "Cursos",
+      "writtenPackages": "Paquetes abiertos"
     },
     "interestedExamType": "Tu interés",
     "continueAria": "Continuar",

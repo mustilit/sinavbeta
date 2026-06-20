@@ -14,6 +14,7 @@ import api from "@/lib/api/apiClient";
 import { entities, candidateWritten } from "@/api/dalClient";
 // Test paket kartı — Explore sayfasıyla görsel tutarlılık için aynı bileşen
 import TestPackageCard from "@/components/ui/TestPackageCard";
+import WrittenPackageCard from "@/components/written/WrittenPackageCard";
 import {
   GraduationCap,
   Search,
@@ -396,6 +397,15 @@ export default function Home() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: writtenPackages = [] } = useQuery({
+    queryKey: ["home-written-packages"],
+    queryFn: async () => {
+      const res = await candidateWritten.listPackages({ limit: 6 });
+      return res?.items ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: packages = [], isLoading: pkgsLoading } = useQuery({
     queryKey: ["home-popular-packages", examTypeIdsParam],
     queryFn: async () => {
@@ -697,11 +707,6 @@ export default function Home() {
           />
         )}
 
-        {/* ── 1b. Sınıflar band — Sınav Türleri ile aynı yapı ────────────── */}
-        {gradeLevels.length > 0 && (
-          <GradeLevelsCarousel gradeLevels={gradeLevels} t={t} />
-        )}
-
         {/* ── 2. Test Paketleri ─────────────────────────────────────────── */}
         <section>
           <SectionHeader
@@ -772,6 +777,32 @@ export default function Home() {
             </div>
           )}
         </section>
+
+        {/* ── 4. Sınıflar band — Sınav Türleri ile aynı yapı ─────────────── */}
+        {gradeLevels.length > 0 && (
+          <GradeLevelsCarousel gradeLevels={gradeLevels} t={t} />
+        )}
+
+        {/* ── 5. Yazılı Paketleri — Test Paketleri ile aynı yapı ─────────── */}
+        {writtenPackages.length > 0 && (
+          <section>
+            <SectionHeader
+              title={t("pages:home.sections.writtenPackages", { defaultValue: "Yazılı Paketleri" })}
+              isPersonalized={false}
+              linkTo={createPageUrl("Explore") + "?tab=written"}
+            />
+            <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+              {writtenPackages.map((pkg) => (
+                <WrittenPackageCard
+                  key={pkg.id}
+                  pkg={pkg}
+                  purchased={false}
+                  onBuy={() => navigate(buildPageUrl("WrittenTestDetail", { id: pkg.id }))}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* ── Stats band ──────────────────────────────────────────────────── */}

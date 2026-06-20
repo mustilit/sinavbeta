@@ -37,7 +37,8 @@
       "examTypes": "Testtypen",
       "testPackages": "Testpakete",
       "educators": "Ausbilder",
-      "gradeLevels": "Klassenstufen"
+      "gradeLevels": "Klassenstufen",
+      "writtenPackages": "Offene Pakete"
     },
     "interestedExamType": "Ihr Interesse",
     "continueAria": "Fortsetzen",
