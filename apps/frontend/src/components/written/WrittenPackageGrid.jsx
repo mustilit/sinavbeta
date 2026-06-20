@@ -10,10 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Loader2, Search, SlidersHorizontal, Star, X } from "lucide-react";
 
+/** Paket çözülme durumu kovası (MyTests deseni): test state'lerinden türetilir. */
+function pkgCompletionBucket(pkg) {
+  const states = (pkg.tests ?? []).map((tt) => tt.state);
+  if (states.includes("IN_PROGRESS")) return "in_progress";
+  if (states.length > 0 && states.every((s) => s === "SUBMITTED" || s === "TIMEOUT")) return "completed";
+  return "pending";
+}
+
 /**
  * WrittenPackageGrid — yazılı paket kart ızgarası (TestPackageCard görünümünde).
  * mode="discover" → pazar + Keşfet'teki test filtresinin aynısı (Sınav Türü hariç —
- * yazılı pakette examType yok). mode="mine" → satın alınanlar (filtresiz).
+ * yazılı pakette examType yok). mode="mine" → satın alınanlar + MyTests test
+ * filtresinin aynısı (Eğitici + Çözülme Durumu; Sınav Türü yazılıda yok).
  */
 export function WrittenPackageGrid({ mode = "discover" }) {
   const { t } = useTranslation(["pages"]);
@@ -30,6 +39,10 @@ export function WrittenPackageGrid({ mode = "discover" }) {
   const [showFilters, setShowFilters] = useState(false);
   const deferredSearch = useDeferredValue(searchQuery);
 
+  // Filtre state (mine) — MyTests test filtresinin aynısı (Sınav Türü hariç)
+  const [mineEducator, setMineEducator] = useState("all");
+  const [mineCompletion, setMineCompletion] = useState("all");
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["candidateWritten", isMine ? "mine" : "discover"],
     queryFn: () => (isMine ? candidateWritten.myPackages() : candidateWritten.listPackages({ limit: 40 })),
@@ -41,11 +54,20 @@ export function WrittenPackageGrid({ mode = "discover" }) {
 
   const allItems = data?.items ?? [];
 
+  // Mine: eğitici dropdown listesi (benzersiz, alfabetik)
+  const mineEducators = isMine
+    ? [...new Set(allItems.map((p) => p.educatorName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"))
+    : [];
+
   // Discover filtreleme (Explore mantığıyla birebir)
   const q = deferredSearch.trim().toLowerCase();
   const eduQ = selectedEducator.trim().toLowerCase();
   const items = isMine
-    ? allItems
+    ? allItems.filter((p) => {
+        const matchesEducator = mineEducator === "all" || p.educatorName === mineEducator;
+        const matchesCompletion = mineCompletion === "all" || pkgCompletionBucket(p) === mineCompletion;
+        return matchesEducator && matchesCompletion;
+      })
     : allItems.filter((p) => {
         const price = (p.priceCents ?? 0) / 100;
         const matchesSearch =
@@ -66,6 +88,9 @@ export function WrittenPackageGrid({ mode = "discover" }) {
 
   const hasActiveFilters = searchQuery || selectedDifficulty || priceRange || minRating > 0 || selectedEducator;
   const clearFilters = () => { setSearchQuery(""); setSelectedDifficulty(""); setPriceRange(""); setSelectedEducator(""); setMinRating(0); };
+
+  const mineHasActiveFilters = mineEducator !== "all" || mineCompletion !== "all";
+  const clearMineFilters = () => { setMineEducator("all"); setMineCompletion("all"); };
 
   return (
     <>
@@ -123,6 +148,49 @@ export function WrittenPackageGrid({ mode = "discover" }) {
               </Button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Filtre çubuğu — MyTests test filtresinin aynısı (mine; Sınav Türü hariç) */}
+      {isMine && allItems.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-8">
+          {mineHasActiveFilters && (
+            <div className="flex items-center justify-end mb-4">
+              <Button variant="ghost" size="sm" onClick={clearMineFilters} className="text-indigo-600 hover:text-indigo-700">
+                <X className="w-4 h-4 mr-1" />{t("pages:myTests.filter.clear")}
+              </Button>
+            </div>
+          )}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">{t("pages:myTests.filter.educatorLabel")}</label>
+              <Select value={mineEducator} onValueChange={setMineEducator}>
+                <SelectTrigger aria-label={t("pages:myTests.filter.educatorAria")}>
+                  <SelectValue placeholder={t("pages:myTests.filter.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("pages:myTests.filter.all")}</SelectItem>
+                  {mineEducators.map((name) => (
+                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">{t("pages:myTests.filter.completionLabel")}</label>
+              <Select value={mineCompletion} onValueChange={setMineCompletion}>
+                <SelectTrigger aria-label={t("pages:myTests.filter.completionAria")}>
+                  <SelectValue placeholder={t("pages:myTests.filter.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("pages:myTests.filter.all")}</SelectItem>
+                  <SelectItem value="pending">{t("pages:myTests.filter.pending")}</SelectItem>
+                  <SelectItem value="in_progress">{t("pages:myTests.filter.inProgress")}</SelectItem>
+                  <SelectItem value="completed">{t("pages:myTests.filter.completed")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       )}
 
