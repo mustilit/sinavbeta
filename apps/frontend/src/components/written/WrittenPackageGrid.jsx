@@ -1,7 +1,7 @@
 import { useState, useDeferredValue } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { candidateWritten } from "@/api/dalClient";
+import { candidateWritten, entities } from "@/api/dalClient";
 import { PaymentModal } from "@/components/ui/PaymentModal";
 import WrittenPackageCard from "@/components/written/WrittenPackageCard";
 import { Input } from "@/components/ui/input";
@@ -52,6 +52,13 @@ export function WrittenPackageGrid({ mode = "discover" }) {
     staleTime: 30_000,
   });
 
+  // Sınıf filtresi için tam aktif sınıf listesi (Keşfet test sekmesiyle aynı kaynak).
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["gradeLevels", "active"],
+    queryFn: () => entities.GradeLevel.filter({ is_active: true }),
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-7 w-7 animate-spin text-indigo-500" /></div>;
   if (isError) return <p className="py-16 text-center text-sm text-rose-500">{t("pages:writtenGrid.loadError")}</p>;
 
@@ -62,9 +69,8 @@ export function WrittenPackageGrid({ mode = "discover" }) {
     ? [...new Set(allItems.map((p) => p.educatorName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"))
     : [];
 
-  // Sınıf dropdown listesi (benzersiz, alfabetik) — null gradeLevel "Genel" sayılır
-  const gradeNames = [...new Set(allItems.map((p) => p.gradeLevelName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
-  const matchesGrade = (p) => selectedGrade === "all" || (p.gradeLevelName || "Genel") === selectedGrade;
+  // Sınıf filtresi id-bazlı (test sekmesiyle aynı): "all" → tümü, aksi → gradeLevelId eşleşmesi.
+  const matchesGrade = (p) => selectedGrade === "all" || p.gradeLevelId === selectedGrade;
 
   // Discover filtreleme (Explore mantığıyla birebir)
   const q = deferredSearch.trim().toLowerCase();
@@ -106,7 +112,7 @@ export function WrittenPackageGrid({ mode = "discover" }) {
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="all">{t("pages:explore.filter.all")}</SelectItem>
-        {gradeNames.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+        {gradeLevels.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
       </SelectContent>
     </Select>
   );
