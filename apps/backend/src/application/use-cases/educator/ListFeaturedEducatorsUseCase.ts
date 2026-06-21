@@ -8,6 +8,7 @@ export type FeaturedEducator = {
   testCount: number;
   writtenCount: number;
   saleCount: number;
+  writtenSaleCount: number;
   ratingAvg: number | null;
   gradeLevelIds: string[];
   createdAt: Date;
@@ -174,6 +175,7 @@ export class ListFeaturedEducatorsUseCase {
           testCount: byEducator[u.id] ?? 0,
           writtenCount: writtenByEducator[u.id] ?? 0,
           saleCount: 0,
+          writtenSaleCount: 0,
           ratingAvg: null as number | null,
           gradeLevelIds: Array.isArray(prefGrades) ? prefGrades.filter((x: unknown) => typeof x === 'string') : [],
           createdAt: u.createdAt,
@@ -207,6 +209,27 @@ export class ListFeaturedEducatorsUseCase {
       _count: { id: true },
     });
     const writtenCountMap = new Map(writtenCounts.map((w) => [w.educatorId!, w._count.id]));
+
+    // Yazılı satış sayısı: writtenPurchase (ACTIVE) → paket üzerinden educatorId'ye toplanır.
+    const writtenSaleMap = new Map<string, number>();
+    {
+      const pkgs = await prisma.writtenPackage.findMany({
+        where: { educatorId: { in: educatorIds } },
+        select: { id: true, educatorId: true },
+      });
+      const pkgEducator = new Map(pkgs.map((p) => [p.id, p.educatorId]));
+      if (pkgs.length) {
+        const wp = await prisma.writtenPurchase.groupBy({
+          by: ['packageId'],
+          where: { packageId: { in: pkgs.map((p) => p.id) }, status: 'ACTIVE' },
+          _count: { id: true },
+        });
+        for (const r of wp) {
+          const eid = pkgEducator.get(r.packageId);
+          if (eid) writtenSaleMap.set(eid, (writtenSaleMap.get(eid) ?? 0) + r._count.id);
+        }
+      }
+    }
 
     // Build sale count map — educatorId TEXT sütunu, cast gerekmez
     const educatorIdList = Prisma.join(educatorIds.map((id) => Prisma.sql`${id}`));
@@ -243,6 +266,7 @@ export class ListFeaturedEducatorsUseCase {
           testCount: testCountMap.get(id) ?? 0,
           writtenCount: writtenCountMap.get(id) ?? 0,
           saleCount: saleMap.get(id) ?? 0,
+          writtenSaleCount: writtenSaleMap.get(id) ?? 0,
           ratingAvg: ratingMap.get(id) ?? null,
           gradeLevelIds: Array.isArray(prefGrades) ? prefGrades.filter((x: unknown) => typeof x === 'string') : [],
           createdAt: u.createdAt,

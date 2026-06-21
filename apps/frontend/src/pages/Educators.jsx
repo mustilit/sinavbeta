@@ -62,7 +62,9 @@ export default function Educators() {
       avatarUrl: e.avatarUrl ?? null,
       testCount: e.testCount ?? 0,
       writtenCount: e.writtenCount ?? 0,
-      totalSales: e.saleCount ?? 0,
+      testSales: e.saleCount ?? 0,
+      writtenSales: e.writtenSaleCount ?? 0,
+      totalSales: (e.saleCount ?? 0) + (e.writtenSaleCount ?? 0),
       avgRating: e.ratingAvg ?? 0,
       createdAt: e.createdAt ?? null,
     }));
@@ -246,32 +248,41 @@ export default function Educators() {
                     <h3 className="font-semibold text-lg text-slate-900 group-hover:text-indigo-600 transition-colors truncate mb-3">
                       {educator.name}
                     </h3>
-                    {/* Tek satır istatistik: Test solda; puan + satış sağda (ml-auto).
-                        Puan yalnızca varsa gösterilir — yoksa o blok hiç render edilmez.
-                        Dar kartta (280px) sığmazsa flex-wrap ile alt satıra düşer. */}
-                    <div className="flex items-center gap-2 text-sm text-slate-600 flex-wrap">
-                      <span className="flex items-center gap-1.5">
-                        <BookOpen className="w-4 h-4 text-indigo-500" />
-                        {educator.testCount} Test
-                      </span>
-                      {educator.writtenCount > 0 && (
+                    {/* 3 satır: 1) Test - satış  2) Yazılı - satış (yazılı varsa)  3) Puan */}
+                    <div className="space-y-1.5 text-sm text-slate-600">
+                      {/* 1. satır: Test + test satışı */}
+                      <div className="flex items-center gap-2">
                         <span className="flex items-center gap-1.5">
-                          <FileText className="w-4 h-4 text-amber-500" />
-                          {educator.writtenCount} Yazılı
+                          <BookOpen className="w-4 h-4 text-indigo-500" />
+                          {educator.testCount} Test
                         </span>
-                      )}
-                      <span className="flex items-center gap-3 ml-auto">
-                        {educator.avgRating > 0 && (
-                          <span className="flex items-center gap-1 font-medium text-amber-600">
-                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                            {educator.avgRating}
-                          </span>
-                        )}
+                        <span className="text-slate-300">-</span>
                         <span className="flex items-center gap-1.5">
                           <TrendingUp className="w-4 h-4 text-emerald-500" />
-                          {educator.totalSales} Satış
+                          {educator.testSales} Satış
                         </span>
-                      </span>
+                      </div>
+                      {/* 2. satır: Yazılı + yazılı satışı (yalnız yazılı varsa) */}
+                      {educator.writtenCount > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1.5">
+                            <FileText className="w-4 h-4 text-amber-500" />
+                            {educator.writtenCount} Yazılı
+                          </span>
+                          <span className="text-slate-300">-</span>
+                          <span className="flex items-center gap-1.5">
+                            <TrendingUp className="w-4 h-4 text-emerald-500" />
+                            {educator.writtenSales} Satış
+                          </span>
+                        </div>
+                      )}
+                      {/* 3. satır: Puan (yalnız varsa) */}
+                      {educator.avgRating > 0 && (
+                        <div className="flex items-center gap-1 font-medium text-amber-600">
+                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                          {educator.avgRating}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
