@@ -2101,9 +2101,9 @@ export const candidateWritten = {
     const { data } = await api.get(`/candidate-written/attempts/${attemptId}/state`);
     return data;
   },
-  /** Metin cevap kaydet (boş → sil) */
-  submitAnswer: async (attemptId, { questionId, textAnswer }) => {
-    const { data } = await api.post(`/candidate-written/attempts/${attemptId}/answer`, { questionId, textAnswer });
+  /** Metin cevap + kalem çizimi kaydet (ikisi de boş → sil) */
+  submitAnswer: async (attemptId, { questionId, textAnswer, drawingUrl }) => {
+    const { data } = await api.post(`/candidate-written/attempts/${attemptId}/answer`, { questionId, textAnswer, drawingUrl });
     return data;
   },
   /** Denemeyi teslim et */
