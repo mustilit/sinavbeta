@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, Star, User, TrendingUp, GraduationCap, ArrowUpDown, FileText } from "lucide-react";
+import { Search, BookOpen, Star, User, TrendingUp, ArrowUpDown, FileText } from "lucide-react";
 import api from "@/lib/api/apiClient";
 import PaginationBar from "@/components/ui/PaginationBar";
 
@@ -115,67 +115,43 @@ export default function Educators() {
           />
         </div>
 
-        {/* Uzmanlık Alanı (Sınav Türü) Filtreleri */}
-        {examTypes.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap pt-1">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 shrink-0">
-              <GraduationCap className="w-3.5 h-3.5" />
-              Uzmanlık:
-            </span>
-            <button
-              onClick={() => setSelectedExamTypeId(null)}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                !selectedExamTypeId
-                  ? "bg-indigo-600 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+        {/* Filtreler — açılan liste (diğer sayfalarla aynı) */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-1">
+          {/* Sınav Türü (Uzmanlık) */}
+          <div className="flex-1">
+            <Select
+              value={selectedExamTypeId ?? "all"}
+              onValueChange={(v) => setSelectedExamTypeId(v === "all" ? null : v)}
             >
-              Tümü
-            </button>
-            {examTypes.map((et) => (
-              <button
-                key={et.id}
-                onClick={() => setSelectedExamTypeId(et.id === selectedExamTypeId ? null : et.id)}
-                className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                  selectedExamTypeId === et.id
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {et.name}
-              </button>
-            ))}
+              <SelectTrigger aria-label="Sınav türü" className="h-11">
+                <SelectValue placeholder="Sınav Türü" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Sınav Türü: Tümü</SelectItem>
+                {examTypes.map((et) => (
+                  <SelectItem key={et.id} value={et.id}>{et.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
-
-        {/* Sınıf Filtreleri (eğitici uzmanlık sınıfları) */}
-        {gradeLevels.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap pt-1">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 shrink-0">
-              <GraduationCap className="w-3.5 h-3.5" />
-              Sınıf:
-            </span>
-            <button
-              onClick={() => setSelectedGradeId(null)}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                !selectedGradeId ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+          {/* Sınıf */}
+          <div className="flex-1">
+            <Select
+              value={selectedGradeId ?? "all"}
+              onValueChange={(v) => setSelectedGradeId(v === "all" ? null : v)}
             >
-              Tümü
-            </button>
-            {gradeLevels.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setSelectedGradeId(g.id === selectedGradeId ? null : g.id)}
-                className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                  selectedGradeId === g.id ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {g.name}
-              </button>
-            ))}
+              <SelectTrigger aria-label="Sınıf" className="h-11">
+                <SelectValue placeholder="Sınıf" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Sınıf: Tümü</SelectItem>
+                {gradeLevels.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Sonuçlar */}
@@ -248,8 +224,9 @@ export default function Educators() {
                     <h3 className="font-semibold text-lg text-slate-900 group-hover:text-indigo-600 transition-colors truncate mb-3">
                       {educator.name}
                     </h3>
-                    {/* 3 satır: 1) Test - satış  2) Yazılı - satış (yazılı varsa)  3) Puan */}
-                    <div className="space-y-1.5 text-sm text-slate-600">
+                    {/* 3 satır: 1) Test - satış  2) Yazılı - satış (yazılı varsa)  3) Puan.
+                        İncele butonu her kartta aynı hizada olsun diye 3 satırlık sabit alan. */}
+                    <div className="space-y-1.5 text-sm text-slate-600 min-h-[4.75rem]">
                       {/* 1. satır: Test + test satışı */}
                       <div className="flex items-center gap-2">
                         <span className="flex items-center gap-1.5">
