@@ -2007,14 +2007,14 @@
     }
   },
   "takeWritten": {
-    "loadError": "Test yüklenemedi",
-    "notFound": "Test bulunamadı",
+    "loadError": "Yazılı yüklenemedi",
+    "notFound": "Yazılı bulunamadı",
     "back": "Geri",
     "themeToggle": "Okuma modu",
     "penToggle": "Kalem",
     "report": "Hata Bildir",
     "submittedBanner": "Yazılı tamamlandı",
-    "selfEvalNote": "Bu test puanlanmaz; cevabını çözümle kendin kıyasla.",
+    "selfEvalNote": "Bu yazılı puanlanmaz; cevabını çözümle kendin kıyasla.",
     "questionNav": "Soru {{n}}",
     "answerLabel": "Cevabınız",
     "answerPlaceholder": "Cevabınızı buraya yazın...",
@@ -2035,7 +2035,8 @@
     "timeUp": "Süre doldu",
     "yourDrawing": "Çizimin",
     "saveExit": "Kaydet ve Çık",
-    "savedExit": "İlerlemeniz kaydedildi"
+    "savedExit": "İlerlemeniz kaydedildi",
+    "clearDrawing": "Temizle"
   },
   "writtenDetail": {
     "notFound": "Paket bulunamadı",

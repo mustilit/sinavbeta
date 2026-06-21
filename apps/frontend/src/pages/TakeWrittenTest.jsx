@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, AlertTriangle, Pencil, Clock, ChevronLeft, ChevronRight, Sun, CheckCircle2, BookOpen, LogOut, Save } from "lucide-react";
+import { Loader2, ArrowLeft, AlertTriangle, Pencil, Clock, ChevronLeft, ChevronRight, Sun, CheckCircle2, BookOpen, LogOut, Save, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import ReportQuestionModal from "@/components/test/ReportQuestionModal";
@@ -122,6 +122,24 @@ function TakeWrittenTest() {
       );
     }, 800);
   };
+
+  // Çizimi temizle — aday kalemle çizdiklerini iptal eder. Canvas + kayıtlı drawingUrl silinir.
+  const handleClearDrawing = useCallback(() => {
+    if (submitted || !q) return;
+    canvasRef.current?.clear?.();
+    drawingDirty.current = false;
+    setHasDrawings(false);
+    setDrawings((prev) => {
+      if (!(q.id in prev)) return prev;
+      const next = { ...prev };
+      delete next[q.id];
+      return next;
+    });
+    // Sunucudan da kaldır (mevcut metin cevabı korunur, drawingUrl null).
+    if (attemptId) {
+      api.submitAnswer(attemptId, { questionId: q.id, textAnswer: answers[q.id] ?? "", drawingUrl: null }).catch(() => {});
+    }
+  }, [submitted, q, attemptId, answers]);
 
   // Kalem çizimini yakala (yalnız değiştiyse) → yükle → cevaba drawingUrl olarak kaydet.
   // Dönüş: yeni URL veya null.
@@ -245,6 +263,11 @@ function TakeWrittenTest() {
           <Button variant="ghost" size="icon" className={examTheme === "sepia" ? "bg-amber-50 text-amber-600" : "text-slate-400"} onClick={() => setExamTheme(examTheme === "sepia" ? "light" : "sepia")} aria-pressed={examTheme === "sepia"} aria-label={t("pages:takeWritten.themeToggle")}><Sun className="h-4 w-4" /></Button>
           {!submitted && (
             <Button variant="ghost" size="icon" className={isDrawing ? "bg-indigo-50 text-indigo-600" : "text-slate-400"} onClick={() => setIsDrawing((d) => !d)} aria-pressed={isDrawing} aria-label={t("pages:takeWritten.penToggle")}><Pencil className="h-4 w-4" /></Button>
+          )}
+          {!submitted && isDrawing && (
+            <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={handleClearDrawing}>
+              <Eraser className="mr-1 h-4 w-4" />{t("pages:takeWritten.clearDrawing", { defaultValue: "Temizle" })}
+            </Button>
           )}
           <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => setReportOpen(true)}><AlertTriangle className="mr-1 h-4 w-4" />{t("pages:takeWritten.report")}</Button>
         </div>

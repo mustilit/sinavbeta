@@ -2038,7 +2038,8 @@
     "timeUp": "Se acabó el tiempo",
     "yourDrawing": "Tu dibujo",
     "saveExit": "Guardar y salir",
-    "savedExit": "Tu progreso se guardó"
+    "savedExit": "Tu progreso se guardó",
+    "clearDrawing": "Borrar"
   },
   "writtenDetail": {
     "notFound": "Paquete no encontrado",

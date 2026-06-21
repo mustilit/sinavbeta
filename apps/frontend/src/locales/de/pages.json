@@ -2035,7 +2035,8 @@
     "timeUp": "Die Zeit ist um",
     "yourDrawing": "Deine Zeichnung",
     "saveExit": "Speichern & Verlassen",
-    "savedExit": "Dein Fortschritt wurde gespeichert"
+    "savedExit": "Dein Fortschritt wurde gespeichert",
+    "clearDrawing": "Löschen"
   },
   "writtenDetail": {
     "notFound": "Paket nicht gefunden",

@@ -2035,7 +2035,8 @@
     "timeUp": "Time is up",
     "yourDrawing": "Your Drawing",
     "saveExit": "Save & Exit",
-    "savedExit": "Your progress was saved"
+    "savedExit": "Your progress was saved",
+    "clearDrawing": "Clear"
   },
   "writtenDetail": {
     "notFound": "Package not found",
