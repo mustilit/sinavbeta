@@ -71,8 +71,14 @@ export class StartWrittenAttemptUseCase {
     const last = await prisma.writtenAttempt.findFirst({
       where: { testId, candidateId: actorId },
       orderBy: { attemptNumber: 'desc' },
-      select: { attemptNumber: true },
+      select: { id: true, attemptNumber: true, status: true },
     });
+    // Teslim edilmiş (SUBMITTED/TIMEOUT) deneme varsa YENİ deneme açma —
+    // incelemeye o denemeyi döndür (öz-kıyas, salt-okunur). Aksi halde "incele"
+    // tıklayınca yeni IN_PROGRESS deneme açılıp çözüm ekranı gibi davranıyordu.
+    if (last && (last.status === 'SUBMITTED' || last.status === 'TIMEOUT')) {
+      return { attemptId: last.id, resumed: true, review: true };
+    }
     const attemptNumber = (last?.attemptNumber ?? 0) + 1;
 
     const created = await prisma.writtenAttempt.create({

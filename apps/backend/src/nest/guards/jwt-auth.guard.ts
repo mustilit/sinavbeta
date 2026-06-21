@@ -19,7 +19,22 @@ export class JwtAuthGuard implements CanActivate {
     const handler = context.getHandler();
     const cls = context.getClass();
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [handler, cls]);
-    if (isPublic) return true;
+    if (isPublic) {
+      // Opsiyonel kimlik: token varsa req.user'ı doldur (örn. tünel/yazılı liste-detay
+      // "satın alındı mı" hesabı), yoksa veya geçersizse SESSİZCE geç — public route
+      // asla reddedilmez. Ban/oturum kontrolü public içerikte uygulanmaz.
+      const reqPub = context.switchToHttp().getRequest();
+      const authPub = reqPub.headers['authorization'];
+      if (authPub && authPub.startsWith('Bearer ')) {
+        try {
+          const payloadPub = this.jwtService.verify(authPub.slice(7));
+          reqPub.user = { ...payloadPub, id: payloadPub.sub };
+        } catch {
+          /* geçersiz token → public erişim, yoksay */
+        }
+      }
+      return true;
+    }
 
     const req = context.switchToHttp().getRequest();
     const auth = req.headers['authorization'];
