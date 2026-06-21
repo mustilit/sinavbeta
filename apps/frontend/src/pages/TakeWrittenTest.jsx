@@ -94,6 +94,14 @@ function TakeWrittenTest() {
 
   const submitted = state?.attempt?.status === "SUBMITTED" || state?.attempt?.status === "TIMEOUT";
 
+  // Yazılı bitince: kalem kapanır, çözümler inceleme için otomatik açılır.
+  useEffect(() => {
+    if (submitted) {
+      setIsDrawing(false);
+      setShowSolution(true);
+    }
+  }, [submitted]);
+
   // Süre sayacı
   useEffect(() => {
     if (submitted || remaining == null) return;
@@ -160,24 +168,29 @@ function TakeWrittenTest() {
     }
   }, [submitted, attemptId, q, answers, t]);
 
-  // Soru değiştir: önce mevcut çizimi yakala, sonra geç.
+  // Soru değiştir: önce mevcut çizimi yakala (yalnız çözerken), sonra geç.
+  // İnceleme modunda (submitted) çözüm açık kalır.
   const goTo = async (idx) => {
     await captureCurrentDrawing();
-    setShowSolution(false);
+    setShowSolution(submitted);
     setCurrent(idx);
   };
 
-  // Soru değişince kayıtlı çizimi geri yükle (canvas questionId değişiminde temizlenir → sonra yükle).
+  // Soru değişince kayıtlı çizimi geri yükle — ÇÖZERKEN de İNCELERKEN de göster.
+  // (canvas questionId değişiminde temizlenir → sonra yüklenir.)
   useEffect(() => {
-    if (!q || submitted) return;
+    if (!q) return;
     const url = drawings[q.id];
     drawingDirty.current = false;
     const id = setTimeout(() => {
-      if (url && canvasRef.current?.loadDataUrl) canvasRef.current.loadDataUrl(url);
+      if (canvasRef.current?.loadDataUrl) {
+        if (url) canvasRef.current.loadDataUrl(url);
+        else canvasRef.current.clear?.();
+      }
     }, 60);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, attemptId, submitted]);
+  }, [current, attemptId, submitted, drawings]);
 
   const toggleSolution = async () => {
     if (!showSolution && q && !submitted && !solutions[q.id]) {
