@@ -103,11 +103,20 @@ export class GetEducatorPageUseCase {
       ratingCount: Number(r.ratingCount ?? 0),
     }));
 
+    // Eğitici Sınıf uzmanlığı (preferences.specialized_grade_levels) — adlarla çöz.
+    const gradeLevelIds: string[] = Array.isArray((prefs?.preferences as any)?.specialized_grade_levels)
+      ? ((prefs!.preferences as any).specialized_grade_levels as unknown[]).filter((x): x is string => typeof x === 'string')
+      : [];
+    let gradeLevels: { id: string; name: string }[] = [];
+    if (gradeLevelIds.length) {
+      gradeLevels = await prisma.gradeLevel.findMany({ where: { id: { in: gradeLevelIds }, active: true }, select: { id: true, name: true } });
+    }
+
     return {
       // Bio (tanıtım metni) kanonik olarak metadata.bio'da saklanır
       // (UpdateEducatorProfileUseCase whitelist'i metadata'ya yazar; bio kolonu
       // legacy/boş). Public profil bunu metadata'dan okumalı — yoksa kolona düş.
-      educator: { id: educator.id, displayName: educator.username, bio: (((educator.metadata as Record<string, unknown> | undefined)?.bio as string | undefined) ?? educator.bio) ?? null, avatarUrl, isApproved: educator.status === 'ACTIVE' },
+      educator: { id: educator.id, displayName: educator.username, bio: (((educator.metadata as Record<string, unknown> | undefined)?.bio as string | undefined) ?? educator.bio) ?? null, avatarUrl, isApproved: educator.status === 'ACTIVE', gradeLevels, gradeLevelIds },
       stats: { ratingAvg: ratingData.ratingAvg, ratingCount: ratingData.ratingCount, totalPublishedTests: total, totalPurchases },
       tests: { items, meta: { page, limit, total } },
     };

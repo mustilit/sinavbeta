@@ -52,7 +52,7 @@ export function decryptPreferencesPII(prefs: Record<string, unknown> | null | un
 const WHITELIST = [
   'theme', 'layout', 'fontSize', 'sidebarCollapsed',
   'phone', 'city', 'website', 'linkedin', 'interested_exam_types', 'notification_preferences',
-  'education', 'bio', 'google_scholar_url', 'cv_url', 'profile_image_url', 'specialized_exam_types',
+  'education', 'bio', 'google_scholar_url', 'cv_url', 'profile_image_url', 'specialized_exam_types', 'specialized_grade_levels',
   'educator_status', 'rejection_reason', 'role',
   'iban', 'bankName', 'accountHolder',
   // Onboarding tur tamamlama bayrakları

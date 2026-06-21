@@ -54,6 +54,7 @@ export class SiteController {
   async getFeaturedEducators(
     @Query('limit') limit?: string,
     @Query('examTypeIds') examTypeIds?: string,
+    @Query('gradeLevelId') gradeLevelId?: string,
   ) {
     const n = limit ? parseInt(limit, 10) : 6;
     const parsedExamTypeIds = examTypeIds
@@ -63,6 +64,7 @@ export class SiteController {
       this.prisma,
       isNaN(n) ? 6 : n,
       parsedExamTypeIds,
+      gradeLevelId || undefined,
     );
   }
 

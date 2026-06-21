@@ -1700,6 +1700,10 @@
       "saving": "Wird aktualisiert...",
       "success": "Dein Passwort wurde erfolgreich aktualisiert",
       "failed": "Passwort konnte nicht aktualisiert werden"
+    },
+    "gradeLevels": {
+      "title": "Klassen-Spezialisierung",
+      "desc": "Wähle die Klassenstufen, auf die du spezialisiert bist. Auf der Lehrer-Seite kann danach gefiltert werden und sie erscheinen in deinem Profil."
     }
   },
   "educatorOnboarding": {

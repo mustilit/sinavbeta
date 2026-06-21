@@ -13,14 +13,20 @@ const mockExamTestFindMany = jest.fn();
 const mockPurchaseFindMany = jest.fn();
 const mockTunnelFindMany = jest.fn();
 const mockTunnelPurchaseFindMany = jest.fn();
+const mockWrittenPackageFindMany = jest.fn(async () => []);
+const mockWrittenPurchaseFindMany = jest.fn(async () => []);
+const mockUserFindMany = jest.fn(async () => []);
 
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     examTest: { findMany: (...args: any[]) => mockExamTestFindMany(...args) },
     purchase: { findMany: (...args: any[]) => mockPurchaseFindMany(...args) },
-    // Eğitici satışları artık tünel satışlarını da kapsıyor
+    // Eğitici satışları artık tünel + yazılı satışlarını da kapsıyor
     tunnel: { findMany: (...args: any[]) => mockTunnelFindMany(...args) },
     tunnelPurchase: { findMany: (...args: any[]) => mockTunnelPurchaseFindMany(...args) },
+    writtenPackage: { findMany: (...args: any[]) => mockWrittenPackageFindMany(...args) },
+    writtenPurchase: { findMany: (...args: any[]) => mockWrittenPurchaseFindMany(...args) },
+    user: { findMany: (...args: any[]) => mockUserFindMany(...args) },
   },
 }));
 

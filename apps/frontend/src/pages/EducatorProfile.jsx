@@ -313,6 +313,21 @@ export default function EducatorProfile() {
                 ))}
               </div>
             )}
+
+            {/* Sınıf uzmanlığı — eğiticinin profilinden seçtiği sınıflar */}
+            {Array.isArray(educator.gradeLevels) && educator.gradeLevels.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1 text-xs font-medium text-slate-500">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  Sınıf:
+                </span>
+                {educator.gradeLevels.map((g) => (
+                  <span key={g.id} className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-medium">
+                    {g.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

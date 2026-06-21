@@ -1700,6 +1700,10 @@
       "saving": "更新中...",
       "success": "您的密码已成功更新",
       "failed": "无法更新密码"
+    },
+    "gradeLevels": {
+      "title": "年级专长",
+      "desc": "选择你专长的年级。在教师页面可据此筛选，并显示在你的个人资料中。"
     }
   },
   "educatorOnboarding": {

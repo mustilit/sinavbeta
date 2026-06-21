@@ -42,6 +42,7 @@ const defaultFormData = {
   website: "",
   linkedin: "",
   interested_exam_types: [],
+  specialized_grade_levels: [],
   notification_preferences: {
     email_new_tests: true,
     email_promotions: true,
@@ -108,6 +109,13 @@ export default function ProfileSettings() {
     queryFn: () => entities.ExamType.filter({ is_active: true }),
   });
 
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["gradeLevels", "active"],
+    queryFn: () => entities.GradeLevel.filter({ is_active: true }),
+  });
+
+  const isEducator = (user?.role ?? user?.user_type ?? "").toString().toUpperCase() === "EDUCATOR";
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -144,6 +152,7 @@ export default function ProfileSettings() {
           website: userData.website || "",
           linkedin: userData.linkedin || "",
           interested_exam_types: userData.interested_exam_types || [],
+          specialized_grade_levels: userData.specialized_grade_levels || [],
           notification_preferences: userData.notification_preferences || defaultFormData.notification_preferences,
           profile_image_url: userData.profile_image_url || "",
         };
@@ -574,8 +583,48 @@ export default function ProfileSettings() {
                 )}
               </div>
 
-              <Button 
-                type="submit" 
+              {/* Eğitici Sınıf uzmanlığı — Eğiticiler sayfası filtresine + profile yansır */}
+              {isEducator && gradeLevels.length > 0 && (
+                <div className="pt-2 border-t border-slate-100">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-indigo-600" />
+                    {t("pages:profileSettings.gradeLevels.title", { defaultValue: "Sınıf Uzmanlığı" })}
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-4">
+                    {t("pages:profileSettings.gradeLevels.desc", { defaultValue: "Uzmanlık alanınız olan sınıfları seçin. Eğiticiler sayfasında bu sınıflarla filtrelenirsiniz." })}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {gradeLevels.map((g) => (
+                      <label
+                        key={g.id}
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          (formData.specialized_grade_levels || []).includes(g.id)
+                            ? "border-indigo-500 bg-indigo-50"
+                            : "border-slate-200 hover:border-slate-300 bg-white"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={(formData.specialized_grade_levels || []).includes(g.id)}
+                          onCheckedChange={(checked) => {
+                            const current = formData.specialized_grade_levels || [];
+                            setFormData({
+                              ...formData,
+                              specialized_grade_levels: checked ? [...current, g.id] : current.filter((id) => id !== g.id),
+                            });
+                          }}
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-900">{g.name}</p>
+                          {g.description && <p className="text-sm text-slate-500 mt-1">{g.description}</p>}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button
+                type="submit"
                 className="bg-indigo-600 hover:bg-indigo-700"
                 disabled={updateMutation.isPending || !hasChanges}
               >

@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, Star, User, TrendingUp, GraduationCap, ArrowUpDown } from "lucide-react";
+import { Search, BookOpen, Star, User, TrendingUp, GraduationCap, ArrowUpDown, FileText } from "lucide-react";
 import api from "@/lib/api/apiClient";
 import PaginationBar from "@/components/ui/PaginationBar";
 
@@ -16,6 +16,7 @@ export default function Educators() {
   const { t } = useTranslation(["pages"]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedExamTypeId, setSelectedExamTypeId] = useState(null);
+  const [selectedGradeId, setSelectedGradeId] = useState(null);
   // Sıralama — filtreden bağımsız: "recommended" (varsayılan, featured/reklam sırası) / "new" / "popular" / "rating"
   const [sortBy, setSortBy] = useState("recommended");
 
@@ -29,12 +30,23 @@ export default function Educators() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Tek kaynak: /site/featured-educators — seçili exam türüne göre filtrele
+  // Sınıflar
+  const { data: gradeLevels = [] } = useQuery({
+    queryKey: ["gradeLevelsPublic"],
+    queryFn: async () => {
+      const res = await api.get("/site/grade-levels");
+      return Array.isArray(res?.data) ? res.data : [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Tek kaynak: /site/featured-educators — seçili sınav türü + sınıfa göre filtrele
   const { data: rawEducators = [], isLoading } = useQuery({
-    queryKey: ["allEducators", selectedExamTypeId],
+    queryKey: ["allEducators", selectedExamTypeId, selectedGradeId],
     queryFn: async () => {
       const params = new URLSearchParams({ limit: "100" });
       if (selectedExamTypeId) params.set("examTypeIds", selectedExamTypeId);
+      if (selectedGradeId) params.set("gradeLevelId", selectedGradeId);
       const res = await api.get(`/site/featured-educators?${params}`);
       const data = res?.data ?? res;
       return Array.isArray(data) ? data : (data?.items ?? []);
@@ -42,13 +54,14 @@ export default function Educators() {
     staleTime: 2 * 60 * 1000,
   });
 
-  // Backend shape: { id, username, avatarUrl, testCount, saleCount, ratingAvg }
+  // Backend shape: { id, username, avatarUrl, testCount, writtenCount, saleCount, ratingAvg }
   const educators = rawEducators
     .map((e) => ({
       id: e.id,
       name: e.username ?? e.name ?? e.id,
       avatarUrl: e.avatarUrl ?? null,
       testCount: e.testCount ?? 0,
+      writtenCount: e.writtenCount ?? 0,
       totalSales: e.saleCount ?? 0,
       avgRating: e.ratingAvg ?? 0,
       createdAt: e.createdAt ?? null,
@@ -72,7 +85,7 @@ export default function Educators() {
 
   // Paging — 10 satır / sayfa. Filtre veya arama değişince 1. sayfaya dön.
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [searchQuery, selectedExamTypeId, sortBy]);
+  useEffect(() => { setPage(1); }, [searchQuery, selectedExamTypeId, selectedGradeId, sortBy]);
   const totalPages = Math.max(1, Math.ceil(filteredEducators.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pagedEducators = useMemo(
@@ -128,6 +141,35 @@ export default function Educators() {
                 }`}
               >
                 {et.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Sınıf Filtreleri (eğitici uzmanlık sınıfları) */}
+        {gradeLevels.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap pt-1">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 shrink-0">
+              <GraduationCap className="w-3.5 h-3.5" />
+              Sınıf:
+            </span>
+            <button
+              onClick={() => setSelectedGradeId(null)}
+              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+                !selectedGradeId ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              Tümü
+            </button>
+            {gradeLevels.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setSelectedGradeId(g.id === selectedGradeId ? null : g.id)}
+                className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+                  selectedGradeId === g.id ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {g.name}
               </button>
             ))}
           </div>
@@ -212,6 +254,12 @@ export default function Educators() {
                         <BookOpen className="w-4 h-4 text-indigo-500" />
                         {educator.testCount} Test
                       </span>
+                      {educator.writtenCount > 0 && (
+                        <span className="flex items-center gap-1.5">
+                          <FileText className="w-4 h-4 text-amber-500" />
+                          {educator.writtenCount} Yazılı
+                        </span>
+                      )}
                       <span className="flex items-center gap-3 ml-auto">
                         {educator.avgRating > 0 && (
                           <span className="flex items-center gap-1 font-medium text-amber-600">

@@ -1700,6 +1700,10 @@
       "saving": "Güncelleniyor...",
       "success": "Şifren başarıyla güncellendi",
       "failed": "Şifre güncellenemedi"
+    },
+    "gradeLevels": {
+      "title": "Sınıf Uzmanlığı",
+      "desc": "Uzmanlık alanınız olan sınıfları seçin. Eğiticiler sayfasında bu sınıflarla filtrelenir ve profilinizde görünür."
     }
   },
   "educatorOnboarding": {

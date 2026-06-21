@@ -1700,6 +1700,10 @@
       "saving": "Updating...",
       "success": "Your password has been updated successfully",
       "failed": "Could not update password"
+    },
+    "gradeLevels": {
+      "title": "Grade Expertise",
+      "desc": "Select the grades you specialize in. You'll be filterable by these on the Educators page and they show on your profile."
     }
   },
   "educatorOnboarding": {

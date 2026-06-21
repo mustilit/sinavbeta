@@ -1703,6 +1703,10 @@
       "saving": "Actualizando...",
       "success": "Tu contraseña se ha actualizado correctamente",
       "failed": "No se pudo actualizar la contraseña"
+    },
+    "gradeLevels": {
+      "title": "Especialidad de curso",
+      "desc": "Selecciona los cursos en los que te especializas. Se podrá filtrar por ellos en la página de educadores y aparecerán en tu perfil."
     }
   },
   "educatorOnboarding": {
