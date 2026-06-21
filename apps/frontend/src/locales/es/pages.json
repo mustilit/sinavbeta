@@ -23,13 +23,13 @@
     "hero": {
       "titleLine1": "Prepárate con",
       "titleLine2": "Confianza",
-      "subtitle": "Realiza miles de exámenes de educadores expertos, sigue tu rendimiento y alcanza tus objetivos.",
+      "subtitle": "Resuelve exámenes preparados por educadores expertos, sigue tu rendimiento y alcanza tu meta.",
       "searchPlaceholder": "Buscar exámenes, temas o educadores...",
       "searchButton": "Buscar",
       "features": {
         "uniqueTests": "Exámenes originales",
         "experiencedEducators": "Educadores expertos",
-        "performanceTracking": "Seguimiento de rendimiento"
+        "performanceTracking": "Exámenes abiertos recientes"
       }
     },
     "sections": {

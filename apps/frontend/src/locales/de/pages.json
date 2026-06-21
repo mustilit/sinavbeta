@@ -23,13 +23,13 @@
     "hero": {
       "titleLine1": "Bereiten Sie sich",
       "titleLine2": "sicher vor",
-      "subtitle": "Lösen Sie Tausende von Tests erfahrener Ausbilder, verfolgen Sie Ihre Leistung und erreichen Sie Ihre Ziele.",
+      "subtitle": "Löse von Experten erstellte Prüfungen, verfolge deine Leistung und erreiche dein Ziel.",
       "searchPlaceholder": "Tests, Themen oder Ausbilder suchen...",
       "searchButton": "Suchen",
       "features": {
         "uniqueTests": "Originale Tests",
         "experiencedEducators": "Erfahrene Ausbilder",
-        "performanceTracking": "Leistungsverfolgung"
+        "performanceTracking": "Aktuelle offene Prüfungen"
       }
     },
     "sections": {

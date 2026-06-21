@@ -23,13 +23,13 @@
     "hero": {
       "titleLine1": "Sınavlara",
       "titleLine2": "Güvenle Hazırlan",
-      "subtitle": "Alanında uzman eğiticilerden binlerce test çöz, performansını takip et ve hedefine ulaş.",
+      "subtitle": "Alanında uzman eğiticilerin hazırladığı sınavları çöz, performansını takip et ve hedefine ulaş.",
       "searchPlaceholder": "Test, konu veya eğitici ara...",
       "searchButton": "Ara",
       "features": {
         "uniqueTests": "Özgün Testler",
         "experiencedEducators": "Tecrübeli Eğiticiler",
-        "performanceTracking": "Performans Takibi"
+        "performanceTracking": "Güncel Yazılılar"
       }
     },
     "sections": {
