@@ -83,6 +83,58 @@ describe('GetPublishedTunnelMetaUseCase', () => {
     const r = await new GetPublishedTunnelMetaUseCase().execute('tn1', 'c1');
     expect(r.purchased).toBe(false);
   });
+
+  it('actorId undefined (guest) → purchased false, findUnique cagirilmaz', async () => {
+    p.tunnel.findUnique.mockResolvedValue(fullTunnel());
+    p.tunnelPurchase.count.mockResolvedValue(2);
+    const r = await new GetPublishedTunnelMetaUseCase().execute('tn1', undefined);
+    expect(r.purchased).toBe(false);
+    expect(r.attemptStatus).toBeNull();
+    expect(p.tunnelPurchase.findUnique).not.toHaveBeenCalled();
+    expect(p.tunnelAttempt.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('satın alma PENDING → purchased false (yalniz ACTIVE gecerli)', async () => {
+    p.tunnel.findUnique.mockResolvedValue(fullTunnel());
+    p.tunnelPurchase.findUnique.mockResolvedValue({ status: 'PENDING' });
+    p.tunnelAttempt.findUnique.mockResolvedValue(null);
+    p.tunnelPurchase.count.mockResolvedValue(1);
+    const r = await new GetPublishedTunnelMetaUseCase().execute('tn1', 'c1');
+    expect(r.purchased).toBe(false);
+  });
+
+  it('ACTIVE satin alma + attempt yok → purchased true, attemptStatus null', async () => {
+    p.tunnel.findUnique.mockResolvedValue(fullTunnel());
+    p.tunnelPurchase.findUnique.mockResolvedValue({ status: 'ACTIVE' });
+    p.tunnelAttempt.findUnique.mockResolvedValue(null);
+    p.tunnelPurchase.count.mockResolvedValue(5);
+    const r = await new GetPublishedTunnelMetaUseCase().execute('tn1', 'c1');
+    expect(r.purchased).toBe(true);
+    expect(r.attemptStatus).toBeNull();
+  });
+
+  it('ACTIVE satin alma + COMPLETED attempt', async () => {
+    p.tunnel.findUnique.mockResolvedValue(fullTunnel());
+    p.tunnelPurchase.findUnique.mockResolvedValue({ status: 'ACTIVE' });
+    p.tunnelAttempt.findUnique.mockResolvedValue({ status: 'COMPLETED' });
+    p.tunnelPurchase.count.mockResolvedValue(10);
+    const r = await new GetPublishedTunnelMetaUseCase().execute('tn1', 'c1');
+    expect(r.purchased).toBe(true);
+    expect(r.attemptStatus).toBe('COMPLETED');
+    expect(r.salesCount).toBe(10);
+  });
+
+  it('REJECTED status tunel → TUNNEL_NOT_FOUND', async () => {
+    p.tunnel.findUnique.mockResolvedValue(fullTunnel({ status: 'REJECTED' }));
+    await expect(new GetPublishedTunnelMetaUseCase().execute('tn1', 'c1'))
+      .rejects.toMatchObject({ code: 'TUNNEL_NOT_FOUND' });
+  });
+
+  it('PENDING_APPROVAL status tunel → TUNNEL_NOT_FOUND', async () => {
+    p.tunnel.findUnique.mockResolvedValue(fullTunnel({ status: 'PENDING_APPROVAL' }));
+    await expect(new GetPublishedTunnelMetaUseCase().execute('tn1', 'c1'))
+      .rejects.toMatchObject({ code: 'TUNNEL_NOT_FOUND' });
+  });
 });
 
 describe('ListPublishedTunnelsUseCase', () => {
@@ -105,6 +157,54 @@ describe('ListPublishedTunnelsUseCase', () => {
     expect(a.purchased).toBe(true);
     expect(a.attemptStatus).toBe('COMPLETED');
     expect(b.purchased).toBe(false);
+  });
+
+  it('actorId undefined (guest) → hic purchase sorgusu yapilmaz', async () => {
+    p.tunnel.findMany.mockResolvedValue([fullTunnel({ id: 'x' })]);
+    const r = await new ListPublishedTunnelsUseCase().execute({}, undefined);
+    expect(r.items[0].purchased).toBe(false);
+    expect(r.items[0].attemptStatus).toBeNull();
+    expect(p.tunnelPurchase.findMany).not.toHaveBeenCalled();
+    expect(p.tunnelAttempt.findMany).not.toHaveBeenCalled();
+  });
+
+  it('actor var ama hic ACTIVE satin alma yok → hepsi purchased false', async () => {
+    p.tunnel.findMany.mockResolvedValue([fullTunnel({ id: 'a' }), fullTunnel({ id: 'b' })]);
+    p.tunnelPurchase.findMany.mockResolvedValue([]); // findMany status:'ACTIVE' filtresini zaten uyguluyor
+    p.tunnelAttempt.findMany.mockResolvedValue([]);
+    const r = await new ListPublishedTunnelsUseCase().execute({}, 'c1');
+    expect(r.items[0].purchased).toBe(false);
+    expect(r.items[1].purchased).toBe(false);
+  });
+
+  it('birden fazla tunel satinalinmis, dogru esleme', async () => {
+    p.tunnel.findMany.mockResolvedValue([
+      fullTunnel({ id: 'a' }),
+      fullTunnel({ id: 'b' }),
+      fullTunnel({ id: 'c' }),
+    ]);
+    p.tunnelPurchase.findMany.mockResolvedValue([{ tunnelId: 'a' }, { tunnelId: 'c' }]);
+    p.tunnelAttempt.findMany.mockResolvedValue([
+      { tunnelId: 'a', status: 'IN_PROGRESS' },
+      { tunnelId: 'c', status: 'COMPLETED' },
+    ]);
+    const r = await new ListPublishedTunnelsUseCase().execute({}, 'c1');
+    const a = r.items.find((x: any) => x.id === 'a');
+    const b = r.items.find((x: any) => x.id === 'b');
+    const c = r.items.find((x: any) => x.id === 'c');
+    expect(a.purchased).toBe(true);
+    expect(a.attemptStatus).toBe('IN_PROGRESS');
+    expect(b.purchased).toBe(false);
+    expect(b.attemptStatus).toBeNull();
+    expect(c.purchased).toBe(true);
+    expect(c.attemptStatus).toBe('COMPLETED');
+  });
+
+  it('bos tunel listesi → bos items dondurir, purchase sorgusu yapilmaz', async () => {
+    p.tunnel.findMany.mockResolvedValue([]);
+    const r = await new ListPublishedTunnelsUseCase().execute({}, 'c1');
+    expect(r.items).toEqual([]);
+    expect(p.tunnelPurchase.findMany).not.toHaveBeenCalled();
   });
 });
 

@@ -45,9 +45,9 @@ describe('Sidebar bileşeni', () => {
   it('CANDIDATE rolü ile aday menüsü render edilir', () => {
     // Arrange & Act
     renderSidebar({ role: 'CANDIDATE' });
-    // Assert — "Testleri Keşfet" ve "Satın Alınan Testler" linkleri
+    // Assert — "Keşfet" ve "Satın Alınan Sınavlar" linkleri
     expect(screen.getByRole('link', { name: /keşfet/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /satın alınan testler/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /satın alınan sınavlar/i })).toBeInTheDocument();
   });
 
   it('EDUCATOR rolü ile aktif eğitici menüsü render edilir', () => {
