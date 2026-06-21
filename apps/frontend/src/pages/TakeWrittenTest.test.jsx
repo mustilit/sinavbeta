@@ -77,12 +77,12 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), info: vi.fn(), success: vi.fn() },
 }));
 
-// lucide-react — stub all icons to simple spans
+// lucide-react — kullanılan ikonları basit span olarak stub'la (X = Dialog kapat ikonu)
 vi.mock('lucide-react', () => {
   const iconNames = [
     'Loader2', 'ArrowLeft', 'AlertTriangle', 'Pencil', 'Clock',
     'ChevronLeft', 'ChevronRight', 'Sun', 'CheckCircle2', 'BookOpen',
-    'LogOut', 'Save', 'Eraser',
+    'LogOut', 'Save', 'Eraser', 'X',
   ];
   const icons = {};
   for (const name of iconNames) {

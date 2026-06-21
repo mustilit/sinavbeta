@@ -2036,7 +2036,14 @@
     "yourDrawing": "Your Drawing",
     "saveExit": "Save & Exit",
     "savedExit": "Your progress was saved",
-    "clearDrawing": "Clear"
+    "clearDrawing": "Clear",
+    "finishTitle": "Are you sure you want to finish?",
+    "answered": "answered",
+    "blank": "left blank",
+    "finishBody": "Finishing ends your answers and moves you to comparing them with the solutions. This action cannot be undone.",
+    "finishSaveHint": "If you want to keep answering, choose Save and Exit; your progress is saved.",
+    "cancel": "Cancel",
+    "confirmFinish": "Yes, finish"
   },
   "writtenDetail": {
     "notFound": "Package not found",

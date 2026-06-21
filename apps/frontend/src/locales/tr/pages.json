@@ -2036,7 +2036,14 @@
     "yourDrawing": "Çizimin",
     "saveExit": "Kaydet ve Çık",
     "savedExit": "İlerlemeniz kaydedildi",
-    "clearDrawing": "Temizle"
+    "clearDrawing": "Temizle",
+    "finishTitle": "Yazılıyı bitirmek istediğine emin misin?",
+    "answered": "cevaplandı",
+    "blank": "boş bırakıldı",
+    "finishBody": "Yazılıyı bitirmek cevaplarını sonlandırır ve çözümle kıyaslamaya geçersin. Bu işlem geri alınamaz.",
+    "finishSaveHint": "Cevaplamaya devam etmek istiyorsan Kaydet ve Çık diyebilirsin; ilerlemen kaydedilir.",
+    "cancel": "İptal",
+    "confirmFinish": "Evet, bitir"
   },
   "writtenDetail": {
     "notFound": "Paket bulunamadı",

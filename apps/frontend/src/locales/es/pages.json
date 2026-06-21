@@ -2039,7 +2039,14 @@
     "yourDrawing": "Tu dibujo",
     "saveExit": "Guardar y salir",
     "savedExit": "Tu progreso se guardó",
-    "clearDrawing": "Borrar"
+    "clearDrawing": "Borrar",
+    "finishTitle": "¿Seguro que quieres finalizar?",
+    "answered": "respondidas",
+    "blank": "en blanco",
+    "finishBody": "Finalizar cierra tus respuestas y pasas a compararlas con las soluciones. Esta acción no se puede deshacer.",
+    "finishSaveHint": "Si quieres seguir respondiendo, elige Guardar y salir; tu progreso se guarda.",
+    "cancel": "Cancelar",
+    "confirmFinish": "Sí, finalizar"
   },
   "writtenDetail": {
     "notFound": "Paquete no encontrado",

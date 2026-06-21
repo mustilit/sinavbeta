@@ -2036,7 +2036,14 @@
     "yourDrawing": "Deine Zeichnung",
     "saveExit": "Speichern & Verlassen",
     "savedExit": "Dein Fortschritt wurde gespeichert",
-    "clearDrawing": "Löschen"
+    "clearDrawing": "Löschen",
+    "finishTitle": "Möchtest du wirklich beenden?",
+    "answered": "beantwortet",
+    "blank": "leer gelassen",
+    "finishBody": "Beim Beenden werden deine Antworten abgeschlossen und du vergleichst sie mit den Lösungen. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "finishSaveHint": "Wenn du weiter antworten möchtest, wähle Speichern und Beenden; dein Fortschritt wird gespeichert.",
+    "cancel": "Abbrechen",
+    "confirmFinish": "Ja, beenden"
   },
   "writtenDetail": {
     "notFound": "Paket nicht gefunden",

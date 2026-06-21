@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, AlertTriangle, Pencil, Clock, ChevronLeft, ChevronRight, Sun, CheckCircle2, BookOpen, LogOut, Save, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ReportQuestionModal from "@/components/test/ReportQuestionModal";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
 import { TestWatermark } from "@/components/test/TestWatermark";
@@ -39,6 +40,7 @@ function TakeWrittenTest() {
   const [showSolution, setShowSolution] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [remaining, setRemaining] = useState(null);
   const [examTheme, setExamTheme] = useState(() => {
     try { return localStorage.getItem("dal_exam_theme") === "sepia" ? "sepia" : "light"; } catch { return "light"; }
@@ -211,7 +213,7 @@ function TakeWrittenTest() {
 
   const handleSubmit = async () => {
     if (!attemptId) return;
-    if (!window.confirm(t("pages:takeWritten.submitConfirm"))) return;
+    setShowFinishConfirm(false);
     setSubmitting(true);
     try {
       // bekleyen autosave'leri zorla + mevcut çizimi yakala
@@ -364,7 +366,7 @@ function TakeWrittenTest() {
         {!submitted && (
           <div className="mt-6 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center gap-3 flex-wrap">
-              <Button variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={handleSubmit} disabled={submitting}>
+              <Button variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={() => setShowFinishConfirm(true)} disabled={submitting}>
                 {submitting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <LogOut className="mr-1.5 h-4 w-4" />}
                 {t("pages:takeWritten.submit")}
               </Button>
@@ -377,6 +379,52 @@ function TakeWrittenTest() {
           </div>
         )}
       </div>
+
+      {/* Yazılıyı Bitir onay dialog'u — test çözüm ekranındaki onay ile aynı tasarım.
+          Cevaplanan/boş soru sayısı + Kaydet ve Çık alternatifi. */}
+      <Dialog open={showFinishConfirm} onOpenChange={setShowFinishConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-700">
+              <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+              {t("pages:takeWritten.finishTitle")}
+            </DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const ans = questions.filter((x) => (answers[x.id] ?? "").trim().length > 0 || drawings[x.id]).length;
+            const blank = questions.length - ans;
+            return (
+              <div className="space-y-4 text-sm text-slate-700 dark:text-gray-200">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center dark:border-emerald-900 dark:bg-emerald-950/30">
+                    <p className="text-2xl font-bold text-emerald-700">{ans}</p>
+                    <p className="text-xs text-emerald-700/80">{t("pages:takeWritten.answered")}</p>
+                  </div>
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center dark:border-amber-900 dark:bg-amber-950/30">
+                    <p className="text-2xl font-bold text-amber-700">{blank}</p>
+                    <p className="text-xs text-amber-700/80">{t("pages:takeWritten.blank")}</p>
+                  </div>
+                </div>
+                <p>{t("pages:takeWritten.finishBody")}</p>
+                <p className="text-slate-600 dark:text-gray-300">{t("pages:takeWritten.finishSaveHint")}</p>
+                <div className="flex flex-wrap justify-end gap-2 pt-1">
+                  <Button variant="outline" onClick={() => setShowFinishConfirm(false)} disabled={submitting}>
+                    {t("pages:takeWritten.cancel")}
+                  </Button>
+                  <Button variant="outline" className="text-slate-700 dark:text-gray-200" onClick={() => { setShowFinishConfirm(false); saveAndExit(); }} disabled={submitting}>
+                    <Save className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    {t("pages:takeWritten.saveExit")}
+                  </Button>
+                  <Button className="bg-rose-600 text-white hover:bg-rose-700" onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <LogOut className="mr-1.5 h-4 w-4" aria-hidden="true" />}
+                    {t("pages:takeWritten.confirmFinish")}
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       <ReportQuestionModal open={reportOpen} onClose={() => setReportOpen(false)} onSubmit={submitReport} questionNumber={current + 1} />
     </div>
