@@ -304,17 +304,18 @@ function TakeWrittenTest() {
           {q.content && <p className="whitespace-pre-wrap text-slate-900 dark:text-gray-100">{q.content}</p>}
           {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mt-3 max-h-72 rounded-lg object-contain" />}
 
-          {/* Cevap alanı (metin) */}
-          <div className="mt-4 space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-gray-200">{t("pages:takeWritten.answerLabel")}</label>
-            <Textarea
-              value={answers[q.id] ?? ""}
-              onChange={(e) => onAnswerChange(q.id, e.target.value)}
-              placeholder={t("pages:takeWritten.answerPlaceholder")}
-              rows={7}
-              disabled={submitted}
-            />
-          </div>
+          {/* Cevap alanı (metin) — yalnız çözerken. İncelemede cevap "Senin Cevabın" kutusunda gösterilir. */}
+          {!submitted && (
+            <div className="mt-4 space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 dark:text-gray-200">{t("pages:takeWritten.answerLabel")}</label>
+              <Textarea
+                value={answers[q.id] ?? ""}
+                onChange={(e) => onAnswerChange(q.id, e.target.value)}
+                placeholder={t("pages:takeWritten.answerPlaceholder")}
+                rows={7}
+              />
+            </div>
+          )}
 
           {/* Çözüm (öz-kıyas) */}
           <div className="mt-4">
