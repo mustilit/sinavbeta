@@ -149,13 +149,15 @@ function TakeWrittenTest() {
     }
   }, [submitted, q, attemptId, answers]);
 
-  // Kalem çizimini yakala (yalnız değiştiyse) → yükle → cevaba drawingUrl olarak kaydet.
-  // Dönüş: yeni URL veya null.
+  // Kalem çizimini yakala → yükle → cevaba drawingUrl olarak kaydet.
+  // ROBUST: dirty bayrağına GÜVENME (clear/soru-değişimi efektleri sıfırlayabiliyor).
+  // Canvas boş değilse her zaman yakala. toDataURL boşsa null döner. Dönüş: yeni URL veya null.
   const captureCurrentDrawing = useCallback(async () => {
-    if (submitted || !attemptId || !q || !drawingDirty.current) return null;
-    const dataUrl = canvasRef.current?.toDataURL?.();
+    if (submitted || !attemptId || !q) return null;
+    let dataUrl = null;
+    try { dataUrl = canvasRef.current?.toDataURL?.(); } catch { dataUrl = null; }
     drawingDirty.current = false;
-    if (!dataUrl) return null; // boş çizim
+    if (!dataUrl) return null; // boş çizim — kayıt yok
     try {
       const { url } = await api.uploadDrawing(dataUrl);
       if (!url) return null;
@@ -177,20 +179,18 @@ function TakeWrittenTest() {
   };
 
   // Soru değişince kayıtlı çizimi geri yükle — ÇÖZERKEN de İNCELERKEN de göster.
-  // (canvas questionId değişiminde temizlenir → sonra yüklenir.)
+  // (canvas questionId değişiminde kendi içinde temizlenir → burada yalnız yükleriz;
+  // taze çizimi silmemek için 'drawings' dep'i YOK, soru/durum değişiminde tetiklenir.)
   useEffect(() => {
     if (!q) return;
     const url = drawings[q.id];
     drawingDirty.current = false;
     const id = setTimeout(() => {
-      if (canvasRef.current?.loadDataUrl) {
-        if (url) canvasRef.current.loadDataUrl(url);
-        else canvasRef.current.clear?.();
-      }
-    }, 60);
+      if (url && canvasRef.current?.loadDataUrl) canvasRef.current.loadDataUrl(url);
+    }, 80);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, attemptId, submitted, drawings]);
+  }, [current, attemptId, submitted]);
 
   const toggleSolution = async () => {
     if (!showSolution && q && !submitted && !solutions[q.id]) {
