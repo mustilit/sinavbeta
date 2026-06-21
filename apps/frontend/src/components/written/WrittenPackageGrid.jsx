@@ -59,6 +59,15 @@ export function WrittenPackageGrid({ mode = "discover" }) {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Discover'da satın alınan paketleri işaretle (giriş yoksa boş → herkese "Satın Al").
+  const { data: ownedData } = useQuery({
+    queryKey: ["candidateWritten", "ownedIds"],
+    queryFn: async () => { try { return await candidateWritten.myPackages(); } catch { return { items: [] }; } },
+    staleTime: 30_000,
+    enabled: !isMine,
+  });
+  const ownedByPkgId = new Map((ownedData?.items ?? []).map((p) => [p.packageId, p]));
+
   if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-7 w-7 animate-spin text-indigo-500" /></div>;
   if (isError) return <p className="py-16 text-center text-sm text-rose-500">{t("pages:writtenGrid.loadError")}</p>;
 
@@ -229,9 +238,20 @@ export function WrittenPackageGrid({ mode = "discover" }) {
         <p className="py-16 text-center text-sm text-slate-500">{isMine ? t("pages:writtenGrid.emptyMine") : t("pages:writtenGrid.emptyDiscover")}</p>
       ) : (
         <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
-          {items.map((pkg) => (
-            <WrittenPackageCard key={pkg.id ?? pkg.packageId} pkg={pkg} purchased={isMine} onBuy={(p) => setPayTarget(p)} />
-          ))}
+          {items.map((pkg) => {
+            // Discover'da bu paket satın alındıysa: satın alma verisini (tests+state) birleştir,
+            // kartı "satın alındı" (Başla/Devam) olarak göster — bir daha satılabilir görünmesin.
+            const owned = !isMine ? ownedByPkgId.get(pkg.id ?? pkg.packageId) : null;
+            const cardPkg = owned ? { ...pkg, ...owned, id: pkg.id ?? pkg.packageId } : pkg;
+            return (
+              <WrittenPackageCard
+                key={pkg.id ?? pkg.packageId}
+                pkg={cardPkg}
+                purchased={isMine || !!owned}
+                onBuy={(p) => setPayTarget(p)}
+              />
+            );
+          })}
         </div>
       )}
 
