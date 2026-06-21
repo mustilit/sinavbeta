@@ -182,7 +182,7 @@ function TakeWrittenTest() {
   // (canvas questionId değişiminde kendi içinde temizlenir → burada yalnız yükleriz;
   // taze çizimi silmemek için 'drawings' dep'i YOK, soru/durum değişiminde tetiklenir.)
   useEffect(() => {
-    if (!q) return;
+    if (!q || submitted) return; // incelemede canvas yok; çizim <img> ile gösterilir
     const url = drawings[q.id];
     drawingDirty.current = false;
     const id = setTimeout(() => {
@@ -298,7 +298,8 @@ function TakeWrittenTest() {
         {/* Soru kartı */}
         <div className="relative rounded-2xl border border-slate-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
           <TestWatermark identity={{ name: user?.full_name || user?.username || user?.email, email: user?.email }} />
-          <QuestionCanvas ref={canvasRef} isActive={isDrawing} questionId={q.id} onHasDrawings={handleHasDrawings} />
+          {/* Çizim katmanı yalnız çözerken — incelemede çizim "Senin Cevabın" kutusunda <img> olarak gösterilir (çift gösterim engeli) */}
+          {!submitted && <QuestionCanvas ref={canvasRef} isActive={isDrawing} questionId={q.id} onHasDrawings={handleHasDrawings} />}
           <div className="mb-2 text-xs font-semibold text-indigo-600">{t("pages:takeWritten.questionNav", { n: current + 1 })} / {questions.length}</div>
           {q.content && <p className="whitespace-pre-wrap text-slate-900 dark:text-gray-100">{q.content}</p>}
           {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mt-3 max-h-72 rounded-lg object-contain" />}
