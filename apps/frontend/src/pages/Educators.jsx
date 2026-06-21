@@ -102,55 +102,49 @@ export default function Educators() {
         <p className="text-slate-500 mt-2">{t("pages:titles.educatorsDesc")}</p>
       </div>
 
-      {/* Arama + Filtre */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 space-y-3">
-        {/* Arama */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <Input
-            placeholder="Eğitici ara..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-11 border-slate-200"
-          />
-        </div>
-
-        {/* Filtreler — açılan liste (diğer sayfalarla aynı) */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-1">
+      {/* Arama + Filtre — tek sıra (3 alan aynı satırda; dar ekranda alt alta) */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6">
+        <div className="flex flex-col lg:flex-row gap-3">
+          {/* Arama */}
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Input
+              placeholder="Eğitici ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-11 border-slate-200"
+            />
+          </div>
           {/* Sınav Türü (Uzmanlık) */}
-          <div className="flex-1">
-            <Select
-              value={selectedExamTypeId ?? "all"}
-              onValueChange={(v) => setSelectedExamTypeId(v === "all" ? null : v)}
-            >
-              <SelectTrigger aria-label="Sınav türü" className="h-11">
-                <SelectValue placeholder="Sınav Türü" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Sınav Türü: Tümü</SelectItem>
-                {examTypes.map((et) => (
-                  <SelectItem key={et.id} value={et.id}>{et.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            value={selectedExamTypeId ?? "all"}
+            onValueChange={(v) => setSelectedExamTypeId(v === "all" ? null : v)}
+          >
+            <SelectTrigger aria-label="Sınav türü" className="h-11 w-full lg:w-56">
+              <SelectValue placeholder="Sınav Türü" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Sınav Türü: Tümü</SelectItem>
+              {examTypes.map((et) => (
+                <SelectItem key={et.id} value={et.id}>{et.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {/* Sınıf */}
-          <div className="flex-1">
-            <Select
-              value={selectedGradeId ?? "all"}
-              onValueChange={(v) => setSelectedGradeId(v === "all" ? null : v)}
-            >
-              <SelectTrigger aria-label="Sınıf" className="h-11">
-                <SelectValue placeholder="Sınıf" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Sınıf: Tümü</SelectItem>
-                {gradeLevels.map((g) => (
-                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            value={selectedGradeId ?? "all"}
+            onValueChange={(v) => setSelectedGradeId(v === "all" ? null : v)}
+          >
+            <SelectTrigger aria-label="Sınıf" className="h-11 w-full lg:w-48">
+              <SelectValue placeholder="Sınıf" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Sınıf: Tümü</SelectItem>
+              {gradeLevels.map((g) => (
+                <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
