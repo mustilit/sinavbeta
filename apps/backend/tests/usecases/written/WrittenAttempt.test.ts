@@ -31,6 +31,8 @@ import {
   SubmitWrittenAnswerUseCase,
   GetWrittenAttemptStateUseCase,
   SubmitWrittenAttemptUseCase,
+  TimeoutWrittenAttemptUseCase,
+  GetWrittenQuestionSolutionUseCase,
 } from '../../../src/application/use-cases/written/WrittenAttemptUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 
@@ -401,5 +403,120 @@ describe('SubmitWrittenAttemptUseCase', () => {
     expect(updateArg.data.status).toBe('SUBMITTED');
     expect(updateArg.data).not.toHaveProperty('score');
     expect(updateArg.data.submittedAt).toBeInstanceOf(Date);
+  });
+});
+
+/* ============================== requirePurchaseAndSnapshot (canlı fallback + hatalar) ============================== */
+describe('Start — purchase/snapshot dalları', () => {
+  const uc = new StartWrittenAttemptUseCase();
+
+  it('test yoksa WRITTEN_TEST_NOT_FOUND', async () => {
+    p.writtenTest.findUnique.mockResolvedValue(null);
+    await expect(uc.execute('wt1', 'u1')).rejects.toMatchObject({ code: 'WRITTEN_TEST_NOT_FOUND' });
+  });
+
+  it('test silinmişse WRITTEN_TEST_NOT_FOUND', async () => {
+    p.writtenTest.findUnique.mockResolvedValue(testRow({ deletedAt: new Date() }));
+    await expect(uc.execute('wt1', 'u1')).rejects.toMatchObject({ code: 'WRITTEN_TEST_NOT_FOUND' });
+  });
+
+  it('test pakete bağlı değilse WRITTEN_TEST_NOT_FOUND', async () => {
+    p.writtenTest.findUnique.mockResolvedValue(testRow({ packageId: null }));
+    await expect(uc.execute('wt1', 'u1')).rejects.toMatchObject({ code: 'WRITTEN_TEST_NOT_FOUND' });
+  });
+
+  it('satın alma yoksa NOT_PURCHASED', async () => {
+    p.writtenTest.findUnique.mockResolvedValue(testRow());
+    p.writtenPurchase.findUnique.mockResolvedValue(null);
+    await expect(uc.execute('wt1', 'u1')).rejects.toMatchObject({ code: 'NOT_PURCHASED' });
+  });
+
+  it('satın alma ACTIVE değilse NOT_PURCHASED', async () => {
+    p.writtenTest.findUnique.mockResolvedValue(testRow());
+    p.writtenPurchase.findUnique.mockResolvedValue(purchaseRow({ status: 'REFUNDED' }));
+    await expect(uc.execute('wt1', 'u1')).rejects.toMatchObject({ code: 'NOT_PURCHASED' });
+  });
+
+  it('snapshot boşsa canlı sorulardan doldurur (writtenQuestion.findMany)', async () => {
+    p.writtenTest.findUnique.mockResolvedValue(testRow());
+    p.writtenPurchase.findUnique.mockResolvedValue(purchaseRow({ testsSnapshot: null }));
+    p.writtenAttempt.findFirst.mockResolvedValue(null); // aktif deneme yok
+    p.writtenAttempt.findFirst
+      .mockResolvedValueOnce(null) // active IN_PROGRESS/PAUSED
+      .mockResolvedValueOnce(null); // last attempt
+    p.writtenQuestion.findMany.mockResolvedValue([
+      { id: 'lq1', content: 'Canlı', mediaUrl: null, order: 0, solutionText: 'C', solutionMediaUrl: null },
+    ]);
+    p.writtenAttempt.create.mockResolvedValue({ id: 'attNew' });
+    const out = await uc.execute('wt1', 'u1');
+    expect(p.writtenQuestion.findMany).toHaveBeenCalled();
+    expect(out.attemptId).toBe('attNew');
+  });
+});
+
+/* ============================== TimeoutWrittenAttemptUseCase ============================== */
+describe('TimeoutWrittenAttemptUseCase', () => {
+  const uc = new TimeoutWrittenAttemptUseCase();
+
+  it('actorId yoksa UNAUTHORIZED', async () => {
+    await expect(uc.execute('att1', null)).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('deneme yoksa ATTEMPT_NOT_FOUND', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue(null);
+    await expect(uc.execute('att1', 'u1')).rejects.toMatchObject({ code: 'ATTEMPT_NOT_FOUND' });
+  });
+
+  it('sahibi değilse NOT_ATTEMPT_OWNER', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue(attemptRow({ candidateId: 'other' }));
+    await expect(uc.execute('att1', 'u1')).rejects.toMatchObject({ code: 'NOT_ATTEMPT_OWNER' });
+  });
+
+  it('zaten SUBMITTED ise alreadySubmitted:true', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue(attemptRow({ status: 'SUBMITTED' }));
+    const out = await uc.execute('att1', 'u1');
+    expect(out).toMatchObject({ ok: true, alreadySubmitted: true });
+    expect(p.writtenAttempt.update).not.toHaveBeenCalled();
+  });
+
+  it('IN_PROGRESS ise TIMEOUT yapar', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue(attemptRow());
+    p.writtenAttempt.update.mockResolvedValue({});
+    const out = await uc.execute('att1', 'u1');
+    expect(out).toMatchObject({ ok: true });
+    expect(p.writtenAttempt.update.mock.calls[0][0].data.status).toBe('TIMEOUT');
+  });
+});
+
+/* ============================== GetWrittenQuestionSolutionUseCase ============================== */
+describe('GetWrittenQuestionSolutionUseCase', () => {
+  const uc = new GetWrittenQuestionSolutionUseCase();
+
+  it('actorId yoksa UNAUTHORIZED', async () => {
+    await expect(uc.execute('att1', 'q1', null)).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('deneme geçersiz durumdaysa ATTEMPT_INVALID_STATUS', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue(attemptRow({ status: 'CANCELLED' }));
+    await expect(uc.execute('att1', 'q1', 'u1')).rejects.toMatchObject({ code: 'ATTEMPT_INVALID_STATUS' });
+  });
+
+  it('test çözüm desteklemiyorsa SOLUTIONS_DISABLED', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue(attemptRow());
+    p.writtenTest.findUnique.mockResolvedValue(testRow({ hasSolutions: false }));
+    await expect(uc.execute('att1', 'q1', 'u1')).rejects.toMatchObject({ code: 'SOLUTIONS_DISABLED' });
+  });
+
+  it('soru denemede yoksa QUESTION_NOT_IN_TEST', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue(attemptRow());
+    p.writtenTest.findUnique.mockResolvedValue(testRow());
+    await expect(uc.execute('att1', 'yok', 'u1')).rejects.toMatchObject({ code: 'QUESTION_NOT_IN_TEST' });
+  });
+
+  it('başarılı: çözüm metnini döner', async () => {
+    p.writtenAttempt.findUnique.mockResolvedValue(attemptRow());
+    p.writtenTest.findUnique.mockResolvedValue(testRow());
+    const out = await uc.execute('att1', 'q2', 'u1');
+    expect(out).toEqual({ questionId: 'q2', solutionText: 'Cozum2', solutionMediaUrl: '/sol2.png' });
   });
 });
