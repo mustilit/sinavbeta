@@ -993,7 +993,8 @@
       "adminNote": "Admin Note",
       "yourAnswer": "Your answer:",
       "respondedAt": "Answered: {{date}}",
-      "respond": "Respond"
+      "respond": "Respond",
+      "viewDetail": "View Detail"
     },
     "empty": {
       "noPending": "No pending reports",

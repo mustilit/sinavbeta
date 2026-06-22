@@ -14,12 +14,12 @@ import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Pagination } from "@/components/ui/Pagination";
 import {
   AlertTriangle,
-  MessageSquare,
   Clock,
   CheckCircle,
   ShieldCheck,
   Search,
   X,
+  Eye,
 } from "lucide-react";
 import {
   Dialog,
@@ -350,12 +350,13 @@ export default function QuestionReports() {
                             </div>
                           </div>
                           <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => { setSelectedReport(report); setResponse(report.answerText ?? ""); }}
                             className="shrink-0"
                           >
-                            <MessageSquare className="w-4 h-4 mr-1.5" />
-                            {t("pages:questionReports.card.respond")}
+                            <Eye className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                            {t("pages:questionReports.card.viewDetail")}
                           </Button>
                         </div>
                       </CardContent>

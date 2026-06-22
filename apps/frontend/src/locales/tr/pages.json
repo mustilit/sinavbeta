@@ -993,7 +993,8 @@
       "adminNote": "Admin Notu",
       "yourAnswer": "Yanıtınız:",
       "respondedAt": "Yanıtlandı: {{date}}",
-      "respond": "Yanıtla"
+      "respond": "Yanıtla",
+      "viewDetail": "Detayı Görüntüle"
     },
     "empty": {
       "noPending": "Bekleyen bildirim yok",

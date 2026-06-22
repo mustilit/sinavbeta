@@ -993,7 +993,8 @@
       "adminNote": "管理员备注",
       "yourAnswer": "您的回复:",
       "respondedAt": "回复时间:{{date}}",
-      "respond": "回复"
+      "respond": "回复",
+      "viewDetail": "查看详情"
     },
     "empty": {
       "noPending": "无待处理报告",

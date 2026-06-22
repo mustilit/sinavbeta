@@ -996,7 +996,8 @@
       "adminNote": "Nota del admin",
       "yourAnswer": "Tu respuesta:",
       "respondedAt": "Respondido: {{date}}",
-      "respond": "Responder"
+      "respond": "Responder",
+      "viewDetail": "Ver detalle"
     },
     "empty": {
       "noPending": "No hay reportes pendientes",

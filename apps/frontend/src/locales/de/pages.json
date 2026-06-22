@@ -993,7 +993,8 @@
       "adminNote": "Admin-Notiz",
       "yourAnswer": "Ihre Antwort:",
       "respondedAt": "Beantwortet: {{date}}",
-      "respond": "Antworten"
+      "respond": "Antworten",
+      "viewDetail": "Details anzeigen"
     },
     "empty": {
       "noPending": "Keine ausstehenden Meldungen",
