@@ -983,7 +983,8 @@
     "statusConfig": {
       "OPEN": "Ausstehend",
       "ANSWERED": "Beantwortet",
-      "ESCALATED": "An Admin eskaliert"
+      "ESCALATED": "An Admin eskaliert",
+      "RESOLVED": "Gelöst"
     },
     "card": {
       "reporter": "Gemeldet von: {{name}}",
@@ -1013,6 +1014,10 @@
       "sent": "Antwort gesendet",
       "sendFailed": "Antwort konnte nicht gesendet werden",
       "min5Chars": "Mindestens 5 Zeichen schreiben"
+    },
+    "kindBadge": {
+      "tunnel": "Tunnel",
+      "written": "Schriftlich"
     }
   },
   "educatorSettings": {

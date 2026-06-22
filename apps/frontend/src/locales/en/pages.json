@@ -983,7 +983,8 @@
     "statusConfig": {
       "OPEN": "Pending",
       "ANSWERED": "Answered",
-      "ESCALATED": "Escalated to Admin"
+      "ESCALATED": "Escalated to Admin",
+      "RESOLVED": "Resolved"
     },
     "card": {
       "reporter": "Reported by: {{name}}",
@@ -1013,6 +1014,10 @@
       "sent": "Response sent",
       "sendFailed": "Could not send response",
       "min5Chars": "Write at least 5 characters"
+    },
+    "kindBadge": {
+      "tunnel": "Tunnel",
+      "written": "Written"
     }
   },
   "educatorSettings": {

@@ -36,6 +36,7 @@ const statusConfig = {
   OPEN:      { labelKey: "pages:questionReports.statusConfig.OPEN",      color: "bg-amber-100 text-amber-700" },
   ANSWERED:  { labelKey: "pages:questionReports.statusConfig.ANSWERED",  color: "bg-emerald-100 text-emerald-700" },
   ESCALATED: { labelKey: "pages:questionReports.statusConfig.ESCALATED", color: "bg-violet-100 text-violet-700" },
+  RESOLVED:  { labelKey: "pages:questionReports.statusConfig.RESOLVED",  color: "bg-emerald-100 text-emerald-700" },
 };
 
 /**
@@ -87,6 +88,7 @@ function FilterBar({
                   <SelectItem value="ALL">{t("pages:questionReports.filterBar.allStatuses")}</SelectItem>
                   <SelectItem value="ANSWERED">{t("pages:questionReports.statusConfig.ANSWERED")}</SelectItem>
                   <SelectItem value="ESCALATED">{t("pages:questionReports.statusConfig.ESCALATED")}</SelectItem>
+                  <SelectItem value="RESOLVED">{t("pages:questionReports.statusConfig.RESOLVED")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -310,6 +312,8 @@ export default function QuestionReports() {
                                 <Badge className={statusConfig[report.status]?.color ?? "bg-slate-100 text-slate-700"}>
                                   {statusConfig[report.status]?.labelKey ? t(statusConfig[report.status].labelKey) : report.status}
                                 </Badge>
+                                {report.kind === "tunnel" && <Badge className="bg-indigo-100 text-indigo-700">{t("pages:questionReports.kindBadge.tunnel")}</Badge>}
+                                {report.kind === "written" && <Badge className="bg-sky-100 text-sky-700">{t("pages:questionReports.kindBadge.written")}</Badge>}
                                 <span className="text-sm font-medium text-slate-800 truncate">
                                   {/* report.testTitle user-generated */}
                                   {report.testTitle}
@@ -332,22 +336,27 @@ export default function QuestionReports() {
                               )}
                               <div className="flex items-center gap-4 mt-2 text-xs text-slate-400 flex-wrap">
                                 <span>{t("pages:questionReports.card.reporter", { name: report.reporterName })}</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  {daysLeft > 0 ? t("pages:questionReports.card.daysLeft", { count: daysLeft }) : t("pages:questionReports.card.deadlineExpired")}
-                                </span>
+                                {/* SLA/yanıt akışı yalnız test itirazlarında; tünel/yazılı bildirimleri salt görüntü */}
+                                {!report.kind && (
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {daysLeft > 0 ? t("pages:questionReports.card.daysLeft", { count: daysLeft }) : t("pages:questionReports.card.deadlineExpired")}
+                                  </span>
+                                )}
                                 <span>{format(new Date(report.createdAt), "d MMM yyyy", { locale: tr })}</span>
                               </div>
                             </div>
                           </div>
-                          <Button
-                            size="sm"
-                            onClick={() => { setSelectedReport(report); setResponse(""); }}
-                            className="shrink-0"
-                          >
-                            <MessageSquare className="w-4 h-4 mr-1.5" />
-                            {t("pages:questionReports.card.respond")}
-                          </Button>
+                          {!report.kind && (
+                            <Button
+                              size="sm"
+                              onClick={() => { setSelectedReport(report); setResponse(""); }}
+                              className="shrink-0"
+                            >
+                              <MessageSquare className="w-4 h-4 mr-1.5" />
+                              {t("pages:questionReports.card.respond")}
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -400,6 +409,8 @@ export default function QuestionReports() {
                             <Badge className={statusConfig[report.status]?.color ?? "bg-slate-100 text-slate-700"}>
                               {statusConfig[report.status]?.labelKey ? t(statusConfig[report.status].labelKey) : report.status}
                             </Badge>
+                            {report.kind === "tunnel" && <Badge className="bg-indigo-100 text-indigo-700">{t("pages:questionReports.kindBadge.tunnel")}</Badge>}
+                            {report.kind === "written" && <Badge className="bg-sky-100 text-sky-700">{t("pages:questionReports.kindBadge.written")}</Badge>}
                             <span className="text-sm font-medium text-slate-800">{report.testTitle}</span>
                           </div>
                           {report.questionContent && (

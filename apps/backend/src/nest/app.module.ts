@@ -77,6 +77,7 @@ import { AnswerObjectionUseCase } from '../application/use-cases/objection/Answe
 import { AnswerObjectionByAdminUseCase } from '../application/use-cases/objection/AnswerObjectionByAdminUseCase';
 import { ListEscalatedObjectionsUseCase } from '../application/use-cases/objection/ListEscalatedObjectionsUseCase';
 import { ListEducatorObjectionsUseCase } from '../application/use-cases/objection/ListEducatorObjectionsUseCase';
+import { ListEducatorContentReportsUseCase } from '../application/use-cases/objection/ListEducatorContentReportsUseCase';
 import { ListAllObjectionsUseCase } from '../application/use-cases/objection/ListAllObjectionsUseCase';
 import { ListTestReportStatsUseCase } from '../application/use-cases/report/ListTestReportStatsUseCase';
 import { ApproveRefundUseCase } from '../application/use-cases/refund/ApproveRefundUseCase';
@@ -563,6 +564,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
       useFactory: (objectionRepo: PrismaObjectionRepository) => new ListEducatorObjectionsUseCase(objectionRepo),
       inject: [OBJECTION_REPO],
     },
+    { provide: ListEducatorContentReportsUseCase, useClass: ListEducatorContentReportsUseCase },
     {
       provide: ListAllObjectionsUseCase,
       useFactory: (objectionRepo: PrismaObjectionRepository) => new ListAllObjectionsUseCase(objectionRepo),

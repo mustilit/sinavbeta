@@ -983,7 +983,8 @@
     "statusConfig": {
       "OPEN": "Beklemede",
       "ANSWERED": "Yanıtlandı",
-      "ESCALATED": "Yöneticiye İletildi"
+      "ESCALATED": "Yöneticiye İletildi",
+      "RESOLVED": "Çözüldü"
     },
     "card": {
       "reporter": "Bildiren: {{name}}",
@@ -1013,6 +1014,10 @@
       "sent": "Yanıt gönderildi",
       "sendFailed": "Yanıt gönderilemedi",
       "min5Chars": "En az 5 karakter yazın"
+    },
+    "kindBadge": {
+      "tunnel": "Tünel",
+      "written": "Yazılı"
     }
   },
   "educatorSettings": {

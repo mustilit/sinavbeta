@@ -5,6 +5,7 @@ import { ParseUUIDPipe } from '../pipes/parse-uuid.pipe';
 import { AnswerObjectionDto } from './dto/answer-objection.dto';
 import { AnswerObjectionUseCase } from '../../application/use-cases/objection/AnswerObjectionUseCase';
 import { ListEducatorObjectionsUseCase } from '../../application/use-cases/objection/ListEducatorObjectionsUseCase';
+import { ListEducatorContentReportsUseCase } from '../../application/use-cases/objection/ListEducatorContentReportsUseCase';
 
 /**
  * Eğiticiye gelen soru itirazlarını listeler ve yanıtlar.
@@ -16,16 +17,24 @@ export class EducatorObjectionsController {
   constructor(
     @Inject(AnswerObjectionUseCase) private readonly answerObjection: AnswerObjectionUseCase,
     @Inject(ListEducatorObjectionsUseCase) private readonly listObjections: ListEducatorObjectionsUseCase,
+    @Inject(ListEducatorContentReportsUseCase) private readonly listContentReports: ListEducatorContentReportsUseCase,
   ) {}
 
   @Get()
   @Roles('EDUCATOR')
   @ApiBearerAuth('bearer')
-  @ApiOkResponse({ description: 'List objections for educator\'s tests' })
+  @ApiOkResponse({ description: 'List objections + tunnel/written question reports for educator content' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
   async list(@Req() req: any, @Query('status') status?: string) {
     const educatorId = (req as any).user?.id;
-    return this.listObjections.execute(educatorId, status ? { status } : undefined);
+    // Test itirazları (yanıtlanabilir) + tünel/yazılı hata bildirimleri (salt görüntü) birleşik liste.
+    const [objections, contentReports] = await Promise.all([
+      this.listObjections.execute(educatorId, status ? { status } : undefined),
+      this.listContentReports.execute(educatorId),
+    ]);
+    return [...objections, ...contentReports].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   }
 
   @Post(':id/answer')

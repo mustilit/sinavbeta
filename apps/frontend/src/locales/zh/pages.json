@@ -983,7 +983,8 @@
     "statusConfig": {
       "OPEN": "待处理",
       "ANSWERED": "已回复",
-      "ESCALATED": "已升级至管理员"
+      "ESCALATED": "已升级至管理员",
+      "RESOLVED": "已解决"
     },
     "card": {
       "reporter": "举报人:{{name}}",
@@ -1013,6 +1014,10 @@
       "sent": "回复已发送",
       "sendFailed": "回复发送失败",
       "min5Chars": "请至少写 5 字"
+    },
+    "kindBadge": {
+      "tunnel": "隧道",
+      "written": "笔试"
     }
   },
   "educatorSettings": {
