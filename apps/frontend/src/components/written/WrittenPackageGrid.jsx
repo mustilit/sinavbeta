@@ -1,8 +1,7 @@
 import { useState, useDeferredValue } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { candidateWritten, entities } from "@/api/dalClient";
-import { PaymentModal } from "@/components/ui/PaymentModal";
 import WrittenPackageCard from "@/components/written/WrittenPackageCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,8 +28,6 @@ export function WrittenPackageGrid({ mode = "discover" }) {
   const { t } = useTranslation(["pages"]);
   const { user } = useAuth();
   const isMine = mode === "mine";
-  const queryClient = useQueryClient();
-  const [payTarget, setPayTarget] = useState(null);
 
   // Filtre state (discover) — Explore ile aynı
   const [searchQuery, setSearchQuery] = useState("");
@@ -251,20 +248,11 @@ export function WrittenPackageGrid({ mode = "discover" }) {
                 key={pkg.id ?? pkg.packageId}
                 pkg={cardPkg}
                 purchased={isMine || !!owned}
-                onBuy={(p) => setPayTarget(p)}
               />
             );
           })}
         </div>
       )}
-
-      <PaymentModal
-        isOpen={!!payTarget}
-        onClose={() => setPayTarget(null)}
-        kind="written"
-        test={payTarget ? { id: payTarget.id, title: payTarget.title, price: (payTarget.priceCents ?? 0) / 100 } : null}
-        onPurchased={() => { setPayTarget(null); queryClient.invalidateQueries({ queryKey: ["candidateWritten"] }); }}
-      />
     </>
   );
 }

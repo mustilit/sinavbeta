@@ -13,6 +13,7 @@ import { PaymentModal } from "@/components/ui/PaymentModal";
 import { candidateTunnels as api, entities } from "@/api/dalClient";
 import http from "@/lib/api/apiClient";
 import { createPageUrl } from "@/utils";
+import { useLoginRedirect } from "@/lib/navigation";
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -26,7 +27,13 @@ export default function TunnelDetail() {
   const queryClient = useQueryClient();
   const id = params.get("id");
   const { user } = useAuth();
+  const loginUrl = useLoginRedirect();
   const [buyOpen, setBuyOpen] = useState(false);
+  // Test paketi deseni: giriş yoksa Satın Al → login'e yönlendir (ödeme açılmaz).
+  const handleBuy = () => {
+    if (!user) { navigate(loginUrl(), { replace: true }); return; }
+    setBuyOpen(true);
+  };
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewPage, setReviewPage] = useState(1);
   const [rating, setRating] = useState(0);
@@ -258,7 +265,7 @@ export default function TunnelDetail() {
                 {t.attemptStatus === "COMPLETED" ? (<><CheckCircle2 className="mr-2 h-5 w-5" /> Tekrar Çöz</>) : (<><Play className="mr-2 h-5 w-5" /> {t.attemptStatus ? "Devam Et" : "Başla"}</>)}
               </Button>
             ) : (
-              <Button className="h-12 w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => setBuyOpen(true)}>
+              <Button className="h-12 w-full bg-indigo-600 hover:bg-indigo-700" onClick={handleBuy}>
                 <ShoppingCart className="mr-2 h-5 w-5" /> Satın Al
               </Button>
             )}

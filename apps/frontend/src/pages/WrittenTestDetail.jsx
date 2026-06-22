@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import StarRating from "@/components/ui/StarRating";
 import { PaymentModal } from "@/components/ui/PaymentModal";
-import { buildPageUrl } from "@/lib/navigation";
+import { buildPageUrl, useLoginRedirect } from "@/lib/navigation";
 import { toast } from "sonner";
 import { Loader2, BookOpen, FileText, Star, User, Award, TrendingUp, ShoppingCart, CheckCircle, Play, Eye } from "lucide-react";
 
@@ -26,6 +26,7 @@ function WrittenTestDetail() {
   const [sp] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const loginUrl = useLoginRedirect();
   const queryClient = useQueryClient();
   const id = sp.get("id");
   const [payOpen, setPayOpen] = useState(false);
@@ -202,7 +203,7 @@ function WrittenTestDetail() {
                 })}
               </div>
             ) : (
-              <Button className="w-full h-12 bg-indigo-600 hover:bg-indigo-700" onClick={() => (user ? setPayOpen(true) : navigate(buildPageUrl("Login")))}>
+              <Button className="w-full h-12 bg-indigo-600 hover:bg-indigo-700" onClick={() => (user ? setPayOpen(true) : navigate(loginUrl(), { replace: true }))}>
                 <ShoppingCart className="w-5 h-5 mr-2" />{t("pages:testCard.buy")}
               </Button>
             )}

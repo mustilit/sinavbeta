@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
  * `pkg` camelCase (candidateWritten endpoint çıktısı). discover'da onBuy; mine'da
  * purchased → Çöz linki.
  */
-export default function WrittenPackageCard({ pkg, onBuy, purchased = false }) {
+export default function WrittenPackageCard({ pkg, purchased = false }) {
   const { t } = useTranslation(["pages"]);
   const id = pkg.id ?? pkg.packageId;
   const detailUrl = `${buildPageUrl("WrittenTestDetail")}?id=${id}`;
@@ -95,7 +95,10 @@ export default function WrittenPackageCard({ pkg, onBuy, purchased = false }) {
               <div className="min-w-0 text-2xl font-bold text-slate-900 dark:text-gray-100">
                 {pkg.priceCents === 0 ? t("pages:testCard.free") : `₺${(pkg.priceCents / 100).toFixed(0)}`}
               </div>
-              <Button onClick={() => onBuy?.(pkg)} className="bg-indigo-600 text-white hover:bg-indigo-700">{t("pages:testCard.buy")}</Button>
+              {/* Test paketi deseni: "Satın Al" inceleme (detay) sayfasına gider; ödeme orada (giriş kapısıyla). */}
+              <Link to={detailUrl}>
+                <Button className="bg-indigo-600 text-white hover:bg-indigo-700">{t("pages:testCard.buy")}</Button>
+              </Link>
             </>
           )}
         </div>
