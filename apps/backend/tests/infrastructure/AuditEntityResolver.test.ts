@@ -8,6 +8,9 @@ jest.mock('../../src/infrastructure/database/prisma', () => ({
     examTest: { findMany: jest.fn() },
     testAttempt: { findMany: jest.fn() },
     purchase: { findMany: jest.fn() },
+    tunnelPurchase: { findMany: jest.fn() },
+    writtenPurchase: { findMany: jest.fn() },
+    writtenPackage: { findMany: jest.fn() },
     user: { findMany: jest.fn() },
   },
 }));
@@ -88,6 +91,35 @@ describe('resolveAuditEntities', () => {
       expect(resolved!.label).toContain('Fizik Paketi');
       expect(resolved!.label).toContain('₺49.00');
       expect(resolved!.link).toBe('/TestDetail?id=pkg-1');
+    });
+  });
+
+  describe('TunnelPurchase entity', () => {
+    it('TunnelPurchase id\'leri tünel adı + tutar + TunnelDetail link ile çözümlenir', async () => {
+      mock.tunnelPurchase.findMany.mockResolvedValueOnce([
+        { id: 'tp-1', amountCents: 7500, tunnel: { id: 'tn-1', title: 'Paragraf Tüneli' } },
+      ]);
+      const result = await resolveAuditEntities([{ entityType: 'TunnelPurchase', entityId: 'tp-1' }]);
+      const resolved = result.get('TunnelPurchase::tp-1');
+      expect(resolved!.label).toContain('Tünel');
+      expect(resolved!.label).toContain('Paragraf Tüneli');
+      expect(resolved!.label).toContain('₺75.00');
+      expect(resolved!.link).toBe('/TunnelDetail?id=tn-1');
+    });
+  });
+
+  describe('WrittenPurchase entity', () => {
+    it('WrittenPurchase id\'leri yazılı paket adı + tutar + WrittenTestDetail link ile çözümlenir', async () => {
+      mock.writtenPurchase.findMany.mockResolvedValueOnce([
+        { id: 'wp-1', amountCents: 12000, packageId: 'wpk-1' },
+      ]);
+      mock.writtenPackage.findMany.mockResolvedValueOnce([{ id: 'wpk-1', title: 'Kompozisyon Seti' }]);
+      const result = await resolveAuditEntities([{ entityType: 'WrittenPurchase', entityId: 'wp-1' }]);
+      const resolved = result.get('WrittenPurchase::wp-1');
+      expect(resolved!.label).toContain('Yazılı');
+      expect(resolved!.label).toContain('Kompozisyon Seti');
+      expect(resolved!.label).toContain('₺120.00');
+      expect(resolved!.link).toBe('/WrittenTestDetail?id=wpk-1');
     });
   });
 

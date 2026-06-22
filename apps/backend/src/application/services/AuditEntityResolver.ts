@@ -132,6 +132,50 @@ export async function resolveAuditEntities(
               }
               break;
             }
+            // ── Tünel satın alma ────────────────────────────────────────
+            case 'TunnelPurchase': {
+              const rows = await prisma.tunnelPurchase.findMany({
+                where: { id: { in: ids } },
+                select: {
+                  id: true,
+                  amountCents: true,
+                  tunnel: { select: { id: true, title: true } },
+                },
+              });
+              for (const r of rows) {
+                const title = r.tunnel?.title ?? '(Tünel silinmiş)';
+                const amount = r.amountCents != null ? `₺${(r.amountCents / 100).toFixed(2)}` : '';
+                result.set(keyOf(type, r.id), {
+                  label: `Satın alma (Tünel): ${title}${amount ? ' — ' + amount : ''}`,
+                  link: r.tunnel?.id ? `/TunnelDetail?id=${r.tunnel.id}` : null,
+                });
+              }
+              break;
+            }
+            // ── Yazılı paket satın alma (scalar — iki adımlı çözüm) ──────
+            case 'WrittenPurchase': {
+              const rows = await prisma.writtenPurchase.findMany({
+                where: { id: { in: ids } },
+                select: { id: true, amountCents: true, packageId: true },
+              });
+              const pkgIds = [...new Set(rows.map((r) => r.packageId))];
+              const pkgs = pkgIds.length
+                ? await prisma.writtenPackage.findMany({
+                    where: { id: { in: pkgIds } },
+                    select: { id: true, title: true },
+                  })
+                : [];
+              const titleById = new Map(pkgs.map((p) => [p.id, p.title]));
+              for (const r of rows) {
+                const title = titleById.get(r.packageId) ?? '(Yazılı paket silinmiş)';
+                const amount = r.amountCents != null ? `₺${(r.amountCents / 100).toFixed(2)}` : '';
+                result.set(keyOf(type, r.id), {
+                  label: `Satın alma (Yazılı): ${title}${amount ? ' — ' + amount : ''}`,
+                  link: `/WrittenTestDetail?id=${r.packageId}`,
+                });
+              }
+              break;
+            }
             // ── Kullanıcı ───────────────────────────────────────────────
             case 'User': {
               const rows = await prisma.user.findMany({
