@@ -3,6 +3,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => {
   const tx = {
     discountCode: { updateMany: jest.fn() },
     tunnelPurchase: { create: jest.fn() },
+    auditLog: { create: jest.fn(async () => ({})) },
   };
   return {
     prisma: {
@@ -13,6 +14,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => {
       tunnelAttempt: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
       discountCode: { findFirst: jest.fn(), updateMany: jest.fn() },
       tunnelQuestionProgress: { findMany: jest.fn(async () => []) },
+      auditLog: { create: jest.fn(async () => ({})) },
       $transaction: jest.fn(async (fn: any) => fn(tx)),
       __tx: tx,
     },

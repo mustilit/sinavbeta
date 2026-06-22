@@ -10,6 +10,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     writtenTest: { findMany: jest.fn() },
     contract: { findFirst: jest.fn() },
     discountCode: { findFirst: jest.fn(), updateMany: jest.fn() },
+    auditLog: { create: jest.fn(async () => ({})) },
     $transaction: jest.fn(),
   },
 }));
@@ -35,6 +36,7 @@ beforeEach(() => {
   p.$transaction.mockImplementation(async (cb: any) => cb({
     discountCode: { updateMany: p.discountCode.updateMany },
     writtenPurchase: { create: p.writtenPurchase.create },
+    auditLog: { create: p.auditLog.create },
   }));
 });
 

@@ -6,6 +6,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => {
   const tx = {
     discountCode: { updateMany: jest.fn() },
     writtenPurchase: { create: jest.fn() },
+    auditLog: { create: jest.fn(async () => ({})) },
   };
   return {
     prisma: {
@@ -18,6 +19,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => {
       writtenAnswer: { findMany: jest.fn(), upsert: jest.fn(), deleteMany: jest.fn() },
       writtenQuestionReport: { create: jest.fn(), findMany: jest.fn() },
       contract: { findFirst: jest.fn() },
+      auditLog: { create: jest.fn(async () => ({})) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
       __tx: tx,
     },

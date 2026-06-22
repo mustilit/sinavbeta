@@ -92,7 +92,7 @@ export class PurchaseWrittenPackageUseCase {
     const code = (discountCodeRaw ?? '').trim();
 
     if (!code || pkg.priceCents <= 0) {
-      return prisma.writtenPurchase.create({
+      const created = await prisma.writtenPurchase.create({
         data: {
           tenantId: candidate.tenantId,
           packageId,
@@ -104,6 +104,19 @@ export class PurchaseWrittenPackageUseCase {
           ...contractSnapshot,
         },
       });
+      // İşlem geçmişi / audit — best-effort (akışı bloke etmez).
+      await prisma.auditLog
+        .create({
+          data: {
+            action: 'PURCHASE',
+            entityType: 'WrittenPurchase',
+            entityId: created.id,
+            actorId,
+            metadata: { kind: 'written', packageId, educatorId: pkg.educatorId, amountCents: created.amountCents, discountCode: null },
+          },
+        })
+        .catch(() => {});
+      return created;
     }
 
     const dc = await prisma.discountCode.findFirst({
@@ -128,7 +141,7 @@ export class PurchaseWrittenPackageUseCase {
       });
       if (inc.count === 0) throw new AppError('DISCOUNT_USAGE_EXHAUSTED', 'İndirim kodu kullanım limiti doldu', 409);
 
-      return tx.writtenPurchase.create({
+      const created = await tx.writtenPurchase.create({
         data: {
           tenantId: candidate.tenantId,
           packageId,
@@ -142,6 +155,17 @@ export class PurchaseWrittenPackageUseCase {
           ...contractSnapshot,
         },
       });
+      // İşlem geçmişi / audit — satın alma ile aynı transaction (atomik).
+      await tx.auditLog.create({
+        data: {
+          action: 'PURCHASE',
+          entityType: 'WrittenPurchase',
+          entityId: created.id,
+          actorId,
+          metadata: { kind: 'written', packageId, educatorId: pkg.educatorId, amountCents: finalAmount, discountCode: dc.code },
+        },
+      });
+      return created;
     });
   }
 }

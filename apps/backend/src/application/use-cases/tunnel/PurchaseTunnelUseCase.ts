@@ -72,7 +72,7 @@ export class PurchaseTunnelUseCase {
     const code = (discountCodeRaw ?? '').trim();
     // İndirimsiz / ücretsiz akış
     if (!code || tunnel.priceCents <= 0) {
-      return prisma.tunnelPurchase.create({
+      const created = await prisma.tunnelPurchase.create({
         data: {
           tenantId: candidate.tenantId,
           tunnelId,
@@ -83,6 +83,19 @@ export class PurchaseTunnelUseCase {
           ...contractSnapshot,
         },
       });
+      // İşlem geçmişi / audit — best-effort (akışı bloke etmez).
+      await prisma.auditLog
+        .create({
+          data: {
+            action: 'PURCHASE',
+            entityType: 'TunnelPurchase',
+            entityId: created.id,
+            actorId,
+            metadata: { kind: 'tunnel', tunnelId, educatorId: tunnel.educatorId, amountCents: created.amountCents, discountCode: null },
+          },
+        })
+        .catch(() => {});
+      return created;
     }
 
     // İndirim kodu doğrulama
@@ -114,7 +127,7 @@ export class PurchaseTunnelUseCase {
       });
       if (inc.count === 0) throw new AppError('DISCOUNT_USAGE_EXHAUSTED', 'İndirim kodu kullanım limiti doldu', 409);
 
-      return tx.tunnelPurchase.create({
+      const created = await tx.tunnelPurchase.create({
         data: {
           tenantId: candidate.tenantId,
           tunnelId,
@@ -127,6 +140,17 @@ export class PurchaseTunnelUseCase {
           ...contractSnapshot,
         },
       });
+      // İşlem geçmişi / audit — satın alma ile aynı transaction (atomik).
+      await tx.auditLog.create({
+        data: {
+          action: 'PURCHASE',
+          entityType: 'TunnelPurchase',
+          entityId: created.id,
+          actorId,
+          metadata: { kind: 'tunnel', tunnelId, educatorId: tunnel.educatorId, amountCents: finalAmount, discountCode: dc.code },
+        },
+      });
+      return created;
     });
   }
 }

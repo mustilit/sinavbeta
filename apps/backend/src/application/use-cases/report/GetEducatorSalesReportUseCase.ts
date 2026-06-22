@@ -24,10 +24,24 @@ export class GetEducatorSalesReportUseCase {
     const tunnelPurchaseCount = tunnelAgg._count ?? 0;
     const tunnelRevenueCents = tunnelAgg._sum.amountCents ?? 0;
 
+    // Yazılı paket satışları (written modülü scalar — educatorId writtenPackage'da).
+    const writtenPkgIds = await prisma.writtenPackage
+      .findMany({ where: { educatorId }, select: { id: true } })
+      .then((r) => r.map((p) => p.id));
+    const writtenAgg = writtenPkgIds.length
+      ? await prisma.writtenPurchase.aggregate({
+          where: { status: 'ACTIVE', packageId: { in: writtenPkgIds } },
+          _count: true,
+          _sum: { amountCents: true },
+        })
+      : { _count: 0, _sum: { amountCents: 0 } };
+    const writtenPurchaseCount = writtenAgg._count ?? 0;
+    const writtenRevenueCents = writtenAgg._sum.amountCents ?? 0;
+
     if (testIds.length === 0) {
       return {
-        totalPurchases: tunnelPurchaseCount,
-        totalRevenueCents: tunnelRevenueCents,
+        totalPurchases: tunnelPurchaseCount + writtenPurchaseCount,
+        totalRevenueCents: tunnelRevenueCents + writtenRevenueCents,
         totalAttempts: 0,
         totalObjections: 0,
         objectionsResolved: 0,
@@ -35,6 +49,8 @@ export class GetEducatorSalesReportUseCase {
         objectionsOpen: 0,
         tunnelPurchaseCount,
         tunnelRevenueCents,
+        writtenPurchaseCount,
+        writtenRevenueCents,
         byTest: [],
       };
     }
@@ -91,9 +107,9 @@ export class GetEducatorSalesReportUseCase {
     );
 
     return {
-      // Toplamlar tünel satışlarını da içerir (paket gibi gelir sayılır)
-      totalPurchases: purchases._count + tunnelPurchaseCount,
-      totalRevenueCents: (purchases._sum.amountCents ?? 0) + tunnelRevenueCents,
+      // Toplamlar tünel + yazılı satışlarını da içerir (paket gibi gelir sayılır)
+      totalPurchases: purchases._count + tunnelPurchaseCount + writtenPurchaseCount,
+      totalRevenueCents: (purchases._sum.amountCents ?? 0) + tunnelRevenueCents + writtenRevenueCents,
       totalAttempts: attempts,
       totalObjections: objections.length,
       objectionsResolved: objectionsByStatus.resolved,
@@ -101,6 +117,8 @@ export class GetEducatorSalesReportUseCase {
       objectionsOpen: objectionsByStatus.open,
       tunnelPurchaseCount,
       tunnelRevenueCents,
+      writtenPurchaseCount,
+      writtenRevenueCents,
       byTest,
     };
   }

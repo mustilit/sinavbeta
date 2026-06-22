@@ -31,10 +31,15 @@ export interface CommissionReportItem {
   tunnelSalesCents: number;
   tunnelCommissionCents: number;
   tunnelPayoutCents: number;
-  // Toplam (normal + canlı + tünel)
+  // Yazılı paket satışları — paket gibi komisyon uygulanır
+  writtenSaleCount: number;
+  writtenSalesCents: number;
+  writtenCommissionCents: number;
+  writtenPayoutCents: number;
+  // Toplam (normal + canlı + tünel + yazılı)
   totalSaleCount: number;
   totalSalesCents: number;
-  totalPayoutCents: number; // normalPayout + live + tunnelPayout
+  totalPayoutCents: number; // normalPayout + live + tunnelPayout + writtenPayout
 }
 
 /** Rapor döneminde geçerli olan oran aralığı */
@@ -63,6 +68,9 @@ export interface CommissionReportResult {
   totalTunnelSalesCents: number;
   totalTunnelCommissionCents: number;
   totalTunnelPayoutCents: number;
+  totalWrittenSalesCents: number;
+  totalWrittenCommissionCents: number;
+  totalWrittenPayoutCents: number;
   totalSalesCents: number;
   totalPayoutCents: number;
 }
@@ -135,6 +143,10 @@ export class GetCommissionReportUseCase {
       tunnelSalesCents: 0,
       tunnelCommissionCents: 0,
       tunnelPayoutCents: 0,
+      writtenSaleCount: 0,
+      writtenSalesCents: 0,
+      writtenCommissionCents: 0,
+      writtenPayoutCents: 0,
       totalSaleCount: 0,
       totalSalesCents: 0,
       totalPayoutCents: 0,
@@ -286,6 +298,55 @@ export class GetCommissionReportUseCase {
       item.tunnelCommissionCents += Math.round((salesCents * rateAtPurchase) / 100);
     }
 
+    // ─── Yazılı paket satışları (paket gibi komisyona tabi) ───────────────────
+    // written_packages.educatorId SCALAR (User relation yok) → users ile id eşleşmesi.
+    interface WrittenRow {
+      educatorId: string;
+      username: string;
+      email: string;
+      iban: string | null;
+      bankName: string | null;
+      accountHolder: string | null;
+      purchaseDate: Date;
+      saleCount: bigint;
+      totalSalesCents: bigint;
+    }
+    const writtenRows = await readDb.$queryRawUnsafe<WrittenRow[]>(`
+      SELECT
+        u.id               AS "educatorId",
+        u.username,
+        u.email,
+        up.preferences->>'iban'           AS iban,
+        up.preferences->>'bankName'       AS "bankName",
+        up.preferences->>'accountHolder'  AS "accountHolder",
+        wp."createdAt"                    AS "purchaseDate",
+        COUNT(wp.id)::bigint              AS "saleCount",
+        COALESCE(SUM(wp."amountCents"), 0)::bigint AS "totalSalesCents"
+      FROM users u
+      JOIN written_packages wpk ON wpk."educatorId" = u.id
+      JOIN written_purchases wp ON wp."packageId" = wpk.id
+      LEFT JOIN user_preferences up ON up."userId" = u.id
+      WHERE
+        EXTRACT(YEAR  FROM wp."createdAt") = ${year}
+        AND EXTRACT(MONTH FROM wp."createdAt") = ${month}
+        AND wp.status = 'ACTIVE'
+        AND u."deletedAt" IS NULL
+      GROUP BY u.id, u.username, u.email, up.preferences, wp."createdAt"
+    `);
+
+    for (const r of writtenRows) {
+      const saleCount = Number(r.saleCount);
+      const salesCents = Number(r.totalSalesCents);
+      const rateAtPurchase = this.getRateAtDate(allHistory, new Date(r.purchaseDate), currentCommissionPercent);
+      if (!map.has(r.educatorId)) {
+        map.set(r.educatorId, this.makeBlankItem(r, currentCommissionPercent));
+      }
+      const item = map.get(r.educatorId)!;
+      item.writtenSaleCount += saleCount;
+      item.writtenSalesCents += salesCents;
+      item.writtenCommissionCents += Math.round((salesCents * rateAtPurchase) / 100);
+    }
+
     // Toplam alanlarını hesapla; genel toplamları biriktir
     let sumNormalSales = 0;
     let sumCommission = 0;
@@ -294,6 +355,9 @@ export class GetCommissionReportUseCase {
     let sumTunnelSales = 0;
     let sumTunnelCommission = 0;
     let sumTunnelPayout = 0;
+    let sumWrittenSales = 0;
+    let sumWrittenCommission = 0;
+    let sumWrittenPayout = 0;
 
     const items: CommissionReportItem[] = [];
 
@@ -302,11 +366,13 @@ export class GetCommissionReportUseCase {
       item.normalPayoutCents = item.normalSalesCents - item.commissionCents;
       // tünelPayout = tünel satış - tünel komisyon
       item.tunnelPayoutCents = item.tunnelSalesCents - item.tunnelCommissionCents;
+      // yazılıPayout = yazılı satış - yazılı komisyon
+      item.writtenPayoutCents = item.writtenSalesCents - item.writtenCommissionCents;
 
-      item.totalSaleCount = item.normalSaleCount + item.liveSaleCount + item.tunnelSaleCount;
-      item.totalSalesCents = item.normalSalesCents + item.liveSalesCents + item.tunnelSalesCents;
-      // Toplam ödeme: komisyon düşülmüş normal + komisyonsuz canlı + komisyon düşülmüş tünel
-      item.totalPayoutCents = item.normalPayoutCents + item.liveSalesCents + item.tunnelPayoutCents;
+      item.totalSaleCount = item.normalSaleCount + item.liveSaleCount + item.tunnelSaleCount + item.writtenSaleCount;
+      item.totalSalesCents = item.normalSalesCents + item.liveSalesCents + item.tunnelSalesCents + item.writtenSalesCents;
+      // Toplam ödeme: normal(komisyonlu) + canlı(komisyonsuz) + tünel(komisyonlu) + yazılı(komisyonlu)
+      item.totalPayoutCents = item.normalPayoutCents + item.liveSalesCents + item.tunnelPayoutCents + item.writtenPayoutCents;
 
       sumNormalSales += item.normalSalesCents;
       sumCommission += item.commissionCents;
@@ -315,6 +381,9 @@ export class GetCommissionReportUseCase {
       sumTunnelSales += item.tunnelSalesCents;
       sumTunnelCommission += item.tunnelCommissionCents;
       sumTunnelPayout += item.tunnelPayoutCents;
+      sumWrittenSales += item.writtenSalesCents;
+      sumWrittenCommission += item.writtenCommissionCents;
+      sumWrittenPayout += item.writtenPayoutCents;
 
       items.push(item);
     }
@@ -335,8 +404,11 @@ export class GetCommissionReportUseCase {
       totalTunnelSalesCents: sumTunnelSales,
       totalTunnelCommissionCents: sumTunnelCommission,
       totalTunnelPayoutCents: sumTunnelPayout,
-      totalSalesCents: sumNormalSales + sumLiveSales + sumTunnelSales,
-      totalPayoutCents: sumNormalPayout + sumLiveSales + sumTunnelPayout,
+      totalWrittenSalesCents: sumWrittenSales,
+      totalWrittenCommissionCents: sumWrittenCommission,
+      totalWrittenPayoutCents: sumWrittenPayout,
+      totalSalesCents: sumNormalSales + sumLiveSales + sumTunnelSales + sumWrittenSales,
+      totalPayoutCents: sumNormalPayout + sumLiveSales + sumTunnelPayout + sumWrittenPayout,
     };
   }
 
@@ -369,6 +441,10 @@ export class GetCommissionReportUseCase {
       'Tünel Satış (TL)',
       'Tünel Komisyon (TL)',
       'Tünel Ödenecek (TL)',
+      'Yazılı Adedi',
+      'Yazılı Satış (TL)',
+      'Yazılı Komisyon (TL)',
+      'Yazılı Ödenecek (TL)',
       'Toplam Ödenecek (TL)',
     ];
 
@@ -396,6 +472,10 @@ export class GetCommissionReportUseCase {
       escape((item.tunnelSalesCents / 100).toFixed(2)),
       escape((item.tunnelCommissionCents / 100).toFixed(2)),
       escape((item.tunnelPayoutCents / 100).toFixed(2)),
+      escape(item.writtenSaleCount),
+      escape((item.writtenSalesCents / 100).toFixed(2)),
+      escape((item.writtenCommissionCents / 100).toFixed(2)),
+      escape((item.writtenPayoutCents / 100).toFixed(2)),
       escape((item.totalPayoutCents / 100).toFixed(2)),
     ]);
 
@@ -419,6 +499,10 @@ export class GetCommissionReportUseCase {
       escape((report.totalTunnelSalesCents / 100).toFixed(2)),
       escape((report.totalTunnelCommissionCents / 100).toFixed(2)),
       escape((report.totalTunnelPayoutCents / 100).toFixed(2)),
+      escape(report.items.reduce((s, i) => s + i.writtenSaleCount, 0)),
+      escape((report.totalWrittenSalesCents / 100).toFixed(2)),
+      escape((report.totalWrittenCommissionCents / 100).toFixed(2)),
+      escape((report.totalWrittenPayoutCents / 100).toFixed(2)),
       escape((report.totalPayoutCents / 100).toFixed(2)),
     ]);
 

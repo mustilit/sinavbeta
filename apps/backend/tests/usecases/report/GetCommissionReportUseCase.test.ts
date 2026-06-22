@@ -74,9 +74,15 @@ describe('GetCommissionReportUseCase', () => {
   });
 
   // Normal/canlı sorgusu ile tünel sorgusunu SQL içeriğine göre ayır (tünel ikinci query).
-  const mockRows = (normalRows: any[], tunnelRows: any[] = []) =>
+  const mockRows = (normalRows: any[], tunnelRows: any[] = [], writtenRows: any[] = []) =>
     mockPrisma.$queryRawUnsafe.mockImplementation((sql: string) =>
-      Promise.resolve(sql.includes('tunnel_purchases') ? tunnelRows : normalRows),
+      Promise.resolve(
+        sql.includes('tunnel_purchases')
+          ? tunnelRows
+          : sql.includes('written_purchases')
+            ? writtenRows
+            : normalRows,
+      ),
     );
 
   it('normal satışlarda komisyon hesaplanır', async () => {

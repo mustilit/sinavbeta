@@ -20,6 +20,9 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
       count: jest.fn(),
       aggregate: jest.fn(),
     },
+    // Tünel + yazılı gelir agregasyonu — default 0 (mevcut testler etkilenmez)
+    tunnelPurchase: { aggregate: jest.fn(async () => ({ _count: 0, _sum: { amountCents: 0 } })) },
+    writtenPurchase: { aggregate: jest.fn(async () => ({ _count: 0, _sum: { amountCents: 0 } })) },
   },
 }));
 

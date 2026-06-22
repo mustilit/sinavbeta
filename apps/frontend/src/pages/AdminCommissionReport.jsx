@@ -31,6 +31,7 @@ import {
   CreditCard,
   Radio,
   Layers,
+  FileText,
   ShoppingBag,
   ArrowRight,
   History,
@@ -119,6 +120,10 @@ export default function AdminCommissionReport() {
         ["Normal Paket Satış Toplamı (₺)", (data.totalNormalSalesCents / 100).toFixed(2)],
         ["Toplam Komisyon (₺)", (data.totalCommissionCents / 100).toFixed(2)],
         ["Canlı Test Satış Toplamı (₺)", (data.totalLiveSalesCents / 100).toFixed(2)],
+        ["Tünel Satış Toplamı (₺)", ((data.totalTunnelSalesCents || 0) / 100).toFixed(2)],
+        ["Tünel Komisyon (₺)", ((data.totalTunnelCommissionCents || 0) / 100).toFixed(2)],
+        ["Yazılı Satış Toplamı (₺)", ((data.totalWrittenSalesCents || 0) / 100).toFixed(2)],
+        ["Yazılı Komisyon (₺)", ((data.totalWrittenCommissionCents || 0) / 100).toFixed(2)],
         ["Toplam Ödenecek (₺)", (data.totalPayoutCents / 100).toFixed(2)],
         [],
       ];
@@ -136,6 +141,14 @@ export default function AdminCommissionReport() {
         "Normal Net Ödenecek (₺)",
         "Canlı Test Satış Adedi",
         "Canlı Test Satış (₺)",
+        "Tünel Satış Adedi",
+        "Tünel Satış (₺)",
+        "Tünel Komisyon (₺)",
+        "Tünel Net Ödenecek (₺)",
+        "Yazılı Satış Adedi",
+        "Yazılı Satış (₺)",
+        "Yazılı Komisyon (₺)",
+        "Yazılı Net Ödenecek (₺)",
         "Toplam Ödenecek (₺)",
       ];
 
@@ -151,6 +164,14 @@ export default function AdminCommissionReport() {
         (item.normalPayoutCents / 100).toFixed(2),
         item.liveSaleCount,
         (item.liveSalesCents / 100).toFixed(2),
+        item.tunnelSaleCount || 0,
+        ((item.tunnelSalesCents || 0) / 100).toFixed(2),
+        ((item.tunnelCommissionCents || 0) / 100).toFixed(2),
+        ((item.tunnelPayoutCents || 0) / 100).toFixed(2),
+        item.writtenSaleCount || 0,
+        ((item.writtenSalesCents || 0) / 100).toFixed(2),
+        ((item.writtenCommissionCents || 0) / 100).toFixed(2),
+        ((item.writtenPayoutCents || 0) / 100).toFixed(2),
         (item.totalPayoutCents / 100).toFixed(2),
       ]);
 
@@ -163,6 +184,14 @@ export default function AdminCommissionReport() {
         (data.totalNormalPayoutCents / 100).toFixed(2),
         items.reduce((s, i) => s + i.liveSaleCount, 0),
         (data.totalLiveSalesCents / 100).toFixed(2),
+        items.reduce((s, i) => s + (i.tunnelSaleCount || 0), 0),
+        ((data.totalTunnelSalesCents || 0) / 100).toFixed(2),
+        ((data.totalTunnelCommissionCents || 0) / 100).toFixed(2),
+        ((data.totalTunnelPayoutCents || 0) / 100).toFixed(2),
+        items.reduce((s, i) => s + (i.writtenSaleCount || 0), 0),
+        ((data.totalWrittenSalesCents || 0) / 100).toFixed(2),
+        ((data.totalWrittenCommissionCents || 0) / 100).toFixed(2),
+        ((data.totalWrittenPayoutCents || 0) / 100).toFixed(2),
         (data.totalPayoutCents / 100).toFixed(2),
       ];
 
@@ -174,7 +203,10 @@ export default function AdminCommissionReport() {
       ws["!cols"] = [
         { wch: 20 }, { wch: 28 }, { wch: 28 }, { wch: 20 }, { wch: 16 },
         { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 },
-        { wch: 12 }, { wch: 18 }, { wch: 18 },
+        { wch: 12 }, { wch: 18 },
+        { wch: 12 }, { wch: 16 }, { wch: 16 }, { wch: 18 },
+        { wch: 12 }, { wch: 16 }, { wch: 16 }, { wch: 18 },
+        { wch: 18 },
       ];
 
       const wb = XLSX.utils.book_new();
@@ -249,7 +281,7 @@ export default function AdminCommissionReport() {
 
       {/* ── Özet kartlar ────────────────────────────────────────────────── */}
       {data && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
           {/* Eğitici sayısı */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <div className="flex items-center gap-3">
@@ -304,6 +336,20 @@ export default function AdminCommissionReport() {
             </div>
           </div>
 
+          {/* Yazılı satış toplamı — komisyonlu */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center">
+                <FileText className="w-5 h-5 text-sky-600" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Yazılı Satışı</p>
+                <p className="text-2xl font-bold text-slate-900">{formatTL(data.totalWrittenSalesCents || 0)}</p>
+                <p className="text-xs text-slate-400">Komisyonlu</p>
+              </div>
+            </div>
+          </div>
+
           {/* Toplam ödenecek */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <div className="flex items-center gap-3">
@@ -337,8 +383,15 @@ export default function AdminCommissionReport() {
                 <span className="text-sm font-bold text-rose-700">{formatTL(data.totalTunnelCommissionCents)}</span>
               </div>
             )}
+            {(data.totalWrittenCommissionCents || 0) > 0 && (
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-sky-500" />
+                <span className="text-sm font-semibold text-rose-800">Yazılı Komisyonu:</span>
+                <span className="text-sm font-bold text-rose-700">{formatTL(data.totalWrittenCommissionCents)}</span>
+              </div>
+            )}
             <span className="text-xs text-rose-500">
-              Normal paket ve tünel satışlarına uygulanır — canlı testler komisyon dışıdır.
+              Normal paket, tünel ve yazılı satışlarına uygulanır — canlı testler komisyon dışıdır.
             </span>
           </div>
 
@@ -460,6 +513,15 @@ export default function AdminCommissionReport() {
                     <div className="text-xs font-semibold text-indigo-700">Tünel</div>
                     Tutar
                   </th>
+                  {/* Yazılı sütunları */}
+                  <th className="text-right px-4 py-3 font-semibold text-slate-600 bg-sky-50/40">
+                    <div className="text-xs font-semibold text-sky-700">Yazılı</div>
+                    Satış
+                  </th>
+                  <th className="text-right px-4 py-3 font-semibold text-slate-600 bg-sky-50/40">
+                    <div className="text-xs font-semibold text-sky-700">Yazılı</div>
+                    Tutar
+                  </th>
                   {/* Toplam */}
                   <th className="text-right px-4 py-3 font-semibold text-slate-900 bg-amber-50/60">
                     Toplam Ödenecek
@@ -519,6 +581,13 @@ export default function AdminCommissionReport() {
                     <td className="px-4 py-3.5 text-right font-medium text-indigo-700 bg-indigo-50/20">
                       {formatTL(item.tunnelSalesCents || 0)}
                     </td>
+                    {/* Yazılı sütunları */}
+                    <td className="px-4 py-3.5 text-right text-slate-700 bg-sky-50/20">
+                      {item.writtenSaleCount || 0}
+                    </td>
+                    <td className="px-4 py-3.5 text-right font-medium text-sky-700 bg-sky-50/20">
+                      {formatTL(item.writtenSalesCents || 0)}
+                    </td>
                     {/* Toplam */}
                     <td className="px-4 py-3.5 text-right font-bold text-amber-700 bg-amber-50/30">
                       {formatTL(item.totalPayoutCents)}
@@ -559,6 +628,13 @@ export default function AdminCommissionReport() {
                   </td>
                   <td className="px-4 py-3.5 text-right font-bold text-indigo-700 bg-indigo-50/20">
                     {data && formatTL(data.totalTunnelSalesCents || 0)}
+                  </td>
+                  {/* Yazılı toplamları */}
+                  <td className="px-4 py-3.5 text-right font-bold text-slate-900 bg-sky-50/20">
+                    {items.reduce((s, i) => s + (i.writtenSaleCount || 0), 0)}
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-bold text-sky-700 bg-sky-50/20">
+                    {data && formatTL(data.totalWrittenSalesCents || 0)}
                   </td>
                   {/* Genel toplam */}
                   <td className="px-4 py-3.5 text-right font-bold text-amber-700 bg-amber-50/40">

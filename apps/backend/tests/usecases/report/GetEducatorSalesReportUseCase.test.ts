@@ -15,6 +15,9 @@ const mockTestAttemptCount = jest.fn();
 const mockObjectionFindMany = jest.fn();
 const mockObjectionCount = jest.fn();
 const mockExamTestFindUnique = jest.fn();
+// Yazılı: default boş — written paketi olmayan eğitici (mevcut testler etkilenmez)
+const mockWrittenPackageFindMany = jest.fn(async () => [] as any[]);
+const mockWrittenPurchaseAggregate = jest.fn(async () => ({ _count: 0, _sum: { amountCents: 0 } }));
 
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
@@ -24,6 +27,8 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     },
     purchase: { aggregate: (...args: any[]) => mockPurchaseAggregate(...args) },
     tunnelPurchase: { aggregate: (...args: any[]) => mockTunnelPurchaseAggregate(...args) },
+    writtenPackage: { findMany: (...args: any[]) => mockWrittenPackageFindMany(...args) },
+    writtenPurchase: { aggregate: (...args: any[]) => mockWrittenPurchaseAggregate(...args) },
     testAttempt: { count: (...args: any[]) => mockTestAttemptCount(...args) },
     objection: {
       findMany: (...args: any[]) => mockObjectionFindMany(...args),
