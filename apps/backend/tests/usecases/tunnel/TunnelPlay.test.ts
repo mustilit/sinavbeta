@@ -9,6 +9,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     tunnelPurchase: { findUnique: jest.fn() },
     tunnelAttempt: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
     tunnelQuestionProgress: { upsert: jest.fn() },
+    auditLog: { create: jest.fn(async () => ({})) },
   },
 }));
 jest.mock('../../../src/application/use-cases/tunnel/tunnelPlay', () => ({

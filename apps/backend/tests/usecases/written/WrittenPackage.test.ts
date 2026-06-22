@@ -159,6 +159,7 @@ describe('PublishWrittenPackageUseCase', () => {
     const mockTx = {
       writtenTest: { update: jest.fn().mockResolvedValue({ id: 'tst1' }) },
       writtenPackage: { update: jest.fn().mockResolvedValue({ id: 'pkg1', publishedAt: new Date() }) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
     p.$transaction.mockImplementation((fn: any) => fn(mockTx));
 
@@ -194,6 +195,7 @@ describe('PublishWrittenPackageUseCase', () => {
     const mockTx = {
       writtenTest: { update: jest.fn().mockResolvedValue({ id: 'tst1' }) },
       writtenPackage: { update: jest.fn().mockResolvedValue({ id: 'pkg1', publishedAt: new Date() }) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
     p.$transaction.mockImplementation((fn: any) => fn(mockTx));
     const result = await new PublishWrittenPackageUseCase().execute('pkg1', 'edu1');

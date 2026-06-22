@@ -79,6 +79,19 @@ export class SubmitTunnelAnswerUseCase {
 
     const updated = await prisma.tunnelAttempt.update({ where: { id: attempt.id }, data: updateData });
 
+    // İşlem geçmişi / audit — yalnız tünel TAMAMLANDIĞINDA (her cevap değil).
+    if (updated.status === 'COMPLETED') {
+      await prisma.auditLog
+        .create({
+          data: {
+            action: 'SUBMIT_ATTEMPT', entityType: 'TunnelAttempt', entityId: updated.id, actorId,
+            metadata: { kind: 'tunnel', tunnelId, status: 'COMPLETED' } as object,
+            tenantId: (attempt as any).tenantId ?? null,
+          },
+        })
+        .catch(() => {});
+    }
+
     return {
       correct,
       correctOptionId: engineQ.correctOptionId, // cevap sonrası gösterim (öğrenme)

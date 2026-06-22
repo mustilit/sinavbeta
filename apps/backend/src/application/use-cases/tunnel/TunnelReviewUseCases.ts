@@ -41,13 +41,26 @@ export class UpsertTunnelReviewUseCase {
       where: { tunnelId_candidateId: { tunnelId, candidateId: actorId } },
       select: { id: true },
     });
+    let reviewId: string;
     if (existing) {
       await prisma.tunnelReview.update({ where: { id: existing.id }, data: { rating, comment } });
+      reviewId = existing.id;
     } else {
-      await prisma.tunnelReview.create({
+      const created = await prisma.tunnelReview.create({
         data: { tenantId: purchase.tenantId, tunnelId, candidateId: actorId, rating, comment },
+        select: { id: true },
       });
+      reviewId = created.id;
     }
+    // İşlem geçmişi / audit — değerlendirme (best-effort, akışı bloke etmez).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'REVIEW_UPSERTED', entityType: 'TunnelReview', entityId: reviewId, actorId,
+          metadata: { kind: 'tunnel', tunnelId, rating } as object, tenantId: purchase.tenantId ?? null,
+        },
+      })
+      .catch(() => {});
     return { ok: true };
   }
 }

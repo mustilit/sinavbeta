@@ -41,13 +41,26 @@ export class UpsertWrittenReviewUseCase {
       where: { packageId_candidateId: { packageId, candidateId: actorId } },
       select: { id: true },
     });
+    let reviewId: string;
     if (existing) {
       await prisma.writtenReview.update({ where: { id: existing.id }, data: { rating, comment } });
+      reviewId = existing.id;
     } else {
-      await prisma.writtenReview.create({
+      const created = await prisma.writtenReview.create({
         data: { tenantId: purchase.tenantId, packageId, candidateId: actorId, rating, comment },
+        select: { id: true },
       });
+      reviewId = created.id;
     }
+    // İşlem geçmişi / audit — değerlendirme (best-effort, akışı bloke etmez).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'REVIEW_UPSERTED', entityType: 'WrittenReview', entityId: reviewId, actorId,
+          metadata: { kind: 'written', packageId, rating } as object, tenantId: purchase.tenantId ?? null,
+        },
+      })
+      .catch(() => {});
     return { ok: true };
   }
 }

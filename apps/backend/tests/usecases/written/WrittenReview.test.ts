@@ -18,6 +18,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
       count: jest.fn(),
     },
     user: { findMany: jest.fn() },
+    auditLog: { create: jest.fn(async () => ({})) },
   },
 }));
 
@@ -88,9 +89,11 @@ describe('UpsertWrittenReviewUseCase', () => {
     const uc = new UpsertWrittenReviewUseCase();
     const r = await uc.execute('pkg1', 'cand1', { rating: 5, comment: 'harika' });
     expect(r.ok).toBe(true);
-    expect(p.writtenReview.create).toHaveBeenCalledWith({
-      data: { tenantId: 'tn1', packageId: 'pkg1', candidateId: 'cand1', rating: 5, comment: 'harika' },
-    });
+    expect(p.writtenReview.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { tenantId: 'tn1', packageId: 'pkg1', candidateId: 'cand1', rating: 5, comment: 'harika' },
+      }),
+    );
   });
 
   it('comment null ise moderasyon çağrılmaz', async () => {

@@ -212,6 +212,13 @@ export class PublishWrittenPackageUseCase {
         where: { id: packageId },
         data: { publishedAt: now, isActive: true },
       });
+      // İşlem geçmişi / audit — yazılı paket yayımlama (yayımla ile aynı transaction).
+      await tx.auditLog.create({
+        data: {
+          action: 'TEST_PUBLISHED', entityType: 'WrittenPackage', entityId: packageId, actorId: actorId ?? null,
+          metadata: { kind: 'written', testCount: tests.length } as object, tenantId: (updated as any).tenantId ?? null,
+        },
+      });
       logger.log({ msg: 'written_package.published', packageId, actorId, testCount: tests.length });
       return updated;
     });

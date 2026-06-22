@@ -10,6 +10,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     adminSettings: { findFirst: jest.fn() },
     tunnelPurchase: { findUnique: jest.fn() },
     tunnelQuestionReport: { create: jest.fn() },
+    auditLog: { create: jest.fn(async () => ({})) },
   },
 }));
 

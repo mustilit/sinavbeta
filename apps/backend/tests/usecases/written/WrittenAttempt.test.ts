@@ -23,6 +23,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
       upsert: jest.fn(),
       deleteMany: jest.fn(),
     },
+    auditLog: { create: jest.fn(async () => ({})) },
   },
 }));
 

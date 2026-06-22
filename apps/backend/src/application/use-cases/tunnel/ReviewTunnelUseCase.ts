@@ -23,6 +23,15 @@ export class ApproveTunnelUseCase {
       data: { status: 'PUBLISHED', reviewedById: actorId, reviewedAt: now, publishedAt: now, reviewNote: null },
     });
     logger.info('tunnel.approved', { tunnelId, actorId });
+    // İşlem geçmişi / audit — tünel yayımlama (best-effort).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'TEST_PUBLISHED', entityType: 'Tunnel', entityId: tunnelId, actorId,
+          metadata: { kind: 'tunnel' } as object, tenantId: (updated as any).tenantId ?? null,
+        },
+      })
+      .catch(() => {});
     return updated;
   }
 }

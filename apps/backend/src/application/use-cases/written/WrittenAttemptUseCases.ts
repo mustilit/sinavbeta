@@ -218,6 +218,15 @@ export class SubmitWrittenAttemptUseCase {
       where: { id: attemptId },
       data: { status: 'SUBMITTED', submittedAt: now, completedAt: now, finishedAt: now, overtimeSeconds },
     });
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'SUBMIT_ATTEMPT', entityType: 'WrittenAttempt', entityId: attemptId, actorId,
+          metadata: { kind: 'written', testId: attempt.testId, status: 'SUBMITTED' } as object,
+          tenantId: (attempt as any).tenantId ?? null,
+        },
+      })
+      .catch(() => {});
     return { ok: true };
   }
 }
@@ -234,6 +243,15 @@ export class TimeoutWrittenAttemptUseCase {
       where: { id: attemptId },
       data: { status: 'TIMEOUT', submittedAt: now, completedAt: now, finishedAt: now },
     });
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'SUBMIT_ATTEMPT', entityType: 'WrittenAttempt', entityId: attemptId, actorId,
+          metadata: { kind: 'written', testId: attempt.testId, status: 'TIMEOUT' } as object,
+          tenantId: (attempt as any).tenantId ?? null,
+        },
+      })
+      .catch(() => {});
     return { ok: true };
   }
 }

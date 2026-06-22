@@ -11,6 +11,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     adminSettings: { findFirst: jest.fn() },
     tunnel: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     tunnelQuestion: { deleteMany: jest.fn(), create: jest.fn() },
+    auditLog: { create: jest.fn(async () => ({})) },
     $transaction: jest.fn(async (fn: any) => fn({ tunnelQuestion: { deleteMany: jest.fn(), create: jest.fn() }, tunnel: { update: jest.fn() } })),
   },
 }));

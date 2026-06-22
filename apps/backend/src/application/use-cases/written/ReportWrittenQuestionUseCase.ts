@@ -37,6 +37,16 @@ export class ReportWrittenQuestionUseCase {
       },
       select: { id: true },
     });
+    // İşlem geçmişi / audit — hata bildirimi (best-effort, akışı bloke etmez).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'OBJECTION_CREATED', entityType: 'WrittenQuestionReport', entityId: report.id, actorId,
+          metadata: { kind: 'written', testId, questionId: input.questionId ?? null } as object,
+          tenantId: test.tenantId ?? null,
+        },
+      })
+      .catch(() => {});
     return { ok: true, id: report.id };
   }
 }

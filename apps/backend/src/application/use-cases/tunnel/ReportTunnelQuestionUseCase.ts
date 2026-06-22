@@ -35,6 +35,16 @@ export class ReportTunnelQuestionUseCase {
       },
       select: { id: true },
     });
+    // İşlem geçmişi / audit — hata bildirimi (best-effort, akışı bloke etmez).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'OBJECTION_CREATED', entityType: 'TunnelQuestionReport', entityId: report.id, actorId,
+          metadata: { kind: 'tunnel', tunnelId, questionId: input.questionId ?? null } as object,
+          tenantId: purchase.tenantId ?? null,
+        },
+      })
+      .catch(() => {});
     return { ok: true, id: report.id };
   }
 }

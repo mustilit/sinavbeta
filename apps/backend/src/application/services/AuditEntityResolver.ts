@@ -176,6 +176,95 @@ export async function resolveAuditEntities(
               }
               break;
             }
+            // ── Tünel (yayımlama) ───────────────────────────────────────
+            case 'Tunnel': {
+              const rows = await prisma.tunnel.findMany({ where: { id: { in: ids } }, select: { id: true, title: true } });
+              for (const r of rows) {
+                result.set(keyOf(type, r.id), { label: `Tünel: ${r.title || '(Adsız)'}`, link: `/TunnelDetail?id=${r.id}` });
+              }
+              break;
+            }
+            // ── Yazılı paket (yayımlama) ────────────────────────────────
+            case 'WrittenPackage': {
+              const rows = await prisma.writtenPackage.findMany({ where: { id: { in: ids } }, select: { id: true, title: true } });
+              for (const r of rows) {
+                result.set(keyOf(type, r.id), { label: `Yazılı paket: ${r.title || '(Adsız)'}`, link: `/WrittenTestDetail?id=${r.id}` });
+              }
+              break;
+            }
+            // ── Tünel değerlendirme / hata bildirimi / çözme (scalar tunnelId) ──
+            case 'TunnelReview':
+            case 'TunnelQuestionReport':
+            case 'TunnelAttempt': {
+              const model: any =
+                type === 'TunnelReview' ? prisma.tunnelReview
+                  : type === 'TunnelQuestionReport' ? (prisma as any).tunnelQuestionReport
+                    : prisma.tunnelAttempt;
+              const rows: any[] = await model.findMany({
+                where: { id: { in: ids } },
+                select: { id: true, tunnelId: true, rating: true, status: true },
+              }).catch(() => []);
+              const tunIds: string[] = [...new Set(rows.map((r) => r.tunnelId as string))];
+              const tuns = tunIds.length
+                ? await prisma.tunnel.findMany({ where: { id: { in: tunIds } }, select: { id: true, title: true } })
+                : [];
+              const tunTitle = new Map(tuns.map((tn) => [tn.id, tn.title]));
+              for (const r of rows as any[]) {
+                const title = tunTitle.get(r.tunnelId) ?? '(Tünel silinmiş)';
+                const label =
+                  type === 'TunnelReview' ? `Değerlendirme (Tünel): ${title} — ${r.rating}/5`
+                    : type === 'TunnelQuestionReport' ? `Hata bildirimi (Tünel): ${title}`
+                      : `Tünel çözme: ${title}${r.status ? ` (${r.status})` : ''}`;
+                result.set(keyOf(type, r.id), { label, link: `/TunnelDetail?id=${r.tunnelId}` });
+              }
+              break;
+            }
+            // ── Yazılı değerlendirme (scalar packageId) ─────────────────
+            case 'WrittenReview': {
+              const rows = await prisma.writtenReview.findMany({
+                where: { id: { in: ids } },
+                select: { id: true, packageId: true, rating: true },
+              });
+              const pkgIds = [...new Set(rows.map((r) => r.packageId))];
+              const pkgs = pkgIds.length
+                ? await prisma.writtenPackage.findMany({ where: { id: { in: pkgIds } }, select: { id: true, title: true } })
+                : [];
+              const pkgTitle = new Map(pkgs.map((p) => [p.id, p.title]));
+              for (const r of rows) {
+                const title = pkgTitle.get(r.packageId) ?? '(Yazılı paket silinmiş)';
+                result.set(keyOf(type, r.id), {
+                  label: `Değerlendirme (Yazılı): ${title} — ${r.rating}/5`,
+                  link: `/WrittenTestDetail?id=${r.packageId}`,
+                });
+              }
+              break;
+            }
+            // ── Yazılı hata bildirimi / çözme (scalar testId → paket) ────
+            case 'WrittenQuestionReport':
+            case 'WrittenAttempt': {
+              const model: any = type === 'WrittenQuestionReport' ? prisma.writtenQuestionReport : prisma.writtenAttempt;
+              const rows: any[] = await model.findMany({
+                where: { id: { in: ids } },
+                select: { id: true, testId: true, status: true },
+              }).catch(() => []);
+              const testIds: string[] = [...new Set(rows.map((r) => r.testId as string).filter(Boolean))];
+              const tests = testIds.length
+                ? await prisma.writtenTest.findMany({ where: { id: { in: testIds } }, select: { id: true, title: true, packageId: true } })
+                : [];
+              const testById = new Map(tests.map((t) => [t.id, t]));
+              for (const r of rows as any[]) {
+                const tt = testById.get(r.testId);
+                const title = tt?.title ?? '(Yazılı test silinmiş)';
+                const label =
+                  type === 'WrittenQuestionReport' ? `Hata bildirimi (Yazılı): ${title}`
+                    : `Yazılı çözme: ${title}${r.status ? ` (${r.status})` : ''}`;
+                result.set(keyOf(type, r.id), {
+                  label,
+                  link: tt?.packageId ? `/WrittenTestDetail?id=${tt.packageId}` : null,
+                });
+              }
+              break;
+            }
             // ── Kullanıcı ───────────────────────────────────────────────
             case 'User': {
               const rows = await prisma.user.findMany({
