@@ -8,6 +8,7 @@ describe('EducatorObjectionsController', () => {
   let mockAnswerObjection: { execute: jest.Mock };
   let mockListObjections: { execute: jest.Mock };
   let mockListContentReports: { execute: jest.Mock };
+  let mockAnswerContentReport: { execute: jest.Mock };
 
   const obj = { id: 'obj-1', status: 'PENDING', questionId: 'q-1', createdAt: new Date() };
 
@@ -15,10 +16,12 @@ describe('EducatorObjectionsController', () => {
     mockAnswerObjection = { execute: jest.fn().mockResolvedValue({ ...obj, status: 'ANSWERED', answerText: 'Doğru cevap B' }) };
     mockListObjections = { execute: jest.fn().mockResolvedValue([obj]) };
     mockListContentReports = { execute: jest.fn().mockResolvedValue([]) };
+    mockAnswerContentReport = { execute: jest.fn().mockResolvedValue({ ok: true }) };
     controller = new EducatorObjectionsController(
       mockAnswerObjection as any,
       mockListObjections as any,
       mockListContentReports as any,
+      mockAnswerContentReport as any,
     );
   });
 

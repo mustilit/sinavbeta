@@ -25,6 +25,7 @@ const statusConfig = {
   OPEN:      { label: "Beklemede",           color: "bg-amber-100 text-amber-700" },
   ANSWERED:  { label: "Yanıtlandı",          color: "bg-emerald-100 text-emerald-700" },
   ESCALATED: { label: "Yöneticiye İletildi", color: "bg-violet-100 text-violet-700" },
+  RESOLVED:  { label: "Çözüldü",             color: "bg-emerald-100 text-emerald-700" },
 };
 
 export default function AdminObjections() {
@@ -44,8 +45,10 @@ export default function AdminObjections() {
   const queryClient = useQueryClient();
 
   const adminAnswerMutation = useMutation({
-    mutationFn: ({ id, text }) =>
-      api.post(`/admin/objections/${id}/admin-answer`, { adminAnswerText: text }),
+    mutationFn: ({ id, text, kind }) =>
+      kind
+        ? api.post(`/admin/objections/content/${kind}/${id}/note`, { adminAnswerText: text })
+        : api.post(`/admin/objections/${id}/admin-answer`, { adminAnswerText: text }),
     onSuccess: () => {
       toast.success("Admin yanıtı kaydedildi");
       queryClient.invalidateQueries({ queryKey: ["adminObjectionsAll"] });
@@ -62,7 +65,7 @@ export default function AdminObjections() {
       toast.error("En az 5 karakter yazın");
       return;
     }
-    adminAnswerMutation.mutate({ id: selectedObjection.id, text: adminAnswerText.trim() });
+    adminAnswerMutation.mutate({ id: selectedObjection.id, text: adminAnswerText.trim(), kind: selectedObjection.kind });
   };
 
   /* All objections – enriched */
@@ -287,6 +290,8 @@ export default function AdminObjections() {
                       <Badge className={statusConfig[obj.status]?.color ?? "bg-slate-100 text-slate-700"}>
                         {statusConfig[obj.status]?.label ?? obj.status}
                       </Badge>
+                      {obj.kind === "tunnel" && <Badge className="bg-indigo-100 text-indigo-700">Tünel</Badge>}
+                      {obj.kind === "written" && <Badge className="bg-sky-100 text-sky-700">Yazılı</Badge>}
                       <span className="text-sm font-semibold text-slate-800 truncate max-w-[260px]" title={obj.testTitle}>
                         {obj.testTitle}
                       </span>

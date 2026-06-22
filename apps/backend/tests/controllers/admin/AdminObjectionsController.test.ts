@@ -9,19 +9,25 @@ describe('AdminObjectionsController', () => {
   let mockListAll: { execute: jest.Mock };
   let mockListStats: { execute: jest.Mock };
   let mockAdminAnswerUC: { execute: jest.Mock };
+  let mockListAllContentReports: { execute: jest.Mock };
+  let mockNoteContentReport: { execute: jest.Mock };
 
-  const obj = { id: 'obj-1', status: 'ESCALATED', questionId: 'q-1' };
+  const obj = { id: 'obj-1', status: 'ESCALATED', questionId: 'q-1', createdAt: new Date() };
 
   beforeEach(() => {
     mockListEscalated = { execute: jest.fn().mockResolvedValue([obj]) };
     mockListAll = { execute: jest.fn().mockResolvedValue([obj]) };
     mockListStats = { execute: jest.fn().mockResolvedValue([{ testId: 'test-1', count: 5 }]) };
     mockAdminAnswerUC = { execute: jest.fn().mockResolvedValue({ ...obj, adminAnswerText: 'Yanıt metni' }) };
+    mockListAllContentReports = { execute: jest.fn().mockResolvedValue([]) };
+    mockNoteContentReport = { execute: jest.fn().mockResolvedValue({ ok: true }) };
     controller = new AdminObjectionsController(
       mockListEscalated as any,
       mockListAll as any,
       mockListStats as any,
       mockAdminAnswerUC as any,
+      mockListAllContentReports as any,
+      mockNoteContentReport as any,
     );
   });
 

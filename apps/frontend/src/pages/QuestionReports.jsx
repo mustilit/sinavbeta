@@ -194,8 +194,10 @@ export default function QuestionReports() {
   });
 
   const answerMutation = useMutation({
-    mutationFn: ({ id, answerText }) =>
-      api.post(`/educators/me/objections/${id}/answer`, { answerText }),
+    mutationFn: ({ id, answerText, kind }) =>
+      kind
+        ? api.post(`/educators/me/objections/content/${kind}/${id}/answer`, { answerText })
+        : api.post(`/educators/me/objections/${id}/answer`, { answerText }),
     onSuccess: () => {
       toast.success(t("pages:questionReports.toasts.sent"));
       queryClient.invalidateQueries({ queryKey: ["educatorObjections"] });
@@ -212,7 +214,7 @@ export default function QuestionReports() {
       toast.error(t("pages:questionReports.toasts.min5Chars"));
       return;
     }
-    answerMutation.mutate({ id: selectedReport.id, answerText: response.trim() });
+    answerMutation.mutate({ id: selectedReport.id, answerText: response.trim(), kind: selectedReport.kind });
   };
 
   const pending  = useMemo(() => reports.filter((r) => r.status === "OPEN"), [reports]);
@@ -347,16 +349,14 @@ export default function QuestionReports() {
                               </div>
                             </div>
                           </div>
-                          {!report.kind && (
-                            <Button
-                              size="sm"
-                              onClick={() => { setSelectedReport(report); setResponse(""); }}
-                              className="shrink-0"
-                            >
-                              <MessageSquare className="w-4 h-4 mr-1.5" />
-                              {t("pages:questionReports.card.respond")}
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            onClick={() => { setSelectedReport(report); setResponse(report.answerText ?? ""); }}
+                            className="shrink-0"
+                          >
+                            <MessageSquare className="w-4 h-4 mr-1.5" />
+                            {t("pages:questionReports.card.respond")}
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>

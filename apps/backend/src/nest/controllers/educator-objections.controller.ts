@@ -6,6 +6,7 @@ import { AnswerObjectionDto } from './dto/answer-objection.dto';
 import { AnswerObjectionUseCase } from '../../application/use-cases/objection/AnswerObjectionUseCase';
 import { ListEducatorObjectionsUseCase } from '../../application/use-cases/objection/ListEducatorObjectionsUseCase';
 import { ListEducatorContentReportsUseCase } from '../../application/use-cases/objection/ListEducatorContentReportsUseCase';
+import { AnswerContentReportUseCase } from '../../application/use-cases/objection/ContentReportUseCases';
 
 /**
  * Eğiticiye gelen soru itirazlarını listeler ve yanıtlar.
@@ -18,6 +19,7 @@ export class EducatorObjectionsController {
     @Inject(AnswerObjectionUseCase) private readonly answerObjection: AnswerObjectionUseCase,
     @Inject(ListEducatorObjectionsUseCase) private readonly listObjections: ListEducatorObjectionsUseCase,
     @Inject(ListEducatorContentReportsUseCase) private readonly listContentReports: ListEducatorContentReportsUseCase,
+    @Inject(AnswerContentReportUseCase) private readonly answerContentReport: AnswerContentReportUseCase,
   ) {}
 
   @Get()
@@ -53,5 +55,22 @@ export class EducatorObjectionsController {
   ) {
     const actorId = (req as any).user?.id;
     return this.answerObjection.execute({ objectionId: id, answerText: body.answerText }, actorId);
+  }
+
+  /** Tünel/yazılı hata bildirimine eğitici izahı (test itirazından ayrı; SLA yok). */
+  @Post('content/:kind/:id/answer')
+  @HttpCode(200)
+  @Roles('EDUCATOR')
+  @ApiBearerAuth('bearer')
+  @ApiOkResponse({ description: 'Content report answered by educator' })
+  async answerContent(
+    @Param('kind') kind: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: AnswerObjectionDto,
+    @Req() req: any,
+  ) {
+    const actorId = (req as any).user?.id;
+    const k = kind === 'tunnel' ? 'tunnel' : 'written';
+    return this.answerContentReport.execute({ kind: k, id, answerText: body.answerText }, actorId);
   }
 }

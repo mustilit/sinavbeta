@@ -2142,6 +2142,12 @@ model TunnelQuestionReport {
   reason      String
   status      String   @default("OPEN") // OPEN | RESOLVED
   createdAt   DateTime @default(now())
+  // Eğitici izahı + admin notu (test Objection deseni; salt-metin, SLA/eskalasyon yok)
+  educatorAnswer     String?
+  educatorAnsweredAt DateTime?
+  adminNote          String?
+  adminNotedAt       DateTime?
+  adminNotedById     String?
 
   @@index([tunnelId, status])
   @@map("tunnel_question_reports")
@@ -2344,6 +2350,12 @@ model WrittenQuestionReport {
   reason      String
   status      String   @default("OPEN") // OPEN | RESOLVED
   createdAt   DateTime @default(now())
+  // Eğitici izahı + admin notu (test Objection deseni; salt-metin, SLA/eskalasyon yok)
+  educatorAnswer     String?
+  educatorAnsweredAt DateTime?
+  adminNote          String?
+  adminNotedAt       DateTime?
+  adminNotedById     String?
 
   @@index([testId, status])
   @@map("written_question_reports")

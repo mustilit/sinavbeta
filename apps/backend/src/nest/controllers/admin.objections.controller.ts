@@ -6,6 +6,7 @@ import { ListEscalatedObjectionsUseCase } from '../../application/use-cases/obje
 import { ListAllObjectionsUseCase } from '../../application/use-cases/objection/ListAllObjectionsUseCase';
 import { ListTestReportStatsUseCase } from '../../application/use-cases/report/ListTestReportStatsUseCase';
 import { AnswerObjectionByAdminUseCase } from '../../application/use-cases/objection/AnswerObjectionByAdminUseCase';
+import { ListAllContentReportsUseCase, NoteContentReportUseCase } from '../../application/use-cases/objection/ContentReportUseCases';
 import { IsString, MinLength } from 'class-validator';
 
 class AdminAnswerObjectionDto {
@@ -27,6 +28,8 @@ export class AdminObjectionsController {
     @Inject(ListAllObjectionsUseCase) private readonly listAll: ListAllObjectionsUseCase,
     @Inject(ListTestReportStatsUseCase) private readonly listStats: ListTestReportStatsUseCase,
     @Inject(AnswerObjectionByAdminUseCase) private readonly adminAnswerUC: AnswerObjectionByAdminUseCase,
+    @Inject(ListAllContentReportsUseCase) private readonly listAllContentReports: ListAllContentReportsUseCase,
+    @Inject(NoteContentReportUseCase) private readonly noteContentReport: NoteContentReportUseCase,
   ) {}
 
   @Get()
@@ -51,11 +54,18 @@ export class AdminObjectionsController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.listAll.execute({
-      status: status || undefined,
-      from: from ? new Date(from) : undefined,
-      to: to ? new Date(to) : undefined,
-    });
+    // Test itirazları + tünel/yazılı hata bildirimleri birleşik (tarihe göre).
+    const [objections, contentReports] = await Promise.all([
+      this.listAll.execute({
+        status: status || undefined,
+        from: from ? new Date(from) : undefined,
+        to: to ? new Date(to) : undefined,
+      }),
+      this.listAllContentReports.execute({ status: status || undefined }),
+    ]);
+    return [...objections, ...contentReports].sort(
+      (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   }
 
   @Get('test-stats')
@@ -82,5 +92,22 @@ export class AdminObjectionsController {
       { objectionId, adminAnswerText: body.adminAnswerText },
       actorId,
     );
+  }
+
+  /** Tünel/yazılı hata bildirimine admin notu (eğitici izahından bağımsız). */
+  @Post('content/:kind/:id/note')
+  @Roles('ADMIN')
+  @ApiBearerAuth('bearer')
+  @ApiOkResponse({ description: 'Admin note saved on content report' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  async noteContent(
+    @Param('kind') kind: string,
+    @Param('id') id: string,
+    @Body() body: AdminAnswerObjectionDto,
+    @Req() req: any,
+  ) {
+    const actorId = (req as any).user?.id;
+    const k = kind === 'tunnel' ? 'tunnel' : 'written';
+    return this.noteContentReport.execute({ kind: k, id, adminNote: body.adminAnswerText }, actorId);
   }
 }
