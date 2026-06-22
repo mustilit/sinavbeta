@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Loader2, Search, SlidersHorizontal, Star, X } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
 /** Paket çözülme durumu kovası (MyTests deseni): test state'lerinden türetilir. */
 function pkgCompletionBucket(pkg) {
@@ -26,6 +27,7 @@ function pkgCompletionBucket(pkg) {
  */
 export function WrittenPackageGrid({ mode = "discover" }) {
   const { t } = useTranslation(["pages"]);
+  const { user } = useAuth();
   const isMine = mode === "mine";
   const queryClient = useQueryClient();
   const [payTarget, setPayTarget] = useState(null);
@@ -59,12 +61,13 @@ export function WrittenPackageGrid({ mode = "discover" }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Discover'da satın alınan paketleri işaretle (giriş yoksa boş → herkese "Satın Al").
+  // Discover'da satın alınan paketleri işaretle. Giriş YOKSA çağrı YAPILMAZ —
+  // my-packages @Roles('CANDIDATE'); misafirde 401 global login yönlendirmesini tetikliyordu.
   const { data: ownedData } = useQuery({
     queryKey: ["candidateWritten", "ownedIds"],
     queryFn: async () => { try { return await candidateWritten.myPackages(); } catch { return { items: [] }; } },
     staleTime: 30_000,
-    enabled: !isMine,
+    enabled: !isMine && !!user,
   });
   const ownedByPkgId = new Map((ownedData?.items ?? []).map((p) => [p.packageId, p]));
 

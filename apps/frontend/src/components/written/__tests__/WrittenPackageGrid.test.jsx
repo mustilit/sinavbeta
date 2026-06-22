@@ -37,6 +37,11 @@ vi.mock('@/components/ui/PaymentModal', () => ({
   PaymentModal: () => null,
 }));
 
+// Giriş yapmış aday — owned-packages sorgusu çalışsın (satın-alındı işaretleme testleri)
+vi.mock('@/lib/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'u1' } }),
+}));
+
 import { candidateWritten } from '@/api/dalClient';
 import { WrittenPackageGrid } from '@/components/written/WrittenPackageGrid';
 
