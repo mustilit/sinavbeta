@@ -108,8 +108,8 @@
     "new": "Más recientes"
   },
   "explore": {
-    "title": "Explorar exámenes",
-    "subtitle": "Encuentra el examen adecuado entre miles disponibles",
+    "title": "Explorar",
+    "subtitle": "Encuentra los exámenes que se adaptan a ti",
     "searchPlaceholder": "Buscar exámenes, temas o educadores...",
     "filtersButton": "Filtros",
     "filter": {

@@ -43,7 +43,7 @@ export function WrittenPackageGrid({ mode = "discover" }) {
   const [mineCompletion, setMineCompletion] = useState("all");
 
   // Sınıf filtresi — hem discover hem mine
-  const [selectedGrade, setSelectedGrade] = useState("all");
+  const [selectedGrade, setSelectedGrade] = useState(null); // Test sekmesiyle aynı: null → placeholder "Sınıf"
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["candidateWritten", isMine ? "mine" : "discover"],
@@ -79,7 +79,7 @@ export function WrittenPackageGrid({ mode = "discover" }) {
     : [];
 
   // Sınıf filtresi id-bazlı (test sekmesiyle aynı): "all" → tümü, aksi → gradeLevelId eşleşmesi.
-  const matchesGrade = (p) => selectedGrade === "all" || p.gradeLevelId === selectedGrade;
+  const matchesGrade = (p) => !selectedGrade || p.gradeLevelId === selectedGrade;
 
   // Discover filtreleme (Explore mantığıyla birebir)
   const q = deferredSearch.trim().toLowerCase();
@@ -108,11 +108,11 @@ export function WrittenPackageGrid({ mode = "discover" }) {
         return matchesSearch && matchesDifficulty && matchesEducator && matchesRating && matchesPrice && matchesGrade(p);
       });
 
-  const hasActiveFilters = searchQuery || selectedDifficulty || priceRange || minRating > 0 || selectedEducator || selectedGrade !== "all";
-  const clearFilters = () => { setSearchQuery(""); setSelectedDifficulty(""); setPriceRange(""); setSelectedEducator(""); setMinRating(0); setSelectedGrade("all"); };
+  const hasActiveFilters = searchQuery || selectedDifficulty || priceRange || minRating > 0 || selectedEducator || !!selectedGrade;
+  const clearFilters = () => { setSearchQuery(""); setSelectedDifficulty(""); setPriceRange(""); setSelectedEducator(""); setMinRating(0); setSelectedGrade(null); };
 
-  const mineHasActiveFilters = mineEducator !== "all" || mineCompletion !== "all" || selectedGrade !== "all";
-  const clearMineFilters = () => { setMineEducator("all"); setMineCompletion("all"); setSelectedGrade("all"); };
+  const mineHasActiveFilters = mineEducator !== "all" || mineCompletion !== "all" || !!selectedGrade;
+  const clearMineFilters = () => { setMineEducator("all"); setMineCompletion("all"); setSelectedGrade(null); };
 
   const gradeSelect = (
     <Select value={selectedGrade} onValueChange={setSelectedGrade}>
@@ -120,7 +120,7 @@ export function WrittenPackageGrid({ mode = "discover" }) {
         <SelectValue placeholder={t("pages:explore.filter.gradeLevel", { defaultValue: "Sınıf" })} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">{t("pages:explore.filter.all")}</SelectItem>
+        <SelectItem value={null}>{t("pages:explore.filter.all")}</SelectItem>
         {gradeLevels.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
       </SelectContent>
     </Select>
@@ -140,6 +140,8 @@ export function WrittenPackageGrid({ mode = "discover" }) {
               <SlidersHorizontal className="w-4 h-4 mr-2" />{t("pages:explore.filtersButton")}
             </Button>
             <div className={`flex flex-col lg:flex-row gap-4 ${showFilters ? "block" : "hidden lg:flex"}`}>
+              {/* Sıralama Test sekmesiyle aynı: Sınıf → Zorluk → Fiyat → Eğitici → Puan (yazılıda Sınav Türü yok). */}
+              {gradeSelect}
               <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
                 <SelectTrigger aria-label={t("pages:explore.filter.difficultyAria")} className="w-full lg:w-36 h-12">
                   <SelectValue placeholder={t("pages:explore.filter.difficulty")} />
@@ -166,8 +168,6 @@ export function WrittenPackageGrid({ mode = "discover" }) {
               </Select>
 
               <Input aria-label={t("pages:explore.filter.educatorAria")} placeholder={t("pages:explore.filter.educator")} value={selectedEducator} onChange={(e) => setSelectedEducator(e.target.value)} className="w-full lg:w-44 h-12" />
-
-              {gradeSelect}
 
               <div className="flex items-center gap-2 px-3 h-12 bg-white border rounded-md min-w-[140px]">
                 <Star className="w-4 h-4 text-amber-500" />

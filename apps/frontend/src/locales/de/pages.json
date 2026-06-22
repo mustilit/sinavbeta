@@ -108,8 +108,8 @@
     "new": "Neueste"
   },
   "explore": {
-    "title": "Tests entdecken",
-    "subtitle": "Finden Sie den richtigen Test aus Tausenden",
+    "title": "Entdecken",
+    "subtitle": "Finde die zu dir passenden Prüfungen",
     "searchPlaceholder": "Tests, Themen oder Ausbilder suchen...",
     "filtersButton": "Filter",
     "filter": {

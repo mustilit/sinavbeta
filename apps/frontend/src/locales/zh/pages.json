@@ -108,8 +108,8 @@
     "new": "最新"
   },
   "explore": {
-    "title": "探索测试",
-    "subtitle": "从数千个测试中找到适合您的",
+    "title": "探索",
+    "subtitle": "找到适合你的考试",
     "searchPlaceholder": "搜索测试、主题或讲师...",
     "filtersButton": "筛选",
     "filter": {

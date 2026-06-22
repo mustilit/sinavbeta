@@ -108,8 +108,8 @@
     "new": "Yeni"
   },
   "explore": {
-    "title": "Testleri Keşfet",
-    "subtitle": "Binlerce test arasından sana uygun olanı bul",
+    "title": "Keşfet",
+    "subtitle": "Kendine uygun sınavları bul",
     "searchPlaceholder": "Test, konu veya eğitici ara...",
     "filtersButton": "Filtreler",
     "filter": {

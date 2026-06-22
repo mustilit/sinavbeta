@@ -108,8 +108,8 @@
     "new": "Newest"
   },
   "explore": {
-    "title": "Explore Tests",
-    "subtitle": "Find the right test from thousands available",
+    "title": "Explore",
+    "subtitle": "Find the exams that suit you",
     "searchPlaceholder": "Search tests, topics or educators...",
     "filtersButton": "Filters",
     "filter": {
