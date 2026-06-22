@@ -674,9 +674,9 @@
   "mySales": {
     "pageInfo": "{{from}}–{{to}} von {{total}} Ergebnissen",
     "stats": {
-      "totalSales": "Verkäufe gesamt",
-      "totalRevenue": "Einnahmen gesamt",
-      "monthRevenue": "Diesen Monat",
+      "totalSales": "Verkaufsanzahl",
+      "totalRevenue": "Gesamtverkäufe",
+      "monthRevenue": "Monatliche Verkäufe",
       "uniqueBuyers": "Einzelne Käufer"
     },
     "searchPlaceholder": "Käufer oder Test suchen...",
@@ -692,7 +692,12 @@
       "lastWeek": "Letzte 7 Tage",
       "lastMonth": "Letzte 30 Tage",
       "exportExcel": "Excel exportieren",
-      "clear": "Löschen"
+      "clear": "Löschen",
+      "kindPlaceholder": "Prüfungstyp",
+      "allKinds": "Alle Typen",
+      "kindPackage": "Test",
+      "kindWritten": "Schriftlich",
+      "kindTunnel": "Tunnel"
     },
     "tableTitle": "Verkaufshistorie",
     "empty": {
@@ -715,7 +720,8 @@
         "test": "Test",
         "amount": "Betrag",
         "status": "Status",
-        "date": "Datum"
+        "date": "Datum",
+        "type": "Typ"
       },
       "filePrefix": "meine-verkaeufe"
     },

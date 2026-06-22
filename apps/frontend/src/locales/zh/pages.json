@@ -674,9 +674,9 @@
   "mySales": {
     "pageInfo": "{{from}}–{{to}} / 共 {{total}} 条",
     "stats": {
-      "totalSales": "总销售",
-      "totalRevenue": "总收入",
-      "monthRevenue": "本月收入",
+      "totalSales": "销售数量",
+      "totalRevenue": "总销售额",
+      "monthRevenue": "本月销售",
       "uniqueBuyers": "独立买家"
     },
     "searchPlaceholder": "搜索买家或测试...",
@@ -692,7 +692,12 @@
       "lastWeek": "最近 7 天",
       "lastMonth": "最近 30 天",
       "exportExcel": "导出 Excel",
-      "clear": "清除"
+      "clear": "清除",
+      "kindPlaceholder": "考试类型",
+      "allKinds": "所有类型",
+      "kindPackage": "测试",
+      "kindWritten": "笔试",
+      "kindTunnel": "隧道"
     },
     "tableTitle": "销售记录",
     "empty": {
@@ -715,7 +720,8 @@
         "test": "测试",
         "amount": "金额",
         "status": "状态",
-        "date": "日期"
+        "date": "日期",
+        "type": "类型"
       },
       "filePrefix": "my-sales"
     },

@@ -37,7 +37,11 @@ export default function MySales() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  const [kindFilter, setKindFilter] = useState("all"); // sınav türü: all | package | written | tunnel
   const [page, setPage] = useState(1);
+
+  // Satış kaydının türü (package/written/tunnel) — kind yoksa "package" sayılır (legacy).
+  const saleKind = (s) => (s.kind === "tunnel" || s.kind === "written" ? s.kind : "package");
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["mySales", user?.email],
@@ -51,7 +55,8 @@ export default function MySales() {
                          sale.user_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          sale.test_package_title?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || sale.status === statusFilter;
-    
+    const matchesKind = kindFilter === "all" || saleKind(sale) === kindFilter;
+
     let matchesDate = true;
     if (dateFilter === "today") {
       const today = new Date();
@@ -67,20 +72,20 @@ export default function MySales() {
       matchesDate = new Date(sale.created_date) >= monthAgo;
     }
     
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesStatus && matchesKind && matchesDate;
   });
 
   // Sayfalama: 15 satır/sayfa. Filtre değişimlerinde 1. sayfaya dön.
   // currentPage'i totalPages'a clamp ediyoruz çünkü filtre liste boyutunu
   // küçültürse mevcut sayfa numarası geçersiz olabilir.
   const totalPages = Math.max(1, Math.ceil(filteredSales.length / PAGE_SIZE));
-  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, dateFilter]);
+  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, dateFilter, kindFilter]);
   const currentPage = Math.min(page, totalPages);
   const pagedSales = useMemo(
     () => filteredSales.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
     // filteredSales her render'da yeni referans; filtre/page tetikler.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentPage, searchQuery, statusFilter, dateFilter, sales.length],
+    [currentPage, searchQuery, statusFilter, dateFilter, kindFilter, sales.length],
   );
 
   const totalRevenue = sales.reduce((sum, s) => sum + (s.price_paid || 0), 0);
@@ -92,40 +97,51 @@ export default function MySales() {
   const thisMonthSales = sales.filter(s => new Date(s.created_date) >= thisMonth);
   const thisMonthRevenue = thisMonthSales.reduce((sum, s) => sum + (s.price_paid || 0), 0);
 
-  const hasActiveFilters = searchQuery || statusFilter !== "all" || dateFilter !== "all";
+  const hasActiveFilters = searchQuery || statusFilter !== "all" || dateFilter !== "all" || kindFilter !== "all";
 
   const clearFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
     setDateFilter("all");
+    setKindFilter("all");
   };
 
-  const exportToExcel = () => {
-    const csvContent = [
-      [
-        t("pages:mySales.excel.headers.buyer"),
-        t("pages:mySales.excel.headers.email"),
-        t("pages:mySales.excel.headers.test"),
-        t("pages:mySales.excel.headers.amount"),
-        t("pages:mySales.excel.headers.status"),
-        t("pages:mySales.excel.headers.date"),
-      ],
-      ...filteredSales.map(sale => [
-        sale.user_name || t("pages:mySales.table.buyerFallback"),
-        sale.user_email,
-        sale.test_package_title,
-        sale.price_paid,
-        sale.status === "completed" ? t("pages:mySales.filter.completed") : sale.status === "refunded" ? t("pages:mySales.filter.refunded") : t("pages:mySales.filter.pending"),
-        sale.created_date && format(new Date(sale.created_date), "d MMM yyyy HH:mm", { locale: tr })
-      ])
-    ].map(row => row.join(",")).join("\n");
+  // S\u0131nav t\u00FCr\u00FC etiketi (export + ileride gerekirse).
+  const kindLabel = (s) => {
+    const k = saleKind(s);
+    return k === "tunnel" ? t("pages:mySales.filter.kindTunnel")
+      : k === "written" ? t("pages:mySales.filter.kindWritten")
+      : t("pages:mySales.filter.kindPackage");
+  };
 
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+  const exportToExcel = async () => {
+    // Sprint 12 #1: xlsx (~429 KB) yaln\u0131zca indirme an\u0131nda dinamik y\u00FCklenir.
+    const XLSX = await import("xlsx");
+    const headers = [
+      t("pages:mySales.excel.headers.buyer"),
+      t("pages:mySales.excel.headers.email"),
+      t("pages:mySales.excel.headers.type"),
+      t("pages:mySales.excel.headers.test"),
+      t("pages:mySales.excel.headers.amount"),
+      t("pages:mySales.excel.headers.status"),
+      t("pages:mySales.excel.headers.date"),
+    ];
+    const rows = filteredSales.map((sale) => [
+      sale.user_name || t("pages:mySales.table.buyerFallback"),
+      sale.user_email,
+      kindLabel(sale),
+      sale.test_package_title,
+      sale.price_paid,
+      sale.status === "completed" ? t("pages:mySales.filter.completed") : sale.status === "refunded" ? t("pages:mySales.filter.refunded") : t("pages:mySales.filter.pending"),
+      sale.created_date && format(new Date(sale.created_date), "d MMM yyyy HH:mm", { locale: tr }),
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [{ wch: 20 }, { wch: 26 }, { wch: 10 }, { wch: 28 }, { wch: 12 }, { wch: 14 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t("pages:titles.mySales"));
     const filePrefix = t("pages:mySales.excel.filePrefix");
-    link.download = `${filePrefix}-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    XLSX.writeFile(wb, `${filePrefix}-${new Date().toISOString().split("T")[0]}.xlsx`);
     toast.success(t("pages:mySales.toasts.excelDownloaded"));
   };
 
@@ -186,6 +202,17 @@ export default function MySales() {
                 <SelectItem value="completed">{t("pages:mySales.filter.completed")}</SelectItem>
                 <SelectItem value="pending">{t("pages:mySales.filter.pending")}</SelectItem>
                 <SelectItem value="refunded">{t("pages:mySales.filter.refunded")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={kindFilter} onValueChange={setKindFilter}>
+              <SelectTrigger className="w-full lg:w-40">
+                <SelectValue placeholder={t("pages:mySales.filter.kindPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("pages:mySales.filter.allKinds")}</SelectItem>
+                <SelectItem value="package">{t("pages:mySales.filter.kindPackage")}</SelectItem>
+                <SelectItem value="written">{t("pages:mySales.filter.kindWritten")}</SelectItem>
+                <SelectItem value="tunnel">{t("pages:mySales.filter.kindTunnel")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={dateFilter} onValueChange={setDateFilter}>

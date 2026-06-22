@@ -677,9 +677,9 @@
   "mySales": {
     "pageInfo": "{{from}}–{{to}} de {{total}} resultados",
     "stats": {
-      "totalSales": "Ventas totales",
-      "totalRevenue": "Ingresos totales",
-      "monthRevenue": "Este mes",
+      "totalSales": "Número de ventas",
+      "totalRevenue": "Ventas totales",
+      "monthRevenue": "Ventas mensuales",
       "uniqueBuyers": "Compradores únicos"
     },
     "searchPlaceholder": "Buscar comprador o examen...",
@@ -695,7 +695,12 @@
       "lastWeek": "Últimos 7 días",
       "lastMonth": "Últimos 30 días",
       "exportExcel": "Exportar Excel",
-      "clear": "Limpiar"
+      "clear": "Limpiar",
+      "kindPlaceholder": "Tipo de examen",
+      "allKinds": "Todos los tipos",
+      "kindPackage": "Test",
+      "kindWritten": "Escrito",
+      "kindTunnel": "Túnel"
     },
     "tableTitle": "Historial de ventas",
     "empty": {
@@ -718,7 +723,8 @@
         "test": "Examen",
         "amount": "Importe",
         "status": "Estado",
-        "date": "Fecha"
+        "date": "Fecha",
+        "type": "Tipo"
       },
       "filePrefix": "mis-ventas"
     },
