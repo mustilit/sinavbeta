@@ -12,6 +12,10 @@
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     $queryRawUnsafe: jest.fn(),
+    tunnel: { findMany: jest.fn(async () => []) },
+    writtenPackage: { findMany: jest.fn(async () => []) },
+    tunnelPurchase: { groupBy: jest.fn(async () => []) },
+    writtenPurchase: { groupBy: jest.fn(async () => []) },
   },
 }));
 

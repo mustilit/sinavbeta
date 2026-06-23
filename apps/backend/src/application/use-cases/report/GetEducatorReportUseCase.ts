@@ -188,6 +188,35 @@ export class GetEducatorReportUseCase {
       examTypeNames: r.examTypeNames ?? null,
     }));
 
+    // Tünel + yazılı satışlarını da satış/gelir toplamına ekle (DB ile tutarlı;
+    // ham SQL yalnız paket purchase'larını sayıyor). TunnelPurchase/WrittenPurchase'ta
+    // educatorId yok → tünel/paket üzerinden eğiticiye eşlenir. SQL bozulmaz (JS merge).
+    const eduIds = items.map((i) => i.id);
+    if (eduIds.length) {
+      const [tns, pkgs] = await Promise.all([
+        prisma.tunnel.findMany({ where: { educatorId: { in: eduIds } }, select: { id: true, educatorId: true } }),
+        prisma.writtenPackage.findMany({ where: { educatorId: { in: eduIds } }, select: { id: true, educatorId: true } }),
+      ]);
+      const eduByTunnel = new Map(tns.map((t) => [t.id, t.educatorId]));
+      const eduByPkg = new Map(pkgs.map((p) => [p.id, p.educatorId]));
+      const [tps, wps] = await Promise.all([
+        tns.length ? prisma.tunnelPurchase.groupBy({ by: ['tunnelId'], where: { tunnelId: { in: tns.map((t) => t.id) }, status: 'ACTIVE' }, _count: { _all: true }, _sum: { amountCents: true } }) : [],
+        pkgs.length ? prisma.writtenPurchase.groupBy({ by: ['packageId'], where: { packageId: { in: pkgs.map((p) => p.id) }, status: 'ACTIVE' }, _count: { _all: true }, _sum: { amountCents: true } }) : [],
+      ]);
+      const extra = new Map<string, { c: number; s: number }>();
+      const add = (edu: string | null | undefined, c: number, s: number) => {
+        if (!edu) return;
+        const cur = extra.get(edu) ?? { c: 0, s: 0 };
+        cur.c += c; cur.s += s; extra.set(edu, cur);
+      };
+      for (const g of tps) add(eduByTunnel.get(g.tunnelId), g._count._all, g._sum.amountCents ?? 0);
+      for (const g of wps) add(eduByPkg.get(g.packageId), g._count._all, g._sum.amountCents ?? 0);
+      for (const it of items) {
+        const e = extra.get(it.id);
+        if (e) { it.totalSales += e.c; it.totalRevenueCents += e.s; }
+      }
+    }
+
     return { items, total };
   }
 }

@@ -12,6 +12,8 @@
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     $queryRawUnsafe: jest.fn(),
+    tunnelPurchase: { groupBy: jest.fn(async () => []) },
+    writtenPurchase: { groupBy: jest.fn(async () => []) },
   },
   // dbRouter.prismaRead() bu modülden isReplicaEnabled'i çağırır; replica
   // kapalıyken primary (mock prisma) döner.

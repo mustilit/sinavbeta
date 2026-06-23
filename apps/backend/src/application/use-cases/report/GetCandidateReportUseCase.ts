@@ -183,6 +183,28 @@ export class GetCandidateReportUseCase {
       correctRate: r.correctRate != null ? Number(r.correctRate) : null,
     }));
 
+    // Tünel + yazılı satın almaları da harcama/adet toplamına ekle (DB ile tutarlı).
+    // Ham SQL paket purchase'ları sayıyor; bunları JS'te birleştiriyoruz (SQL'i bozmadan).
+    const candIds = items.map((i) => i.id);
+    if (candIds.length) {
+      const read = prismaRead();
+      const [tp, wp] = await Promise.all([
+        read.tunnelPurchase.groupBy({ by: ['candidateId'], where: { candidateId: { in: candIds }, status: 'ACTIVE' }, _count: { _all: true }, _sum: { amountCents: true } }),
+        read.writtenPurchase.groupBy({ by: ['candidateId'], where: { candidateId: { in: candIds }, status: 'ACTIVE' }, _count: { _all: true }, _sum: { amountCents: true } }),
+      ]);
+      const extra = new Map<string, { c: number; s: number }>();
+      for (const g of [...tp, ...wp]) {
+        const cur = extra.get(g.candidateId) ?? { c: 0, s: 0 };
+        cur.c += g._count._all;
+        cur.s += g._sum.amountCents ?? 0;
+        extra.set(g.candidateId, cur);
+      }
+      for (const it of items) {
+        const e = extra.get(it.id);
+        if (e) { it.totalPurchases += e.c; it.totalSpentCents += e.s; }
+      }
+    }
+
     return { items, total };
   }
 }
