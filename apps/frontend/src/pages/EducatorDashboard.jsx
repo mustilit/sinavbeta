@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { useAuth } from "@/lib/AuthContext";
 import api from "@/lib/api/apiClient";
+import { tunnels as tunnelApi, writtenTests } from "@/api/dalClient";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import { useShouldShowTour, useCompleteTour, TOUR_KEYS } from "@/lib/useOnboarding";
 import { EDUCATOR_WELCOME_STEPS } from "@/components/onboarding/tourSteps";
@@ -61,8 +62,25 @@ export default function EducatorDashboard() {
     enabled: !!user,
   });
 
+  // Tünel + yazılı içerik de toplamlara dahil (DB ile tutarlı — satış/gelir zaten 3 modülü kapsıyor).
+  const { data: myTunnels = [] } = useQuery({
+    queryKey: ["myTunnels", user?.id],
+    queryFn: async () => { try { return (await tunnelApi.mine())?.items ?? []; } catch { return []; } },
+    enabled: !!user,
+  });
+  const { data: myWritten = [] } = useQuery({
+    queryKey: ["myWrittenPackages", user?.id],
+    queryFn: async () => { try { const r = await writtenTests.listMine(); return Array.isArray(r) ? r : (r?.items ?? []); } catch { return []; } },
+    enabled: !!user,
+  });
+
   const totalRevenue = sales.reduce((sum, s) => sum + (s.amountCents ?? 0), 0);
   const publishedTests = myTests.filter(t => t.status === "PUBLISHED" || t.publishedAt).length;
+  const publishedTunnels = myTunnels.filter(t => t.status === "PUBLISHED").length;
+  const publishedWritten = myWritten.filter(p => !!p.publishedAt).length;
+  // Toplam içerik (paket + tünel + yazılı) ve yayında olanlar
+  const totalContent = myTests.length + myTunnels.length + myWritten.length;
+  const totalPublished = publishedTests + publishedTunnels + publishedWritten;
   const recentSales = sales.slice(0, 5);
 
   return (
@@ -97,14 +115,14 @@ export default function EducatorDashboard() {
       {/* Stats */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
-          title="Toplam Test"
-          value={myTests.length}
+          title="Toplam İçerik"
+          value={totalContent}
           icon={BookOpen}
           bgColor="bg-indigo-500"
         />
         <StatCard
           title="Yayında"
-          value={publishedTests}
+          value={totalPublished}
           icon={Eye}
           bgColor="bg-emerald-500"
         />
