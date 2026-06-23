@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { buildPageUrl } from "@/lib/navigation";
-import { BookOpen, FileText, Star, User, Play, Eye } from "lucide-react";
+import { BookOpen, FileText, Star, User, Play, Eye, Megaphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +24,7 @@ export default function WrittenPackageCard({ pkg, purchased = false }) {
     hard: "bg-rose-100 text-rose-700",
   }[pkg.difficulty] || "bg-amber-100 text-amber-700";
   const difficultyLabel = t(`pages:testCard.difficulty.${pkg.difficulty || "medium"}`);
+  const isBoosted = pkg.featured === true || (Array.isArray(pkg.tags) && pkg.tags.includes("AD_BOOSTED"));
 
   return (
     <div className="group bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 dark:bg-gray-900 dark:border-gray-800">
@@ -34,8 +35,13 @@ export default function WrittenPackageCard({ pkg, purchased = false }) {
           ) : (
             <div className="absolute inset-0 flex items-center justify-center"><BookOpen className="w-16 h-16 text-white/30" /></div>
           )}
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-3 left-3 flex items-center gap-2">
             <Badge className="bg-white/90 text-amber-700 backdrop-blur-sm">{t("pages:writtenGrid.typeBadge")}</Badge>
+            {isBoosted && (
+              <Badge className="bg-indigo-600 text-white flex items-center gap-1">
+                <Megaphone className="w-3 h-3" /> {t("pages:card.boosted")}
+              </Badge>
+            )}
           </div>
           <div className="absolute bottom-3 right-3">
             <Badge className={`bg-white/90 backdrop-blur-sm ${difficultyColorClass}`}>{difficultyLabel}</Badge>

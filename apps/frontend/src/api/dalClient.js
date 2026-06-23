@@ -2063,11 +2063,12 @@ export const writtenTests = {
 
 /** Aday yazılı test akışı (pazar / satın alma / çözme). */
 export const candidateWritten = {
-  /** Yayımlanmış yazılı paketler (pazar) */
-  listPackages: async ({ limit = 20, cursor } = {}) => {
+  /** Yayımlanmış yazılı paketler (pazar). featured=true → aktif reklamlar en üste (AD_BOOSTED). */
+  listPackages: async ({ limit = 20, cursor, featured } = {}) => {
     const qs = new URLSearchParams();
     if (limit) qs.set('limit', String(limit));
     if (cursor) qs.set('cursor', cursor);
+    if (featured) qs.set('featured', '1');
     const { data } = await api.get(`/candidate-written/packages?${qs.toString()}`);
     return data;
   },

@@ -90,7 +90,7 @@ export class ListMyWrittenPurchasesUseCase {
 
 /** Yayımlanmış yazılı paketler (pazar listesi — kart alanları). */
 export class ListPublishedWrittenPackagesUseCase {
-  async execute(params?: { limit?: number; cursor?: string | null; gradeLevelId?: string | null }) {
+  async execute(params?: { limit?: number; cursor?: string | null; gradeLevelId?: string | null; featured?: boolean; viewerId?: string | null }) {
     const take = Math.min(Math.max(params?.limit ?? 20, 1), 100);
     const rows = await prisma.writtenPackage.findMany({
       where: { isActive: true, publishedAt: { not: null }, ...(params?.gradeLevelId ? { gradeLevelId: params.gradeLevelId } : {}) },
@@ -125,25 +125,120 @@ export class ListPublishedWrittenPackagesUseCase {
         : Promise.resolve([] as { packageId: string; _avg: { rating: number | null } }[]),
     ]);
     const ratingByPkg = new Map(ratings.map((r) => [r.packageId, r._avg.rating]));
+    const mapItem = (p: (typeof items)[number], tags?: string[]) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      coverImageUrl: p.coverImageUrl,
+      priceCents: p.priceCents,
+      currency: p.currency,
+      difficulty: p.difficulty,
+      testCount: p.tests.length,
+      totalQuestions: p.tests.reduce((s, t) => s + (t.questionCount ?? 0), 0),
+      avgRating: ratingByPkg.get(p.id) != null ? Math.round((ratingByPkg.get(p.id) as number) * 10) / 10 : null,
+      educatorId: p.educatorId,
+      educatorName: p.educatorId ? educators.get(p.educatorId) ?? null : null,
+      gradeLevelId: p.gradeLevelId ?? null,
+      gradeLevelName: p.gradeLevelId ? gradeLevels.get(p.gradeLevelId) ?? null : null,
+      ...(tags ? { tags, featured: true } : {}),
+    });
+
+    let mappedItems = items.map((p) => mapItem(p));
+
+    // Öne çıkarma (reklam) — yalnız ilk sayfada (cursor yok) ve featured istendiğinde.
+    // Aktif WRITTEN reklamı olan paketleri en üste taşır, AD_BOOSTED rozetiyle işaretler.
+    if (params?.featured && !params?.cursor) {
+      try {
+        const boosted = await this.applyWrittenAds(mappedItems, items, mapItem, params.viewerId ?? null);
+        mappedItems = boosted;
+      } catch {
+        /* reklam öne çıkarma kritik değil — sessiz geç */
+      }
+    }
+
     return {
-      items: items.map((p) => ({
-        id: p.id,
-        title: p.title,
-        description: p.description,
-        coverImageUrl: p.coverImageUrl,
-        priceCents: p.priceCents,
-        currency: p.currency,
-        difficulty: p.difficulty,
-        testCount: p.tests.length,
-        totalQuestions: p.tests.reduce((s, t) => s + (t.questionCount ?? 0), 0),
-        avgRating: ratingByPkg.get(p.id) != null ? Math.round((ratingByPkg.get(p.id) as number) * 10) / 10 : null,
-        educatorId: p.educatorId,
-        educatorName: p.educatorId ? educators.get(p.educatorId) ?? null : null,
-        gradeLevelId: p.gradeLevelId ?? null,
-        gradeLevelName: p.gradeLevelId ? gradeLevels.get(p.gradeLevelId) ?? null : null,
-      })),
+      items: mappedItems,
       nextCursor: hasMore ? items[items.length - 1]?.id ?? null : null,
     };
+  }
+
+  /**
+   * Aktif WRITTEN reklamlarını listenin başına yerleştirir (AD_BOOSTED).
+   * Listede olmayan öne çıkan paketleri ayrıca çeker. Impression best-effort kaydeder.
+   */
+  private async applyWrittenAds(
+    mapped: any[],
+    rawItems: any[],
+    mapItem: (p: any, tags?: string[]) => any,
+    viewerId: string | null,
+  ): Promise<any[]> {
+    const now = new Date();
+    const ads = await prisma.adPurchase.findMany({
+      where: {
+        targetType: 'WRITTEN' as any,
+        validUntil: { gt: now },
+        impressionsRemaining: { gt: 0 },
+        writtenPackageId: { not: null },
+      } as any,
+      select: { id: true, educatorId: true, writtenPackageId: true } as any,
+    });
+    if (ads.length === 0) return mapped;
+
+    // Reklamı olan, yayında + aktif paket id'leri (sahibi tarafından yayından kaldırılmış olabilir)
+    const adByPkg = new Map<string, { id: string; educatorId: string }>();
+    for (const a of ads as any[]) {
+      if (a.writtenPackageId && !adByPkg.has(a.writtenPackageId)) {
+        adByPkg.set(a.writtenPackageId, { id: a.id, educatorId: a.educatorId });
+      }
+    }
+    const adPkgIds = [...adByPkg.keys()];
+
+    // Listede zaten olan öne çıkanları tag'le; olmayanları ayrıca çek
+    const presentIds = new Set(mapped.map((m) => m.id));
+    const missingIds = adPkgIds.filter((id) => !presentIds.has(id));
+
+    let extra: any[] = [];
+    if (missingIds.length > 0) {
+      const extraRows = await prisma.writtenPackage.findMany({
+        where: { id: { in: missingIds }, isActive: true, publishedAt: { not: null } },
+        select: {
+          id: true, title: true, description: true, coverImageUrl: true, priceCents: true,
+          currency: true, difficulty: true, publishedAt: true, educatorId: true, gradeLevelId: true,
+          tests: { where: { deletedAt: null }, select: { questionCount: true } },
+        },
+      });
+      const [edu, grades] = await Promise.all([
+        resolveEducators(extraRows.map((p) => p.educatorId ?? '')),
+        resolveGradeLevels(extraRows.map((p) => p.gradeLevelId)),
+      ]);
+      extra = extraRows.map((p) => ({
+        ...mapItem({ ...p, tests: p.tests } as any, ['AD_BOOSTED']),
+        educatorName: p.educatorId ? edu.get(p.educatorId) ?? null : null,
+        gradeLevelName: p.gradeLevelId ? grades.get(p.gradeLevelId) ?? null : null,
+      }));
+    }
+
+    // Geçerli (yayında olan) öne çıkan id kümesi
+    const validAdIds = new Set([...presentIds].filter((id) => adByPkg.has(id)).concat(extra.map((e) => e.id)));
+
+    // Mevcut listedekileri öne çıkan/normal diye ayır + tag uygula
+    const boostedExisting = mapped.filter((m) => validAdIds.has(m.id)).map((m) => ({ ...m, tags: ['AD_BOOSTED'], featured: true }));
+    const normal = mapped.filter((m) => !validAdIds.has(m.id));
+
+    // Impression best-effort
+    const impressionPayload = [...boostedExisting, ...extra]
+      .map((it) => adByPkg.get(it.id))
+      .filter(Boolean) as { id: string; educatorId: string }[];
+    if (impressionPayload.length > 0) {
+      try {
+        const { RecordAdImpressionsUseCase } = await import('../ad/RecordAdImpressionsUseCase');
+        new RecordAdImpressionsUseCase()
+          .execute(impressionPayload.map((p) => ({ id: p.id, educatorId: p.educatorId, testId: null })), viewerId)
+          .catch(() => {});
+      } catch { /* impression kaydı kritik değil */ }
+    }
+
+    return [...extra, ...boostedExisting, ...normal];
   }
 }
 

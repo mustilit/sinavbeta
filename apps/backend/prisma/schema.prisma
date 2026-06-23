@@ -265,6 +265,7 @@ enum ContractType {
 enum AdTargetType {
   TEST
   EDUCATOR
+  WRITTEN
 }
 
 // --- Multi-tenant foundation ---
@@ -1186,10 +1187,12 @@ model AdPurchase {
   id                   String       @id @default(uuid())
   educatorId           String
   adPackageId          String
-  // TEST: belirli bir paket öne çıkar; EDUCATOR: eğiticinin kendisi öne çıkar
+  // TEST: belirli bir test paketi öne çıkar; WRITTEN: yazılı paket; EDUCATOR: eğiticinin kendisi
   targetType           AdTargetType @default(TEST)
   // TEST türünde zorunlu; EDUCATOR türünde null olabilir
   testId               String?
+  // WRITTEN türünde zorunlu — yazılı modülü scalar (FK YOK, written deseni)
+  writtenPackageId     String?
   validUntil           DateTime
   impressionsRemaining Int          @default(0)
   // Şimdiye kadar gerçekleşen toplam gösterim sayısı
@@ -1219,6 +1222,7 @@ model AdPurchase {
   @@index([tenantId])
   @@index([educatorId])
   @@index([testId])
+  @@index([writtenPackageId])
   @@index([validUntil])
   @@map("ad_purchases")
 }

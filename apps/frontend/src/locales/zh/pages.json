@@ -826,11 +826,16 @@
       "targetType": "推广类型",
       "targetTest": "测试套餐",
       "targetTestDesc": "推广您的特定测试",
+      "targetWritten": "笔试套餐",
+      "targetWrittenDesc": "推广您的某个笔试套餐",
       "targetEducator": "我的资料",
       "targetEducatorDesc": "推广您的讲师资料",
       "whichTest": "哪个测试?",
       "noPublishedTests": "您还没有已发布的测试。请先发布一个。",
       "selectTest": "选择测试",
+      "whichWritten": "哪个笔试套餐?",
+      "noPublishedWritten": "您还没有已发布的笔试套餐。请先发布一个。",
+      "selectWritten": "选择笔试套餐",
       "adPackage": "广告套餐",
       "noPackages": "目前没有可购买的套餐。",
       "packageInfo": "{{impressions}} 次展示 · 有效期 {{days}} 天",
@@ -841,7 +846,8 @@
       "purchased": "广告已购买!展示将立即开始。",
       "purchaseFailed": "购买失败",
       "selectPackage": "请选择一个套餐",
-      "selectTest": "请选择要推广的测试"
+      "selectTest": "请选择要推广的测试",
+      "selectWritten": "请选择要推广的笔试套餐"
     }
   },
   "myLiveSessions": {

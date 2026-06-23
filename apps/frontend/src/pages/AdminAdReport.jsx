@@ -28,6 +28,7 @@ import {
   Loader2,
   User,
   Package,
+  FileText,
 } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -190,6 +191,8 @@ export default function AdminAdReport() {
                 <SelectItem value="all">Tümü</SelectItem>
                 {/* TEST: belirli bir test paketi öne çıkarma */}
                 <SelectItem value="TEST">Test Paketi</SelectItem>
+                {/* WRITTEN: yazılı paket öne çıkarma */}
+                <SelectItem value="WRITTEN">Yazılı Paketi</SelectItem>
                 {/* EDUCATOR: eğiticinin kendisi öne çıkarma */}
                 <SelectItem value="EDUCATOR">Eğitici Profili</SelectItem>
               </SelectContent>
@@ -362,6 +365,10 @@ export default function AdminAdReport() {
                           <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
                             <Package className="w-3 h-3" /> Test
                           </span>
+                        ) : item.targetType === "WRITTEN" ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+                            <FileText className="w-3 h-3" /> Yazılı
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-700">
                             <User className="w-3 h-3" /> Eğitici
@@ -369,9 +376,15 @@ export default function AdminAdReport() {
                         )}
                       </td>
 
-                      {/* TEST türünde test adı; EDUCATOR türünde profil bilgisi */}
+                      {/* TEST → test adı; WRITTEN → yazılı paket adı; EDUCATOR → profil */}
                       <td className="px-4 py-3.5 max-w-[180px]">
-                        {item.testTitle ? (
+                        {item.targetType === "WRITTEN" ? (
+                          item.writtenPackageTitle ? (
+                            <p className="text-slate-700 text-xs line-clamp-2">{item.writtenPackageTitle}</p>
+                          ) : (
+                            <span className="text-slate-400 text-xs">Yazılı paket</span>
+                          )
+                        ) : item.testTitle ? (
                           <p className="text-slate-700 text-xs line-clamp-2">{item.testTitle}</p>
                         ) : (
                           <span className="text-slate-400 text-xs">Eğitici profili</span>

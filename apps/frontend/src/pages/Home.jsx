@@ -400,7 +400,7 @@ export default function Home() {
   const { data: writtenPackages = [] } = useQuery({
     queryKey: ["home-written-packages"],
     queryFn: async () => {
-      const res = await candidateWritten.listPackages({ limit: 6 });
+      const res = await candidateWritten.listPackages({ limit: 6, featured: true });
       return res?.items ?? [];
     },
     staleTime: 5 * 60 * 1000,

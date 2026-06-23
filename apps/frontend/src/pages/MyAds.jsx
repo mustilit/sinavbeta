@@ -34,6 +34,7 @@ import {
   Package,
   Info,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 
 export default function MyAds() {
@@ -46,6 +47,7 @@ export default function MyAds() {
   // Yeni reklam formu alanları
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [selectedTestId, setSelectedTestId]       = useState("");
+  const [selectedWrittenPackageId, setSelectedWrittenPackageId] = useState("");
   const [targetType, setTargetType]               = useState("TEST");
   // Sprint 15 #4/6 — Admin platform promo kodu (AD_PACKAGE scope)
   const [promoInput, setPromoInput]               = useState("");
@@ -95,6 +97,16 @@ export default function MyAds() {
     enabled: !!user,
   });
 
+  // Eğiticinin yazılı paketlerini yükle (WRITTEN türü seçiminde kullanılır)
+  const { data: myWrittenPackages = [] } = useQuery({
+    queryKey: ["myWrittenPackagesForAds", user?.id],
+    queryFn:  async () => {
+      const res = await api.get("/written-packages/mine");
+      return res.data?.items ?? res.data ?? [];
+    },
+    enabled: !!user,
+  });
+
   // Sprint 15 #4/6 — Platform admin promo kodu (AD_PACKAGE scope) input + validate.
   // Eğitici opsiyonel olarak admin'den aldığı kodu uygular; backend atomik
   // validate + apply + usedCount++ yapar. Fiyat selectedPackageId'nin
@@ -110,6 +122,7 @@ export default function MyAds() {
     mutationFn: async () => {
       const body = { adPackageId: selectedPackageId, targetType };
       if (targetType === "TEST") body.testId = selectedTestId;
+      if (targetType === "WRITTEN") body.writtenPackageId = selectedWrittenPackageId;
       // Sprint 15 #4 — appliedPromo varsa promoCode body'sine eklenir
       if (appliedAdPromo?.code) body.promoCode = appliedAdPromo.code;
       const res = await api.post("/educators/me/ads", body);
@@ -121,6 +134,7 @@ export default function MyAds() {
       queryClient.invalidateQueries({ queryKey: ["adPurchases"] });
       setSelectedPackageId("");
       setSelectedTestId("");
+      setSelectedWrittenPackageId("");
       setActiveTab("stats");
     },
     onError: (err) => {
@@ -132,6 +146,7 @@ export default function MyAds() {
   const handlePurchase = () => {
     if (!selectedPackageId) { toast.error(t("pages:myAds.toasts.selectPackage")); return; }
     if (targetType === "TEST" && !selectedTestId) { toast.error(t("pages:myAds.toasts.selectTest")); return; }
+    if (targetType === "WRITTEN" && !selectedWrittenPackageId) { toast.error(t("pages:myAds.toasts.selectWritten")); return; }
     purchaseMutation.mutate();
   };
 
@@ -175,6 +190,8 @@ export default function MyAds() {
 
   // Yayında olan testleri filtrele (sadece bunlara reklam alınabilir)
   const publishedTests = myTests.filter((t) => t.status === "PUBLISHED" || t.is_published);
+  // Yayında olan yazılı paketler (publishedAt dolu + aktif)
+  const publishedWritten = myWrittenPackages.filter((p) => !!p.publishedAt && p.isActive !== false);
 
   // İstatistik özet kartları için hesaplamalar
   const totalDelivered  = stats?.totals?.totalDelivered  ?? 0;
@@ -311,16 +328,20 @@ export default function MyAds() {
                   <div key={p.id} className="py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       {/* Hedef türü ikonu */}
-                      <div className={`p-2 rounded-lg ${p.targetType === "EDUCATOR" ? "bg-purple-50" : "bg-indigo-50"}`}>
+                      <div className={`p-2 rounded-lg ${p.targetType === "EDUCATOR" ? "bg-purple-50" : p.targetType === "WRITTEN" ? "bg-amber-50" : "bg-indigo-50"}`}>
                         {p.targetType === "EDUCATOR"
                           ? <User className="w-4 h-4 text-purple-600" />
-                          : <Package className="w-4 h-4 text-indigo-600" />
+                          : p.targetType === "WRITTEN"
+                            ? <FileText className="w-4 h-4 text-amber-600" />
+                            : <Package className="w-4 h-4 text-indigo-600" />
                         }
                       </div>
                       <div>
                         <p className="font-medium text-slate-900 text-sm">
-                          {/* p.test.title user-generated */}
-                          {p.test ? p.test.title : t("pages:myAds.stats.profileBoost")}
+                          {/* p.test/writtenPackage.title user-generated */}
+                          {p.targetType === "WRITTEN"
+                            ? (p.writtenPackage?.title ?? t("pages:myAds.stats.profileBoost"))
+                            : p.test ? p.test.title : t("pages:myAds.stats.profileBoost")}
                         </p>
                         <p className="text-xs text-slate-500">
                           {p.packageName} · {t("pages:myAds.stats.validUntil", { date: format(new Date(p.validUntil), "d MMM yyyy", { locale: tr }) })}
@@ -392,15 +413,19 @@ export default function MyAds() {
                   return (
                     <div key={p.id} className="p-4 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${p.targetType === "EDUCATOR" ? "bg-purple-50" : "bg-indigo-50"}`}>
+                        <div className={`p-2 rounded-lg ${p.targetType === "EDUCATOR" ? "bg-purple-50" : p.targetType === "WRITTEN" ? "bg-amber-50" : "bg-indigo-50"}`}>
                           {p.targetType === "EDUCATOR"
                             ? <User className="w-4 h-4 text-purple-600" />
-                            : <Package className="w-4 h-4 text-indigo-600" />
+                            : p.targetType === "WRITTEN"
+                              ? <FileText className="w-4 h-4 text-amber-600" />
+                              : <Package className="w-4 h-4 text-indigo-600" />
                           }
                         </div>
                         <div>
                           <p className="font-medium text-slate-900 text-sm">
-                            {p.test ? p.test.title : t("pages:myAds.stats.profileBoost")}
+                            {p.targetType === "WRITTEN"
+                              ? (p.writtenPackage?.title ?? t("pages:myAds.stats.profileBoost"))
+                              : p.test ? p.test.title : t("pages:myAds.stats.profileBoost")}
                           </p>
                           <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
                             <Clock className="w-3 h-3" />
@@ -468,15 +493,16 @@ export default function MyAds() {
           {/* Hedef türü seçimi */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">{t("pages:myAds.buy.targetType")}</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {[
                 { val: "TEST",     label: t("pages:myAds.buy.targetTest"),     desc: t("pages:myAds.buy.targetTestDesc"),     Icon: Package },
+                { val: "WRITTEN",  label: t("pages:myAds.buy.targetWritten"),  desc: t("pages:myAds.buy.targetWrittenDesc"),  Icon: FileText },
                 { val: "EDUCATOR", label: t("pages:myAds.buy.targetEducator"), desc: t("pages:myAds.buy.targetEducatorDesc"), Icon: User    },
               ].map(({ val, label, desc, Icon }) => (
                 <button
                   key={val}
                   type="button"
-                  onClick={() => { setTargetType(val); setSelectedTestId(""); }}
+                  onClick={() => { setTargetType(val); setSelectedTestId(""); setSelectedWrittenPackageId(""); }}
                   className={`p-4 rounded-xl border-2 text-left transition-all ${
                     targetType === val
                       ? "border-indigo-500 bg-indigo-50"
@@ -508,6 +534,30 @@ export default function MyAds() {
                     {/* tt.title user-generated */}
                     {publishedTests.map((tt) => (
                       <SelectItem key={tt.id} value={tt.id}>{tt.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
+
+          {/* WRITTEN türünde yazılı paket seçimi */}
+          {targetType === "WRITTEN" && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700">{t("pages:myAds.buy.whichWritten")}</label>
+              {publishedWritten.length === 0 ? (
+                <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                  {t("pages:myAds.buy.noPublishedWritten")}
+                </p>
+              ) : (
+                <Select value={selectedWrittenPackageId} onValueChange={setSelectedWrittenPackageId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("pages:myAds.buy.selectWritten")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* p.title user-generated */}
+                    {publishedWritten.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -631,7 +681,8 @@ export default function MyAds() {
             disabled={
               purchaseMutation.isPending ||
               !selectedPackageId ||
-              (targetType === "TEST" && !selectedTestId)
+              (targetType === "TEST" && !selectedTestId) ||
+              (targetType === "WRITTEN" && !selectedWrittenPackageId)
             }
             className="w-full bg-indigo-600 hover:bg-indigo-700"
           >

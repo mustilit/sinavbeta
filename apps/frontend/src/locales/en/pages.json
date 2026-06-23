@@ -826,11 +826,16 @@
       "targetType": "Boost Type",
       "targetTest": "Test Package",
       "targetTestDesc": "Boost a specific test of yours",
+      "targetWritten": "Written Package",
+      "targetWrittenDesc": "Boost one of your written packages",
       "targetEducator": "My Profile",
       "targetEducatorDesc": "Boost your educator profile",
       "whichTest": "Which Test?",
       "noPublishedTests": "You have no published tests. Please publish one first.",
       "selectTest": "Select test",
+      "whichWritten": "Which Written Package?",
+      "noPublishedWritten": "You have no published written packages. Please publish one first.",
+      "selectWritten": "Select written package",
       "adPackage": "Ad Package",
       "noPackages": "No packages available for sale right now.",
       "packageInfo": "{{impressions}} impressions · valid for {{days}} days",
@@ -841,7 +846,8 @@
       "purchased": "Ad purchased! Impressions will start immediately.",
       "purchaseFailed": "Purchase failed",
       "selectPackage": "Please select a package",
-      "selectTest": "Please select the test you want to boost"
+      "selectTest": "Please select the test you want to boost",
+      "selectWritten": "Please select the written package you want to boost"
     }
   },
   "myLiveSessions": {

@@ -251,6 +251,7 @@ export class EducatorsController {
       dto.testId ?? null,
       (dto as any).targetType ?? 'TEST',
       promoCode,
+      (dto as any).writtenPackageId ?? null,
     );
   }
 

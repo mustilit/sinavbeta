@@ -829,11 +829,16 @@
       "targetType": "Tipo de destacado",
       "targetTest": "Paquete de examen",
       "targetTestDesc": "Destaca un examen específico",
+      "targetWritten": "Paquete escrito",
+      "targetWrittenDesc": "Destaca uno de tus paquetes escritos",
       "targetEducator": "Mi perfil",
       "targetEducatorDesc": "Destaca tu perfil de educador",
       "whichTest": "¿Qué examen?",
       "noPublishedTests": "No tienes exámenes publicados. Publica uno primero.",
       "selectTest": "Selecciona examen",
+      "whichWritten": "¿Qué paquete escrito?",
+      "noPublishedWritten": "No tienes paquetes escritos publicados. Publica uno primero.",
+      "selectWritten": "Selecciona paquete escrito",
       "adPackage": "Paquete de anuncios",
       "noPackages": "No hay paquetes disponibles ahora.",
       "packageInfo": "{{impressions}} impresiones · válido {{days}} días",
@@ -844,7 +849,8 @@
       "purchased": "¡Anuncio comprado! Las impresiones comenzarán de inmediato.",
       "purchaseFailed": "Compra fallida",
       "selectPackage": "Por favor selecciona un paquete",
-      "selectTest": "Por favor selecciona el examen a destacar"
+      "selectTest": "Por favor selecciona el examen a destacar",
+      "selectWritten": "Por favor selecciona el paquete escrito a destacar"
     }
   },
   "myLiveSessions": {

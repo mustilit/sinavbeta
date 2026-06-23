@@ -19,9 +19,16 @@ export class PurchaseAdDto {
   @IsUUID()
   testId?: string;
 
-  /** Reklam hedef türü: TEST (paket öne çıkarma) veya EDUCATOR (profil öne çıkarma) */
-  @ApiPropertyOptional({ enum: ['TEST', 'EDUCATOR'], default: 'TEST' })
+  /** WRITTEN türünde zorunlu — öne çıkarılacak yazılı paket */
+  @ApiPropertyOptional({ format: 'uuid', description: 'Öne çıkarılacak yazılı paket (WRITTEN türünde zorunlu)' })
   @IsOptional()
-  @IsIn(['TEST', 'EDUCATOR'])
-  targetType?: 'TEST' | 'EDUCATOR';
+  @IsString()
+  @IsUUID()
+  writtenPackageId?: string;
+
+  /** Reklam hedef türü: TEST (test paketi) · WRITTEN (yazılı paket) · EDUCATOR (profil) */
+  @ApiPropertyOptional({ enum: ['TEST', 'WRITTEN', 'EDUCATOR'], default: 'TEST' })
+  @IsOptional()
+  @IsIn(['TEST', 'WRITTEN', 'EDUCATOR'])
+  targetType?: 'TEST' | 'WRITTEN' | 'EDUCATOR';
 }

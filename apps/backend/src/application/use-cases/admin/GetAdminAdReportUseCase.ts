@@ -22,6 +22,9 @@ export interface AdReportItem {
   impressionsRemaining: number;
   testId: string | null;
   testTitle: string | null;
+  /** WRITTEN hedefli reklamlarda yazılı paket (scalar — relation YOK) */
+  writtenPackageId: string | null;
+  writtenPackageTitle: string | null;
   /** validUntil > şimdiki zaman VE impressionsRemaining > 0 ise aktif sayılır */
   isActive: boolean;
 }
@@ -48,8 +51,8 @@ export interface AdReportFilters {
   month?: number;
   /** Belirli bir eğiticiye göre filtrele */
   educatorId?: string;
-  /** Reklam hedef türüne göre filtrele: 'TEST' veya 'EDUCATOR' */
-  targetType?: 'TEST' | 'EDUCATOR';
+  /** Reklam hedef türüne göre filtrele: 'TEST' | 'WRITTEN' | 'EDUCATOR' */
+  targetType?: 'TEST' | 'WRITTEN' | 'EDUCATOR';
 }
 
 /**
@@ -102,6 +105,19 @@ export class GetAdminAdReportUseCase {
       orderBy: { createdAt: 'desc' },
     });
 
+    // WRITTEN hedefli reklamlar için yazılı paket başlıklarını çöz (scalar — relation YOK)
+    const writtenIds = purchases
+      .map((p) => (p as any).writtenPackageId as string | null)
+      .filter((id): id is string => !!id);
+    const writtenById = new Map<string, string>();
+    if (writtenIds.length > 0) {
+      const pkgs = await prisma.writtenPackage.findMany({
+        where: { id: { in: writtenIds } },
+        select: { id: true, title: true },
+      });
+      for (const w of pkgs) writtenById.set(w.id, w.title);
+    }
+
     // Özet sayaçlar
     let totalRevenueCents = 0;
     let totalImpressionsSold = 0;
@@ -138,6 +154,8 @@ export class GetAdminAdReportUseCase {
         impressionsRemaining: p.impressionsRemaining,
         testId: p.test?.id ?? null,
         testTitle: p.test?.title ?? null,
+        writtenPackageId: (p as any).writtenPackageId ?? null,
+        writtenPackageTitle: (p as any).writtenPackageId ? writtenById.get((p as any).writtenPackageId) ?? null : null,
         isActive,
       };
     });

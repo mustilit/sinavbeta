@@ -826,11 +826,16 @@
       "targetType": "Hervorhebungstyp",
       "targetTest": "Testpaket",
       "targetTestDesc": "Heben Sie einen bestimmten Test hervor",
+      "targetWritten": "Schriftliches Paket",
+      "targetWrittenDesc": "Heben Sie eines Ihrer schriftlichen Pakete hervor",
       "targetEducator": "Mein Profil",
       "targetEducatorDesc": "Heben Sie Ihr Ausbilder-Profil hervor",
       "whichTest": "Welcher Test?",
       "noPublishedTests": "Sie haben keine veröffentlichten Tests. Bitte zuerst einen veröffentlichen.",
       "selectTest": "Test wählen",
+      "whichWritten": "Welches schriftliche Paket?",
+      "noPublishedWritten": "Sie haben keine veröffentlichten schriftlichen Pakete. Bitte zuerst eines veröffentlichen.",
+      "selectWritten": "Schriftliches Paket wählen",
       "adPackage": "Anzeigenpaket",
       "noPackages": "Aktuell sind keine Pakete verfügbar.",
       "packageInfo": "{{impressions}} Impressionen · gültig {{days}} Tage",
@@ -841,7 +846,8 @@
       "purchased": "Anzeige gekauft! Impressionen beginnen sofort.",
       "purchaseFailed": "Kauf fehlgeschlagen",
       "selectPackage": "Bitte ein Paket auswählen",
-      "selectTest": "Bitte den hervorzuhebenden Test auswählen"
+      "selectTest": "Bitte den hervorzuhebenden Test auswählen",
+      "selectWritten": "Bitte das hervorzuhebende schriftliche Paket auswählen"
     }
   },
   "myLiveSessions": {

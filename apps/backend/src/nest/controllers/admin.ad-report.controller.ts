@@ -21,7 +21,7 @@ export class AdminAdReportController {
    * @param year      - Yıl filtresi (opsiyonel)
    * @param month     - Ay filtresi (opsiyonel, 1-12)
    * @param educatorId - Belirli eğiticiye göre filtrele (opsiyonel)
-   * @param targetType - 'TEST' veya 'EDUCATOR' (opsiyonel)
+   * @param targetType - 'TEST' | 'WRITTEN' | 'EDUCATOR' (opsiyonel)
    */
   @Get()
   @Roles('ADMIN')
@@ -39,7 +39,7 @@ export class AdminAdReportController {
       month: month ? parseInt(month, 10) : undefined,
       educatorId: educatorId || undefined,
       // Yalnızca geçerli targetType değerlerine izin ver; diğerleri filtre dışı
-      targetType: (targetType === 'TEST' || targetType === 'EDUCATOR') ? targetType : undefined,
+      targetType: (targetType === 'TEST' || targetType === 'WRITTEN' || targetType === 'EDUCATOR') ? targetType : undefined,
     });
   }
 }

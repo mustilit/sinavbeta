@@ -826,11 +826,16 @@
       "targetType": "Öne Çıkarma Türü",
       "targetTest": "Test Paketi",
       "targetTestDesc": "Belirli bir testinizi öne çıkarın",
+      "targetWritten": "Yazılı Paketi",
+      "targetWrittenDesc": "Bir yazılı paketinizi öne çıkarın",
       "targetEducator": "Profilim",
       "targetEducatorDesc": "Eğitici profilinizi öne çıkarın",
       "whichTest": "Hangi Test?",
       "noPublishedTests": "Yayında testiniz bulunmuyor. Önce bir test yayınlayın.",
       "selectTest": "Test seçin",
+      "whichWritten": "Hangi Yazılı Paket?",
+      "noPublishedWritten": "Yayında yazılı paketiniz bulunmuyor. Önce bir yazılı paket yayınlayın.",
+      "selectWritten": "Yazılı paket seçin",
       "adPackage": "Reklam Paketi",
       "noPackages": "Şu an satışta paket bulunmuyor.",
       "packageInfo": "{{impressions}} gösterim · {{days}} gün geçerli",
@@ -841,7 +846,8 @@
       "purchased": "Reklam satın alındı! Gösterimlere hemen başlanacak.",
       "purchaseFailed": "Satın alma başarısız",
       "selectPackage": "Lütfen bir paket seçin",
-      "selectTest": "Lütfen öne çıkarmak istediğiniz testi seçin"
+      "selectTest": "Lütfen öne çıkarmak istediğiniz testi seçin",
+      "selectWritten": "Lütfen öne çıkarmak istediğiniz yazılı paketi seçin"
     }
   },
   "myLiveSessions": {

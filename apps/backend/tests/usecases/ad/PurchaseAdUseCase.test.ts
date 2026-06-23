@@ -20,6 +20,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     adminSettings: { findFirst: jest.fn().mockResolvedValue(null) },
     adPackage: { findUnique: jest.fn() },
     examTest: { findUnique: jest.fn() },
+    writtenPackage: { findUnique: jest.fn() },
     adPurchase: {
       create: jest.fn().mockImplementation(async ({ data }: any) => ({
         id: 'ad-purchase-1',
@@ -58,6 +59,10 @@ function makeTest(overrides: any = {}) {
   return { id: 'test-1', educatorId: 'edu-1', status: 'PUBLISHED', tenantId: 'tenant-1', ...overrides };
 }
 
+function makeWritten(overrides: any = {}) {
+  return { id: 'wpkg-1', educatorId: 'edu-1', publishedAt: new Date('2024-02-01'), isActive: true, tenantId: 'tenant-1', ...overrides };
+}
+
 function makeUserRepo(user: any = null) {
   return { findById: jest.fn().mockResolvedValue(user) };
 }
@@ -68,6 +73,7 @@ describe('PurchaseAdUseCase', () => {
     mockPrisma.adminSettings.findFirst.mockResolvedValue(null);
     mockPrisma.adPackage.findUnique.mockResolvedValue(makeAdPackage());
     mockPrisma.examTest.findUnique.mockResolvedValue(makeTest());
+    mockPrisma.writtenPackage.findUnique.mockResolvedValue(makeWritten());
   });
 
   it('adPurchasesEnabled=false ise AD_PURCHASES_DISABLED fırlatır', async () => {
@@ -138,5 +144,31 @@ describe('PurchaseAdUseCase', () => {
     const result = await uc.execute('edu-1', 'ad-pkg-1', null, 'EDUCATOR');
     expect(result.targetType).toBe('EDUCATOR');
     expect(result.testId).toBeNull();
+  });
+
+  it('WRITTEN türünde writtenPackageId yoksa WRITTEN_PACKAGE_ID_REQUIRED fırlatır', async () => {
+    const uc = new PurchaseAdUseCase(makeUserRepo(makeUser()) as any);
+    await expect(uc.execute('edu-1', 'ad-pkg-1', null, 'WRITTEN')).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('WRITTEN paketi başkasının ise FORBIDDEN_NOT_OWNER fırlatır', async () => {
+    mockPrisma.writtenPackage.findUnique.mockResolvedValue(makeWritten({ educatorId: 'other-edu' }));
+    const uc = new PurchaseAdUseCase(makeUserRepo(makeUser()) as any);
+    await expect(uc.execute('edu-1', 'ad-pkg-1', null, 'WRITTEN', undefined, 'wpkg-1')).rejects.toThrow();
+  });
+
+  it('WRITTEN paketi yayınlanmamışsa WRITTEN_PACKAGE_NOT_PUBLISHED fırlatır', async () => {
+    mockPrisma.writtenPackage.findUnique.mockResolvedValue(makeWritten({ publishedAt: null }));
+    const uc = new PurchaseAdUseCase(makeUserRepo(makeUser()) as any);
+    await expect(uc.execute('edu-1', 'ad-pkg-1', null, 'WRITTEN', undefined, 'wpkg-1')).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('WRITTEN türünde başarılı satın alma', async () => {
+    const uc = new PurchaseAdUseCase(makeUserRepo(makeUser()) as any);
+    const result = await uc.execute('edu-1', 'ad-pkg-1', null, 'WRITTEN', undefined, 'wpkg-1');
+    expect(result.targetType).toBe('WRITTEN');
+    expect((result as any).writtenPackageId).toBe('wpkg-1');
+    expect(result.testId).toBeNull();
+    expect(result.impressionsRemaining).toBe(500);
   });
 });

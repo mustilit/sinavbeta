@@ -28,7 +28,7 @@ export class PurchaseAdUseCase {
    * @param promoCode    - Sprint 15 #4: opsiyonel platform promo (AD_PACKAGE scope).
    *                       Varsa atomik validate + apply + Usage kaydı + AdPurchase snapshot.
    */
-  async execute(educatorId: string, adPackageId: string, testId: string | null, targetType: 'TEST' | 'EDUCATOR' = 'TEST', promoCode?: string) {
+  async execute(educatorId: string, adPackageId: string, testId: string | null, targetType: 'TEST' | 'EDUCATOR' | 'WRITTEN' = 'TEST', promoCode?: string, writtenPackageId?: string | null) {
     // Admin reklam kill-switch kontrolü — false ise satın alma engellenir (fail-open: satır yoksa izin verilir)
     const settings = await prisma.adminSettings.findFirst({ where: { id: 1 } });
     if (settings && (settings as any).adPurchasesEnabled === false) {
@@ -46,6 +46,7 @@ export class PurchaseAdUseCase {
     if (!adPackage.active) throw new BadRequestException({ code: 'AD_PACKAGE_INACTIVE', message: 'Ad package is not active' });
 
     let resolvedTestId: string | null = null;
+    let resolvedWrittenPackageId: string | null = null;
     let tenantId: string = getDefaultTenantId();
 
     if (targetType === 'TEST') {
@@ -63,6 +64,20 @@ export class PurchaseAdUseCase {
       }
       resolvedTestId = testId;
       tenantId       = (test as any).tenantId ?? getDefaultTenantId();
+    } else if (targetType === 'WRITTEN') {
+      // WRITTEN türünde writtenPackageId zorunlu (yazılı modülü scalar — FK YOK)
+      if (!writtenPackageId) throw new BadRequestException({ code: 'WRITTEN_PACKAGE_ID_REQUIRED', message: 'writtenPackageId is required for WRITTEN type ads' });
+
+      const pkg = await prisma.writtenPackage.findUnique({ where: { id: writtenPackageId } });
+      if (!pkg) throw new BadRequestException({ code: 'WRITTEN_PACKAGE_NOT_FOUND', message: 'Written package not found' });
+      if ((pkg as any).educatorId !== educatorId) {
+        throw new AppError('FORBIDDEN_NOT_OWNER', 'Only the educator who owns the written package can purchase ads for it', 403);
+      }
+      if (!(pkg as any).publishedAt || (pkg as any).isActive === false) {
+        throw new BadRequestException({ code: 'WRITTEN_PACKAGE_NOT_PUBLISHED', message: 'Written package must be published to purchase ads' });
+      }
+      resolvedWrittenPackageId = writtenPackageId;
+      tenantId                 = (pkg as any).tenantId ?? getDefaultTenantId();
     } else {
       // EDUCATOR türünde eğiticinin tenant'ını kullan
       tenantId = (user as any).tenantId ?? getDefaultTenantId();
@@ -120,6 +135,7 @@ export class PurchaseAdUseCase {
             adPackageId,
             targetType,
             testId: resolvedTestId,
+            writtenPackageId: resolvedWrittenPackageId,
             validUntil,
             impressionsRemaining: adPackage.impressions,
             impressionsDelivered: 0,
@@ -147,6 +163,7 @@ export class PurchaseAdUseCase {
         targetType:           result.targetType,
         adPackageId,
         testId:               resolvedTestId,
+        writtenPackageId:     resolvedWrittenPackageId,
         validUntil:           result.validUntil,
         impressionsRemaining: result.impressionsRemaining,
         createdAt:            result.createdAt,
@@ -163,6 +180,7 @@ export class PurchaseAdUseCase {
         adPackageId,
         targetType,
         testId:               resolvedTestId,
+        writtenPackageId:     resolvedWrittenPackageId,
         validUntil,
         impressionsRemaining: adPackage.impressions,
         impressionsDelivered: 0,
@@ -175,6 +193,7 @@ export class PurchaseAdUseCase {
       targetType:           purchase.targetType,
       adPackageId,
       testId:               resolvedTestId,
+      writtenPackageId:     resolvedWrittenPackageId,
       validUntil:           purchase.validUntil,
       impressionsRemaining: purchase.impressionsRemaining,
       createdAt:            purchase.createdAt,

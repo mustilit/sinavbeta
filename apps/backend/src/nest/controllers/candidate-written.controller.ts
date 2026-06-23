@@ -57,8 +57,20 @@ export class CandidateWrittenController {
   @Get('packages')
   @Public()
   @ApiOkResponse({ description: 'Yayımlanmış yazılı paketler (pazar)' })
-  async list(@Query('limit') limit?: string, @Query('cursor') cursor?: string, @Query('gradeLevelId') gradeLevelId?: string) {
-    return this.listUC.execute({ limit: limit ? Number(limit) : undefined, cursor: cursor || null, gradeLevelId: gradeLevelId || null });
+  async list(
+    @Req() req: any,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+    @Query('gradeLevelId') gradeLevelId?: string,
+    @Query('featured') featured?: string,
+  ) {
+    return this.listUC.execute({
+      limit: limit ? Number(limit) : undefined,
+      cursor: cursor || null,
+      gradeLevelId: gradeLevelId || null,
+      featured: featured === '1' || featured === 'true',
+      viewerId: (req as any)?.user?.id ?? null,
+    });
   }
 
   @Get('my-packages')
