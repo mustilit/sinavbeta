@@ -31,4 +31,19 @@ export class CreateCandidateNoteDto {
   @IsInt()
   @Min(1)
   questionOrder?: number;
+
+  @ApiPropertyOptional({ description: 'Kaynak modül: TEST | TUNNEL | WRITTEN' })
+  @IsOptional()
+  @IsString()
+  source?: string;
+
+  @ApiPropertyOptional({ description: 'Modül-dışı içerik id (tunnelId / writtenTestId)' })
+  @IsOptional()
+  @IsUUID()
+  contextId?: string;
+
+  @ApiPropertyOptional({ description: 'Modül-dışı soru id (tunnel/written question)' })
+  @IsOptional()
+  @IsUUID()
+  contextQuestionId?: string;
 }

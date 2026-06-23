@@ -49,6 +49,9 @@ export class CandidateNotesController {
         testId: dto.testId,
         attemptId: dto.attemptId,
         questionOrder: dto.questionOrder,
+        source: dto.source,
+        contextId: dto.contextId,
+        contextQuestionId: dto.contextQuestionId,
       },
       actorId,
     );
@@ -65,6 +68,7 @@ export class CandidateNotesController {
       topicId: q.topicId,
       testId: q.testId,
       examTypeId: q.examTypeId,
+      contextId: q.contextId,
       q: q.q,
       scope: q.scope ?? null,
     });

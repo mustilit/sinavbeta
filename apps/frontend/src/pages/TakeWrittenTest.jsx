@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import ReportQuestionModal from "@/components/test/ReportQuestionModal";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
 import { TestWatermark } from "@/components/test/TestWatermark";
+import { NoteWidget } from "@/components/notes/NoteWidget";
 import { useAuth } from "@/lib/AuthContext";
 import { candidateWritten as api } from "@/api/dalClient";
 
@@ -427,6 +428,15 @@ function TakeWrittenTest() {
       </Dialog>
 
       <ReportQuestionModal open={reportOpen} onClose={() => setReportOpen(false)} onSubmit={submitReport} questionNumber={current + 1} />
+
+      {/* Aday not alma — test ekranıyla aynı widget; yazılı kaynağına adreslenir. */}
+      <NoteWidget
+        source="WRITTEN"
+        contextId={testId}
+        contextQuestionId={q?.id}
+        questionOrder={current + 1}
+        testTitle={state?.test?.title}
+      />
     </div>
   );
 }

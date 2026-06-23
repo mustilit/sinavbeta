@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import ReportQuestionModal from "@/components/test/ReportQuestionModal";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
 import { TestWatermark } from "@/components/test/TestWatermark";
+import { NoteWidget } from "@/components/notes/NoteWidget";
 import { useAuth } from "@/lib/AuthContext";
 import { candidateTunnels as api } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
@@ -296,6 +297,14 @@ export default function TakeTunnel() {
         onClose={() => setReportOpen(false)}
         onSubmit={submitReport}
         questionNumber={viewIndex < answered.length ? viewIndex + 1 : answered.length + 1}
+      />
+
+      {/* Aday not alma — test ekranıyla aynı widget; tünel kaynağına adreslenir. */}
+      <NoteWidget
+        source="TUNNEL"
+        contextId={tunnelId}
+        contextQuestionId={q?.id}
+        testTitle={state?.title}
       />
     </div>
   );

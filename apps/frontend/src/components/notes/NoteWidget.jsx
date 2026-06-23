@@ -12,30 +12,35 @@ import { notes as notesApi } from "@/api/dalClient";
  * Açılınca chat benzeri bir panel: üstte ilgili notların akışı, altta yazma alanı.
  * "Bu soru" (adresli) / "Genel" (serbest) kapsamı seçilebilir.
  *
- * @param {{ testId?:string, questionId?:string, attemptId?:string, questionOrder?:number, testTitle?:string }} props
+ * Tünel/yazılı için source + contextId/contextQuestionId verilir (testId/questionId FK'sini kullanamaz).
+ * @param {{ testId?:string, questionId?:string, attemptId?:string, questionOrder?:number, testTitle?:string, source?:string, contextId?:string, contextQuestionId?:string }} props
  */
-export function NoteWidget({ testId, questionId, attemptId, questionOrder, testTitle }) {
+export function NoteWidget({ testId, questionId, attemptId, questionOrder, testTitle, source = "TEST", contextId, contextQuestionId }) {
   const { t } = useTranslation("pages");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const isModule = source && source !== "TEST"; // tünel/yazılı
+  const hasQuestion = !!(questionId || contextQuestionId);
   // Soru varsa varsayılan "bu soru"; yoksa "genel".
-  const [scope, setScope] = useState(questionId ? "question" : "general");
+  const [scope, setScope] = useState(hasQuestion ? "question" : "general");
   const [text, setText] = useState("");
   const threadEndRef = useRef(null);
 
   // Soru değişince kapsamı uygun şekilde sıfırla
   useEffect(() => {
-    setScope(questionId ? "question" : "general");
-  }, [questionId]);
+    setScope(hasQuestion ? "question" : "general");
+  }, [hasQuestion]);
 
   const isCandidate = user?.role === "CANDIDATE";
 
-  // İlgili notların akışı: kapsam "bu soru/test" ise testId ile, "genel" ise scope=general.
+  // İlgili notların akışı: "bu soru/içerik" ise testId/contextId ile; "genel" ise scope=general.
   const threadParams =
-    scope === "question" && testId
-      ? { testId, pageSize: 30 }
-      : { scope: "general", pageSize: 30 };
+    scope === "question" && isModule && contextId
+      ? { contextId, pageSize: 30 }
+      : scope === "question" && testId
+        ? { testId, pageSize: 30 }
+        : { scope: "general", pageSize: 30 };
 
   const { data: thread, isLoading: threadLoading } = useQuery({
     queryKey: ["noteThread", threadParams],
@@ -47,9 +52,11 @@ export function NoteWidget({ testId, questionId, attemptId, questionOrder, testT
   const createNote = useMutation({
     mutationFn: (body) =>
       notesApi.create(
-        scope === "question"
-          ? { body, questionId, testId, attemptId, questionOrder }
-          : { body },
+        scope !== "question"
+          ? { body }
+          : isModule
+            ? { body, source, contextId, contextQuestionId, attemptId, questionOrder }
+            : { body, questionId, testId, attemptId, questionOrder },
       ),
     onSuccess: () => {
       setText("");
@@ -106,7 +113,7 @@ export function NoteWidget({ testId, questionId, attemptId, questionOrder, testT
 
           {/* Kapsam seçimi */}
           <div className="flex gap-1 px-3 pt-2">
-            {questionId ? (
+            {hasQuestion ? (
               <button
                 type="button"
                 onClick={() => setScope("question")}

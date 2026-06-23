@@ -14,6 +14,11 @@ type Input = {
   // Ekranda görünen soru numarası (1-tabanlı). Verilirse DB order yerine bu saklanır
   // — aday hangi soruda gördüyse o numara ("Soru N") korunur.
   questionOrder?: number | null;
+  // Modül kaynağı: TEST (varsayılan) | TUNNEL | WRITTEN. Tünel/yazılı için
+  // testId/questionId FK kullanılamaz → contextId/contextQuestionId ile adreslenir.
+  source?: string | null;
+  contextId?: string | null;
+  contextQuestionId?: string | null;
 };
 
 /**
@@ -46,8 +51,51 @@ export class CreateCandidateNoteUseCase {
     let examTypeName: string | null = null;
     let questionExcerpt: string | null = null;
     let questionOrder: number | null = null;
+    const source = (input.source ?? 'TEST').toUpperCase();
+    let contextId: string | null = null;
+    let contextQuestionId: string | null = null;
 
-    if (input.questionId) {
+    if (source === 'TUNNEL') {
+      // Tünel notu — TunnelQuestion / Tunnel'dan snapshot (FK yok, contextId ile).
+      if (input.contextQuestionId) {
+        const q = await prisma.tunnelQuestion.findUnique({
+          where: { id: input.contextQuestionId },
+          select: { id: true, content: true, order: true, tunnelId: true },
+        });
+        if (!q) throw new AppError('NOTE_TARGET_NOT_FOUND', 'Not eklenecek soru bulunamadı', 404);
+        contextQuestionId = q.id;
+        contextId = q.tunnelId;
+        questionExcerpt = (q.content ?? '').slice(0, EXCERPT_LEN);
+        questionOrder = input.questionOrder ?? q.order;
+        const tn = await prisma.tunnel.findUnique({ where: { id: q.tunnelId }, select: { title: true } });
+        testTitle = `Tünel: ${tn?.title ?? '—'}`;
+      } else if (input.contextId) {
+        const tn = await prisma.tunnel.findUnique({ where: { id: input.contextId }, select: { id: true, title: true } });
+        if (!tn) throw new AppError('NOTE_TARGET_NOT_FOUND', 'Not eklenecek tünel bulunamadı', 404);
+        contextId = tn.id;
+        testTitle = `Tünel: ${tn.title}`;
+      }
+    } else if (source === 'WRITTEN') {
+      // Yazılı notu — WrittenQuestion / WrittenTest'ten snapshot.
+      if (input.contextQuestionId) {
+        const q = await prisma.writtenQuestion.findUnique({
+          where: { id: input.contextQuestionId },
+          select: { id: true, content: true, order: true, testId: true },
+        });
+        if (!q) throw new AppError('NOTE_TARGET_NOT_FOUND', 'Not eklenecek soru bulunamadı', 404);
+        contextQuestionId = q.id;
+        contextId = q.testId;
+        questionExcerpt = (q.content ?? '').slice(0, EXCERPT_LEN);
+        questionOrder = input.questionOrder ?? q.order;
+        const wt = await prisma.writtenTest.findUnique({ where: { id: q.testId }, select: { title: true } });
+        testTitle = `Yazılı: ${wt?.title ?? '—'}`;
+      } else if (input.contextId) {
+        const wt = await prisma.writtenTest.findUnique({ where: { id: input.contextId }, select: { id: true, title: true } });
+        if (!wt) throw new AppError('NOTE_TARGET_NOT_FOUND', 'Not eklenecek test bulunamadı', 404);
+        contextId = wt.id;
+        testTitle = `Yazılı: ${wt.title}`;
+      }
+    } else if (input.questionId) {
       const q = await prisma.examQuestion.findUnique({
         where: { id: input.questionId },
         select: {
@@ -115,6 +163,9 @@ export class CreateCandidateNoteUseCase {
         examTypeName,
         questionExcerpt,
         questionOrder,
+        source,
+        contextId,
+        contextQuestionId,
       },
     });
 
@@ -135,6 +186,9 @@ export function serializeNote(n: {
   examTypeName: string | null;
   questionExcerpt: string | null;
   questionOrder: number | null;
+  source?: string | null;
+  contextId?: string | null;
+  contextQuestionId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -151,6 +205,9 @@ export function serializeNote(n: {
     examTypeName: n.examTypeName,
     questionExcerpt: n.questionExcerpt,
     questionOrder: n.questionOrder,
+    source: n.source ?? 'TEST',
+    contextId: n.contextId ?? null,
+    contextQuestionId: n.contextQuestionId ?? null,
     createdAt: n.createdAt.toISOString(),
     updatedAt: n.updatedAt.toISOString(),
   };

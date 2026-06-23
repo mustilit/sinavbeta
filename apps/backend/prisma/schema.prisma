@@ -1891,6 +1891,12 @@ model CandidateNote {
   examTypeId String?
   attemptId  String? // bağlam işareti (FK yok — silinen attempt notu düşürmesin)
 
+  // Kaynak modül + modül-dışı adres (FK YOK — tünel/yazılı testId/questionId FK'sini kullanamaz).
+  // source: TEST (varsayılan) | TUNNEL | WRITTEN. contextId = tunnelId/writtenTestId.
+  source            String  @default("TEST")
+  contextId         String?
+  contextQuestionId String?
+
   // Snapshot (denormalize): kaynak değişse/silinse de Notlarım'da doğru adres
   testTitle       String?
   topicName       String?
@@ -1913,6 +1919,7 @@ model CandidateNote {
   @@index([candidateId, testId])
   @@index([candidateId, examTypeId])
   @@index([candidateId, questionId])
+  @@index([candidateId, contextId])
   @@map("candidate_notes")
 }
 

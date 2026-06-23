@@ -34,6 +34,11 @@ export class ListCandidateNotesQueryDto {
   @IsString()
   examTypeId?: string;
 
+  @ApiPropertyOptional({ description: 'Modül-dışı içerik filtresi (tünel/yazılı id)' })
+  @IsOptional()
+  @IsString()
+  contextId?: string;
+
   @ApiPropertyOptional({ description: 'Metin araması (not içeriği)' })
   @IsOptional()
   @IsString()
