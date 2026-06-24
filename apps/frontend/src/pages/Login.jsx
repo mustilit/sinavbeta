@@ -45,7 +45,12 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password, { turnstileToken });
+      const loggedIn = await login(email, password, { turnstileToken });
+      // E-Sınıf (okul) kullanıcısı → okul paneline yönlendir (marketplace home değil).
+      if (loggedIn?.school?.schoolRole) {
+        navigate(createPageUrl('SchoolPanel'), { replace: true });
+        return;
+      }
       // Öncelik sırası: ?next= (whitelist) > ?from= (open redirect korumalı) > Home
       const target = safeNextPage
         ? createPageUrl(safeNextPage)

@@ -153,6 +153,12 @@ const BackupManagement = lazy(() => import('./pages/BackupManagement'));
 const CreateWrittenTest = lazy(() => import('./pages/CreateWrittenTest'));
 const EditWrittenTest = lazy(() => import('./pages/EditWrittenTest'));
 const ManageWrittenTests = lazy(() => import('./pages/ManageWrittenTests'));
+// E-Sınıf (Okul) modülü — Sprint 1
+const AdminSchools = lazy(() => import('./pages/AdminSchools'));
+const SchoolPanel = lazy(() => import('./pages/SchoolPanel'));
+const SchoolUsers = lazy(() => import('./pages/SchoolUsers'));
+const SchoolBranches = lazy(() => import('./pages/SchoolBranches'));
+const SchoolDepartments = lazy(() => import('./pages/SchoolDepartments'));
 
 
 export const PAGES = {
@@ -251,6 +257,11 @@ export const PAGES = {
     "CreateWrittenTest": CreateWrittenTest,
     "EditWrittenTest": EditWrittenTest,
     "ManageWrittenTests": ManageWrittenTests,
+    "AdminSchools": AdminSchools,
+    "SchoolPanel": SchoolPanel,
+    "SchoolUsers": SchoolUsers,
+    "SchoolBranches": SchoolBranches,
+    "SchoolDepartments": SchoolDepartments,
 }
 
 export const pagesConfig = {

@@ -159,6 +159,27 @@ export class AuthController {
       metadata: meta,
     };
 
+    // E-Sınıf (okul) bağlamı — kullanıcı bir okula bağlıysa schoolRole + okul bilgisi.
+    // Frontend giriş sonrası okul paneline yönlendirme + rol-bazlı UI için kullanır.
+    try {
+      const su = await prisma.schoolUser.findFirst({
+        where: { userId: user.id, isActive: true },
+        select: { id: true, schoolRole: true, schoolId: true, branchId: true, school: { select: { name: true, code: true } } },
+      });
+      if (su) {
+        userResponse.school = {
+          schoolUserId: su.id,
+          schoolRole: su.schoolRole,
+          schoolId: su.schoolId,
+          branchId: su.branchId,
+          schoolName: su.school?.name ?? null,
+          schoolCode: su.school?.code ?? null,
+        };
+      }
+    } catch {
+      /* okul bağlamı kritik değil — yoksa marketplace kullanıcısı gibi davran */
+    }
+
     // WORKER rolü ise sayfa izinlerini de ekle
     if (user.role === 'WORKER') {
       const wp = await prisma.workerPermission.findUnique({ where: { userId: user.id } });

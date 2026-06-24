@@ -149,6 +149,17 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     { name: t("sidebar.admin.riskyContent"), page: "RiskyContent", icon: ShieldAlert },
     { name: t("sidebar.admin.contracts"), page: "ManageContracts", icon: FileText },
     { name: t("sidebar.admin.backup"), page: "BackupManagement", icon: Database },
+    { name: t("sidebar.admin.schools", { defaultValue: "E-Sınıf Okulları" }), page: "AdminSchools", icon: GraduationCap },
+  ];
+
+  // E-Sınıf okul yöneticisi/şube yöneticisi menüsü (User.role=CANDIDATE; bağlam user.school'da)
+  const schoolCtx = user?.school;
+  const isSchoolManager = ["SCHOOL_ADMIN", "BRANCH_ADMIN"].includes(schoolCtx?.schoolRole);
+  const schoolLinks = [
+    { name: t("sidebar.esinif.panel", { defaultValue: "Okul Paneli" }), page: "SchoolPanel", icon: Home },
+    { name: t("sidebar.esinif.users", { defaultValue: "Kullanıcılar" }), page: "SchoolUsers", icon: Users },
+    { name: t("sidebar.esinif.branches", { defaultValue: "Şubeler & Sınıflar" }), page: "SchoolBranches", icon: BookOpen },
+    { name: t("sidebar.esinif.departments", { defaultValue: "Zümreler" }), page: "SchoolDepartments", icon: Layers },
   ];
 
   const workerPages = Array.isArray(user?.workerPages) ? user.workerPages : [];
@@ -157,6 +168,12 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   let links = candidateLinks;
   if (isAdmin) {
     links = [...adminLinks, { divider: true }, ...candidateLinks];
+  } else if (isSchoolManager) {
+    // Okul yöneticisi marketplace menüsü görmez — yalnız E-Sınıf menüsü
+    links = schoolLinks;
+  } else if (schoolCtx?.schoolRole) {
+    // Öğretmen/öğrenci (modülleri ileri sprint) — şimdilik yalnız panel
+    links = [schoolLinks[0]];
   } else if (isWorker) {
     links = workerLinks;
   } else if (isEducator) {
@@ -174,7 +191,16 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     ];
   }
 
-  const roleLabel = isAdmin
+  const SCHOOL_ROLE_LABEL = {
+    SCHOOL_ADMIN: t("sidebar.esinif.roleSchoolAdmin", { defaultValue: "Okul Yöneticisi" }),
+    BRANCH_ADMIN: t("sidebar.esinif.roleBranchAdmin", { defaultValue: "Şube Yöneticisi" }),
+    DEPT_HEAD: t("sidebar.esinif.roleDeptHead", { defaultValue: "Zümre Başkanı" }),
+    TEACHER: t("sidebar.esinif.roleTeacher", { defaultValue: "Öğretmen" }),
+    STUDENT: t("sidebar.esinif.roleStudent", { defaultValue: "Öğrenci" }),
+  };
+  const roleLabel = schoolCtx?.schoolRole
+    ? SCHOOL_ROLE_LABEL[schoolCtx.schoolRole]
+    : isAdmin
     ? t("roles.admin")
     : isWorker
     ? t("roles.worker")

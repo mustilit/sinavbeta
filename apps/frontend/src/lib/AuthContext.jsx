@@ -147,12 +147,14 @@ export const AuthProvider = ({ children }) => {
     }
     setAuth(u, token);
     // Login response preferences içermez; profil resmi vb. için /me ile zenginleştir.
+    let merged = null;
     try {
-      const merged = await base44.auth.me();
+      merged = await base44.auth.me();
       if (merged) setAuth(merged, token);
     } catch {}
     authLog('login ok', { id: u?.id, role: u?.role });
-    return u;
+    // merged /me okul bağlamını (school) içerir; çağıran (Login) yönlendirme için kullanır.
+    return merged ?? u;
   }, [setAuth]);
 
   /**

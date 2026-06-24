@@ -109,6 +109,14 @@ export const PAGE_ROLES = {
   ManagePromoCodes: [ROLES.ADMIN],
   // Sprint 16 — admin yasal sözleşme yönetimi
   ManageContracts: [ROLES.ADMIN],
+  // E-Sınıf (Okul) modülü — admin okul yönetimi + okul kullanıcı sayfaları.
+  // Okul kullanıcılarının User.role'ü CANDIDATE; bu yüzden okul sayfaları "giriş yapan
+  // herkes" ([]) ile açılır ve sayfa içinde user.school.schoolRole ile yetki kapısı uygulanır.
+  AdminSchools: [ROLES.ADMIN],
+  SchoolPanel: [],
+  SchoolUsers: [],
+  SchoolBranches: [],
+  SchoolDepartments: [],
   ManageTopics: [ROLES.ADMIN],
   ManageUsers: [ROLES.ADMIN],
   ManageTests: [ROLES.ADMIN],
