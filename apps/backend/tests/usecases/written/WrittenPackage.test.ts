@@ -10,6 +10,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     writtenQuestion: { count: jest.fn() },
     gradeLevel: { findUnique: jest.fn(async () => ({ id: 'genel-id' })) },
     adminSettings: { findFirst: jest.fn() },
+    auditLog: { create: jest.fn(async () => ({})) },
     $transaction: jest.fn(),
   },
 }));
@@ -99,11 +100,21 @@ describe('UpdateWrittenPackageUseCase', () => {
     p.writtenPackage.findUnique.mockResolvedValue({
       id: 'pkg1', educatorId: 'edu1', publishedAt: new Date(), tenantId: 'ten1',
     });
-    p.writtenPackage.update.mockResolvedValue({ id: 'pkg1', title: 'Güncel' });
+    p.writtenPackage.update.mockResolvedValue({ id: 'pkg1', title: 'Güncel', tenantId: 'ten1' });
     const result = await new UpdateWrittenPackageUseCase().execute(
-      'pkg1', { title: 'Güncel' }, 'edu1',
+      'pkg1', { title: 'Güncel', priceCents: 5000 }, 'edu1',
     );
     expect(result).toMatchObject({ id: 'pkg1' });
+    // Audit: meta güncelleme WRITTEN_UPDATED + değişen alanlar ile loglanır
+    expect(p.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: 'WRITTEN_UPDATED',
+          entityType: 'WrittenPackage',
+          metadata: expect.objectContaining({ changedFields: expect.arrayContaining(['title', 'priceCents']) }),
+        }),
+      }),
+    );
   });
 });
 
@@ -170,6 +181,10 @@ describe('PublishWrittenPackageUseCase', () => {
     );
     expect(mockTx.writtenPackage.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ isActive: true }) }),
+    );
+    // Audit: yazılı yayımlama WRITTEN_PUBLISHED ile loglanır
+    expect(mockTx.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: 'WRITTEN_PUBLISHED', entityType: 'WrittenPackage' }) }),
     );
   });
 

@@ -1,6 +1,7 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { serializeTunnelDetail } from './GetTunnelUseCase';
+import { logger } from '../../../infrastructure/logger/logger';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_TITLE = 200;
@@ -94,6 +95,18 @@ export class UpdateTunnelUseCase {
         },
       },
     });
+
+    // İşlem geçmişi / audit — tünel meta güncelleme (değişen alanlar; best-effort).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'TUNNEL_UPDATED', entityType: 'Tunnel', entityId: tunnelId, actorId,
+          metadata: { kind: 'tunnel', changedFields: Object.keys(data) } as object,
+          tenantId: (updated as any).tenantId ?? null,
+        },
+      })
+      .catch((e) => logger.warn('tunnel.update.audit_failed', { error: (e as any)?.message, tunnelId, actorId }));
+
     return serializeTunnelDetail(updated);
   }
 }

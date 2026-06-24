@@ -1,5 +1,6 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { logger } from '../../../infrastructure/logger/logger';
 
 const SUBMITTABLE: ReadonlySet<string> = new Set(['DRAFT', 'REJECTED']);
 
@@ -50,6 +51,18 @@ export class SubmitTunnelForApprovalUseCase {
       where: { id: tunnelId },
       data: { status: 'PENDING_APPROVAL', submittedAt: new Date(), reviewNote: null },
     });
+
+    // İşlem geçmişi / audit — tünel onaya gönderildi (best-effort).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'TUNNEL_SUBMITTED', entityType: 'Tunnel', entityId: tunnelId, actorId,
+          metadata: { kind: 'tunnel', layerCount: tunnel.layers.length } as object,
+          tenantId: (updated as any).tenantId ?? null,
+        },
+      })
+      .catch((e) => logger.warn('tunnel.submit.audit_failed', { error: (e as any)?.message, tunnelId, actorId }));
+
     return updated;
   }
 }

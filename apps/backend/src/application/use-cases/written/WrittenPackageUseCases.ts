@@ -133,10 +133,23 @@ export class UpdateWrittenPackageUseCase {
       return prisma.writtenPackage.findUnique({ where: { id: packageId } });
     }
 
-    return prisma.writtenPackage.update({
+    const updated = await prisma.writtenPackage.update({
       where: { id: packageId },
       data,
     });
+
+    // İşlem geçmişi / audit — yazılı paket meta güncelleme (değişen alanlar; best-effort).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'WRITTEN_UPDATED', entityType: 'WrittenPackage', entityId: packageId, actorId: actorId ?? null,
+          metadata: { kind: 'written', changedFields: Object.keys(data) } as object,
+          tenantId: (updated as any).tenantId ?? null,
+        },
+      })
+      .catch((e) => logger.warn('written_package.update.audit_failed', { error: (e as any)?.message, packageId, actorId }));
+
+    return updated;
   }
 }
 
@@ -215,7 +228,7 @@ export class PublishWrittenPackageUseCase {
       // İşlem geçmişi / audit — yazılı paket yayımlama (yayımla ile aynı transaction).
       await tx.auditLog.create({
         data: {
-          action: 'TEST_PUBLISHED', entityType: 'WrittenPackage', entityId: packageId, actorId: actorId ?? null,
+          action: 'WRITTEN_PUBLISHED', entityType: 'WrittenPackage', entityId: packageId, actorId: actorId ?? null,
           metadata: { kind: 'written', testCount: tests.length } as object, tenantId: (updated as any).tenantId ?? null,
         },
       });
@@ -244,6 +257,13 @@ export class UnpublishWrittenPackageUseCase {
       const updated = await tx.writtenPackage.update({
         where: { id: packageId },
         data: { publishedAt: null, isActive: false },
+      });
+      // İşlem geçmişi / audit — yazılı paket yayından kaldırma (aynı transaction).
+      await tx.auditLog.create({
+        data: {
+          action: 'WRITTEN_UNPUBLISHED', entityType: 'WrittenPackage', entityId: packageId, actorId: actorId ?? null,
+          metadata: { kind: 'written' } as object, tenantId: (updated as any).tenantId ?? null,
+        },
       });
       logger.log({ msg: 'written_package.unpublished', packageId, actorId });
       return updated;

@@ -147,6 +147,15 @@ enum AuditAction {
   EMAIL_RETRY_TRIGGERED
   EMAIL_PREFERENCES_UPDATED
   EMAIL_UNSUBSCRIBE
+  // ── Tünel modülü içerik yaşam döngüsü ───────────────────────────────
+  TUNNEL_SUBMITTED
+  TUNNEL_APPROVED
+  TUNNEL_REJECTED
+  TUNNEL_UPDATED
+  // ── Yazılı modülü içerik yaşam döngüsü ──────────────────────────────
+  WRITTEN_PUBLISHED
+  WRITTEN_UNPUBLISHED
+  WRITTEN_UPDATED
 }
 
 // ── Email Trafiği Enums ─────────────────────────────────────────────────────

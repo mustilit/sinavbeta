@@ -52,6 +52,18 @@ const ACTION_GROUPS = [
     ],
   },
   {
+    label: "Tünel & Yazılı İşlemleri",
+    actions: [
+      { value: "TUNNEL_SUBMITTED", label: "Tünel onaya gönderme" },
+      { value: "TUNNEL_APPROVED", label: "Tünel onaylama" },
+      { value: "TUNNEL_REJECTED", label: "Tünel reddi" },
+      { value: "TUNNEL_UPDATED", label: "Tünel güncelleme" },
+      { value: "WRITTEN_PUBLISHED", label: "Yazılı yayımlama" },
+      { value: "WRITTEN_UNPUBLISHED", label: "Yazılı yayından kaldırma" },
+      { value: "WRITTEN_UPDATED", label: "Yazılı güncelleme" },
+    ],
+  },
+  {
     label: "Satın Alma & İade",
     actions: [
       { value: "PURCHASE", label: "Satın alma" },

@@ -27,11 +27,11 @@ export class ApproveTunnelUseCase {
     await prisma.auditLog
       .create({
         data: {
-          action: 'TEST_PUBLISHED', entityType: 'Tunnel', entityId: tunnelId, actorId,
+          action: 'TUNNEL_APPROVED', entityType: 'Tunnel', entityId: tunnelId, actorId,
           metadata: { kind: 'tunnel' } as object, tenantId: (updated as any).tenantId ?? null,
         },
       })
-      .catch(() => {});
+      .catch((e) => logger.warn('tunnel.approve.audit_failed', { error: (e as any)?.message, tunnelId, actorId }));
     return updated;
   }
 }
@@ -55,6 +55,15 @@ export class RejectTunnelUseCase {
       data: { status: 'REJECTED', reviewedById: actorId, reviewedAt: new Date(), reviewNote: note },
     });
     logger.info('tunnel.rejected', { tunnelId, actorId });
+    // İşlem geçmişi / audit — tünel reddi (sebep metadata'da; best-effort).
+    await prisma.auditLog
+      .create({
+        data: {
+          action: 'TUNNEL_REJECTED', entityType: 'Tunnel', entityId: tunnelId, actorId,
+          metadata: { kind: 'tunnel', reason: note } as object, tenantId: (updated as any).tenantId ?? null,
+        },
+      })
+      .catch((e) => logger.warn('tunnel.reject.audit_failed', { error: (e as any)?.message, tunnelId, actorId }));
     return updated;
   }
 }

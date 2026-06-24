@@ -102,6 +102,10 @@ describe('UpdateTunnelUseCase', () => {
     expect(data.title).toBe('Yeni');
     expect(data.description).toBeNull();
     expect(r.id).toBe('tn1');
+    // Audit: tünel meta güncelleme TUNNEL_UPDATED ile loglanır
+    expect(p.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: 'TUNNEL_UPDATED', entityType: 'Tunnel' }) }),
+    );
   });
   it('fiyat min altı → TUNNEL_PRICE_TOO_LOW', async () => {
     p.tunnel.findUnique.mockResolvedValue({ id: 'tn1', educatorId: 'edu1', status: 'DRAFT' });
