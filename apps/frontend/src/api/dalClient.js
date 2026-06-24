@@ -2204,6 +2204,24 @@ export const school = {
   resetPassword: async (id) => (await api.post(`/school/users/${id}/reset-password`)).data,
   // Kota
   quota: async () => (await api.get('/school/quota')).data,
+
+  // Sınav havuzu (Sprint 2) — öğretmen/zümre başkanı
+  exams: {
+    list: async ({ examType, gradeLevel, includeArchived, q } = {}) => {
+      const qs = new URLSearchParams();
+      if (examType) qs.set('examType', examType);
+      if (gradeLevel != null) qs.set('gradeLevel', String(gradeLevel));
+      if (includeArchived) qs.set('includeArchived', '1');
+      if (q) qs.set('q', q);
+      return (await api.get(`/school/exams?${qs.toString()}`)).data;
+    },
+    get: async (id) => (await api.get(`/school/exams/${id}`)).data,
+    create: async (body) => (await api.post('/school/exams', body)).data,
+    update: async (id, body) => (await api.patch(`/school/exams/${id}`, body)).data,
+    saveQuestions: async (id, questions) => (await api.post(`/school/exams/${id}/questions`, { questions })).data,
+    archive: async (id, isArchived) => (await api.patch(`/school/exams/${id}/archive`, { isArchived })).data,
+    remove: async (id) => (await api.delete(`/school/exams/${id}`)).data,
+  },
 };
 
 export default api;

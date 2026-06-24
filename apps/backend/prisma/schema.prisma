@@ -399,10 +399,11 @@ model User {
   candidateTunnelAttempts  TunnelAttempt[]       @relation("candidateTunnelAttempts")
 
   // ── E-Sınıf (okul modülü) ilişkileri ────────────────────────────────────
-  schoolAdminOf     School?      @relation("SchoolAdmin")
-  branchAdminOf     Branch?      @relation("BranchAdmin")
-  departmentsHeaded Department[] @relation("DeptHead")
-  schoolMemberships SchoolUser[]
+  schoolAdminOf      School?      @relation("SchoolAdmin")
+  branchAdminOf      Branch?      @relation("BranchAdmin")
+  departmentsHeaded  Department[] @relation("DeptHead")
+  schoolMemberships  SchoolUser[]
+  createdSchoolExams SchoolExam[] @relation("SchoolExamCreatedBy")
 
   @@index([tenantId])
   @@index([twoFactorEnabled])
@@ -2453,6 +2454,7 @@ model School {
   departments     Department[]
   classrooms      Classroom[]
   schoolUsers     SchoolUser[]
+  exams           SchoolExam[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   deletedAt       DateTime?
@@ -2504,6 +2506,7 @@ model Department {
   headUserId String?
   headUser   User?        @relation("DeptHead", fields: [headUserId], references: [id], onDelete: SetNull)
   members    SchoolUser[]
+  exams      SchoolExam[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
@@ -2536,4 +2539,80 @@ model SchoolUser {
   @@index([departmentId])
   @@index([branchId])
   @@map("school_users")
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// E-SINIF — Sprint 2: Sınav içeriği (özel kopya) + havuz
+// Marketplace ExamTest'ten AYRI; ücret/satın alma yok. Tek model hem sınav
+// hem havuz kaydıdır (poolVisibility + isArchived). 3 tür: TEST/TUNNEL/WRITTEN.
+// ════════════════════════════════════════════════════════════════════════
+
+enum SchoolExamType {
+  TEST // çoktan seçmeli, geri dönülebilir
+  TUNNEL // sıralı; geri dönüş yok, geçilebilir
+  WRITTEN // açık uçlu; öğretmen manuel puanlar (Sprint 4)
+}
+
+enum PoolVisibility {
+  DEPARTMENT // yalnız aynı zümre
+  SCHOOL // tüm okul öğretmenleri
+}
+
+model SchoolExam {
+  id              String           @id @default(uuid())
+  schoolId        String
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  departmentId    String?
+  department      Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdById     String
+  createdBy       User             @relation("SchoolExamCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  examType        SchoolExamType
+  subject         String // ders (zümreden türetilir/serbest)
+  gradeLevel      Int? // sınıf seviyesi 1-12
+  topic           String? // konu başlığı (serbest)
+  title           String
+  durationMinutes Int? // tüm sınav süresi (null = süresiz)
+  totalPoints     Int              @default(0) // soru puanları toplamı (denormalize)
+  poolVisibility  PoolVisibility   @default(DEPARTMENT)
+  isArchived      Boolean          @default(false)
+  tenantId        String
+  questions       SchoolQuestion[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([schoolId, departmentId])
+  @@index([schoolId, gradeLevel])
+  @@index([schoolId, examType])
+  @@index([createdById])
+  @@map("school_exams")
+}
+
+model SchoolQuestion {
+  id               String                 @id @default(uuid())
+  examId           String
+  exam             SchoolExam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  content          String
+  mediaUrl         String?
+  order            Int // 1-tabanlı
+  points           Int                    @default(1)
+  // WRITTEN için çözüm (öğretmen referansı); TEST/TUNNEL için opsiyonel açıklama
+  solutionText     String?
+  solutionMediaUrl String?
+  options          SchoolQuestionOption[]
+  createdAt        DateTime               @default(now())
+
+  @@index([examId])
+  @@map("school_questions")
+}
+
+model SchoolQuestionOption {
+  id         String         @id @default(uuid())
+  questionId String
+  question   SchoolQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  content    String
+  isCorrect  Boolean        @default(false)
+  order      Int // 1-tabanlı (A,B,C,D...)
+
+  @@index([questionId])
+  @@map("school_question_options")
 }

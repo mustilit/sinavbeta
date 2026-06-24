@@ -25,6 +25,7 @@ import { TestsPerformanceController } from './controllers/tests.performance.cont
 import { HomeController } from './controllers/home.controller';
 import { AdminSchoolsController } from './controllers/admin.schools.controller';
 import { SchoolController } from './controllers/school.controller';
+import { SchoolExamsController } from './controllers/school-exams.controller';
 import { ReviewsController } from './controllers/reviews.controller';
 import { EducatorsController } from './controllers/educators.controller';
 import { FollowsController } from './controllers/follows.controller';
@@ -429,6 +430,8 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     // E-Sınıf (Okul) modülü — Sprint 1 Foundation
     AdminSchoolsController,
     SchoolController,
+    // E-Sınıf — Sprint 2 sınav içeriği + havuz
+    SchoolExamsController,
   ],
   providers: [
     SeedService,
