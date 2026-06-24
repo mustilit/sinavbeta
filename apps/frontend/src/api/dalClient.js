@@ -235,6 +235,7 @@ function userAdapter(u) {
 function normalizeRefund(r) {
   return {
     id: r.id,
+    source: r.source ?? 'TEST',
     purchaseId: r.purchaseId ?? null,
     candidateId: r.candidateId ?? null,
     educatorId: r.educatorId ?? null,
@@ -960,10 +961,11 @@ export const entities = {
       const list = Array.isArray(data) ? data : [];
       return list.map((r) => normalizeRefund(r));
     },
-    // Aday: iade talebi oluştur
+    // Aday: iade talebi oluştur (source: TEST | TUNNEL | WRITTEN)
     create: async (body) => {
       const { data } = await api.post('/refunds', {
         purchaseId: body.purchase_id ?? body.purchaseId,
+        source: body.source ?? 'TEST',
         reason: body.reason,
         description: body.description,
       });

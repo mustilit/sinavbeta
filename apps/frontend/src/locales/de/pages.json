@@ -2115,5 +2115,10 @@
     "completed": "Abgeschlossen",
     "inProgress": "Läuft",
     "notStarted": "Nicht begonnen"
+  },
+  "refundSource": {
+    "TEST": "Testpaket",
+    "TUNNEL": "Tunnel",
+    "WRITTEN": "Schriftlich"
   }
 }

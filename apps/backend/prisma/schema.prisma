@@ -935,10 +935,18 @@ enum RefundStatus {
 
 model RefundRequest {
   id                String       @id @default(uuid())
-  purchaseId        String       @unique
+  // Kaynak modülü: TEST (test paketi) | TUNNEL | WRITTEN. purchaseId/testId yalnız TEST'te dolu.
+  source            String       @default("TEST")
+  purchaseId        String?      @unique
+  // TUNNEL/WRITTEN kaynaklı iadelerde ilgili satın alma satırı (scalar — FK YOK)
+  tunnelPurchaseId  String?      @unique
+  writtenPurchaseId String?      @unique
+  // Provenans/başlık çözümü için içerik id'leri
+  tunnelId          String?
+  writtenPackageId  String?
   candidateId       String
   educatorId        String
-  testId            String
+  testId            String?
   reason            String?
   description       String?
   currency          Currency     @default(TRY)
@@ -956,6 +964,7 @@ model RefundRequest {
   @@index([candidateId])
   @@index([educatorId])
   @@index([testId])
+  @@index([source])
   @@map("refund_requests")
 }
 

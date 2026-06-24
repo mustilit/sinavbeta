@@ -33,6 +33,7 @@ export class ListMyWrittenPurchasesUseCase {
       where: { id: { in: packageIds } },
       select: {
         id: true, title: true, description: true, coverImageUrl: true, difficulty: true, educatorId: true, gradeLevelId: true,
+        priceCents: true, currency: true,
         tests: { where: { deletedAt: null }, orderBy: { createdAt: 'asc' }, select: { id: true, title: true, isTimed: true, duration: true, questionCount: true } },
       },
     });
@@ -61,10 +62,13 @@ export class ListMyWrittenPurchasesUseCase {
           if (!p) return null;
           return {
             packageId: p.id,
+            purchaseId: pur.id, // iade akışı için WrittenPurchase id'si
             title: p.title,
             description: p.description,
             coverImageUrl: p.coverImageUrl,
             difficulty: p.difficulty,
+            priceCents: p.priceCents ?? null,
+            currency: p.currency ?? 'TRY',
             educatorName: p.educatorId ? educators.get(p.educatorId) ?? null : null,
             gradeLevelId: p.gradeLevelId ?? null,
             gradeLevelName: p.gradeLevelId ? gradeLevels.get(p.gradeLevelId) ?? null : null,

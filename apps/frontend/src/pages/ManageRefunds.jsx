@@ -189,6 +189,11 @@ export default function ManageRefunds() {
                               <Badge className={STATUS_COLOR[r.status] ?? "bg-slate-100 text-slate-600"}>
                                 {STATUS_LABEL[r.status] ?? r.status}
                               </Badge>
+                              {r.source && r.source !== "TEST" && (
+                                <Badge className={r.source === "TUNNEL" ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-700"}>
+                                  {r.source === "TUNNEL" ? "Tünel" : "Yazılı"}
+                                </Badge>
+                              )}
                             </div>
                             <p className="font-semibold text-slate-900">{r.test_package_title || "Test"}</p>
                             <p className="text-sm text-slate-500 mt-0.5">

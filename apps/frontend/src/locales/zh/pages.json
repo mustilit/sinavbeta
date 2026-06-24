@@ -2115,5 +2115,10 @@
     "completed": "已完成",
     "inProgress": "进行中",
     "notStarted": "未开始"
+  },
+  "refundSource": {
+    "TEST": "测试套餐",
+    "TUNNEL": "隧道",
+    "WRITTEN": "笔试"
   }
 }

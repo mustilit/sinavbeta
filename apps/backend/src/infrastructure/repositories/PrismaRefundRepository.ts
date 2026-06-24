@@ -1,22 +1,32 @@
 import { prisma } from '../database/prisma';
-import { IRefundRepository, RefundRequest, RefundListItem, RefundStatus } from '../../domain/interfaces/IRefundRepository';
+import { IRefundRepository, RefundRequest, RefundListItem, RefundStatus, RefundSource } from '../../domain/interfaces/IRefundRepository';
 
 export class PrismaRefundRepository implements IRefundRepository {
   async create(input: {
-    purchaseId: string;
+    source?: RefundSource;
+    purchaseId?: string | null;
+    tunnelPurchaseId?: string | null;
+    writtenPurchaseId?: string | null;
+    tunnelId?: string | null;
+    writtenPackageId?: string | null;
     candidateId: string;
     educatorId: string;
-    testId: string;
+    testId?: string | null;
     reason?: string;
     description?: string;
     educatorDeadline?: Date;
   }): Promise<RefundRequest> {
     const r = await prisma.refundRequest.create({
       data: {
-        purchaseId: input.purchaseId,
+        source: input.source ?? 'TEST',
+        purchaseId: input.purchaseId ?? null,
+        tunnelPurchaseId: input.tunnelPurchaseId ?? null,
+        writtenPurchaseId: input.writtenPurchaseId ?? null,
+        tunnelId: input.tunnelId ?? null,
+        writtenPackageId: input.writtenPackageId ?? null,
         candidateId: input.candidateId,
         educatorId: input.educatorId,
-        testId: input.testId,
+        testId: input.testId ?? null,
         reason: input.reason ?? null,
         description: input.description ?? null,
         educatorDeadline: input.educatorDeadline ?? null,
@@ -27,6 +37,17 @@ export class PrismaRefundRepository implements IRefundRepository {
 
   async findByPurchaseId(purchaseId: string): Promise<RefundRequest | null> {
     const r = await prisma.refundRequest.findUnique({ where: { purchaseId } as any });
+    return r ? this.toDomain(r) : null;
+  }
+
+  async findBySourcePurchaseId(source: RefundSource, sourcePurchaseId: string): Promise<RefundRequest | null> {
+    const where =
+      source === 'TUNNEL'
+        ? { tunnelPurchaseId: sourcePurchaseId }
+        : source === 'WRITTEN'
+          ? { writtenPurchaseId: sourcePurchaseId }
+          : { purchaseId: sourcePurchaseId };
+    const r = await prisma.refundRequest.findUnique({ where: where as any });
     return r ? this.toDomain(r) : null;
   }
 
@@ -82,22 +103,40 @@ export class PrismaRefundRepository implements IRefundRepository {
     const refundRow = await prisma.refundRequest.findUnique({ where: { id: refundId } });
     if (!refundRow) throw new Error('REFUND_NOT_FOUND');
 
+    const source = (refundRow as any).source ?? 'TEST';
     const r = await prisma.$transaction(async (tx) => {
       const updated = await tx.refundRequest.update({
         where: { id: refundId },
         data: { status: 'APPROVED', decidedBy: adminId, decidedAt, adminNotes: adminNotes ?? null } as any,
       });
-      await tx.purchase.update({
-        where: { id: (refundRow as any).purchaseId },
-        data: { status: 'REFUNDED', refundedAt: decidedAt } as any,
-      });
+      // Kaynağa göre doğru satın alma satırını REFUNDED işaretle (her tablonun refundedAt'i var)
+      let refundedPurchaseId: string | null = null;
+      if (source === 'TUNNEL' && (refundRow as any).tunnelPurchaseId) {
+        refundedPurchaseId = (refundRow as any).tunnelPurchaseId;
+        await tx.tunnelPurchase.update({
+          where: { id: refundedPurchaseId as string },
+          data: { status: 'REFUNDED', refundedAt: decidedAt } as any,
+        });
+      } else if (source === 'WRITTEN' && (refundRow as any).writtenPurchaseId) {
+        refundedPurchaseId = (refundRow as any).writtenPurchaseId;
+        await tx.writtenPurchase.update({
+          where: { id: refundedPurchaseId as string },
+          data: { status: 'REFUNDED', refundedAt: decidedAt } as any,
+        });
+      } else if ((refundRow as any).purchaseId) {
+        refundedPurchaseId = (refundRow as any).purchaseId;
+        await tx.purchase.update({
+          where: { id: refundedPurchaseId as string },
+          data: { status: 'REFUNDED', refundedAt: decidedAt } as any,
+        });
+      }
       await tx.auditLog.create({
         data: {
           action: 'REFUND_APPROVED',
           entityType: 'RefundRequest',
           entityId: refundId,
           actorId: adminId,
-          metadata: { purchaseId: (refundRow as any).purchaseId },
+          metadata: { source, purchaseId: refundedPurchaseId },
         } as any,
       });
       return updated;
@@ -171,10 +210,15 @@ export class PrismaRefundRepository implements IRefundRepository {
   private toDomain(row: any): RefundRequest {
     return {
       id: row.id,
-      purchaseId: row.purchaseId,
+      source: (row.source ?? 'TEST') as RefundSource,
+      purchaseId: row.purchaseId ?? null,
+      tunnelPurchaseId: row.tunnelPurchaseId ?? null,
+      writtenPurchaseId: row.writtenPurchaseId ?? null,
+      tunnelId: row.tunnelId ?? null,
+      writtenPackageId: row.writtenPackageId ?? null,
       candidateId: row.candidateId,
       educatorId: row.educatorId ?? '',
-      testId: row.testId,
+      testId: row.testId ?? null,
       reason: row.reason,
       description: row.description ?? null,
       status: row.status as RefundStatus,
@@ -192,15 +236,30 @@ export class PrismaRefundRepository implements IRefundRepository {
 
   private async toListWithTestTitle(rows: any[]): Promise<RefundListItem[]> {
     if (rows.length === 0) return [];
-    const testIds = [...new Set(rows.map((r) => r.testId))];
-    const tests = await prisma.examTest.findMany({
-      where: { id: { in: testIds } },
-      select: { id: true, title: true },
-    });
+
+    // Kaynağa göre başlık çöz: TEST → ExamTest.title; TUNNEL → Tunnel.title; WRITTEN → WrittenPackage.title
+    const testIds = [...new Set(rows.filter((r) => (r.source ?? 'TEST') === 'TEST' && r.testId).map((r) => r.testId))];
+    const tunnelIds = [...new Set(rows.filter((r) => r.source === 'TUNNEL' && r.tunnelId).map((r) => r.tunnelId))];
+    const writtenIds = [...new Set(rows.filter((r) => r.source === 'WRITTEN' && r.writtenPackageId).map((r) => r.writtenPackageId))];
+
+    const [tests, tunnels, writtens] = await Promise.all([
+      testIds.length ? prisma.examTest.findMany({ where: { id: { in: testIds } }, select: { id: true, title: true } }) : Promise.resolve([] as { id: string; title: string }[]),
+      tunnelIds.length ? prisma.tunnel.findMany({ where: { id: { in: tunnelIds } }, select: { id: true, title: true } }) : Promise.resolve([] as { id: string; title: string }[]),
+      writtenIds.length ? prisma.writtenPackage.findMany({ where: { id: { in: writtenIds } }, select: { id: true, title: true } }) : Promise.resolve([] as { id: string; title: string }[]),
+    ]);
     const titleByTestId = new Map(tests.map((t) => [t.id, t.title]));
-    return rows.map((row) => ({
-      ...this.toDomain(row),
-      testTitle: titleByTestId.get(row.testId) ?? null,
-    }));
+    const titleByTunnelId = new Map(tunnels.map((t) => [t.id, t.title]));
+    const titleByWrittenId = new Map(writtens.map((w) => [w.id, w.title]));
+
+    return rows.map((row) => {
+      const source = row.source ?? 'TEST';
+      const testTitle =
+        source === 'TUNNEL'
+          ? titleByTunnelId.get(row.tunnelId) ?? null
+          : source === 'WRITTEN'
+            ? titleByWrittenId.get(row.writtenPackageId) ?? null
+            : titleByTestId.get(row.testId) ?? null;
+      return { ...this.toDomain(row), testTitle };
+    });
   }
 }

@@ -40,14 +40,15 @@ export class RequestRefundUseCase {
    * @param actorId           - Talebi yapan kullanıcının ID'si; yoksa 401 fırlatır.
    */
   async execute(
-    input: { purchaseId: string; reason?: string; description?: string },
+    input: { purchaseId: string; reason?: string; description?: string; source?: 'TEST' | 'TUNNEL' | 'WRITTEN' },
     actorId: string | undefined,
   ): Promise<{
     id: string;
-    purchaseId: string;
+    source: string;
+    purchaseId: string | null;
     candidateId: string;
     educatorId: string;
-    testId: string;
+    testId: string | null;
     reason: string | null;
     status: string;
     educatorDeadline: string | null;
@@ -55,6 +56,10 @@ export class RequestRefundUseCase {
   }> {
     if (!actorId) {
       throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+    }
+    // TUNNEL/WRITTEN kaynaklı iadeler ayrı akıştan geçer (test paketinden bağımsız satın alma)
+    if (input.source === 'TUNNEL' || input.source === 'WRITTEN') {
+      return this.executeForModule(input.source, input, actorId);
     }
     if (!UUID_REGEX.test(input.purchaseId)) {
       throw new AppError('INVALID_UUID', 'Invalid purchaseId', 400);
@@ -125,6 +130,7 @@ export class RequestRefundUseCase {
     const educatorDeadline = new Date(Date.now() + EDUCATOR_REVIEW_DAYS * 24 * 60 * 60 * 1000);
 
     const created = await this.refundRepo.create({
+      source: 'TEST',
       purchaseId: input.purchaseId,
       candidateId: actorId,
       educatorId,
@@ -140,7 +146,7 @@ export class RequestRefundUseCase {
         entityType: 'REFUND',
         entityId: created.id,
         actorId,
-        metadata: { purchaseId: input.purchaseId, testId: purchase.testId },
+        metadata: { source: 'TEST', purchaseId: input.purchaseId, testId: purchase.testId },
       });
     } catch {
       // best-effort
@@ -148,10 +154,139 @@ export class RequestRefundUseCase {
 
     return {
       id: created.id,
+      source: created.source,
       purchaseId: created.purchaseId,
       candidateId: created.candidateId,
       educatorId: created.educatorId,
       testId: created.testId,
+      reason: created.reason ?? null,
+      status: created.status,
+      educatorDeadline: created.educatorDeadline ?? null,
+      createdAt: typeof created.createdAt === 'string' ? created.createdAt : new Date(created.createdAt).toISOString(),
+    };
+  }
+
+  /**
+   * TUNNEL/WRITTEN kaynaklı iade talebi. Test paketinden bağımsız satın alma
+   * (TunnelPurchase/WrittenPurchase) üzerine çalışır; aynı kurallar:
+   *  - 7 gün iade penceresi (satın alma tarihinden)
+   *  - çözmeye başlanmışsa (attempt var) iade yok
+   *  - aynı satın alma için tek talep
+   *  - educatorId içerik sahibinden çözülür
+   */
+  private async executeForModule(
+    source: 'TUNNEL' | 'WRITTEN',
+    input: { purchaseId: string; reason?: string; description?: string },
+    actorId: string,
+  ) {
+    if (!UUID_REGEX.test(input.purchaseId)) {
+      throw new AppError('INVALID_UUID', 'Invalid purchaseId', 400);
+    }
+
+    const reason = input.reason?.trim();
+    if (reason != null && reason !== '' && reason.length < 5) {
+      throw new AppError('REASON_TOO_SHORT', 'Reason must be at least 5 characters if provided', 400);
+    }
+
+    const educatorDeadline = new Date(Date.now() + EDUCATOR_REVIEW_DAYS * 24 * 60 * 60 * 1000);
+
+    if (source === 'TUNNEL') {
+      const tp = await prisma.tunnelPurchase.findUnique({ where: { id: input.purchaseId } });
+      if (!tp) throw new AppError('PURCHASE_NOT_FOUND', 'Purchase not found', 404);
+      if (tp.candidateId !== actorId) throw new AppError('FORBIDDEN_NOT_OWNER', 'Only the purchase owner can request a refund', 403);
+      if (tp.status !== 'ACTIVE') throw new AppError('REFUND_NOT_ALLOWED', 'Purchase is not refundable', 409);
+
+      if (Date.now() - new Date(tp.createdAt).getTime() > REFUND_WINDOW_MS) {
+        throw new AppError('REFUND_WINDOW_EXPIRED', 'Refund window has expired (7 days from purchase)', 409);
+      }
+
+      // Çözmeye başlanmışsa iade yok
+      const attemptCount = await prisma.tunnelAttempt.count({ where: { candidateId: actorId, tunnelId: tp.tunnelId } });
+      if (attemptCount > 0) {
+        throw new AppError('REFUND_NOT_ALLOWED_ATTEMPT_STARTED', 'Refund not allowed: you have already started this tunnel', 409);
+      }
+
+      const existing = await this.refundRepo.findBySourcePurchaseId('TUNNEL', input.purchaseId);
+      if (existing) throw new AppError('REFUND_ALREADY_REQUESTED', 'A refund has already been requested for this purchase', 409);
+
+      const tunnel = await prisma.tunnel.findUnique({ where: { id: tp.tunnelId }, select: { educatorId: true } });
+
+      const created = await this.refundRepo.create({
+        source: 'TUNNEL',
+        tunnelPurchaseId: tp.id,
+        tunnelId: tp.tunnelId,
+        candidateId: actorId,
+        educatorId: tunnel?.educatorId ?? '',
+        reason: reason ?? undefined,
+        description: input.description?.trim() || undefined,
+        educatorDeadline,
+      });
+      try {
+        await this.auditRepo.create({
+          action: 'REFUND_REQUESTED',
+          entityType: 'REFUND',
+          entityId: created.id,
+          actorId,
+          metadata: { source: 'TUNNEL', tunnelPurchaseId: tp.id, tunnelId: tp.tunnelId },
+        });
+      } catch { /* best-effort */ }
+      return this.serializeCreated(created);
+    }
+
+    // WRITTEN
+    const wp = await prisma.writtenPurchase.findUnique({ where: { id: input.purchaseId } });
+    if (!wp) throw new AppError('PURCHASE_NOT_FOUND', 'Purchase not found', 404);
+    if (wp.candidateId !== actorId) throw new AppError('FORBIDDEN_NOT_OWNER', 'Only the purchase owner can request a refund', 403);
+    if (wp.status !== 'ACTIVE') throw new AppError('REFUND_NOT_ALLOWED', 'Purchase is not refundable', 409);
+
+    if (Date.now() - new Date(wp.createdAt).getTime() > REFUND_WINDOW_MS) {
+      throw new AppError('REFUND_WINDOW_EXPIRED', 'Refund window has expired (7 days from purchase)', 409);
+    }
+
+    // Paketteki herhangi bir teste attempt açılmışsa iade yok
+    const testIds = (await prisma.writtenTest.findMany({ where: { packageId: wp.packageId, deletedAt: null }, select: { id: true } })).map((t) => t.id);
+    if (testIds.length > 0) {
+      const attemptCount = await prisma.writtenAttempt.count({ where: { candidateId: actorId, testId: { in: testIds } } });
+      if (attemptCount > 0) {
+        throw new AppError('REFUND_NOT_ALLOWED_ATTEMPT_STARTED', 'Refund not allowed: you have already started a test in this package', 409);
+      }
+    }
+
+    const existing = await this.refundRepo.findBySourcePurchaseId('WRITTEN', input.purchaseId);
+    if (existing) throw new AppError('REFUND_ALREADY_REQUESTED', 'A refund has already been requested for this purchase', 409);
+
+    const pkg = await prisma.writtenPackage.findUnique({ where: { id: wp.packageId }, select: { educatorId: true } });
+
+    const created = await this.refundRepo.create({
+      source: 'WRITTEN',
+      writtenPurchaseId: wp.id,
+      writtenPackageId: wp.packageId,
+      candidateId: actorId,
+      educatorId: pkg?.educatorId ?? '',
+      reason: reason ?? undefined,
+      description: input.description?.trim() || undefined,
+      educatorDeadline,
+    });
+    try {
+      await this.auditRepo.create({
+        action: 'REFUND_REQUESTED',
+        entityType: 'REFUND',
+        entityId: created.id,
+        actorId,
+        metadata: { source: 'WRITTEN', writtenPurchaseId: wp.id, writtenPackageId: wp.packageId },
+      });
+    } catch { /* best-effort */ }
+    return this.serializeCreated(created);
+  }
+
+  private serializeCreated(created: any) {
+    return {
+      id: created.id,
+      source: created.source,
+      purchaseId: created.purchaseId ?? null,
+      candidateId: created.candidateId,
+      educatorId: created.educatorId,
+      testId: created.testId ?? null,
       reason: created.reason ?? null,
       status: created.status,
       educatorDeadline: created.educatorDeadline ?? null,

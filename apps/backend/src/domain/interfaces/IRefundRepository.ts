@@ -7,12 +7,19 @@ export type RefundStatus =
   | 'APPROVED'
   | 'REJECTED';
 
+export type RefundSource = 'TEST' | 'TUNNEL' | 'WRITTEN';
+
 export type RefundRequest = {
   id: string;
-  purchaseId: string;
+  source: RefundSource;
+  purchaseId: string | null;
+  tunnelPurchaseId?: string | null;
+  writtenPurchaseId?: string | null;
+  tunnelId?: string | null;
+  writtenPackageId?: string | null;
   candidateId: string;
   educatorId: string;
-  testId: string;
+  testId: string | null;
   reason?: string | null;
   description?: string | null;
   status: RefundStatus;
@@ -27,20 +34,27 @@ export type RefundRequest = {
   updatedAt?: string;
 };
 
-/** Refund list item with optional test title for UX (include purchase.test.title) */
+/** Refund list item with optional content title for UX (test/tunnel/written başlığı) */
 export type RefundListItem = RefundRequest & { testTitle?: string | null };
 
 export interface IRefundRepository {
   create(input: {
-    purchaseId: string;
+    source?: RefundSource;
+    purchaseId?: string | null;
+    tunnelPurchaseId?: string | null;
+    writtenPurchaseId?: string | null;
+    tunnelId?: string | null;
+    writtenPackageId?: string | null;
     candidateId: string;
     educatorId: string;
-    testId: string;
+    testId?: string | null;
     reason?: string;
     description?: string;
     educatorDeadline?: Date;
   }): Promise<RefundRequest>;
   findByPurchaseId(purchaseId: string): Promise<RefundRequest | null>;
+  /** TUNNEL/WRITTEN kaynaklı dedup için kaynak satın alma id'siyle arar */
+  findBySourcePurchaseId(source: RefundSource, sourcePurchaseId: string): Promise<RefundRequest | null>;
   findById(id: string): Promise<RefundRequest | null>;
   findByCandidateId(candidateId: string): Promise<RefundListItem[]>;
   /** Tek statü ile filtrele (geriye dönük uyumluluk için korunur) */

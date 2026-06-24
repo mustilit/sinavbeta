@@ -154,7 +154,14 @@ function EducatorRefunds() {
                         </div>
                         <div>
                           {/* test_package_title user-generated */}
-                          <p className="font-semibold text-slate-900">{r.test_package_title || t("pages:educatorRefunds.card.testFallback")}</p>
+                          <p className="font-semibold text-slate-900 flex items-center gap-2">
+                            {r.test_package_title || t("pages:educatorRefunds.card.testFallback")}
+                            {r.source && r.source !== "TEST" && (
+                              <Badge className={r.source === "TUNNEL" ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-700"}>
+                                {t(`pages:refundSource.${r.source}`)}
+                              </Badge>
+                            )}
+                          </p>
                           <p className="text-sm text-slate-500 mt-0.5">
                             {REASON_KEY[r.reason] ? t(REASON_KEY[r.reason]) : (r.reason ?? t("pages:educatorRefunds.card.reasonFallback"))}
                           </p>

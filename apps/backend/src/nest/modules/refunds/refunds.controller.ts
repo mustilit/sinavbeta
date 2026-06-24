@@ -48,7 +48,7 @@ export class RefundsController {
   async create(@Body() body: RequestRefundDto, @Req() req: Request) {
     const actorId = (req as any).user?.id;
     return this.requestRefundUc.execute(
-      { purchaseId: body.purchaseId, reason: body.reason },
+      { purchaseId: body.purchaseId, reason: body.reason, description: (body as any).description, source: body.source ?? 'TEST' },
       actorId,
     );
   }

@@ -17,6 +17,13 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     examTest: { findMany: jest.fn(), findUnique: jest.fn() },
     testAttempt: { count: jest.fn() },
+    tunnelPurchase: { findUnique: jest.fn() },
+    tunnel: { findUnique: jest.fn() },
+    tunnelAttempt: { count: jest.fn() },
+    writtenPurchase: { findUnique: jest.fn() },
+    writtenTest: { findMany: jest.fn() },
+    writtenAttempt: { count: jest.fn() },
+    writtenPackage: { findUnique: jest.fn() },
   },
 }));
 
@@ -217,5 +224,100 @@ describe('RequestRefundUseCase', () => {
 
     const result = await uc.execute({ purchaseId: VALID_UUID }, 'cand-1');
     expect(result.id).toBe('ref-1'); // başarıyla döner
+  });
+
+  // ── TUNNEL kaynaklı iade ──────────────────────────────────────────
+  describe('source=TUNNEL', () => {
+    function makeTunnelRepos() {
+      const refundRepo = {
+        findBySourcePurchaseId: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({
+          id: 'ref-tun', source: 'TUNNEL', tunnelPurchaseId: VALID_UUID, candidateId: 'cand-1',
+          educatorId: 'edu-1', testId: null, reason: null, status: 'PENDING',
+          educatorDeadline: new Date().toISOString(), createdAt: new Date().toISOString(),
+        }),
+      };
+      return { refundRepo, auditRepo: { create: jest.fn().mockResolvedValue({}) } };
+    }
+
+    beforeEach(() => {
+      mockPrisma.tunnelPurchase.findUnique.mockResolvedValue({ id: VALID_UUID, candidateId: 'cand-1', tunnelId: 'tun-1', status: 'ACTIVE', createdAt: new Date() });
+      mockPrisma.tunnelAttempt.count.mockResolvedValue(0);
+      mockPrisma.tunnel.findUnique.mockResolvedValue({ educatorId: 'edu-1' });
+    });
+
+    it('başarı: TUNNEL iade kaydı oluşturulur (source + tunnelPurchaseId)', async () => {
+      const { refundRepo, auditRepo } = makeTunnelRepos();
+      const uc = new RequestRefundUseCase(refundRepo as any, {} as any, {} as any, auditRepo as any);
+      const result = await uc.execute({ purchaseId: VALID_UUID, source: 'TUNNEL' }, 'cand-1');
+      expect(refundRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ source: 'TUNNEL', tunnelPurchaseId: VALID_UUID, tunnelId: 'tun-1', educatorId: 'edu-1' }),
+      );
+      expect(result.source).toBe('TUNNEL');
+    });
+
+    it('tünel çözülmeye başlandıysa REFUND_NOT_ALLOWED_ATTEMPT_STARTED', async () => {
+      mockPrisma.tunnelAttempt.count.mockResolvedValue(1);
+      const { refundRepo, auditRepo } = makeTunnelRepos();
+      const uc = new RequestRefundUseCase(refundRepo as any, {} as any, {} as any, auditRepo as any);
+      await expect(uc.execute({ purchaseId: VALID_UUID, source: 'TUNNEL' }, 'cand-1'))
+        .rejects.toMatchObject({ code: 'REFUND_NOT_ALLOWED_ATTEMPT_STARTED' });
+    });
+
+    it('sahibi değilse FORBIDDEN_NOT_OWNER', async () => {
+      mockPrisma.tunnelPurchase.findUnique.mockResolvedValue({ id: VALID_UUID, candidateId: 'other', tunnelId: 'tun-1', status: 'ACTIVE', createdAt: new Date() });
+      const { refundRepo, auditRepo } = makeTunnelRepos();
+      const uc = new RequestRefundUseCase(refundRepo as any, {} as any, {} as any, auditRepo as any);
+      await expect(uc.execute({ purchaseId: VALID_UUID, source: 'TUNNEL' }, 'cand-1'))
+        .rejects.toMatchObject({ code: 'FORBIDDEN_NOT_OWNER' });
+    });
+
+    it('aynı tünel satın alması için ikinci talep REFUND_ALREADY_REQUESTED', async () => {
+      const { refundRepo, auditRepo } = makeTunnelRepos();
+      refundRepo.findBySourcePurchaseId.mockResolvedValue({ id: 'existing' });
+      const uc = new RequestRefundUseCase(refundRepo as any, {} as any, {} as any, auditRepo as any);
+      await expect(uc.execute({ purchaseId: VALID_UUID, source: 'TUNNEL' }, 'cand-1'))
+        .rejects.toMatchObject({ code: 'REFUND_ALREADY_REQUESTED' });
+    });
+  });
+
+  // ── WRITTEN kaynaklı iade ─────────────────────────────────────────
+  describe('source=WRITTEN', () => {
+    function makeWrittenRepos() {
+      const refundRepo = {
+        findBySourcePurchaseId: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({
+          id: 'ref-wr', source: 'WRITTEN', writtenPurchaseId: VALID_UUID, candidateId: 'cand-1',
+          educatorId: 'edu-2', testId: null, reason: null, status: 'PENDING',
+          educatorDeadline: new Date().toISOString(), createdAt: new Date().toISOString(),
+        }),
+      };
+      return { refundRepo, auditRepo: { create: jest.fn().mockResolvedValue({}) } };
+    }
+
+    beforeEach(() => {
+      mockPrisma.writtenPurchase.findUnique.mockResolvedValue({ id: VALID_UUID, candidateId: 'cand-1', packageId: 'wpkg-1', status: 'ACTIVE', createdAt: new Date() });
+      mockPrisma.writtenTest.findMany.mockResolvedValue([{ id: 'wt-1' }]);
+      mockPrisma.writtenAttempt.count.mockResolvedValue(0);
+      mockPrisma.writtenPackage.findUnique.mockResolvedValue({ educatorId: 'edu-2' });
+    });
+
+    it('başarı: WRITTEN iade kaydı oluşturulur (source + writtenPurchaseId)', async () => {
+      const { refundRepo, auditRepo } = makeWrittenRepos();
+      const uc = new RequestRefundUseCase(refundRepo as any, {} as any, {} as any, auditRepo as any);
+      const result = await uc.execute({ purchaseId: VALID_UUID, source: 'WRITTEN' }, 'cand-1');
+      expect(refundRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ source: 'WRITTEN', writtenPurchaseId: VALID_UUID, writtenPackageId: 'wpkg-1', educatorId: 'edu-2' }),
+      );
+      expect(result.source).toBe('WRITTEN');
+    });
+
+    it('paketteki teste başlandıysa REFUND_NOT_ALLOWED_ATTEMPT_STARTED', async () => {
+      mockPrisma.writtenAttempt.count.mockResolvedValue(1);
+      const { refundRepo, auditRepo } = makeWrittenRepos();
+      const uc = new RequestRefundUseCase(refundRepo as any, {} as any, {} as any, auditRepo as any);
+      await expect(uc.execute({ purchaseId: VALID_UUID, source: 'WRITTEN' }, 'cand-1'))
+        .rejects.toMatchObject({ code: 'REFUND_NOT_ALLOWED_ATTEMPT_STARTED' });
+    });
   });
 });

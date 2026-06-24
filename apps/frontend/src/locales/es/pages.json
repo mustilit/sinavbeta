@@ -2118,5 +2118,10 @@
     "completed": "Completado",
     "inProgress": "En curso",
     "notStarted": "No iniciado"
+  },
+  "refundSource": {
+    "TEST": "Paquete de examen",
+    "TUNNEL": "Túnel",
+    "WRITTEN": "Escrito"
   }
 }

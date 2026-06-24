@@ -1,35 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="15" failures="0" errors="0" time="1.291">
-  <testsuite name="PurchaseAdUseCase" errors="0" failures="0" skipped="0" timestamp="2026-06-23T13:00:39" time="0.823" tests="15">
-    <testcase classname="PurchaseAdUseCase adPurchasesEnabled=false ise AD_PURCHASES_DISABLED fırlatır" name="PurchaseAdUseCase adPurchasesEnabled=false ise AD_PURCHASES_DISABLED fırlatır" time="0.005">
+<testsuites name="jest tests" tests="12" failures="3" errors="0" time="1.714">
+  <testsuite name="SiteController" errors="0" failures="3" skipped="0" timestamp="2026-06-24T06:46:27" time="1.235" tests="12">
+    <testcase classname="SiteController getSettings site ayarlarını döndürür" name="SiteController getSettings site ayarlarını döndürür" time="0.007">
     </testcase>
-    <testcase classname="PurchaseAdUseCase kullanıcı bulunamazsa USER_NOT_FOUND fırlatır" name="PurchaseAdUseCase kullanıcı bulunamazsa USER_NOT_FOUND fırlatır" time="0.002">
+    <testcase classname="SiteController getExamTypes aktif sınav türlerini döndürür" name="SiteController getExamTypes aktif sınav türlerini döndürür" time="0.001">
     </testcase>
-    <testcase classname="PurchaseAdUseCase eğitici askıya alınmışsa hata fırlatır (ensureEducatorActive)" name="PurchaseAdUseCase eğitici askıya alınmışsa hata fırlatır (ensureEducatorActive)" time="0.001">
+    <testcase classname="SiteController getFeaturedEducators öne çıkan eğiticileri döndürür" name="SiteController getFeaturedEducators öne çıkan eğiticileri döndürür" time="0.005">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+- Expected
++ Received
+
+  {&quot;$queryRaw&quot;: [Function mockConstructor], &quot;adminSettings&quot;: {&quot;findFirst&quot;: [Function mockConstructor]}},
+  6,
+  undefined,
++ undefined,
+
+Number of calls: 1
+    at Object.&lt;anonymous&gt; (/home/mtulu/dal/apps/backend/tests/controllers/SiteController.test.ts:72:49)</failure>
     </testcase>
-    <testcase classname="PurchaseAdUseCase reklam paketi bulunamazsa AD_PACKAGE_NOT_FOUND fırlatır" name="PurchaseAdUseCase reklam paketi bulunamazsa AD_PACKAGE_NOT_FOUND fırlatır" time="0.001">
+    <testcase classname="SiteController getFeaturedEducators examTypeIds virgülle ayrılarak parse edilir" name="SiteController getFeaturedEducators examTypeIds virgülle ayrılarak parse edilir" time="0.003">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+- Expected
++ Received
+
+  {&quot;$queryRaw&quot;: [Function mockConstructor], &quot;adminSettings&quot;: {&quot;findFirst&quot;: [Function mockConstructor]}},
+  3,
+  [&quot;et-1&quot;, &quot;et-2&quot;],
++ undefined,
+
+Number of calls: 1
+    at Object.&lt;anonymous&gt; (/home/mtulu/dal/apps/backend/tests/controllers/SiteController.test.ts:78:49)</failure>
     </testcase>
-    <testcase classname="PurchaseAdUseCase reklam paketi pasifse AD_PACKAGE_INACTIVE fırlatır" name="PurchaseAdUseCase reklam paketi pasifse AD_PACKAGE_INACTIVE fırlatır" time="0.001">
+    <testcase classname="SiteController getFeaturedEducators limit geçersizse varsayılan 6 kullanılır" name="SiteController getFeaturedEducators limit geçersizse varsayılan 6 kullanılır" time="0.002">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+- Expected
++ Received
+
+  {&quot;$queryRaw&quot;: [Function mockConstructor], &quot;adminSettings&quot;: {&quot;findFirst&quot;: [Function mockConstructor]}},
+  6,
+  undefined,
++ undefined,
+
+Number of calls: 1
+    at Object.&lt;anonymous&gt; (/home/mtulu/dal/apps/backend/tests/controllers/SiteController.test.ts:83:49)</failure>
     </testcase>
-    <testcase classname="PurchaseAdUseCase TEST türünde testId yoksa TEST_ID_REQUIRED fırlatır" name="PurchaseAdUseCase TEST türünde testId yoksa TEST_ID_REQUIRED fırlatır" time="0">
+    <testcase classname="SiteController getServiceStatus servis durumu alanlarını döndürür" name="SiteController getServiceStatus servis durumu alanlarını döndürür" time="0.002">
     </testcase>
-    <testcase classname="PurchaseAdUseCase test bulunamazsa TEST_NOT_FOUND fırlatır" name="PurchaseAdUseCase test bulunamazsa TEST_NOT_FOUND fırlatır" time="0">
+    <testcase classname="SiteController getServiceStatus DB row yoksa varsayılan değerler kullanılır" name="SiteController getServiceStatus DB row yoksa varsayılan değerler kullanılır" time="0.001">
     </testcase>
-    <testcase classname="PurchaseAdUseCase test başkasının testiyse FORBIDDEN_NOT_OWNER fırlatır" name="PurchaseAdUseCase test başkasının testiyse FORBIDDEN_NOT_OWNER fırlatır" time="0">
+    <testcase classname="SiteController listPopularPackages popüler paketleri döndürür" name="SiteController listPopularPackages popüler paketleri döndürür" time="0.002">
     </testcase>
-    <testcase classname="PurchaseAdUseCase test yayınlanmamışsa TEST_NOT_PUBLISHED fırlatır" name="PurchaseAdUseCase test yayınlanmamışsa TEST_NOT_PUBLISHED fırlatır" time="0.001">
+    <testcase classname="SiteController listPopularPackages examTypeIds ile sorgular" name="SiteController listPopularPackages examTypeIds ile sorgular" time="0.001">
     </testcase>
-    <testcase classname="PurchaseAdUseCase TEST türünde başarılı satın alma" name="PurchaseAdUseCase TEST türünde başarılı satın alma" time="0.001">
+    <testcase classname="SiteController getPublicPaymentSettings ödeme sağlayıcı bilgilerini döndürür" name="SiteController getPublicPaymentSettings ödeme sağlayıcı bilgilerini döndürür" time="0.001">
     </testcase>
-    <testcase classname="PurchaseAdUseCase EDUCATOR türünde testId zorunlu değil" name="PurchaseAdUseCase EDUCATOR türünde testId zorunlu değil" time="0.001">
+    <testcase classname="SiteController getPublicIntegrations public entegrasyon anahtarlarını döndürür" name="SiteController getPublicIntegrations public entegrasyon anahtarlarını döndürür" time="0.001">
     </testcase>
-    <testcase classname="PurchaseAdUseCase WRITTEN türünde writtenPackageId yoksa WRITTEN_PACKAGE_ID_REQUIRED fırlatır" name="PurchaseAdUseCase WRITTEN türünde writtenPackageId yoksa WRITTEN_PACKAGE_ID_REQUIRED fırlatır" time="0.001">
-    </testcase>
-    <testcase classname="PurchaseAdUseCase WRITTEN paketi başkasının ise FORBIDDEN_NOT_OWNER fırlatır" name="PurchaseAdUseCase WRITTEN paketi başkasının ise FORBIDDEN_NOT_OWNER fırlatır" time="0.026">
-    </testcase>
-    <testcase classname="PurchaseAdUseCase WRITTEN paketi yayınlanmamışsa WRITTEN_PACKAGE_NOT_PUBLISHED fırlatır" name="PurchaseAdUseCase WRITTEN paketi yayınlanmamışsa WRITTEN_PACKAGE_NOT_PUBLISHED fırlatır" time="0.001">
-    </testcase>
-    <testcase classname="PurchaseAdUseCase WRITTEN türünde başarılı satın alma" name="PurchaseAdUseCase WRITTEN türünde başarılı satın alma" time="0.001">
+    <testcase classname="SiteController getPublicIntegrations DB hatası olduğunda null döner" name="SiteController getPublicIntegrations DB hatası olduğunda null döner" time="0.001">
     </testcase>
   </testsuite>
 </testsuites>

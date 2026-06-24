@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { entities, auth } from "@/api/dalClient";
+import { entities, auth, candidateTunnels, candidateWritten } from "@/api/dalClient";
 import { passwordPolicyError } from "@/lib/passwordPolicy";
 import { useAuth } from "@/lib/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -95,6 +95,26 @@ export default function ProfileSettings() {
   const { data: purchases = [] } = useQuery({
     queryKey: ["userPurchases", user?.email],
     queryFn: () => user ? entities.Purchase.filter({ user_email: user.email }, "-created_date") : [],
+    enabled: !!user,
+  });
+
+  // Tünel satın almaları (iade akışı için) — purchased olanlar
+  const { data: tunnelPurchaseItems = [] } = useQuery({
+    queryKey: ["myTunnelPurchases", user?.id],
+    queryFn: async () => {
+      const res = await candidateTunnels.list();
+      return (res?.items ?? []).filter((tn) => tn.purchased && tn.purchaseId);
+    },
+    enabled: !!user,
+  });
+
+  // Yazılı satın almaları (iade akışı için)
+  const { data: writtenPurchaseItems = [] } = useQuery({
+    queryKey: ["myWrittenPurchases", user?.id],
+    queryFn: async () => {
+      const res = await candidateWritten.myPackages();
+      return (res?.items ?? res ?? []).filter((p) => p.purchaseId);
+    },
     enabled: !!user,
   });
 
@@ -285,9 +305,45 @@ export default function ProfileSettings() {
     toast.success(t("pages:profileSettings.toasts.profileUpdated"));
   };
 
+  // İade edilebilir satın almalar (3 kaynak: TEST paket + TUNNEL + WRITTEN).
+  // Her biri ortak şekle normalize edilir: { id (kaynak satın alma id), source,
+  // test_package_title, price_paid, created_date, eligible }.
+  const refundableItems = useMemo(() => {
+    const test = (purchases ?? []).map((p) => {
+      const hasAttempts = Array.isArray(p.attempts) && p.attempts.length > 0;
+      const hasMainAttempt = !!p.attempt;
+      return {
+        id: p.id,
+        source: "TEST",
+        test_package_title: p.test_package_title,
+        price_paid: p.price_paid,
+        created_date: p.created_date,
+        eligible: !hasAttempts && !hasMainAttempt,
+      };
+    });
+    const tunnel = (tunnelPurchaseItems ?? []).map((tn) => ({
+      id: tn.purchaseId,
+      source: "TUNNEL",
+      test_package_title: tn.title,
+      price_paid: tn.priceCents != null ? tn.priceCents / 100 : null,
+      created_date: tn.purchasedAt ?? null,
+      eligible: !tn.attemptStatus, // çözmeye başlanmadıysa
+    }));
+    const written = (writtenPurchaseItems ?? []).map((w) => ({
+      id: w.purchaseId,
+      source: "WRITTEN",
+      test_package_title: w.title,
+      price_paid: w.priceCents != null ? w.priceCents / 100 : null,
+      created_date: w.purchasedAt ?? null,
+      eligible: !(w.tests ?? []).some((tt) => !!tt.state), // hiçbir teste başlanmadıysa
+    }));
+    return [...test, ...tunnel, ...written];
+  }, [purchases, tunnelPurchaseItems, writtenPurchaseItems]);
+
   const refundMutation = useMutation({
     mutationFn: (data) => entities.RefundRequest.create({
       purchase_id: selectedPurchase.id,
+      source: selectedPurchase.source ?? "TEST",
       reason: data.reason,
       description: data.description,
     }),
@@ -637,7 +693,7 @@ export default function ProfileSettings() {
           {/* Mali İşlemler Tab */}
           <TabsContent value="financial" className="space-y-6">
             <div className="flex items-center justify-between gap-4">
-              {purchases.length > 0 && (
+              {refundableItems.length > 0 && (
                 <Button
                   variant="outline"
                   onClick={() => setRefundModalOpen(true)}
@@ -929,14 +985,9 @@ export default function ProfileSettings() {
             />
             <div className="space-y-2 max-h-96 overflow-y-auto mb-4">
               {(() => {
-                // Sadece HİÇ açılmamış testler için iade alınabilir:
-                // - purchase.attempts[] herhangi bir attempt içeriyorsa (IN_PROGRESS, PAUSED, SUBMITTED, TIMEOUT)
-                //   test "Devam Et" veya "İncele" durumuna gelmiş demektir → listeden çıkar.
-                const eligible = purchases.filter((p) => {
-                  const hasAttempts = Array.isArray(p.attempts) && p.attempts.length > 0;
-                  const hasMainAttempt = !!p.attempt;
-                  return !hasAttempts && !hasMainAttempt;
-                });
+                // Sadece HİÇ açılmamış (çözülmemiş) satın almalar için iade alınabilir.
+                // 3 kaynak (TEST/TUNNEL/WRITTEN) refundableItems'te eligible bayrağıyla normalize edildi.
+                const eligible = refundableItems.filter((p) => p.eligible);
                 const filtered = eligible.filter((p) =>
                   (p.test_package_title ?? "").toLowerCase().includes(searchPurchase.toLowerCase()),
                 );
@@ -944,13 +995,13 @@ export default function ProfileSettings() {
                   return (
                     <div className="text-center py-6 px-3 space-y-2">
                       <p className="text-sm text-slate-500">
-                        {purchases.length === 0
+                        {refundableItems.length === 0
                           ? t("pages:profileSettings.refundModal.noPurchases")
                           : eligible.length === 0
                           ? t("pages:profileSettings.refundModal.noEligible")
                           : t("pages:profileSettings.refundModal.notFound")}
                       </p>
-                      {purchases.length > 0 && eligible.length === 0 && (
+                      {refundableItems.length > 0 && eligible.length === 0 && (
                         <p className="text-xs text-slate-400">
                           {t("pages:profileSettings.refundModal.eligibleHint")}
                         </p>
@@ -960,7 +1011,7 @@ export default function ProfileSettings() {
                 }
                 return filtered.map((purchase) => (
                   <button
-                    key={purchase.id}
+                    key={`${purchase.source}-${purchase.id}`}
                     onClick={() => {
                       setSelectedPurchase(purchase);
                       setSearchPurchase("");
@@ -969,8 +1020,8 @@ export default function ProfileSettings() {
                   >
                     <p className="font-medium text-slate-900">{purchase.test_package_title}</p>
                     <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
-                      <span>₺{purchase.price_paid}</span>
-                      <span>{new Date(purchase.created_date).toLocaleDateString('tr-TR')}</span>
+                      {purchase.price_paid != null && <span>₺{purchase.price_paid}</span>}
+                      {purchase.created_date && <span>{new Date(purchase.created_date).toLocaleDateString('tr-TR')}</span>}
                     </div>
                   </button>
                 ));

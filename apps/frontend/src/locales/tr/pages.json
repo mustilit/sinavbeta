@@ -2115,5 +2115,10 @@
     "completed": "Tamamlandı",
     "inProgress": "Devam Ediyor",
     "notStarted": "Başlanmadı"
+  },
+  "refundSource": {
+    "TEST": "Test Paketi",
+    "TUNNEL": "Tünel",
+    "WRITTEN": "Yazılı"
   }
 }
