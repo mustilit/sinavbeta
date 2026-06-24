@@ -398,6 +398,12 @@ model User {
   candidateTunnelPurchases TunnelPurchase[]      @relation("candidateTunnelPurchases")
   candidateTunnelAttempts  TunnelAttempt[]       @relation("candidateTunnelAttempts")
 
+  // ── E-Sınıf (okul modülü) ilişkileri ────────────────────────────────────
+  schoolAdminOf     School?      @relation("SchoolAdmin")
+  branchAdminOf     Branch?      @relation("BranchAdmin")
+  departmentsHeaded Department[] @relation("DeptHead")
+  schoolMemberships SchoolUser[]
+
   @@index([tenantId])
   @@index([twoFactorEnabled])
   @@map("users")
@@ -1089,7 +1095,7 @@ model AdminSettings {
   maxQuestionsPerTest              Int       @default(100) // Test başına maksimum soru sayısı
   maxTestsPerPackage               Int       @default(10) // Paket başına maksimum test sayısı
   maxWrittenTestsPerPackage        Int       @default(10) // Yazılı paket başına maksimum yazılı test
-  minQuestionsPerWrittenTest       Int       @default(1)  // Yazılı test başına minimum soru
+  minQuestionsPerWrittenTest       Int       @default(1) // Yazılı test başına minimum soru
   maxQuestionsPerWrittenTest       Int       @default(50) // Yazılı test başına maksimum soru
   maxLiveQuestions                 Int       @default(50) // Canlı oturum başına maksimum soru sayısı
   // ── Tünel limitleri (Test Yönetimi) ───────────────────────────────────────
@@ -2163,14 +2169,14 @@ model TunnelReview {
 /// Aday çözüm sırasında bir soru için "hata bildirimi" gönderir (yanlış cevap,
 /// belirsiz ifade vb.). Eğitici/admin sonradan inceler. Scalar-only (hafif).
 model TunnelQuestionReport {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tunnelId    String
-  questionId  String?
-  candidateId String
-  reason      String
-  status      String   @default("OPEN") // OPEN | RESOLVED
-  createdAt   DateTime @default(now())
+  id                 String    @id @default(uuid())
+  tenantId           String
+  tunnelId           String
+  questionId         String?
+  candidateId        String
+  reason             String
+  status             String    @default("OPEN") // OPEN | RESOLVED
+  createdAt          DateTime  @default(now())
   // Eğitici izahı + admin notu (test Objection deseni; salt-metin, SLA/eskalasyon yok)
   educatorAnswer     String?
   educatorAnsweredAt DateTime?
@@ -2371,14 +2377,14 @@ model WrittenReview {
 
 /// Aday hata bildirimi (TunnelQuestionReport deseni — scalar-only, hafif).
 model WrittenQuestionReport {
-  id          String   @id @default(uuid())
-  tenantId    String
-  testId      String?
-  questionId  String?
-  candidateId String
-  reason      String
-  status      String   @default("OPEN") // OPEN | RESOLVED
-  createdAt   DateTime @default(now())
+  id                 String    @id @default(uuid())
+  tenantId           String
+  testId             String?
+  questionId         String?
+  candidateId        String
+  reason             String
+  status             String    @default("OPEN") // OPEN | RESOLVED
+  createdAt          DateTime  @default(now())
   // Eğitici izahı + admin notu (test Objection deseni; salt-metin, SLA/eskalasyon yok)
   educatorAnswer     String?
   educatorAnsweredAt DateTime?
@@ -2388,4 +2394,146 @@ model WrittenQuestionReport {
 
   @@index([testId, status])
   @@map("written_question_reports")
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// E-SINIF (Okul / B2B) MODÜLÜ — Sprint 1: Foundation
+// Marketplace'ten izole; okul aboneliği kapsamında ücretsiz erişim.
+// schoolRole SchoolUser junction'ında tutulur (User.role değişmez).
+// tenantId scalar (written/tunnel deseni — Tenant relation YOK).
+// ════════════════════════════════════════════════════════════════════════
+
+enum SchoolType {
+  PRIMARY // İlkokul
+  MIDDLE // Ortaokul
+  HIGH // Lise
+  MIXED // Karma
+}
+
+enum SchoolRole {
+  SCHOOL_ADMIN
+  BRANCH_ADMIN
+  DEPT_HEAD
+  TEACHER
+  STUDENT
+}
+
+model AcademicPeriod {
+  id        String   @id @default(uuid())
+  name      String // "2026-2027"
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  tenantId  String
+  schools   School[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("academic_periods")
+}
+
+model School {
+  id              String         @id @default(uuid())
+  name            String
+  code            String         @unique // "ANK" — username prefix
+  city            String?
+  schoolType      SchoolType     @default(MIDDLE)
+  periodId        String
+  period          AcademicPeriod @relation(fields: [periodId], references: [id])
+  // Okul Yöneticisi (tek kişi) — User'a one-to-one
+  adminUserId     String?        @unique
+  adminUser       User?          @relation("SchoolAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
+  maxUsers        Int            @default(0)
+  annualLiveLimit Int            @default(0)
+  usedLiveCount   Int            @default(0)
+  isActive        Boolean        @default(true)
+  tenantId        String
+  branches        Branch[]
+  departments     Department[]
+  classrooms      Classroom[]
+  schoolUsers     SchoolUser[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  @@index([tenantId])
+  @@index([periodId])
+  @@map("schools")
+}
+
+model Branch {
+  id          String       @id @default(uuid())
+  schoolId    String
+  school      School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name        String // "Ankara Şubesi"
+  adminUserId String?      @unique
+  adminUser   User?        @relation("BranchAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
+  classrooms  Classroom[]
+  schoolUsers SchoolUser[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([schoolId])
+  @@map("branches")
+}
+
+model Classroom {
+  id         String       @id @default(uuid())
+  schoolId   String
+  school     School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  branchId   String
+  branch     Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  name       String // "5-A"
+  gradeLevel Int // 5, 6, 7, 8
+  students   SchoolUser[] @relation("ClassroomStudents")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([branchId])
+  @@index([schoolId, gradeLevel])
+  @@map("classrooms")
+}
+
+model Department {
+  id         String       @id @default(uuid())
+  schoolId   String
+  school     School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name       String // "Matematik Zümresi"
+  subject    String // "Matematik"
+  headUserId String?
+  headUser   User?        @relation("DeptHead", fields: [headUserId], references: [id], onDelete: SetNull)
+  members    SchoolUser[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([schoolId])
+  @@map("departments")
+}
+
+// Okul kullanıcısı + rolü — User'ı okula/şubeye/sınıfa/zümreye bağlar.
+model SchoolUser {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schoolId     String
+  school       School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  branchId     String?
+  branch       Branch?     @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  classroomId  String? // öğrenciler için
+  classroom    Classroom?  @relation("ClassroomStudents", fields: [classroomId], references: [id], onDelete: SetNull)
+  departmentId String? // öğretmenler için
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  schoolRole   SchoolRole
+  username     String      @unique // otomatik üretilen (ANK-T-0042)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([userId, schoolId])
+  @@index([schoolId, schoolRole])
+  @@index([classroomId])
+  @@index([departmentId])
+  @@index([branchId])
+  @@map("school_users")
 }

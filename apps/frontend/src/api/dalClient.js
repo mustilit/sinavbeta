@@ -2154,5 +2154,57 @@ export const candidateWritten = {
   },
 };
 
+// ════════════════════════════════════════════════════════════════════════
+// E-Sınıf (Okul) modülü — Sprint 1 Foundation
+// ════════════════════════════════════════════════════════════════════════
+
+/** Platform Admin — okul + dönem yönetimi (/admin/schools, /admin/academic-periods) */
+export const adminSchools = {
+  listPeriods: async () => (await api.get('/admin/academic-periods')).data,
+  createPeriod: async (body) => (await api.post('/admin/academic-periods', body)).data,
+  list: async () => (await api.get('/admin/schools')).data,
+  create: async (body) => (await api.post('/admin/schools', body)).data,
+  update: async (id, body) => (await api.patch(`/admin/schools/${id}`, body)).data,
+  deactivate: async (id) => (await api.delete(`/admin/schools/${id}`)).data,
+  /** { username, tempPassword } döner */
+  assignAdmin: async (id, body) => (await api.post(`/admin/schools/${id}/assign-admin`, body)).data,
+};
+
+/** Okul Yöneticisi / Şube Yöneticisi — okul içi yönetim (/school/*) */
+export const school = {
+  // Şube
+  listBranches: async () => (await api.get('/school/branches')).data,
+  createBranch: async (body) => (await api.post('/school/branches', body)).data,
+  assignBranchAdmin: async (id, body) => (await api.post(`/school/branches/${id}/assign-admin`, body)).data,
+  // Sınıf
+  listClassrooms: async ({ branchId } = {}) => {
+    const qs = new URLSearchParams();
+    if (branchId) qs.set('branchId', branchId);
+    return (await api.get(`/school/classrooms?${qs.toString()}`)).data;
+  },
+  createClassroom: async (body) => (await api.post('/school/classrooms', body)).data,
+  assignStudents: async (id, schoolUserIds) => (await api.post(`/school/classrooms/${id}/students`, { schoolUserIds })).data,
+  // Zümre
+  listDepartments: async () => (await api.get('/school/departments')).data,
+  createDepartment: async (body) => (await api.post('/school/departments', body)).data,
+  assignMembers: async (id, body) => (await api.post(`/school/departments/${id}/members`, body)).data,
+  // Kullanıcılar
+  listUsers: async ({ role, q, cursor, limit = 30 } = {}) => {
+    const qs = new URLSearchParams();
+    if (role) qs.set('role', role);
+    if (q) qs.set('q', q);
+    if (cursor) qs.set('cursor', cursor);
+    if (limit) qs.set('limit', String(limit));
+    return (await api.get(`/school/users?${qs.toString()}`)).data;
+  },
+  /** { schoolUserId, username, tempPassword } döner */
+  createUser: async (body) => (await api.post('/school/users', body)).data,
+  setUserActive: async (id, isActive) => (await api.patch(`/school/users/${id}/active`, { isActive })).data,
+  /** { username, tempPassword } döner */
+  resetPassword: async (id) => (await api.post(`/school/users/${id}/reset-password`)).data,
+  // Kota
+  quota: async () => (await api.get('/school/quota')).data,
+};
+
 export default api;
 export { api };

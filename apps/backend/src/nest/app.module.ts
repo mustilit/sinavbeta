@@ -23,6 +23,8 @@ import { NotificationsController } from './controllers/notifications.controller'
 import { AdminDlqController } from './controllers/admin.dlq.controller';
 import { TestsPerformanceController } from './controllers/tests.performance.controller';
 import { HomeController } from './controllers/home.controller';
+import { AdminSchoolsController } from './controllers/admin.schools.controller';
+import { SchoolController } from './controllers/school.controller';
 import { ReviewsController } from './controllers/reviews.controller';
 import { EducatorsController } from './controllers/educators.controller';
 import { FollowsController } from './controllers/follows.controller';
@@ -424,6 +426,9 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     WrittenTestsController,
     WrittenTestsItemController,
     CandidateWrittenController,
+    // E-Sınıf (Okul) modülü — Sprint 1 Foundation
+    AdminSchoolsController,
+    SchoolController,
   ],
   providers: [
     SeedService,
