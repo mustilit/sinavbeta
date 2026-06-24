@@ -718,11 +718,32 @@ export default function Home() {
                   <p className="mt-6 text-lg text-white/90 max-w-xl">
                     {t(`pages:home.hero.slides.${key}.desc`)}
                   </p>
-                  <Link to={to} className="inline-block mt-10">
+
+                  {/* Arama tüm slaytlarda — slayt 0 ile aynı (paylaşılan searchQuery state) */}
+                  <form onSubmit={handleSearch} className="mt-8 flex gap-3">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Input
+                        placeholder={t("pages:home.hero.searchPlaceholder")}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-12 h-14 bg-white/95 backdrop-blur border-0 rounded-xl text-lg"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="h-14 px-8 bg-white hover:bg-slate-100 rounded-xl"
+                      style={{ color: ctaColor }}
+                    >
+                      {t("pages:home.hero.searchButton")}
+                    </Button>
+                  </form>
+
+                  <Link to={to} className="inline-block mt-6">
                     <Button
                       size="lg"
-                      className="h-14 px-8 bg-white hover:bg-slate-100 rounded-xl font-semibold"
-                      style={{ color: ctaColor }}
+                      className="h-12 px-7 bg-white/15 text-white hover:bg-white/25 rounded-xl font-semibold backdrop-blur border border-white/30"
                     >
                       {t(`pages:home.hero.slides.${key}.cta`)}
                       <ArrowRight className="w-5 h-5 ml-2" />
