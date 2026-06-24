@@ -31,6 +31,11 @@ import {
   Megaphone,
   Play,
   Eye,
+  Zap,
+  FileText,
+  Layers,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { getExamTypeIcon } from "@/lib/examTypeIcons";
 
@@ -364,6 +369,17 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useAppNavigate();
 
+  // ── Hero slider ───────────────────────────────────────────────────────────
+  // 4 slayt: 0) klasik karşılama (arama), 1) Canlı Test (turuncu), 2) Yazılı (sarı),
+  // 3) Tünel (yeşil). Otomatik ilerler; ok/nokta ile manuel geçilir.
+  const [heroIndex, setHeroIndex] = useState(0);
+  const HERO_COUNT = 4;
+  useEffect(() => {
+    const id = setInterval(() => setHeroIndex((i) => (i + 1) % HERO_COUNT), 7000);
+    return () => clearInterval(id);
+  }, []);
+  const goHero = (i) => setHeroIndex(((i % HERO_COUNT) + HERO_COUNT) % HERO_COUNT);
+
   // ── Onboarding ────────────────────────────────────────────────────────────
   const role = (user?.role || '').toString().toUpperCase();
   const isCandidate = role === 'CANDIDATE' || (role !== 'EDUCATOR' && role !== 'ADMIN' && !!user);
@@ -589,63 +605,165 @@ export default function Home() {
 
       {/* Topbar artık Layout tarafından PublicHeader olarak render ediliyor (tüm public sayfalarda paylaşılır) */}
 
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        {/* Marka indigo gradient — kendi içinde (dış bağımlılık YOK). Önceden desen
-            dış Unsplash görselinden geliyordu; anonim/dış kullanıcıda yüklenmeyince
-            düz #0000CD kalıp renk mora kayıyor + desen kayboluyordu. */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #4f46e5 0%, #4338ca 55%, #3730a3 100%)" }} />
-        {/* Desen — inline SVG (her kullanıcıda görünür; ağ/CSP'ye bağlı değil) */}
+      {/* ── Hero slider ──────────────────────────────────────────────────── */}
+      {/* 4 slayt yatay kayan tek band. Slayt 0: klasik karşılama (arama).
+          Slayt 1-3: modül vurguları (Canlı/Yazılı/Tünel) kendi temasıyla. */}
+      <section
+        className="relative overflow-hidden"
+        aria-roledescription="carousel"
+        aria-label={t("pages:home.hero.carouselLabel", { defaultValue: "Tanıtım" })}
+      >
         <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='1.5' fill='%23ffffff'/%3E%3C/svg%3E\")",
-            backgroundSize: "32px 32px",
-          }}
-        />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
-              {t("pages:home.hero.titleLine1")}
-              <span className="block text-indigo-200">{t("pages:home.hero.titleLine2")}</span>
-            </h1>
-            <p className="mt-6 text-lg text-indigo-100 max-w-xl">
-              {t("pages:home.hero.subtitle")}
-            </p>
+          className="flex transition-transform duration-700 ease-out"
+          style={{ transform: `translateX(-${heroIndex * 100}%)` }}
+        >
+          {/* Slayt 0 — Klasik karşılama (indigo) */}
+          <div className="w-full flex-shrink-0 relative overflow-hidden">
+            <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #4f46e5 0%, #4338ca 55%, #3730a3 100%)" }} />
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='1.5' fill='%23ffffff'/%3E%3C/svg%3E\")",
+                backgroundSize: "32px 32px",
+              }}
+            />
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+              <div className="max-w-3xl">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                  {t("pages:home.hero.titleLine1")}
+                  <span className="block text-indigo-200">{t("pages:home.hero.titleLine2")}</span>
+                </h1>
+                <p className="mt-6 text-lg text-indigo-100 max-w-xl">
+                  {t("pages:home.hero.subtitle")}
+                </p>
 
-            <form onSubmit={handleSearch} className="mt-10 flex gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
-                  placeholder={t("pages:home.hero.searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-14 bg-white/95 backdrop-blur border-0 rounded-xl text-lg"
-                />
-              </div>
-              <Button
-                type="submit"
-                size="lg"
-                className="h-14 px-8 bg-white hover:bg-slate-100 rounded-xl"
-                style={{ color: "#0000CD" }}
-              >
-                {t("pages:home.hero.searchButton")}
-              </Button>
-            </form>
+                <form onSubmit={handleSearch} className="mt-10 flex gap-3">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Input
+                      placeholder={t("pages:home.hero.searchPlaceholder")}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-12 h-14 bg-white/95 backdrop-blur border-0 rounded-xl text-lg"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="h-14 px-8 bg-white hover:bg-slate-100 rounded-xl"
+                    style={{ color: "#0000CD" }}
+                  >
+                    {t("pages:home.hero.searchButton")}
+                  </Button>
+                </form>
 
-            <div className="mt-10 flex flex-wrap gap-6 text-white/90">
-              {[
-                { key: "uniqueTests", label: t("pages:home.hero.features.uniqueTests") },
-                { key: "experiencedEducators", label: t("pages:home.hero.features.experiencedEducators") },
-                { key: "performanceTracking", label: t("pages:home.hero.features.performanceTracking") },
-              ].map(({ key, label }) => (
-                <div key={key} className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
-                  <span>{label}</span>
+                <div className="mt-10 flex flex-wrap gap-6 text-white/90">
+                  {[
+                    { key: "uniqueTests", label: t("pages:home.hero.features.uniqueTests") },
+                    { key: "experiencedEducators", label: t("pages:home.hero.features.experiencedEducators") },
+                    { key: "performanceTracking", label: t("pages:home.hero.features.performanceTracking") },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-emerald-400" />
+                      <span>{label}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
+
+          {/* Slayt 1-3 — Modül vurguları (Canlı / Yazılı / Tünel) */}
+          {[
+            {
+              key: "live",
+              Icon: Zap,
+              gradient: "linear-gradient(135deg, #fb923c 0%, #ea580c 55%, #c2410c 100%)",
+              ctaColor: "#c2410c",
+              to: createPageUrl("LiveSessionJoin"),
+            },
+            {
+              key: "written",
+              Icon: FileText,
+              gradient: "linear-gradient(135deg, #fbbf24 0%, #d97706 55%, #b45309 100%)",
+              ctaColor: "#b45309",
+              to: createPageUrl("Explore") + "?tab=written",
+            },
+            {
+              key: "tunnel",
+              Icon: Layers,
+              gradient: "linear-gradient(135deg, #34d399 0%, #059669 55%, #047857 100%)",
+              ctaColor: "#047857",
+              to: createPageUrl("Explore") + "?tab=tunnels",
+            },
+          ].map(({ key, Icon, gradient, ctaColor, to }) => (
+            <div key={key} className="w-full flex-shrink-0 relative overflow-hidden">
+              <div className="absolute inset-0" style={{ background: gradient }} />
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='1.5' fill='%23ffffff'/%3E%3C/svg%3E\")",
+                  backgroundSize: "32px 32px",
+                }}
+              />
+              <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+                <div className="max-w-3xl">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur">
+                    <Icon className="w-4 h-4" aria-hidden="true" />
+                    {t(`pages:home.hero.slides.${key}.badge`)}
+                  </span>
+                  <h2 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                    {t(`pages:home.hero.slides.${key}.title`)}
+                  </h2>
+                  <p className="mt-6 text-lg text-white/90 max-w-xl">
+                    {t(`pages:home.hero.slides.${key}.desc`)}
+                  </p>
+                  <Link to={to} className="inline-block mt-10">
+                    <Button
+                      size="lg"
+                      className="h-14 px-8 bg-white hover:bg-slate-100 rounded-xl font-semibold"
+                      style={{ color: ctaColor }}
+                    >
+                      {t(`pages:home.hero.slides.${key}.cta`)}
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Sol/sağ ok */}
+        <button
+          type="button"
+          onClick={() => goHero(heroIndex - 1)}
+          aria-label={t("pages:home.hero.prev", { defaultValue: "Önceki" })}
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => goHero(heroIndex + 1)}
+          aria-label={t("pages:home.hero.next", { defaultValue: "Sonraki" })}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <ChevronRight className="h-5 w-5" aria-hidden="true" />
+        </button>
+
+        {/* Nokta göstergeleri */}
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
+          {Array.from({ length: HERO_COUNT }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goHero(i)}
+              aria-label={t("pages:home.hero.goToSlide", { defaultValue: "Slayta git", index: i + 1 })}
+              aria-current={i === heroIndex}
+              className={`h-2.5 rounded-full transition-all ${i === heroIndex ? "w-8 bg-white" : "w-2.5 bg-white/50 hover:bg-white/70"}`}
+            />
+          ))}
         </div>
       </section>
 

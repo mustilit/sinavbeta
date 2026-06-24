@@ -30,6 +30,30 @@
         "uniqueTests": "Exámenes originales",
         "experiencedEducators": "Educadores expertos",
         "performanceTracking": "Exámenes abiertos recientes"
+      },
+      "carouselLabel": "Diapositivas promocionales",
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "goToSlide": "Ir a la diapositiva {{index}}",
+      "slides": {
+        "live": {
+          "badge": "Test en Vivo",
+          "title": "Compite en Tests en Vivo",
+          "desc": "Únete con un código a la sesión en tiempo real dirigida por el educador; las preguntas se abren para todos a la vez y ves tu posición en directo.",
+          "cta": "Unirme a un Test en Vivo"
+        },
+        "written": {
+          "badge": "Test Escrito",
+          "title": "Profundiza con Tests Escritos",
+          "desc": "Responde preguntas abiertas con tus palabras, compara con la solución tras enviar y detecta tú mismo tus carencias.",
+          "cta": "Explorar Escritos"
+        },
+        "tunnel": {
+          "badge": "Túnel",
+          "title": "Domina con un Túnel",
+          "desc": "Capas adaptativas de fácil a difícil; resuelve cada pregunta con opciones cambiantes y avanza hasta la maestría real.",
+          "cta": "Explorar Túneles"
+        }
       }
     },
     "sections": {

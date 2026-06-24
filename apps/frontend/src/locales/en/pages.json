@@ -30,6 +30,30 @@
         "uniqueTests": "Original Tests",
         "experiencedEducators": "Experienced Educators",
         "performanceTracking": "Latest Open-Ended"
+      },
+      "carouselLabel": "Promotional slides",
+      "prev": "Previous",
+      "next": "Next",
+      "goToSlide": "Go to slide {{index}}",
+      "slides": {
+        "live": {
+          "badge": "Live Test",
+          "title": "Compete in Live Tests",
+          "desc": "Join the educator-led real-time session with a code; questions open to everyone at once and you see your rank live.",
+          "cta": "Join a Live Test"
+        },
+        "written": {
+          "badge": "Written Test",
+          "title": "Go Deeper with Written Tests",
+          "desc": "Answer open-ended questions in your own words, compare against the solution after submitting, and spot your gaps yourself.",
+          "cta": "Explore Written Tests"
+        },
+        "tunnel": {
+          "badge": "Tunnel",
+          "title": "Master It with a Tunnel",
+          "desc": "Adaptive layers from easy to hard; solve each question with shifting options and progress until you reach true mastery.",
+          "cta": "Explore Tunnels"
+        }
       }
     },
     "sections": {

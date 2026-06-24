@@ -30,6 +30,30 @@
         "uniqueTests": "原创测试",
         "experiencedEducators": "经验丰富的讲师",
         "performanceTracking": "最新写作测验"
+      },
+      "carouselLabel": "宣传幻灯片",
+      "prev": "上一张",
+      "next": "下一张",
+      "goToSlide": "前往第 {{index}} 张幻灯片",
+      "slides": {
+        "live": {
+          "badge": "直播测验",
+          "title": "在直播测验中竞技",
+          "desc": "用代码加入讲师主持的实时会话；题目同时向所有人开放，实时查看你的排名。",
+          "cta": "加入直播测验"
+        },
+        "written": {
+          "badge": "笔试",
+          "title": "用笔试深入学习",
+          "desc": "用自己的话回答开放式题目，提交后与解析对照，自行发现不足。",
+          "cta": "探索笔试"
+        },
+        "tunnel": {
+          "badge": "隧道",
+          "title": "用隧道精通掌握",
+          "desc": "由易到难的自适应层级；用不断变化的选项作答每道题，直至达到真正的精通。",
+          "cta": "探索隧道"
+        }
       }
     },
     "sections": {

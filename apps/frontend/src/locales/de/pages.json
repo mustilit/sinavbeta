@@ -30,6 +30,30 @@
         "uniqueTests": "Originale Tests",
         "experiencedEducators": "Erfahrene Ausbilder",
         "performanceTracking": "Aktuelle offene Prüfungen"
+      },
+      "carouselLabel": "Werbe-Folien",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "goToSlide": "Zu Folie {{index}} gehen",
+      "slides": {
+        "live": {
+          "badge": "Live-Test",
+          "title": "Tritt in Live-Tests an",
+          "desc": "Tritt der vom Ausbilder geleiteten Echtzeit-Sitzung mit einem Code bei; Fragen öffnen sich für alle gleichzeitig und du siehst deinen Rang live.",
+          "cta": "Live-Test beitreten"
+        },
+        "written": {
+          "badge": "Schriftlicher Test",
+          "title": "Vertiefe dich mit schriftlichen Tests",
+          "desc": "Beantworte offene Fragen in eigenen Worten, vergleiche nach dem Absenden mit der Lösung und erkenne deine Lücken selbst.",
+          "cta": "Schriftliche entdecken"
+        },
+        "tunnel": {
+          "badge": "Tunnel",
+          "title": "Werde Meister mit einem Tunnel",
+          "desc": "Adaptive Ebenen von leicht bis schwer; löse jede Frage mit wechselnden Optionen und schreite fort bis zur echten Meisterschaft.",
+          "cta": "Tunnel entdecken"
+        }
       }
     },
     "sections": {

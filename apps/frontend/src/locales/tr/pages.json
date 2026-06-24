@@ -30,6 +30,30 @@
         "uniqueTests": "Özgün Testler",
         "experiencedEducators": "Tecrübeli Eğiticiler",
         "performanceTracking": "Güncel Yazılılar"
+      },
+      "carouselLabel": "Tanıtım slaytları",
+      "prev": "Önceki",
+      "next": "Sonraki",
+      "goToSlide": "{{index}}. slayta git",
+      "slides": {
+        "live": {
+          "badge": "Canlı Test",
+          "title": "Canlı Testlerle Yarış",
+          "desc": "Eğiticinin yönettiği eş zamanlı oturuma kodla katıl; sorular herkese aynı anda açılsın, anlık sıralamada yerini gör.",
+          "cta": "Canlı Teste Katıl"
+        },
+        "written": {
+          "badge": "Yazılı Test",
+          "title": "Yazılı Testlerle Derinleş",
+          "desc": "Açık uçlu sorulara kendi cümlelerinle cevap ver, teslim sonrası çözümle kıyasla ve eksiklerini kendin gör.",
+          "cta": "Yazılıları Keşfet"
+        },
+        "tunnel": {
+          "badge": "Tünel",
+          "title": "Tünelle Ustalaş",
+          "desc": "Kolaydan zora uyarlanabilir katmanlar; her soruyu farklı seçeneklerle çöz, gerçek ustalığa ulaşana kadar ilerle.",
+          "cta": "Tünelleri Keşfet"
+        }
       }
     },
     "sections": {
