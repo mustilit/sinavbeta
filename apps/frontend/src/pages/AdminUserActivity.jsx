@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { adminUsers, adminAudit } from "@/api/dalClient";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -189,10 +189,12 @@ export default function AdminUserActivity() {
 
   const [foundUser, setFoundUser] = useState(null);
   const [logs, setLogs] = useState(null);
+  const [searchParams] = useSearchParams();
 
   const searchMut = useMutation({
-    mutationFn: async () => {
-      const q = query.trim();
+    mutationFn: async (overrideQ) => {
+      // overrideQ: deep-link (?q=) ile gelen sorgu; yoksa input state'i
+      const q = (typeof overrideQ === "string" ? overrideQ : query).trim();
       if (!q) throw new Error("Kullanıcı adı veya email gerekli");
 
       // 1) User lookup
@@ -259,6 +261,17 @@ export default function AdminUserActivity() {
     e?.preventDefault();
     searchMut.mutate();
   };
+
+  // Deep-link: ManageUsers vb. sayfalardan ?q=<email|username> ile gelince
+  // arama otomatik koşar (kullanıcının tüm işlem geçmişine tek tıkla geçiş).
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && q.trim()) {
+      setQuery(q.trim());
+      searchMut.mutate(q.trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

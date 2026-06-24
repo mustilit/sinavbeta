@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import api from "@/lib/api/apiClient";
 import { adminEducators } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -19,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Users, UserPlus, ShieldCheck, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, Users, UserPlus, ShieldCheck, ChevronDown, ChevronRight, History } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -849,10 +851,28 @@ export default function ManageUsers() {
               )}
 
               {/* İşlem Geçmişi — sözleşme onayları + admin onay/red + eğitici geri gönderim
-                  (audit log + ContractAcceptance backend'de birleştirilip occurredAt'a göre sıralanır). */}
-              {reviewDetail.history?.length > 0 && (
+                  (audit log + ContractAcceptance backend'de birleştirilip occurredAt'a göre sıralanır).
+                  Bu özet hesap yaşam döngüsüne odaklıdır; tünel/yazılı içerik işlemleri dahil
+                  TÜM audit kayıtları için "Tüm işlem geçmişi" bağlantısı kullanıcının full
+                  AdminUserActivity sayfasına götürür. */}
+              {reviewDetail && (
                 <div className="rounded-lg border border-slate-200 p-4">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-3">İşlem Geçmişi</h3>
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <h3 className="text-sm font-semibold text-slate-900">İşlem Geçmişi</h3>
+                    {(reviewDetail.email || reviewDetail.username) && (
+                      <Link
+                        to={`${createPageUrl("AdminUserActivity")}?q=${encodeURIComponent(reviewDetail.email || reviewDetail.username)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                      >
+                        <History className="w-3.5 h-3.5" aria-hidden="true" />
+                        Tüm işlem geçmişi
+                        <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                      </Link>
+                    )}
+                  </div>
+                  {reviewDetail.history?.length > 0 ? (
                   <ol className="text-xs text-slate-700 space-y-2 border-l-2 border-slate-200 pl-3 ml-1">
                     {reviewDetail.history.map((h, i) => {
                       const dot =
@@ -890,6 +910,12 @@ export default function ManageUsers() {
                       );
                     })}
                   </ol>
+                  ) : (
+                    <p className="text-xs text-slate-400">
+                      Bu özet için kayıt yok. Tünel/yazılı içerik işlemleri dahil tüm kayıtlar için
+                      "Tüm işlem geçmişi" bağlantısını kullanın.
+                    </p>
+                  )}
                 </div>
               )}
 
