@@ -159,6 +159,8 @@ const SchoolPanel = lazy(() => import('./pages/SchoolPanel'));
 const SchoolUsers = lazy(() => import('./pages/SchoolUsers'));
 const SchoolBranches = lazy(() => import('./pages/SchoolBranches'));
 const SchoolDepartments = lazy(() => import('./pages/SchoolDepartments'));
+const SchoolExamPool = lazy(() => import('./pages/SchoolExamPool'));
+const SchoolExamEdit = lazy(() => import('./pages/SchoolExamEdit'));
 
 
 export const PAGES = {
@@ -262,6 +264,8 @@ export const PAGES = {
     "SchoolUsers": SchoolUsers,
     "SchoolBranches": SchoolBranches,
     "SchoolDepartments": SchoolDepartments,
+    "SchoolExamPool": SchoolExamPool,
+    "SchoolExamEdit": SchoolExamEdit,
 }
 
 export const pagesConfig = {

@@ -117,6 +117,8 @@ export const PAGE_ROLES = {
   SchoolUsers: [],
   SchoolBranches: [],
   SchoolDepartments: [],
+  SchoolExamPool: [],
+  SchoolExamEdit: [],
   ManageTopics: [ROLES.ADMIN],
   ManageUsers: [ROLES.ADMIN],
   ManageTests: [ROLES.ADMIN],

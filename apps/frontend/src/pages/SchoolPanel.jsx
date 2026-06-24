@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Users, Building2, BookOpen, Radio, ChevronRight, GraduationCap, AlertCircle } from "lucide-react";
 
 const ADMIN_ROLES = ["SCHOOL_ADMIN", "BRANCH_ADMIN"];
+const TEACHER_ROLES = ["TEACHER", "DEPT_HEAD"];
 
 const ROLE_LABEL = {
   SCHOOL_ADMIN: "Okul Yöneticisi",
@@ -38,12 +39,40 @@ export default function SchoolPanel() {
     );
   }
 
+  const isTeacher = TEACHER_ROLES.includes(ctx.schoolRole);
+
+  if (isTeacher) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-indigo-600" /></div>
+          <div><h1 className="text-2xl font-bold text-slate-900">{ctx.schoolName}</h1><p className="text-sm text-slate-500">{ROLE_LABEL[ctx.schoolRole]} paneli</p></div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Link to={createPageUrl("SchoolExamPool")} className="group">
+            <Card className="hover:shadow-lg hover:shadow-slate-200/60 transition-all">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center"><BookOpen className="w-5 h-5 text-indigo-600" /></div>
+                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
+                </div>
+                <p className="font-semibold text-slate-900 mt-3">Sınav Havuzu</p>
+                <p className="text-sm text-slate-500">Test, Tünel ve Yazılı sınav oluştur</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+        <p className="text-sm text-slate-400">Ödev atama ve sonuç raporları yakında bu panele eklenecek.</p>
+      </div>
+    );
+  }
+
   if (!isManager) {
     return (
       <div className="max-w-lg mx-auto text-center py-20">
         <GraduationCap className="w-12 h-12 mx-auto mb-3 text-indigo-300" />
         <h2 className="text-xl font-semibold text-slate-900">Merhaba, {ROLE_LABEL[ctx.schoolRole]}</h2>
-        <p className="text-slate-500 mt-2">{ctx.schoolName} · Modülünüz (sınav/ödev) yakında bu panele eklenecek.</p>
+        <p className="text-slate-500 mt-2">{ctx.schoolName} · Modülünüz (ödev/sınav) yakında bu panele eklenecek.</p>
       </div>
     );
   }
