@@ -35,28 +35,26 @@ export default function PublicHeader() {
           </Link>
 
           <nav className="flex items-center gap-3">
-            <Link
-              to={createPageUrl("Explore")}
-              className="text-slate-600 hover:text-slate-900 transition-colors text-sm"
-            >
-              {t("pages:home.nav.explore")}
-            </Link>
-            <Link
-              to={createPageUrl("Educators")}
-              className="text-slate-600 hover:text-slate-900 transition-colors text-sm"
-            >
-              {t("pages:home.nav.educators")}
-            </Link>
             {/* Dil seçici — login olmadan da erişilebilir; sadece bayrak görünür, tıklayınca açılır */}
             <LanguageSwitcherCompact />
             {!user && (
-              <Button
-                onClick={() => navigate(buildPageUrl("Login", { from: createPageUrl("Explore") }))}
-                style={{ backgroundColor: "#0000CD" }}
-                className="hover:opacity-90"
-              >
-                {t("pages:home.nav.login")}
-              </Button>
+              <>
+                <Button
+                  onClick={() => navigate(buildPageUrl("Login", { from: createPageUrl("Explore") }))}
+                  style={{ backgroundColor: "#0000CD" }}
+                  className="hover:opacity-90"
+                >
+                  {t("pages:home.nav.login")}
+                </Button>
+                {/* E-Sınıf (okul) girişi — aynı giriş ekranı; okul kullanıcısı giriş yapınca okul paneline yönlenir */}
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(buildPageUrl("Login", { from: createPageUrl("Home"), context: "school" }))}
+                  className="border-indigo-600 text-indigo-700 hover:bg-indigo-50"
+                >
+                  {t("pages:home.nav.eSinif", { defaultValue: "E-Sınıf" })}
+                </Button>
+              </>
             )}
           </nav>
         </div>
