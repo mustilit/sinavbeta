@@ -65,7 +65,7 @@
       "startNow": "Get Started"
     },
     "footer": {
-      "tagline": "The most trusted platform for exam preparation. Take tests from expert educators and track your performance.",
+      "tagline": "Solve exams prepared by expert educators in their field, track your performance and reach your goal.",
       "corporate": "Company",
       "support": "Support",
       "supportLink": "Help and Support",
@@ -2120,5 +2120,19 @@
     "TEST": "Test Package",
     "TUNNEL": "Tunnel",
     "WRITTEN": "Written"
+  },
+  "liveSessionInfo": {
+    "title": "What Is a Live Test?",
+    "intro": "A Live Test is a real-time exam session run by the educator; all participants solve the same question together at the same time.",
+    "normalLabel": "Normal Test",
+    "normalDesc": "You solve it alone whenever you want, moving through questions at your own pace.",
+    "liveLabel": "Live Test",
+    "liveDesc": "The educator starts the session; participants join with a code and questions advance in sync.",
+    "point1": "The educator creates the session and shares a join code; candidates enter the live room with it.",
+    "point2": "Questions open to everyone at once as the educator advances; answers lock when time runs out.",
+    "point3": "Results and a leaderboard can optionally be shown live; a summary appears when the session ends.",
+    "point4": "A round 2 can be opened for participants who answered wrong; live tests are ideal for in-class/group review.",
+    "gotIt": "Got it",
+    "trigger": "What is a Live Test?"
   }
 }

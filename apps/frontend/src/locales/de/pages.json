@@ -65,7 +65,7 @@
       "startNow": "Jetzt starten"
     },
     "footer": {
-      "tagline": "Die zuverlässigste Plattform zur Prüfungsvorbereitung. Lösen Sie Tests erfahrener Ausbilder und verfolgen Sie Ihre Leistung.",
+      "tagline": "Löse Prüfungen, die von Fachexperten erstellt wurden, verfolge deine Leistung und erreiche dein Ziel.",
       "corporate": "Unternehmen",
       "support": "Support",
       "supportLink": "Hilfe und Support",
@@ -2120,5 +2120,19 @@
     "TEST": "Testpaket",
     "TUNNEL": "Tunnel",
     "WRITTEN": "Schriftlich"
+  },
+  "liveSessionInfo": {
+    "title": "Was ist ein Live-Test?",
+    "intro": "Ein Live-Test ist eine vom Ausbilder geleitete Echtzeit-Prüfungssitzung; alle Teilnehmer lösen dieselbe Frage gleichzeitig.",
+    "normalLabel": "Normaler Test",
+    "normalDesc": "Du löst ihn allein, wann du willst, und gehst die Fragen in deinem eigenen Tempo durch.",
+    "liveLabel": "Live-Test",
+    "liveDesc": "Der Ausbilder startet die Sitzung; Teilnehmer treten mit einem Code bei und die Fragen laufen synchron.",
+    "point1": "Der Ausbilder erstellt die Sitzung und teilt einen Beitrittscode; Kandidaten betreten damit den Live-Raum.",
+    "point2": "Fragen werden für alle gleichzeitig freigegeben, während der Ausbilder fortschreitet; bei Zeitablauf werden Antworten gesperrt.",
+    "point3": "Ergebnisse und eine Rangliste können live angezeigt werden; nach Sitzungsende erscheint eine Zusammenfassung.",
+    "point4": "Für Teilnehmer mit falschen Antworten kann eine 2. Runde geöffnet werden; Live-Tests eignen sich ideal für Wiederholungen im Unterricht/in der Gruppe.",
+    "gotIt": "Verstanden",
+    "trigger": "Was ist ein Live-Test?"
   }
 }

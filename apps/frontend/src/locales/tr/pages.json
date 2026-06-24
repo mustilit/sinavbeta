@@ -65,7 +65,7 @@
       "startNow": "Hemen Başla"
     },
     "footer": {
-      "tagline": "Sınavlara hazırlık için en güvenilir platform. Alanında uzman eğiticilerden test çöz, performansını takip et.",
+      "tagline": "Alanında uzman eğiticilerin hazırladığı sınavları çöz, performansını takip et ve hedefine ulaş.",
       "corporate": "Kurumsal",
       "support": "Destek",
       "supportLink": "Yardım ve Destek",
@@ -2120,5 +2120,19 @@
     "TEST": "Test Paketi",
     "TUNNEL": "Tünel",
     "WRITTEN": "Yazılı"
+  },
+  "liveSessionInfo": {
+    "title": "Canlı Test Nedir?",
+    "intro": "Canlı Test, eğiticinin yönettiği eş zamanlı bir sınav oturumudur; tüm katılımcılar aynı anda, aynı soruyu birlikte çözer.",
+    "normalLabel": "Normal Test",
+    "normalDesc": "İstediğin zaman tek başına çözersin; soruları kendi hızında ilerletirsin.",
+    "liveLabel": "Canlı Test",
+    "liveDesc": "Eğitici oturumu başlatır; katılımcılar bir kodla katılır ve sorular eş zamanlı ilerler.",
+    "point1": "Eğitici oturumu oluşturur, katılım kodunu paylaşır; adaylar bu kodla canlı odaya girer.",
+    "point2": "Sorular tek tek, eğiticinin ilerletmesiyle herkese aynı anda açılır; süre dolunca cevaplar kilitlenir.",
+    "point3": "İsteğe bağlı olarak sonuçlar ve sıralama anlık gösterilebilir; oturum bitince özet çıkar.",
+    "point4": "Yanlış yapan katılımcılarla 2. tur açılabilir; canlı test, sınıf içi/grup tekrarı için idealdir.",
+    "gotIt": "Anladım",
+    "trigger": "Canlı Test nedir?"
   }
 }

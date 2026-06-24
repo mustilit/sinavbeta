@@ -11,8 +11,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Zap, Plus, Users, Clock, CheckCircle2,
-  FileEdit, ChevronRight, Radio, Eye, Pencil, Play,
+  FileEdit, ChevronRight, Radio, Eye, Pencil, Play, HelpCircle,
 } from "lucide-react";
+import { LiveSessionInfoModal, useLiveSessionIntro } from "@/components/live/LiveSessionInfoModal";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -263,6 +264,8 @@ export default function MyLiveSessions() {
   const queryClient    = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState("ALL");
+  // "Canlı Test Nedir?" bilgilendirme pop-up'ı (Tünel intro deseni, ilk açılışta otomatik)
+  const liveIntro = useLiveSessionIntro(true);
   // Başlat onay dialog'u — native window.confirm yerine projedeki shadcn Dialog
   // ile tutarlı görünüm. State: null veya { kind: 'round1'|'round2', sessionId, existingRound2? }
   const [confirmStart, setConfirmStart] = useState(null);
@@ -366,12 +369,21 @@ export default function MyLiveSessions() {
           <p className="text-slate-500 mt-1 text-sm">
             {t("pages:myLiveSessions.subtitle")}
           </p>
+          <button
+            type="button"
+            onClick={() => liveIntro.setOpen(true)}
+            className="mt-2 inline-flex items-center gap-1 px-2 py-1 min-h-10 text-xs font-medium text-amber-600 hover:text-amber-700"
+          >
+            <HelpCircle className="h-4 w-4" aria-hidden="true" /> {t("pages:liveSessionInfo.trigger")}
+          </button>
         </div>
         <Button onClick={goToCreate} className="bg-amber-500 hover:bg-amber-600 gap-2 shrink-0">
           <Plus className="w-4 h-4" />
           {t("pages:myLiveSessions.newButton")}
         </Button>
       </div>
+
+      <LiveSessionInfoModal open={liveIntro.open} onClose={() => liveIntro.setOpen(false)} />
 
       {/* Filtre sekmeleri — pagination cursor'ı statusFilter ile resetlenir
           (queryKey ['myLiveSessions', statusFilter]). */}

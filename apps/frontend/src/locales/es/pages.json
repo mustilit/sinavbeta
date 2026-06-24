@@ -65,7 +65,7 @@
       "startNow": "Comenzar"
     },
     "footer": {
-      "tagline": "La plataforma más confiable para la preparación de exámenes. Realiza exámenes de educadores expertos y sigue tu rendimiento.",
+      "tagline": "Resuelve exámenes preparados por educadores expertos en su campo, sigue tu rendimiento y alcanza tu meta.",
       "corporate": "Empresa",
       "support": "Soporte",
       "supportLink": "Ayuda y soporte",
@@ -2123,5 +2123,19 @@
     "TEST": "Paquete de examen",
     "TUNNEL": "Túnel",
     "WRITTEN": "Escrito"
+  },
+  "liveSessionInfo": {
+    "title": "¿Qué es un Test en Vivo?",
+    "intro": "Un Test en Vivo es una sesión de examen en tiempo real dirigida por el educador; todos los participantes resuelven la misma pregunta a la vez.",
+    "normalLabel": "Test Normal",
+    "normalDesc": "Lo resuelves solo cuando quieras, avanzando por las preguntas a tu propio ritmo.",
+    "liveLabel": "Test en Vivo",
+    "liveDesc": "El educador inicia la sesión; los participantes se unen con un código y las preguntas avanzan en sincronía.",
+    "point1": "El educador crea la sesión y comparte un código; los candidatos entran a la sala en vivo con él.",
+    "point2": "Las preguntas se abren para todos a la vez según avanza el educador; las respuestas se bloquean al acabarse el tiempo.",
+    "point3": "Los resultados y una clasificación pueden mostrarse en vivo; al terminar la sesión aparece un resumen.",
+    "point4": "Se puede abrir una 2ª ronda para quienes fallaron; el test en vivo es ideal para repaso en clase/grupo.",
+    "gotIt": "Entendido",
+    "trigger": "¿Qué es un Test en Vivo?"
   }
 }
