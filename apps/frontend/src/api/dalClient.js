@@ -2247,6 +2247,23 @@ export const school = {
     overview: async () => (await api.get('/school/reports/overview')).data,
     branch: async (branchId) => (await api.get(`/school/reports/branch/${branchId}`)).data,
   },
+
+  // Canlı sınav — öğretmen host (Sprint 4-B)
+  live: {
+    list: async () => (await api.get('/school/live')).data,
+    create: async (body) => (await api.post('/school/live', body)).data,
+    host: async (id) => (await api.get(`/school/live/${id}/host`)).data,
+    start: async (id) => (await api.post(`/school/live/${id}/start`)).data,
+    advance: async (id) => (await api.post(`/school/live/${id}/advance`)).data,
+    end: async (id) => (await api.post(`/school/live/${id}/end`)).data,
+  },
+};
+
+// E-Sınıf öğrenci canlı sınav katılımı (Sprint 4-B)
+export const studentLive = {
+  join: async (joinCode) => (await api.post('/school/live/join', { joinCode })).data,
+  state: async (id) => (await api.get(`/school/live/${id}/state`)).data,
+  answer: async (id, body) => (await api.post(`/school/live/${id}/answer`, body)).data,
 };
 
 // E-Sınıf öğrenci ödev çözme (Sprint 3)

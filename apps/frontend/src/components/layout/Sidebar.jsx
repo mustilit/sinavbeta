@@ -167,10 +167,12 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     { name: t("sidebar.esinif.panel", { defaultValue: "Okul Paneli" }), page: "SchoolPanel", icon: Home },
     { name: t("sidebar.esinif.examPool", { defaultValue: "Sınav Havuzu" }), page: "SchoolExamPool", icon: BookOpen },
     { name: t("sidebar.esinif.assignments", { defaultValue: "Ödevler" }), page: "SchoolAssignments", icon: Layers },
+    { name: t("sidebar.esinif.live", { defaultValue: "Canlı Sınav" }), page: "SchoolLive", icon: Zap },
   ];
   const isSchoolStudent = schoolCtx?.schoolRole === "STUDENT";
   const studentLinks = [
     { name: t("sidebar.esinif.myAssignments", { defaultValue: "Ödevlerim" }), page: "StudentAssignments", icon: BookOpen },
+    { name: t("sidebar.esinif.joinLive", { defaultValue: "Canlı Sınava Katıl" }), page: "StudentLive", icon: Zap },
   ];
 
   const workerPages = Array.isArray(user?.workerPages) ? user.workerPages : [];

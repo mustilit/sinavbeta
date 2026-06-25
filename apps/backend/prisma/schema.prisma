@@ -1387,6 +1387,8 @@ model LiveSession {
   endedAt                 DateTime?
   roundNumber             Int       @default(1)
   parentSessionId         String?
+  // E-Sınıf — okul canlı sınavı (marketplace'ten ayrı akış; null = marketplace oturumu)
+  schoolId                String?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -1403,6 +1405,7 @@ model LiveSession {
   parent       LiveSession?      @relation("LiveSessionRounds", fields: [parentSessionId], references: [id])
   rounds       LiveSession[]     @relation("LiveSessionRounds")
 
+  @@index([schoolId])
   @@index([educatorId])
   @@index([parentSessionId])
   @@map("live_sessions")
