@@ -2267,6 +2267,26 @@ export const school = {
   reports: {
     overview: async () => (await api.get('/school/reports/overview')).data,
     branch: async (branchId) => (await api.get(`/school/reports/branch/${branchId}`)).data,
+    /** Filtreli kırılım: { from, to, gradeLevel, classroomId, departmentId } → şube/seviye/sınıf + highlights */
+    breakdown: async ({ from, to, gradeLevel, classroomId, departmentId } = {}) => {
+      const qs = new URLSearchParams();
+      if (from) qs.set('from', from);
+      if (to) qs.set('to', to);
+      if (gradeLevel) qs.set('gradeLevel', String(gradeLevel));
+      if (classroomId) qs.set('classroomId', classroomId);
+      if (departmentId) qs.set('departmentId', departmentId);
+      const s = qs.toString();
+      return (await api.get(`/school/reports/breakdown${s ? `?${s}` : ''}`)).data;
+    },
+    /** Tek sınıf detayı: classroomId + { from, to, departmentId } */
+    classroom: async (classroomId, { from, to, departmentId } = {}) => {
+      const qs = new URLSearchParams();
+      if (from) qs.set('from', from);
+      if (to) qs.set('to', to);
+      if (departmentId) qs.set('departmentId', departmentId);
+      const s = qs.toString();
+      return (await api.get(`/school/reports/classroom/${classroomId}${s ? `?${s}` : ''}`)).data;
+    },
   },
 
   // Canlı sınav — öğretmen host (Sprint 4-B)
