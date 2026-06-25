@@ -253,6 +253,29 @@ Mevcut Sınav modülünün **şıksız** versiyonu. Aday her soruya **METİN** c
 **Frontend:** `CreateWrittenTest`/`EditWrittenTest`/`ManageWrittenTests` (eğitici), `WrittenTestDetail`/`TakeWrittenTest` (aday), `WrittenPackageGrid` (Explore+MyTests 3. sekme), `MyResults` yazılı sekmesi. dalClient: `writtenTests` (eğitici) + `candidateWritten` (aday) namespace.
 **Önemli fark:** Tünel adaptif/şıklı; Yazılı şıksız/metin/öz-değerlendirme. İkisi de TestPackage'dan ayrı.
 
+### E-Sınıf (B2B Okul Modülü) — Marketplace İzolasyonu
+
+E-Sınıf, okulların/kurumların öğrenci-öğretmen-yönetici hiyerarşisiyle kapalı devre sınav/ödev yönettiği **ayrı bir B2B dikeyidir**. Marketplace (eğitici→aday satış) ile **veri ve iş mantığı düzeyinde tamamen izoledir**.
+
+- **Roller junction'da:** Okul kullanıcısının `User.role` **her zaman `CANDIDATE`** kalır; gerçek yetki `SchoolUser.schoolRole` (`SCHOOL_ADMIN`/`BRANCH_ADMIN`/`DEPT_HEAD`/`TEACHER`/`STUDENT`) ile taşınır. Okul yöneticisi gerçek e-posta + üretilen geçici şifreyle; öğrenci/öğretmen otomatik kullanıcı adıyla (`KOD-S-0001`) girer.
+- **Ayrı modeller:** `School/Branch/Classroom/Department/SchoolUser/AcademicPeriod` (org) + `SchoolExam/SchoolQuestion/SchoolQuestionOption` + `SchoolAssignment/SchoolSubmission/SchoolSubmissionAnswer`. Marketplace içeriğinden (ExamTest/TestPackage/Purchase) **bağımsız** — relation yok, modül-dışı id'ler scalar. Use-case'ler `application/use-cases/school/`, controller'lar `school*`/`admin.schools`, sayfalar `School*`/`Student*`.
+
+**ALTIN KURAL — marketplace'i bozma:** E-Sınıf için **marketplace use-case/query/controller/sayfasını DEĞİŞTİRME**. Yeni kod kendi `school/` katmanında yaşar. Marketplace tarafı, okul bağlamı (`user.school`) **yokken byte-byte aynı** davranmalı.
+
+**Tek paylaşılan (cross-cutting) dokunuş noktaları — yalnız BURADA değişiklik olur ve katı şekilde additive/backward-compatible kalır:**
+- `auth/LoginUseCase.ts` — tanımlayıcı `@` içermiyorsa `findByUsername` (e-posta yolu **değişmez**); `SCHOOL_ADMIN` için ADMIN/WORKER gibi yeni-cihaz doğrulaması (marketplace kullanıcısında `schoolUser.findFirst` → null → davranış aynı).
+- `nest/controllers/auth.controller.ts` — `login` tanımlayıcıyı lowercase'e zorlamaz (e-posta use-case içinde normalize); `/auth/me` yanıtına `school` alanı (marketplace'te `null`).
+- `lib/routeRoles.js` — `canAccessPage` **boş dizi `[]` = giriş yapmış herkes** (yalnız E-Sınıf sayfaları `[]`; asıl yetki `SchoolUser` ile server-side + sayfa içi `ctx.schoolRole`).
+- `components/layout/Sidebar.jsx`, `pages/Login.jsx` — okul menüsü/`context=school` dalı **yalnız `user.school` varken** görünür.
+- `prisma/schema.prisma` — yeni okul modelleri additive; `LiveSession.schoolId String?` **nullable** (marketplace canlı oturumlarda `null`, sorgular etkilenmez). E-Sınıf canlı = ayrı `/school/live` dikeyi, mevcut LiveSession tablolarını yeniden kullanır ama marketplace canlı akışına dokunmaz.
+- `pages.config.js` / `routeRoles.js` PAGE_ROLES / `dalClient.js` namespaces / `locales/*/auth.json` — sadece **ekleme**.
+
+**Checklist (E-Sınıf'a kod eklerken):**
+- [ ] Yeni iş mantığı `school/` use-case'inde mi (marketplace use-case'i düzenlenmedi)?
+- [ ] Paylaşılan bir dosyaya (Login/auth.controller/routeRoles/Sidebar/schema) dokunuldu mu? Dokunulduysa: `user.school` yokken marketplace davranışı **aynı** mı?
+- [ ] Yeni şema alanı nullable + additive mi (NOT NULL backfill marketplace satırlarını bozmaz)?
+- [ ] Yetki hem server-side (`resolveSchoolContext`/`requireSchoolRole`) hem sayfa içi (`ctx.schoolRole`) kontrol ediliyor mu (route guard tek başına yeterli değil)?
+
 ## İş Kuralları
 
 **Yayımlama**
