@@ -39,6 +39,7 @@ import {
   StickyNote,
   Layers,
   BookMarked,
+  Compass,
   ShieldCheck,
 } from "lucide-react";
 
@@ -175,7 +176,9 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   ];
   const isSchoolStudent = schoolCtx?.schoolRole === "STUDENT";
   const studentLinks = [
+    { name: t("sidebar.esinif.explore", { defaultValue: "Keşfet" }), page: "StudentExplore", icon: Compass },
     { name: t("sidebar.esinif.myAssignments", { defaultValue: "Ödevlerim" }), page: "StudentAssignments", icon: BookOpen },
+    { name: t("sidebar.esinif.myReports", { defaultValue: "Raporlarım" }), page: "StudentReports", icon: BarChart3 },
     { name: t("sidebar.esinif.joinLive", { defaultValue: "Canlı Sınava Katıl" }), page: "StudentLive", icon: Zap },
   ];
 

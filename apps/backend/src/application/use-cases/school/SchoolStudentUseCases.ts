@@ -3,6 +3,7 @@
  * Liste → başlat → cevap kaydet (autosave) → teslim (TEST/TUNNEL otomatik puanlanır) → sonuç.
  */
 import { prisma } from '../../../infrastructure/database/prisma';
+import { prismaRead } from '../../../infrastructure/database/dbRouter';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole } from './schoolHelpers';
@@ -256,6 +257,72 @@ export class GetStudentResultUseCase {
               }),
         };
       }),
+    };
+  }
+}
+
+/**
+ * Öğrenci kendi raporu — kendi teslimlerinin ders (zümre) + konu (exam.topic) bazlı
+ * başarımı ve takvime göre (gün) zaman serisi. Zaman aralığı filtresi opsiyonel.
+ * Yalnız teslim/puanlanmış (SUBMITTED/GRADED) ve skoru olan teslimler ortalamaya girer.
+ */
+export class GetStudentReportUseCase {
+  async execute(actorId: string | undefined, input: { from?: string; to?: string } = {}) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'STUDENT');
+    const db = prismaRead();
+
+    const g = input.from ? new Date(input.from) : undefined;
+    const l = input.to ? new Date(input.to) : undefined;
+    const range =
+      (g && !isNaN(g.getTime())) || (l && !isNaN(l.getTime()))
+        ? { ...(g && !isNaN(g.getTime()) ? { gte: g } : {}), ...(l && !isNaN(l.getTime()) ? { lte: l } : {}) }
+        : undefined;
+
+    let gradeLevel: number | null = null;
+    if (ctx.classroomId) {
+      const cls = await db.classroom.findUnique({ where: { id: ctx.classroomId }, select: { gradeLevel: true } });
+      gradeLevel = cls?.gradeLevel ?? null;
+    }
+
+    const subs = await db.schoolSubmission.findMany({
+      where: { studentId: actorId as string, status: { in: ['SUBMITTED', 'GRADED'] as any }, ...(range ? { submittedAt: range } : {}) },
+      select: {
+        totalScore: true,
+        maxScore: true,
+        submittedAt: true,
+        assignment: { select: { exam: { select: { topic: true, department: { select: { name: true } } } } } },
+      },
+    });
+
+    const pct = (s: number | null, m: number | null) => (s == null || !m ? null : Math.round((s / m) * 1000) / 10);
+    const avg = (a: number[]) => (a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null);
+    const subjectAgg = new Map<string, number[]>();
+    const topicAgg = new Map<string, number[]>();
+    const dayAgg = new Map<string, number[]>();
+    const all: number[] = [];
+    for (const s of subs) {
+      const p = pct(s.totalScore, s.maxScore);
+      if (p == null) continue;
+      all.push(p);
+      const subj = s.assignment.exam?.department?.name ?? 'Zümresiz';
+      subjectAgg.set(subj, [...(subjectAgg.get(subj) ?? []), p]);
+      const top = (s.assignment.exam?.topic && s.assignment.exam.topic.trim()) || 'Konusuz';
+      topicAgg.set(top, [...(topicAgg.get(top) ?? []), p]);
+      if (s.submittedAt) {
+        const day = s.submittedAt.toISOString().slice(0, 10);
+        dayAgg.set(day, [...(dayAgg.get(day) ?? []), p]);
+      }
+    }
+    const rows = (m: Map<string, number[]>) =>
+      [...m.entries()].map(([name, ps]) => ({ name, avgPercent: avg(ps), count: ps.length })).sort((a, b) => (b.avgPercent ?? -1) - (a.avgPercent ?? -1));
+
+    return {
+      level: gradeLevel,
+      summary: { submissionCount: subs.length, avgPercent: avg(all) },
+      bySubject: rows(subjectAgg),
+      byTopic: rows(topicAgg),
+      timeseries: [...dayAgg.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, ps]) => ({ date, avgPercent: avg(ps), count: ps.length })),
     };
   }
 }

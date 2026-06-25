@@ -2312,6 +2312,17 @@ export const school = {
 };
 
 // E-Sınıf öğrenci canlı sınav katılımı (Sprint 4-B)
+// E-Sınıf öğrenci raporu (ders/konu/takvim)
+export const studentReport = {
+  get: async ({ from, to } = {}) => {
+    const qs = new URLSearchParams();
+    if (from) qs.set('from', from);
+    if (to) qs.set('to', to);
+    const s = qs.toString();
+    return (await api.get(`/student/report${s ? `?${s}` : ''}`)).data;
+  },
+};
+
 export const studentLive = {
   join: async (joinCode) => (await api.post('/school/live/join', { joinCode })).data,
   state: async (id) => (await api.get(`/school/live/${id}/state`)).data,

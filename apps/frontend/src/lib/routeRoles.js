@@ -123,6 +123,8 @@ export const PAGE_ROLES = {
   SchoolAssignments: [],
   SchoolAssignmentReport: [],
   StudentAssignments: [],
+  StudentExplore: [],
+  StudentReports: [],
   StudentSolve: [],
   StudentResult: [],
   SchoolGradeSubmission: [],

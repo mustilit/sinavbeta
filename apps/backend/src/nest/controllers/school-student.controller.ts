@@ -9,6 +9,7 @@ import {
   SaveAnswerUseCase,
   SubmitAssignmentUseCase,
   GetStudentResultUseCase,
+  GetStudentReportUseCase,
 } from '../../application/use-cases/school/SchoolStudentUseCases';
 
 class SaveAnswerDto {
@@ -45,4 +46,16 @@ export class SchoolStudentController {
 
   @Get(':id/result') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Sonuç (showResultAfter kuralına göre)' }) @ApiErrorResponses()
   result(@Param('id') id: string, @Req() req: any) { return this.resultUC.execute(id, req?.user?.id); }
+}
+
+/** E-Sınıf — Öğrenci kendi raporu (ders + konu + takvim). */
+@Controller('student/report')
+@ApiTags('E-Sınıf · Öğrenci')
+export class SchoolStudentReportController {
+  private reportUC = new GetStudentReportUseCase();
+
+  @Get() @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Öğrencinin ders/konu/takvim raporu' }) @ApiErrorResponses()
+  report(@Query('from') from: string | undefined, @Query('to') to: string | undefined, @Req() req: any) {
+    return this.reportUC.execute(req?.user?.id, { from, to });
+  }
 }
