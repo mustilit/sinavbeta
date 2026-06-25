@@ -57,6 +57,15 @@ describe('routeRoles', () => {
       expect(canAccessPage('Home', worker)).toBe(true);
       expect(canAccessPage('Explore', worker)).toBe(true);
     });
+
+    it('boş dizi (E-Sınıf sayfaları) → giriş yapmış herkes erişebilir', () => {
+      // Okul kullanıcıları User.role=CANDIDATE; yetki SchoolUser.schoolRole ile.
+      expect(canAccessPage('SchoolPanel', { role: 'CANDIDATE' })).toBe(true);
+      expect(canAccessPage('StudentAssignments', { role: 'CANDIDATE' })).toBe(true);
+      expect(canAccessPage('SchoolBranches', { role: 'EDUCATOR', status: 'ACTIVE' })).toBe(true);
+      // Giriş yoksa yine reddedilir.
+      expect(canAccessPage('SchoolPanel', null)).toBe(false);
+    });
   });
 
   describe('getHomeForRole', () => {

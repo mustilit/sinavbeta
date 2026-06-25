@@ -232,6 +232,10 @@ export function canAccessPage(pageName, user) {
   if (r === ROLES.WORKER) {
     return Array.isArray(user.workerPages) && user.workerPages.includes(pageName);
   }
+  // Boş dizi = giriş yapmış HERKES (E-Sınıf okul/öğrenci sayfaları). Asıl yetki
+  // SchoolUser.schoolRole ile hem server-side hem sayfa içinde kontrol edilir;
+  // okul bağlamı olmayan kullanıcı sayfada "Erişim yok" görür.
+  if (roles.length === 0) return true;
   if (roles.includes(r)) return true;
   return false;
 }
