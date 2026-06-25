@@ -2241,6 +2241,12 @@ export const school = {
     get: async (submissionId) => (await api.get(`/school/submissions/${submissionId}/grading`)).data,
     grade: async (submissionId, body) => (await api.post(`/school/submissions/${submissionId}/grade`, body)).data,
   },
+
+  // Raporlar (Sprint 5)
+  reports: {
+    overview: async () => (await api.get('/school/reports/overview')).data,
+    branch: async (branchId) => (await api.get(`/school/reports/branch/${branchId}`)).data,
+  },
 };
 
 // E-Sınıf öğrenci ödev çözme (Sprint 3)
