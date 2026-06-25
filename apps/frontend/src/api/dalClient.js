@@ -2208,7 +2208,12 @@ export const school = {
   listDepartments: async () => (await api.get('/school/departments')).data,
   createDepartment: async (body) => (await api.post('/school/departments', body)).data,
   deleteDepartment: async (id) => (await api.delete(`/school/departments/${id}`)).data,
+  departmentMembers: async (id) => (await api.get(`/school/departments/${id}/members`)).data,
   assignMembers: async (id, body) => (await api.post(`/school/departments/${id}/members`, body)).data,
+  // Ders havuzu
+  listSubjects: async () => (await api.get('/school/subjects')).data,
+  createSubject: async (body) => (await api.post('/school/subjects', body)).data,
+  deleteSubject: async (id) => (await api.delete(`/school/subjects/${id}`)).data,
   // Kullanıcılar
   listUsers: async ({ role, q, cursor, limit = 30 } = {}) => {
     const qs = new URLSearchParams();

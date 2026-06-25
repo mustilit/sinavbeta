@@ -19,7 +19,11 @@ import {
   ListDepartmentsUseCase,
   GetDepartmentTreeUseCase,
   DeleteDepartmentUseCase,
+  GetDepartmentMembersUseCase,
   AssignDepartmentMembersUseCase,
+  CreateSubjectUseCase,
+  ListSubjectsUseCase,
+  DeleteSubjectUseCase,
   GetSchoolQuotaUseCase,
 } from '../../application/use-cases/school/SchoolOrgUseCases';
 import {
@@ -46,6 +50,7 @@ class CreateDepartmentDto {
   @IsOptional() @IsString() levelId?: string;   // seviyeye özel zümre
   @IsOptional() @IsString() branchId?: string;  // şube geneli zümre (levelId yoksa)
 }
+class CreateSubjectDto { @IsString() @MaxLength(60) name!: string; }
 class AssignMembersDto {
   @IsArray() @IsString({ each: true }) schoolUserIds!: string[];
   @IsOptional() @IsString() headSchoolUserId?: string;
@@ -81,7 +86,11 @@ export class SchoolController {
   private listDeptsUC = new ListDepartmentsUseCase();
   private deptTreeUC = new GetDepartmentTreeUseCase();
   private deleteDeptUC = new DeleteDepartmentUseCase();
+  private deptMembersUC = new GetDepartmentMembersUseCase();
   private assignMembersUC = new AssignDepartmentMembersUseCase();
+  private createSubjectUC = new CreateSubjectUseCase();
+  private listSubjectsUC = new ListSubjectsUseCase();
+  private deleteSubjectUC = new DeleteSubjectUseCase();
   private quotaUC = new GetSchoolQuotaUseCase();
   private createUserUC = new CreateSchoolUserUseCase();
   private listUsersUC = new ListSchoolUsersUseCase();
@@ -139,10 +148,20 @@ export class SchoolController {
   createDepartment(@Body() dto: CreateDepartmentDto, @Req() req: any) { return this.createDeptUC.execute(dto, req?.user?.id); }
   @Delete('departments/:id') @ApiBearerAuth('bearer') @ApiErrorResponses()
   deleteDepartment(@Param('id') id: string, @Req() req: any) { return this.deleteDeptUC.execute(id, req?.user?.id); }
+  @Get('departments/:id/members') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Zümre öğretmen adayları + mevcut durum' }) @ApiErrorResponses()
+  departmentMembers(@Param('id') id: string, @Req() req: any) { return this.deptMembersUC.execute(id, req?.user?.id); }
   @Post('departments/:id/members') @ApiBearerAuth('bearer') @ApiErrorResponses()
   assignMembers(@Param('id') id: string, @Body() dto: AssignMembersDto, @Req() req: any) {
     return this.assignMembersUC.execute(id, dto, req?.user?.id);
   }
+
+  // ── Ders havuzu ──
+  @Get('subjects') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Ders listesi' }) @ApiErrorResponses()
+  listSubjects(@Req() req: any) { return this.listSubjectsUC.execute(req?.user?.id); }
+  @Post('subjects') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  createSubject(@Body() dto: CreateSubjectDto, @Req() req: any) { return this.createSubjectUC.execute(dto, req?.user?.id); }
+  @Delete('subjects/:id') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  deleteSubject(@Param('id') id: string, @Req() req: any) { return this.deleteSubjectUC.execute(id, req?.user?.id); }
 
   // ── Kullanıcılar ──
   @Get('users') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Okul kullanıcı listesi (cursor)' }) @ApiErrorResponses()

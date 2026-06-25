@@ -161,6 +161,19 @@ describe('AssignDepartmentMembersUseCase', () => {
     const r = await new AssignDepartmentMembersUseCase().execute('d1', { schoolUserIds: ['t1', 't2'], headSchoolUserId: 't1' }, 'u0');
     expect(r.assigned).toBe(2);
   });
+  it('senkron: istenmeyen üye çıkarılır (removed)', async () => {
+    p.schoolUser.findMany
+      .mockResolvedValueOnce([{ id: 't1', userId: 'u1' }])          // valid (desired)
+      .mockResolvedValueOnce([{ id: 't1' }, { id: 't2' }]);         // current members
+    const r = await new AssignDepartmentMembersUseCase().execute('d1', { schoolUserIds: ['t1'] }, 'u0');
+    expect(r).toMatchObject({ assigned: 1, removed: 1 });
+  });
+  it('boş küme: tüm üyeler çıkar (removed hepsi)', async () => {
+    // desired boş → valid sorgusu atlanır; yalnız "mevcut üyeler" sorgusu çalışır
+    p.schoolUser.findMany.mockResolvedValueOnce([{ id: 't1' }, { id: 't2' }]);
+    const r = await new AssignDepartmentMembersUseCase().execute('d1', { schoolUserIds: [] }, 'u0');
+    expect(r).toMatchObject({ assigned: 0, removed: 2 });
+  });
 });
 
 describe('GetSchoolQuotaUseCase', () => {

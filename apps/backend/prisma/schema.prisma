@@ -2460,6 +2460,7 @@ model School {
   branches        Branch[]
   levels          SchoolLevel[]
   departments     Department[]
+  subjects        SchoolSubject[]
   classrooms      Classroom[]
   schoolUsers     SchoolUser[]
   exams           SchoolExam[]
@@ -2557,6 +2558,20 @@ model Department {
   @@index([branchId])
   @@index([levelId])
   @@map("departments")
+}
+
+// Ders havuzu — okul yöneticisi tanımlar; zümre oluştururken listeden seçilir.
+model SchoolSubject {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+  @@map("school_subjects")
 }
 
 // Okul kullanıcısı + rolü — User'ı okula/şubeye/sınıfa/zümreye bağlar.

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { school as schoolApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { SubjectCombobox } from "@/components/ui/SubjectCombobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -35,10 +36,9 @@ export default function SchoolDepartments() {
   const [createFor, setCreateFor] = useState(null); // { scope, branchId?, levelId?, title }
   const [membersFor, setMembersFor] = useState(null);
   const [deleteFor, setDeleteFor] = useState(null);
-  const [picked, setPicked] = useState(new Set());
-  const [head, setHead] = useState("");
 
   const { data: tree, isLoading } = useQuery({ queryKey: ["esinif", "department-tree"], queryFn: schoolApi.departmentTree });
+  const { data: subjects = [] } = useQuery({ queryKey: ["esinif", "subjects"], queryFn: schoolApi.listSubjects, enabled: canManage });
   const schoolWide = tree?.schoolWide ?? [];
   const branches = tree?.branches ?? [];
 
@@ -51,7 +51,7 @@ export default function SchoolDepartments() {
   });
   const assignMembers = useMutation({
     mutationFn: ({ id, body }) => schoolApi.assignMembers(id, body),
-    onSuccess: (res) => { toast.success(`${res?.assigned ?? 0} öğretmen atandı`); invalidate(); setMembersFor(null); setPicked(new Set()); setHead(""); },
+    onSuccess: (res) => { toast.success(`${res?.assigned ?? 0} öğretmen · ${res?.removed ?? 0} çıkarıldı`); invalidate(); setMembersFor(null); },
     onError: (e) => toast.error(errMsg(e)),
   });
   const removeDept = useMutation({
@@ -64,14 +64,10 @@ export default function SchoolDepartments() {
     return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
   }
 
-  const togglePick = (id) => setPicked((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const openMembers = (d) => { setMembersFor(d); setPicked(new Set()); setHead(""); };
   const empty = !isLoading && schoolWide.length === 0 && branches.length === 0;
 
-  const submitCreate = (e) => {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const body = { name: f.get("name"), subject: f.get("subject") };
+  const submitCreate = ({ name, subject }) => {
+    const body = { name, subject };
     if (createFor.scope === "level") body.levelId = createFor.levelId;
     else if (createFor.scope === "branch") body.branchId = createFor.branchId;
     createDept.mutate(body);
@@ -100,7 +96,7 @@ export default function SchoolDepartments() {
             </div>
             {schoolWide.length > 0 && (
               <div className="ml-6 border-l-2 border-slate-100 pl-2">
-                {schoolWide.map((d) => <DeptRow key={d.id} dept={d} canManage={canManage} onMembers={openMembers} onDelete={setDeleteFor} />)}
+                {schoolWide.map((d) => <DeptRow key={d.id} dept={d} canManage={canManage} onMembers={setMembersFor} onDelete={setDeleteFor} />)}
               </div>
             )}
           </div>
@@ -112,7 +108,7 @@ export default function SchoolDepartments() {
                 branch={b} canManage={canManage}
                 onAddBranch={() => setCreateFor({ scope: "branch", branchId: b.id, title: `${b.name} (şube geneli)` })}
                 onAddLevel={(lv) => setCreateFor({ scope: "level", levelId: lv.id, title: `${b.name} / ${lv.gradeLevel}. Seviye` })}
-                onMembers={openMembers} onDelete={setDeleteFor}
+                onMembers={setMembersFor} onDelete={setDeleteFor}
               />
             </div>
           ))}
@@ -120,22 +116,17 @@ export default function SchoolDepartments() {
       )}
 
       {/* Zümre ekle */}
-      <Dialog open={!!createFor} onOpenChange={(o) => !o && setCreateFor(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Yeni Zümre — {createFor?.title}</DialogTitle></DialogHeader>
-          <form onSubmit={submitCreate} className="space-y-3">
-            <div><Label htmlFor="d-name">Zümre adı</Label><Input id="d-name" name="name" required maxLength={80} placeholder="Matematik Zümresi" /></div>
-            <div><Label htmlFor="d-subject">Ders</Label><Input id="d-subject" name="subject" required maxLength={60} placeholder="Matematik" /></div>
-            <DialogFooter className="gap-2"><Button type="button" variant="outline" onClick={() => setCreateFor(null)}>İptal</Button><Button type="submit" disabled={createDept.isPending} className="bg-indigo-600 hover:bg-indigo-700">Oluştur</Button></DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CreateDeptDialog
+        createFor={createFor} subjects={subjects}
+        onClose={() => setCreateFor(null)}
+        onSubmit={submitCreate} pending={createDept.isPending}
+      />
 
-      {/* Öğretmen/başkan ata */}
+      {/* Öğretmen/başkan ata (güncelle) */}
       <MembersDialog
-        dept={membersFor} picked={picked} head={head} togglePick={togglePick} setHead={setHead}
-        onClose={() => { setMembersFor(null); setPicked(new Set()); setHead(""); }}
-        onSubmit={() => assignMembers.mutate({ id: membersFor.id, body: { schoolUserIds: [...picked], headSchoolUserId: head || undefined } })}
+        dept={membersFor}
+        onClose={() => setMembersFor(null)}
+        onSubmit={(body) => assignMembers.mutate({ id: membersFor.id, body })}
         pending={assignMembers.isPending}
       />
 
@@ -229,33 +220,102 @@ function DeptRow({ dept, canManage, onMembers, onDelete, scopeTag }) {
   );
 }
 
-// ── Öğretmen/başkan atama diyaloğu ────────────────────────────────────────────
-function MembersDialog({ dept, picked, head, togglePick, setHead, onClose, onSubmit, pending }) {
-  const { data: teachers } = useQuery({
-    queryKey: ["esinif", "users", "teacher-pick"],
-    queryFn: () => schoolApi.listUsers({ limit: 100 }),
+// ── Zümre oluşturma diyaloğu (ders aramalı seçim) ─────────────────────────────
+function CreateDeptDialog({ createFor, subjects, onClose, onSubmit, pending }) {
+  const [name, setName] = useState("");
+  const [subject, setSubject] = useState("");
+
+  // Dialog her açıldığında alanları sıfırla
+  useEffect(() => { if (createFor) { setName(""); setSubject(""); } }, [createFor]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) return toast.error("Zümre adı zorunlu");
+    if (!subject) return toast.error("Ders seçin");
+    onSubmit({ name: name.trim(), subject });
+  };
+
+  return (
+    <Dialog open={!!createFor} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Yeni Zümre — {createFor?.title}</DialogTitle></DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div><Label htmlFor="d-name">Zümre adı</Label><Input id="d-name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={80} placeholder="Matematik Zümresi" /></div>
+          <div>
+            <Label>Ders</Label>
+            <SubjectCombobox value={subject} onChange={setSubject} subjects={subjects} />
+            {subjects.length === 0 && <p className="text-xs text-amber-600 mt-1">Önce "Dersler" sayfasından ders ekleyin.</p>}
+          </div>
+          <DialogFooter className="gap-2"><Button type="button" variant="outline" onClick={onClose}>İptal</Button><Button type="submit" disabled={pending || subjects.length === 0} className="bg-indigo-600 hover:bg-indigo-700">Oluştur</Button></DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Öğretmen/başkan atama diyaloğu (GÜNCELLE: mevcutları göster, ekle/çıkar) ───
+function MembersDialog({ dept, onClose, onSubmit, pending }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["esinif", "dept-members", dept?.id],
+    queryFn: () => schoolApi.departmentMembers(dept.id),
     enabled: !!dept,
   });
-  const candidates = (teachers?.items ?? []).filter((u) => u.schoolRole === "TEACHER" || u.schoolRole === "DEPT_HEAD");
+  const candidates = data?.candidates ?? [];
+  const [picked, setPicked] = useState(new Set());
+  const [head, setHead] = useState("");
+
+  // Sunucudan gelen mevcut durumu yükle: zümredekiler işaretli, başkan seçili
+  useEffect(() => {
+    if (data?.candidates) {
+      setPicked(new Set(data.candidates.filter((c) => c.inDept).map((c) => c.id)));
+      setHead(data.candidates.find((c) => c.isHead)?.id ?? "");
+    }
+  }, [data]);
+
+  const togglePick = (id) => setPicked((s) => {
+    const n = new Set(s);
+    if (n.has(id)) { n.delete(id); }
+    else n.add(id);
+    return n;
+  });
+
+  const save = () => {
+    // başkan, seçili kümede değilse başkanlığı düşür
+    const headId = head && picked.has(head) ? head : undefined;
+    onSubmit({ schoolUserIds: [...picked], headSchoolUserId: headId });
+  };
+
   return (
     <Dialog open={!!dept} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Öğretmen Ata — {dept?.name}</DialogTitle></DialogHeader>
-        <div className="max-h-72 overflow-y-auto space-y-1">
-          {candidates.length === 0 ? <p className="text-sm text-slate-400 py-6 text-center">Öğretmen yok. Önce öğretmen ekleyin.</p> : candidates.map((u) => (
-            <div key={u.id} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2">
-              <input type="checkbox" checked={picked.has(u.id)} onChange={() => togglePick(u.id)} className="rounded" />
-              <span className="font-mono text-sm">{u.username}</span>
-              <span className="text-xs text-slate-500">{u.fullName || ""}</span>
-              <label className="ml-auto flex items-center gap-1 text-xs text-slate-500">
-                <input type="radio" name="head" checked={head === u.id} onChange={() => { setHead(u.id); if (!picked.has(u.id)) togglePick(u.id); }} /> Başkan
-              </label>
-            </div>
-          ))}
+        <DialogHeader><DialogTitle>Öğretmenler — {dept?.name}</DialogTitle></DialogHeader>
+        <p className="text-xs text-slate-500 -mt-2">Zümredekiler işaretli gelir. İşareti kaldırırsan çıkarılır, ekleyebilirsin. Başkanı seç veya "Başkan yok" bırak.</p>
+        <div className="max-h-72 overflow-y-auto space-y-1 mt-1">
+          {isLoading ? (
+            [0, 1, 2].map((i) => <div key={i} className="h-10 bg-slate-100 rounded animate-pulse" />)
+          ) : candidates.length === 0 ? (
+            <p className="text-sm text-slate-400 py-6 text-center">Öğretmen yok. Önce öğretmen ekleyin.</p>
+          ) : candidates.map((u) => {
+            const checked = picked.has(u.id);
+            return (
+              <div key={u.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${checked ? "border-indigo-200 bg-indigo-50/40" : "border-slate-200"}`}>
+                <input type="checkbox" checked={checked} onChange={() => togglePick(u.id)} className="rounded" />
+                <span className="font-mono text-sm">{u.username}</span>
+                <span className="text-xs text-slate-500 truncate">{u.fullName || ""}</span>
+                {u.otherDept && !checked && <Badge className="bg-amber-50 text-amber-600 text-[10px] border border-amber-100">{u.otherDept}</Badge>}
+                <label className={`ml-auto flex items-center gap-1 text-xs ${checked ? "text-slate-600" : "text-slate-300"}`}>
+                  <input type="radio" name="head" disabled={!checked} checked={head === u.id} onChange={() => setHead(u.id)} /> Başkan
+                </label>
+              </div>
+            );
+          })}
         </div>
-        <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>İptal</Button>
-          <Button onClick={onSubmit} disabled={picked.size === 0 || pending} className="bg-indigo-600 hover:bg-indigo-700">Ata</Button>
+        <DialogFooter className="gap-2 sm:justify-between">
+          <Button type="button" variant="ghost" size="sm" className="text-slate-500" onClick={() => setHead("")}>Başkan yok</Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>İptal</Button>
+            <Button onClick={save} disabled={pending || isLoading} className="bg-indigo-600 hover:bg-indigo-700">Kaydet</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

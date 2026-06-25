@@ -408,33 +408,119 @@ export class DeleteDepartmentUseCase {
   }
 }
 
-/** Zümreye öğretmen atar; biri başkan yapılabilir (headUserId + DEPT_HEAD). */
-export class AssignDepartmentMembersUseCase {
-  async execute(departmentId: string, input: { schoolUserIds: string[]; headSchoolUserId?: string }, actorId?: string) {
+/** Zümre öğretmen adayları + mevcut durum (atama diyaloğunu önceden işaretlemek için). */
+export class GetDepartmentMembersUseCase {
+  async execute(departmentId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN');
-    const dept = await prisma.department.findFirst({ where: { id: departmentId, schoolId: ctx.schoolId }, select: { id: true } });
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const dept = await prisma.department.findFirst({ where: { id: departmentId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, headUserId: true } });
     if (!dept) throw new AppError('DEPARTMENT_NOT_FOUND', 'Zümre bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && dept.branchId !== ctx.branchId) throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
 
-    const ids = [...new Set(input.schoolUserIds ?? [])];
-    if (ids.length === 0) throw new AppError('NO_MEMBERS', 'En az bir öğretmen seçin', 400);
-    const valid = await prisma.schoolUser.findMany({
-      where: { id: { in: ids }, schoolId: ctx.schoolId, schoolRole: { in: ['TEACHER', 'DEPT_HEAD'] as any } },
-      select: { id: true, userId: true },
+    const teachers = await prisma.schoolUser.findMany({
+      where: { schoolId: ctx.schoolId, schoolRole: { in: ['TEACHER', 'DEPT_HEAD'] as any } },
+      select: { id: true, userId: true, username: true, departmentId: true, user: { select: { firstName: true, lastName: true } }, department: { select: { name: true } } },
+      orderBy: [{ username: 'asc' }],
     });
-    if (valid.length === 0) throw new AppError('NO_VALID_MEMBERS', 'Geçerli öğretmen bulunamadı', 400);
+    return {
+      candidates: teachers.map((t) => ({
+        id: t.id,
+        username: t.username,
+        fullName: [t.user?.firstName, t.user?.lastName].filter(Boolean).join(' ') || null,
+        inDept: t.departmentId === departmentId,
+        isHead: !!dept.headUserId && t.userId === dept.headUserId,
+        otherDept: t.departmentId && t.departmentId !== departmentId ? (t.department?.name ?? null) : null,
+      })),
+    };
+  }
+}
+
+/**
+ * Zümre üyelerini SENKRONLAR (güncelle semantiği): istenen tam küme dışındakiler çıkarılır,
+ * istenenler eklenir/korunur; başkan ayarlanır/temizlenir. Boş küme → tüm üyeler çıkar.
+ */
+export class AssignDepartmentMembersUseCase {
+  async execute(departmentId: string, input: { schoolUserIds: string[]; headSchoolUserId?: string | null }, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const dept = await prisma.department.findFirst({ where: { id: departmentId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+    if (!dept) throw new AppError('DEPARTMENT_NOT_FOUND', 'Zümre bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && dept.branchId !== ctx.branchId) throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+
+    const desiredIds = [...new Set(input.schoolUserIds ?? [])];
+    const valid = desiredIds.length
+      ? await prisma.schoolUser.findMany({
+          where: { id: { in: desiredIds }, schoolId: ctx.schoolId, schoolRole: { in: ['TEACHER', 'DEPT_HEAD'] as any } },
+          select: { id: true, userId: true },
+        })
+      : [];
+    if (valid.length !== desiredIds.length) throw new AppError('INVALID_MEMBERS', 'Geçersiz öğretmen seçimi', 400);
+    const validById = new Map(valid.map((v) => [v.id, v.userId]));
+
+    let headUserId: string | null = null;
+    if (input.headSchoolUserId) {
+      if (!validById.has(input.headSchoolUserId)) throw new AppError('INVALID_HEAD', 'Başkan, atanan öğretmenlerden olmalı', 400);
+      headUserId = validById.get(input.headSchoolUserId) ?? null;
+    }
+
+    const current = await prisma.schoolUser.findMany({ where: { schoolId: ctx.schoolId, departmentId }, select: { id: true } });
+    const desiredSet = new Set(desiredIds);
+    const toRemove = current.map((c) => c.id).filter((id) => !desiredSet.has(id));
 
     await prisma.$transaction(async (tx) => {
-      await tx.schoolUser.updateMany({ where: { id: { in: valid.map((v) => v.id) } }, data: { departmentId } });
-      if (input.headSchoolUserId) {
-        const head = valid.find((v) => v.id === input.headSchoolUserId);
-        if (!head) throw new AppError('INVALID_HEAD', 'Başkan, atanan öğretmenlerden olmalı', 400);
-        await tx.schoolUser.update({ where: { id: head.id }, data: { schoolRole: 'DEPT_HEAD' as any } });
-        await tx.department.update({ where: { id: departmentId }, data: { headUserId: head.userId } });
+      // Çıkarılanlar: zümreden ayır; başkan rolündeyse öğretmene indir
+      if (toRemove.length) {
+        await tx.schoolUser.updateMany({ where: { id: { in: toRemove } }, data: { departmentId: null } });
+        await tx.schoolUser.updateMany({ where: { id: { in: toRemove }, schoolRole: 'DEPT_HEAD' as any }, data: { schoolRole: 'TEACHER' as any } });
       }
+      // Eklenen/korunan: zümreye bağla
+      if (desiredIds.length) {
+        await tx.schoolUser.updateMany({ where: { id: { in: desiredIds } }, data: { departmentId } });
+      }
+      // Başkan: önce bu zümredeki tüm DEPT_HEAD'leri öğretmene indir, sonra seçileni başkan yap
+      await tx.schoolUser.updateMany({ where: { departmentId, schoolRole: 'DEPT_HEAD' as any }, data: { schoolRole: 'TEACHER' as any } });
+      if (input.headSchoolUserId) {
+        await tx.schoolUser.update({ where: { id: input.headSchoolUserId }, data: { schoolRole: 'DEPT_HEAD' as any } });
+      }
+      await tx.department.update({ where: { id: departmentId }, data: { headUserId } });
     });
-    logger.info('school.department.members_assigned', { departmentId, count: valid.length, actorId });
-    return { assigned: valid.length };
+    logger.info('school.department.members_synced', { departmentId, members: desiredIds.length, removed: toRemove.length, head: !!headUserId, actorId });
+    return { assigned: desiredIds.length, removed: toRemove.length };
+  }
+}
+
+// ── Ders havuzu ──────────────────────────────────────────────────────────────
+export class CreateSubjectUseCase {
+  async execute(input: { name: string }, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN');
+    const name = (input.name ?? '').trim();
+    if (!name) throw new AppError('NAME_REQUIRED', 'Ders adı zorunlu', 400);
+    const clash = await prisma.schoolSubject.findUnique({ where: { schoolId_name: { schoolId: ctx.schoolId, name } }, select: { id: true } });
+    if (clash) throw new AppError('SUBJECT_EXISTS', 'Bu ders zaten ekli', 409);
+    const created = await prisma.schoolSubject.create({ data: { schoolId: ctx.schoolId, name } });
+    logger.info('school.subject.created', { id: created.id, actorId });
+    return { id: created.id, name: created.name };
+  }
+}
+
+export class ListSubjectsUseCase {
+  async execute(actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER');
+    return prisma.schoolSubject.findMany({ where: { schoolId: ctx.schoolId }, orderBy: [{ name: 'asc' }], select: { id: true, name: true } });
+  }
+}
+
+export class DeleteSubjectUseCase {
+  async execute(id: string, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN');
+    const subj = await prisma.schoolSubject.findFirst({ where: { id, schoolId: ctx.schoolId }, select: { id: true } });
+    if (!subj) throw new AppError('SUBJECT_NOT_FOUND', 'Ders bulunamadı', 404);
+    await prisma.schoolSubject.delete({ where: { id } });
+    logger.info('school.subject.deleted', { id, actorId });
+    return { ok: true };
   }
 }
 

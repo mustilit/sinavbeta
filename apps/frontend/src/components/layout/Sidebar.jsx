@@ -38,6 +38,7 @@ import {
   FileText,
   StickyNote,
   Layers,
+  BookMarked,
   ShieldCheck,
 } from "lucide-react";
 
@@ -161,6 +162,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     { name: t("sidebar.esinif.users", { defaultValue: "Kullanıcılar" }), page: "SchoolUsers", icon: Users },
     { name: t("sidebar.esinif.branches", { defaultValue: "Şubeler & Sınıflar" }), page: "SchoolBranches", icon: BookOpen },
     { name: t("sidebar.esinif.departments", { defaultValue: "Zümreler" }), page: "SchoolDepartments", icon: Layers },
+    { name: t("sidebar.esinif.subjects", { defaultValue: "Dersler" }), page: "SchoolSubjects", icon: BookMarked },
     { name: t("sidebar.esinif.reports", { defaultValue: "Raporlar" }), page: "SchoolReports", icon: BarChart3 },
   ];
   const teacherLinks = [
