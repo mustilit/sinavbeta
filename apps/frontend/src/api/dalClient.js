@@ -2222,6 +2222,33 @@ export const school = {
     archive: async (id, isArchived) => (await api.patch(`/school/exams/${id}/archive`, { isArchived })).data,
     remove: async (id) => (await api.delete(`/school/exams/${id}`)).data,
   },
+
+  // Ödevler (Sprint 3) — öğretmen/zümre başkanı
+  assignments: {
+    list: async ({ classroomId } = {}) => {
+      const qs = new URLSearchParams();
+      if (classroomId) qs.set('classroomId', classroomId);
+      return (await api.get(`/school/assignments?${qs.toString()}`)).data;
+    },
+    create: async (body) => (await api.post('/school/assignments', body)).data,
+    report: async (id) => (await api.get(`/school/assignments/${id}/report`)).data,
+    releaseResults: async (id) => (await api.post(`/school/assignments/${id}/release-results`)).data,
+    setStatus: async (id, status) => (await api.patch(`/school/assignments/${id}/status`, { status })).data,
+  },
+};
+
+// E-Sınıf öğrenci ödev çözme (Sprint 3)
+export const studentAssignments = {
+  list: async ({ filter } = {}) => {
+    const qs = new URLSearchParams();
+    if (filter) qs.set('filter', filter);
+    return (await api.get(`/student/assignments?${qs.toString()}`)).data;
+  },
+  get: async (id) => (await api.get(`/student/assignments/${id}`)).data,
+  start: async (id) => (await api.post(`/student/assignments/${id}/start`)).data,
+  saveAnswer: async (id, body) => (await api.put(`/student/assignments/${id}/answer`, body)).data,
+  submit: async (id) => (await api.post(`/student/assignments/${id}/submit`)).data,
+  result: async (id) => (await api.get(`/student/assignments/${id}/result`)).data,
 };
 
 export default api;

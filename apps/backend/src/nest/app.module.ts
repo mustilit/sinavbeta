@@ -26,6 +26,8 @@ import { HomeController } from './controllers/home.controller';
 import { AdminSchoolsController } from './controllers/admin.schools.controller';
 import { SchoolController } from './controllers/school.controller';
 import { SchoolExamsController } from './controllers/school-exams.controller';
+import { SchoolAssignmentsController } from './controllers/school-assignments.controller';
+import { SchoolStudentController } from './controllers/school-student.controller';
 import { ReviewsController } from './controllers/reviews.controller';
 import { EducatorsController } from './controllers/educators.controller';
 import { FollowsController } from './controllers/follows.controller';
@@ -432,6 +434,9 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     SchoolController,
     // E-Sınıf — Sprint 2 sınav içeriği + havuz
     SchoolExamsController,
+    // E-Sınıf — Sprint 3 ödev + öğrenci çözme
+    SchoolAssignmentsController,
+    SchoolStudentController,
   ],
   providers: [
     SeedService,
