@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { school as schoolApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -10,6 +10,9 @@ import { BarChart3, Download, Building2, Layers, GraduationCap, AlertCircle, Tro
 import { toast } from "sonner";
 
 const fmtPct = (p) => (p == null ? "—" : `%${p}`);
+
+// recharts ağır lib → yalnız Raporlar dashboard'u render edilince yüklenir
+const ReportCharts = lazy(() => import("@/components/school/ReportCharts"));
 
 const RANGES = [
   { value: "all", label: "Tüm zamanlar", days: null },
@@ -73,6 +76,8 @@ export default function SchoolReports() {
   const branches = data?.branches ?? [];
   const levels = data?.levels ?? [];
   const classrooms = data?.classrooms ?? [];
+  const byDepartment = data?.byDepartment ?? [];
+  const timeseries = data?.timeseries ?? [];
   const highlights = data?.highlights ?? { bestBranch: null, bestClassByLevel: [] };
 
   const onLevelChange = (v) => { setGradeLevel(v); setClassroomId("ALL"); };
@@ -135,6 +140,11 @@ export default function SchoolReports() {
         <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}</div>
       ) : (
         <>
+          {/* Görsel dashboard — seçilen sekmeye uygun birim + konu + takvim grafikleri */}
+          <Suspense fallback={<div className="h-64 bg-slate-100 rounded-xl animate-pulse" />}>
+            <ReportCharts tab={tab} branches={branches} levels={levels} classrooms={classrooms} byDepartment={byDepartment} timeseries={timeseries} />
+          </Suspense>
+
           {/* ŞUBELER */}
           {tab === "branches" && (
             <div className="space-y-5">

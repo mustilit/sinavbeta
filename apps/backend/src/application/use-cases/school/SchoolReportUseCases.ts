@@ -139,7 +139,10 @@ export class GetFilteredReportUseCase {
           status: { in: ['SUBMITTED', 'GRADED'] as any },
           ...(submittedAt ? { submittedAt } : {}),
         },
-        select: { totalScore: true, maxScore: true, assignment: { select: { classroomId: true } } },
+        select: {
+          totalScore: true, maxScore: true, submittedAt: true,
+          assignment: { select: { classroomId: true, exam: { select: { department: { select: { name: true } } } } } },
+        },
       }),
     ]);
 
@@ -147,11 +150,20 @@ export class GetFilteredReportUseCase {
     assignments.forEach((a) => asgCountByCls.set(a.classroomId, (asgCountByCls.get(a.classroomId) ?? 0) + 1));
     const pctByCls = new Map<string, number[]>();
     const subCountByCls = new Map<string, number>();
+    const deptAgg = new Map<string, number[]>();    // konu/zümre başarımı
+    const dayAgg = new Map<string, number[]>();     // takvime göre (gün bazlı)
     for (const s of submissions) {
       const cid = s.assignment.classroomId;
       subCountByCls.set(cid, (subCountByCls.get(cid) ?? 0) + 1);
       const p = pct(s.totalScore, s.maxScore);
-      if (p != null) pctByCls.set(cid, [...(pctByCls.get(cid) ?? []), p]);
+      if (p == null) continue;
+      pctByCls.set(cid, [...(pctByCls.get(cid) ?? []), p]);
+      const dname = s.assignment.exam?.department?.name ?? 'Zümresiz';
+      deptAgg.set(dname, [...(deptAgg.get(dname) ?? []), p]);
+      if (s.submittedAt) {
+        const day = s.submittedAt.toISOString().slice(0, 10);
+        dayAgg.set(day, [...(dayAgg.get(day) ?? []), p]);
+      }
     }
 
     const clsRows = classrooms
@@ -202,7 +214,15 @@ export class GetFilteredReportUseCase {
       return best ? { gradeLevel: lv.gradeLevel, classroom: best } : null;
     }).filter(Boolean);
 
-    return { branches: branchRows, levels: levelRows, classrooms: clsRows, highlights: { bestBranch, bestClassByLevel } };
+    // Konu (zümre) başarımı + takvim zaman serisi
+    const byDepartment = [...deptAgg.entries()]
+      .map(([name, ps]) => ({ name, avgPercent: avg(ps), submissionCount: ps.length }))
+      .sort((a, b) => (b.avgPercent ?? -1) - (a.avgPercent ?? -1));
+    const timeseries = [...dayAgg.entries()]
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .map(([date, ps]) => ({ date, avgPercent: avg(ps), submissionCount: ps.length }));
+
+    return { branches: branchRows, levels: levelRows, classrooms: clsRows, byDepartment, timeseries, highlights: { bestBranch, bestClassByLevel } };
   }
 }
 
