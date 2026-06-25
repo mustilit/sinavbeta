@@ -165,6 +165,11 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   const teacherLinks = [
     { name: t("sidebar.esinif.panel", { defaultValue: "Okul Paneli" }), page: "SchoolPanel", icon: Home },
     { name: t("sidebar.esinif.examPool", { defaultValue: "Sınav Havuzu" }), page: "SchoolExamPool", icon: BookOpen },
+    { name: t("sidebar.esinif.assignments", { defaultValue: "Ödevler" }), page: "SchoolAssignments", icon: Layers },
+  ];
+  const isSchoolStudent = schoolCtx?.schoolRole === "STUDENT";
+  const studentLinks = [
+    { name: t("sidebar.esinif.myAssignments", { defaultValue: "Ödevlerim" }), page: "StudentAssignments", icon: BookOpen },
   ];
 
   const workerPages = Array.isArray(user?.workerPages) ? user.workerPages : [];
@@ -177,10 +182,12 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     // Okul yöneticisi marketplace menüsü görmez — yalnız E-Sınıf menüsü
     links = schoolLinks;
   } else if (isSchoolTeacher) {
-    // Öğretmen/zümre başkanı — panel + sınav havuzu
+    // Öğretmen/zümre başkanı — panel + sınav havuzu + ödevler
     links = teacherLinks;
+  } else if (isSchoolStudent) {
+    // Öğrenci — ödevlerim
+    links = studentLinks;
   } else if (schoolCtx?.schoolRole) {
-    // Öğrenci (modülleri ileri sprint) — şimdilik yalnız panel
     links = [schoolLinks[0]];
   } else if (isWorker) {
     links = workerLinks;
