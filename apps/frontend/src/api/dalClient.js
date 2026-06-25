@@ -2179,6 +2179,9 @@ export const adminSchools = {
   deactivate: async (id) => (await api.delete(`/admin/schools/${id}`)).data,
   /** body: { email, firstName?, lastName? } → { email, tempPassword } döner */
   assignAdmin: async (id, body) => (await api.post(`/admin/schools/${id}/assign-admin`, body)).data,
+  /** Okula dönem yetkilendirmesi ekle/çıkar (çoklu dönem) */
+  addPeriod: async (id, periodId) => (await api.post(`/admin/schools/${id}/periods`, { periodId })).data,
+  removePeriod: async (id, periodId) => (await api.delete(`/admin/schools/${id}/periods/${periodId}`)).data,
 };
 
 /** Okul Yöneticisi / Şube Yöneticisi — okul içi yönetim (/school/*) */
@@ -2217,10 +2220,11 @@ export const school = {
   createSubject: async (body) => (await api.post('/school/subjects', body)).data,
   deleteSubject: async (id) => (await api.delete(`/school/subjects/${id}`)).data,
   // Kullanıcılar
-  listUsers: async ({ role, q, cursor, limit = 30 } = {}) => {
+  listUsers: async ({ role, q, branchId, cursor, limit = 30 } = {}) => {
     const qs = new URLSearchParams();
     if (role) qs.set('role', role);
     if (q) qs.set('q', q);
+    if (branchId) qs.set('branchId', branchId);
     if (cursor) qs.set('cursor', cursor);
     if (limit) qs.set('limit', String(limit));
     return (await api.get(`/school/users?${qs.toString()}`)).data;

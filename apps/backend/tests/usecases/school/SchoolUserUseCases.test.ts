@@ -58,19 +58,25 @@ describe('CreateSchoolUserUseCase', () => {
       .rejects.toMatchObject({ code: 'INVALID_ROLE' });
   });
 
+  it('öğrenci bu akıştan eklenemez → STUDENT_VIA_IMPORT', async () => {
+    asAdmin();
+    await expect(new CreateSchoolUserUseCase().execute({ schoolRole: 'STUDENT' }, 'u1'))
+      .rejects.toMatchObject({ code: 'STUDENT_VIA_IMPORT' });
+  });
+
   it('kota dolu → USER_QUOTA_EXCEEDED (409)', async () => {
     asAdmin();
     p.school.findUnique.mockResolvedValue({ id: 'sch1', code: 'ANK', tenantId: 'ten1', maxUsers: 5 });
     p.schoolUser.count.mockResolvedValue(5);
-    await expect(new CreateSchoolUserUseCase().execute({ schoolRole: 'STUDENT' }, 'u1'))
+    await expect(new CreateSchoolUserUseCase().execute({ schoolRole: 'TEACHER' }, 'u1'))
       .rejects.toMatchObject({ code: 'USER_QUOTA_EXCEEDED' });
   });
 
-  it('başarı: otomatik username + geçici şifre döner', async () => {
+  it('başarı: otomatik username + geçici şifre döner (öğretmen)', async () => {
     asAdmin();
-    const res = await new CreateSchoolUserUseCase().execute({ schoolRole: 'STUDENT', firstName: 'Ali' }, 'u1');
-    expect(res.username).toBe('ANK-S-0001');
-    expect(res.schoolRole).toBe('STUDENT');
+    const res = await new CreateSchoolUserUseCase().execute({ schoolRole: 'TEACHER', firstName: 'Ali' }, 'u1');
+    expect(res.username).toBe('ANK-T-0001');
+    expect(res.schoolRole).toBe('TEACHER');
     expect(res.tempPassword).toHaveLength(8);
     expect(res.schoolUserId).toBe('su-new');
   });

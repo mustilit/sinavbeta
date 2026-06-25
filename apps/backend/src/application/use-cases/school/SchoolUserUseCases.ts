@@ -27,6 +27,8 @@ export class CreateSchoolUserUseCase {
 
     const role = input.schoolRole as SchoolRoleStr;
     if (!ASSIGNABLE.includes(role)) throw new AppError('INVALID_ROLE', 'Geçersiz okul rolü', 400);
+    // Öğrenciler bu akıştan değil, sınıf sayfasından Excel ile toplu eklenir.
+    if (role === 'STUDENT') throw new AppError('STUDENT_VIA_IMPORT', 'Öğrenciler sınıf sayfasından Excel ile eklenir', 400);
 
     const school = await prisma.school.findUnique({ where: { id: ctx.schoolId }, select: { id: true, code: true, tenantId: true, maxUsers: true } });
     if (!school) throw new AppError('SCHOOL_NOT_FOUND', 'Okul bulunamadı', 404);
@@ -76,8 +78,8 @@ export class CreateSchoolUserUseCase {
           schoolId: ctx.schoolId,
           schoolRole: role as any,
           username,
-          branchId: role === 'STUDENT' || role === 'BRANCH_ADMIN' ? input.branchId ?? null : null,
-          classroomId: role === 'STUDENT' ? input.classroomId ?? null : null,
+          // Öğrenci bu akıştan oluşturulmaz (Excel ile); yalnız öğretmen ve üstü.
+          branchId: role === 'BRANCH_ADMIN' ? input.branchId ?? null : null,
           departmentId: role === 'TEACHER' || role === 'DEPT_HEAD' ? input.departmentId ?? null : null,
         },
       });
@@ -99,9 +101,9 @@ const MAX_BULK_STUDENTS = 300;
 export class BulkCreateStudentsUseCase {
   async execute(
     classroomId: string,
-    input: { students: Array<{ firstName?: string; lastName?: string }> },
+    input: { students: Array<{ firstName?: string; lastName?: string; studentNo?: string }> },
     actorId?: string,
-  ): Promise<{ count: number; created: Array<{ name: string; username: string; tempPassword: string }> }> {
+  ): Promise<{ count: number; created: Array<{ name: string; username: string; studentNo: string | null; tempPassword: string }> }> {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
 
@@ -115,7 +117,7 @@ export class BulkCreateStudentsUseCase {
     }
 
     const rows = (input.students ?? [])
-      .map((s) => ({ firstName: (s.firstName ?? '').trim(), lastName: (s.lastName ?? '').trim() }))
+      .map((s) => ({ firstName: (s.firstName ?? '').trim(), lastName: (s.lastName ?? '').trim(), studentNo: (s.studentNo ?? '').trim() || null }))
       .filter((s) => s.firstName || s.lastName);
     if (rows.length === 0) throw new AppError('NO_STUDENTS', 'Geçerli öğrenci satırı yok (Ad/Soyad)', 400);
     if (rows.length > MAX_BULK_STUDENTS) throw new AppError('TOO_MANY', `Tek seferde en fazla ${MAX_BULK_STUDENTS} öğrenci`, 400);
@@ -130,11 +132,11 @@ export class BulkCreateStudentsUseCase {
     // Şifre üretimi + hash transaction DIŞINDA (CPU yoğun; tx'i kısa tut)
     const withHash = await Promise.all(rows.map(async (r) => {
       const tempPassword = generateTempPassword();
-      return { firstName: r.firstName, lastName: r.lastName, tempPassword, passwordHash: await bcrypt.hash(tempPassword, 12) };
+      return { firstName: r.firstName, lastName: r.lastName, studentNo: r.studentNo, tempPassword, passwordHash: await bcrypt.hash(tempPassword, 12) };
     }));
 
     const created = await prisma.$transaction(async (tx) => {
-      const out: Array<{ name: string; username: string; tempPassword: string }> = [];
+      const out: Array<{ name: string; username: string; studentNo: string | null; tempPassword: string }> = [];
       for (const p of withHash) {
         const username = await nextSchoolUsername(tx, ctx.schoolId, school.code, 'STUDENT');
         const user = await tx.user.create({
@@ -152,9 +154,9 @@ export class BulkCreateStudentsUseCase {
           },
         });
         await tx.schoolUser.create({
-          data: { userId: user.id, schoolId: ctx.schoolId, schoolRole: 'STUDENT' as any, username, branchId: classroom.branchId, classroomId: classroom.id },
+          data: { userId: user.id, schoolId: ctx.schoolId, schoolRole: 'STUDENT' as any, username, studentNo: p.studentNo, branchId: classroom.branchId, classroomId: classroom.id },
         });
-        out.push({ name: `${p.firstName} ${p.lastName}`.trim(), username, tempPassword: p.tempPassword });
+        out.push({ name: `${p.firstName} ${p.lastName}`.trim(), username, studentNo: p.studentNo, tempPassword: p.tempPassword });
       }
       return out;
     }, { timeout: 30000 });
@@ -165,7 +167,7 @@ export class BulkCreateStudentsUseCase {
 }
 
 export class ListSchoolUsersUseCase {
-  async execute(input: { role?: string; q?: string; cursor?: string | null; limit?: number }, actorId?: string) {
+  async execute(input: { role?: string; q?: string; branchId?: string; cursor?: string | null; limit?: number }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
     const take = Math.min(Math.max(input.limit ?? 30, 1), 100);
@@ -175,7 +177,8 @@ export class ListSchoolUsersUseCase {
       where: {
         schoolId: ctx.schoolId,
         ...(input.role && ASSIGNABLE.concat('SCHOOL_ADMIN' as any).includes(input.role as any) ? { schoolRole: input.role as any } : {}),
-        ...(ctx.schoolRole === 'BRANCH_ADMIN' ? { branchId: ctx.branchId ?? '__none__' } : {}),
+        // Şube yöneticisi yalnız kendi şubesi; okul yöneticisi seçtiği şube ile filtreler
+        ...(ctx.schoolRole === 'BRANCH_ADMIN' ? { branchId: ctx.branchId ?? '__none__' } : (input.branchId ? { branchId: input.branchId } : {})),
         ...(text ? { username: { contains: text, mode: 'insensitive' as const } } : {}),
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -192,6 +195,7 @@ export class ListSchoolUsersUseCase {
     const items = (hasMore ? rows.slice(0, -1) : rows).map((su) => ({
       id: su.id,
       username: su.username,
+      studentNo: su.studentNo ?? null,
       fullName: `${su.user.firstName ?? ''} ${su.user.lastName ?? ''}`.trim() || null,
       schoolRole: su.schoolRole,
       branchName: su.branch?.name ?? null,

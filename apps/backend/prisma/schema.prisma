@@ -2434,6 +2434,7 @@ model AcademicPeriod {
   isActive  Boolean  @default(false)
   tenantId  String
   schools   School[]
+  schoolLinks SchoolPeriod[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -2449,6 +2450,7 @@ model School {
   schoolType      SchoolType     @default(MIDDLE)
   periodId        String
   period          AcademicPeriod @relation(fields: [periodId], references: [id])
+  periodLinks     SchoolPeriod[] // çoklu dönem yetkilendirmesi
   // Okul Yöneticisi (tek kişi) — User'a one-to-one
   adminUserId     String?        @unique
   adminUser       User?          @relation("SchoolAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
@@ -2489,6 +2491,22 @@ model Branch {
 
   @@index([schoolId])
   @@map("branches")
+}
+
+// Okul ↔ Dönem yetkilendirmesi (çoklu). Bir okul birden fazla dönemde eğitim verebilir;
+// bu tabloda kaydı olan dönemlerde yetkilidir.
+model SchoolPeriod {
+  id        String         @id @default(uuid())
+  schoolId  String
+  school    School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  periodId  String
+  period    AcademicPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([schoolId, periodId])
+  @@index([schoolId])
+  @@index([periodId])
+  @@map("school_periods")
 }
 
 // Seviye (Şube içindeki kademe; örn. 5. seviye). Kalıcı kayıt — boş seviye de durur,
@@ -2589,6 +2607,7 @@ model SchoolUser {
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   schoolRole   SchoolRole
   username     String      @unique // otomatik üretilen (ANK-T-0042)
+  studentNo    String? // öğrenci numarası (Excel içe aktarımında opsiyonel)
   isActive     Boolean     @default(true)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt

@@ -30,25 +30,29 @@ async function parseStudentRows(file) {
   const header = (rows[0] || []).map(norm);
   const AD = ["ad", "adı", "isim", "öğrenci adı", "first name", "firstname", "name"];
   const SOYAD = ["soyad", "soyadı", "öğrenci soyadı", "surname", "last name", "lastname"];
+  const NO = ["no", "numara", "öğrenci no", "öğrenci numarası", "okul no", "number", "studentno", "öğrenci numara"];
   const adIdx = header.findIndex((h) => AD.includes(h));
   const soyadIdx = header.findIndex((h) => SOYAD.includes(h));
+  const noIdx = header.findIndex((h) => NO.includes(h));
   const out = [];
   if (adIdx !== -1 || soyadIdx !== -1) {
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i] || [];
       const fn = adIdx !== -1 ? String(r[adIdx] ?? "").trim() : "";
       const ln = soyadIdx !== -1 ? String(r[soyadIdx] ?? "").trim() : "";
-      if (fn || ln) out.push({ firstName: fn, lastName: ln });
+      const no = noIdx !== -1 ? String(r[noIdx] ?? "").trim() : "";
+      if (fn || ln) out.push({ firstName: fn, lastName: ln, studentNo: no || undefined });
     }
     return out;
   }
-  // Başlık yok → tüm satırlar veri; ilk iki sütun, tek sütunsa boşluktan böl
-  const looksHeader = header.some((h) => /ad|soyad|isim|name|surname/.test(h));
+  // Başlık yok → tüm satırlar veri; ilk iki sütun ad/soyad, üçüncü sütun varsa no
+  const looksHeader = header.some((h) => /ad|soyad|isim|name|surname|no|numara/.test(h));
   const dataRows = looksHeader ? rows.slice(1) : rows;
   for (const r of dataRows) {
     const c0 = String(r?.[0] ?? "").trim();
     const c1 = String(r?.[1] ?? "").trim();
-    if (c1) out.push({ firstName: c0, lastName: c1 });
+    const c2 = String(r?.[2] ?? "").trim();
+    if (c1) out.push({ firstName: c0, lastName: c1, studentNo: c2 || undefined });
     else if (c0) {
       const parts = c0.split(/\s+/);
       const lastName = parts.length > 1 ? parts.pop() : "";
@@ -60,7 +64,7 @@ async function parseStudentRows(file) {
 
 async function downloadStudentTemplate() {
   const XLSX = await import("xlsx");
-  const ws = XLSX.utils.aoa_to_sheet([["Ad", "Soyad"], ["Ahmet", "Yılmaz"], ["Ayşe", "Demir"]]);
+  const ws = XLSX.utils.aoa_to_sheet([["Ad", "Soyad", "Öğrenci No"], ["Ahmet", "Yılmaz", "101"], ["Ayşe", "Demir", "102"]]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Öğrenciler");
   XLSX.writeFile(wb, "ogrenci-sablonu.xlsx");
@@ -408,7 +412,7 @@ function StudentsDialog({ open, classroom, picked, togglePick, onClose, onSubmit
         {/* Excel ile toplu oluşturma */}
         <div className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-3 space-y-2">
           <p className="text-sm font-medium text-indigo-900">Excel ile öğrenci ekle</p>
-          <p className="text-xs text-slate-500">Ad ve Soyad sütunlu dosya yükleyin; sistem her öğrenci için kullanıcı adı + geçici şifre üretir, bu sınıfa ekler.</p>
+          <p className="text-xs text-slate-500">Ad, Soyad (ve opsiyonel Öğrenci No) sütunlu dosya yükleyin; sistem her öğrenci için kullanıcı adı + geçici şifre üretir, bu sınıfa ekler.</p>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" hidden onChange={handleFile} />
           <div className="flex gap-2">
             <Button type="button" size="sm" onClick={() => fileRef.current?.click()} disabled={importing} className="bg-indigo-600 hover:bg-indigo-700 gap-1.5">
@@ -450,14 +454,14 @@ function BulkCredentialsDialog({ creds, onClose }) {
   if (!creds) return null;
 
   const copyAll = async () => {
-    const text = creds.map((c) => `${c.name}\t${c.username}\t${c.tempPassword}`).join("\n");
-    try { await navigator.clipboard.writeText(`Ad Soyad\tKullanıcı adı\tŞifre\n${text}`); setCopied(true); toast.success("Panoya kopyalandı"); setTimeout(() => setCopied(false), 1500); }
+    const text = creds.map((c) => `${c.name}\t${c.studentNo ?? ""}\t${c.username}\t${c.tempPassword}`).join("\n");
+    try { await navigator.clipboard.writeText(`Ad Soyad\tÖğrenci No\tKullanıcı adı\tŞifre\n${text}`); setCopied(true); toast.success("Panoya kopyalandı"); setTimeout(() => setCopied(false), 1500); }
     catch { toast.error("Kopyalanamadı"); }
   };
   const exportExcel = async () => {
     try {
       const XLSX = await import("xlsx");
-      const ws = XLSX.utils.aoa_to_sheet([["Ad Soyad", "Kullanıcı adı", "Şifre"], ...creds.map((c) => [c.name, c.username, c.tempPassword])]);
+      const ws = XLSX.utils.aoa_to_sheet([["Ad Soyad", "Öğrenci No", "Kullanıcı adı", "Şifre"], ...creds.map((c) => [c.name, c.studentNo ?? "", c.username, c.tempPassword])]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Öğrenciler");
       XLSX.writeFile(wb, `ogrenci-sifreleri-${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -482,11 +486,12 @@ function BulkCredentialsDialog({ creds, onClose }) {
         </div>
         <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600 text-xs"><tr><th className="px-3 py-2 text-left">Ad Soyad</th><th className="px-3 py-2 text-left">Kullanıcı adı</th><th className="px-3 py-2 text-left">Şifre</th></tr></thead>
+            <thead className="bg-slate-50 text-slate-600 text-xs"><tr><th className="px-3 py-2 text-left">Ad Soyad</th><th className="px-3 py-2 text-left">No</th><th className="px-3 py-2 text-left">Kullanıcı adı</th><th className="px-3 py-2 text-left">Şifre</th></tr></thead>
             <tbody>
               {creds.map((c, i) => (
                 <tr key={i} className="border-t border-slate-100">
                   <td className="px-3 py-2">{c.name || "—"}</td>
+                  <td className="px-3 py-2 text-slate-500">{c.studentNo || "—"}</td>
                   <td className="px-3 py-2 font-mono">{c.username}</td>
                   <td className="px-3 py-2 font-mono font-semibold text-slate-900">{c.tempPassword}</td>
                 </tr>

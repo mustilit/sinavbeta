@@ -12,6 +12,8 @@ import {
   UpdateSchoolUseCase,
   DeactivateSchoolUseCase,
   AssignSchoolAdminUseCase,
+  AssignSchoolPeriodUseCase,
+  RemoveSchoolPeriodUseCase,
 } from '../../application/use-cases/school/SchoolAdminUseCases';
 
 class CreatePeriodDto {
@@ -46,6 +48,8 @@ class AssignSchoolAdminDto {
   @IsOptional() @IsString() @MaxLength(60) lastName?: string;
 }
 
+class AssignPeriodDto { @IsString() periodId!: string; }
+
 class ListSchoolsQueryDto {
   @IsOptional() @IsString() @MaxLength(80) q?: string;
   @IsOptional() @IsIn(['PRIMARY', 'MIDDLE', 'HIGH', 'MIXED']) schoolType?: string;
@@ -66,6 +70,8 @@ export class AdminSchoolsController {
   private updateSchoolUC = new UpdateSchoolUseCase();
   private deactivateSchoolUC = new DeactivateSchoolUseCase();
   private assignAdminUC = new AssignSchoolAdminUseCase();
+  private assignPeriodUC = new AssignSchoolPeriodUseCase();
+  private removePeriodUC = new RemoveSchoolPeriodUseCase();
 
   // ── Dönem ──
   @Get('academic-periods')
@@ -126,5 +132,22 @@ export class AdminSchoolsController {
   @ApiErrorResponses()
   assignAdmin(@Param('id') id: string, @Body() dto: AssignSchoolAdminDto, @Req() req: any) {
     return this.assignAdminUC.execute(id, dto, req?.user?.id);
+  }
+
+  @Post('schools/:id/periods')
+  @Roles('ADMIN')
+  @ApiBearerAuth('bearer')
+  @ApiOkResponse({ description: 'Okula dönem yetkilendirmesi ekler' })
+  @ApiErrorResponses()
+  assignPeriod(@Param('id') id: string, @Body() dto: AssignPeriodDto, @Req() req: any) {
+    return this.assignPeriodUC.execute(id, dto, req?.user?.id);
+  }
+
+  @Delete('schools/:id/periods/:periodId')
+  @Roles('ADMIN')
+  @ApiBearerAuth('bearer')
+  @ApiErrorResponses()
+  removePeriod(@Param('id') id: string, @Param('periodId') periodId: string, @Req() req: any) {
+    return this.removePeriodUC.execute(id, periodId, req?.user?.id);
   }
 }

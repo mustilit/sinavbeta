@@ -61,6 +61,8 @@ export class CreateSchoolUseCase {
         city: (input.city ?? '').trim() || null,
         schoolType: (input.schoolType as any) ?? 'MIDDLE',
         periodId: input.periodId,
+        // Kuruluş dönemini çoklu-dönem yetkilendirmesine de ekle
+        periodLinks: { create: { periodId: input.periodId } },
         maxUsers: Math.max(0, Math.floor(input.maxUsers ?? 0)),
         annualLiveLimit: Math.max(0, Math.floor(input.annualLiveLimit ?? 0)),
         tenantId: getDefaultTenantId(),
@@ -108,6 +110,7 @@ export class ListSchoolsUseCase {
         take: pageSize,
         include: {
           period: { select: { id: true, name: true } },
+          periodLinks: { select: { period: { select: { id: true, name: true, startDate: true } } } },
           adminUser: { select: { id: true, username: true, email: true, firstName: true, lastName: true } },
           _count: { select: { schoolUsers: true, branches: true, departments: true } },
         },
@@ -124,6 +127,11 @@ export class ListSchoolsUseCase {
       adminUsername: s.adminUser?.username ?? null,
       adminEmail: s.adminUser?.email ?? null,
       adminName: [s.adminUser?.firstName, s.adminUser?.lastName].filter(Boolean).join(' ') || null,
+      // Çoklu dönem yetkilendirmesi (kuruluş dönemi backfill ile dahil)
+      periods: s.periodLinks
+        .map((pl) => pl.period)
+        .sort((a, b) => (b.startDate?.getTime() ?? 0) - (a.startDate?.getTime() ?? 0))
+        .map((p) => ({ id: p.id, name: p.name })),
       maxUsers: s.maxUsers,
       userCount: s._count.schoolUsers,
       branchCount: s._count.branches,
@@ -172,6 +180,33 @@ export class DeactivateSchoolUseCase {
     const updated = await prisma.school.update({ where: { id }, data: { isActive: false, deletedAt: new Date() } });
     logger.info('school.deactivated', { id, actorId });
     return { id: updated.id, isActive: updated.isActive };
+  }
+}
+
+// ── Okul ↔ Dönem yetkilendirmesi (çoklu) ──────────────────────────────────────
+export class AssignSchoolPeriodUseCase {
+  async execute(schoolId: string, input: { periodId: string }, actorId?: string | null) {
+    const school = await prisma.school.findUnique({ where: { id: schoolId }, select: { id: true } });
+    if (!school) throw new AppError('SCHOOL_NOT_FOUND', 'Okul bulunamadı', 404);
+    const period = await prisma.academicPeriod.findUnique({ where: { id: input.periodId }, select: { id: true } });
+    if (!period) throw new AppError('PERIOD_NOT_FOUND', 'Dönem bulunamadı', 404);
+    const clash = await prisma.schoolPeriod.findUnique({ where: { schoolId_periodId: { schoolId, periodId: input.periodId } }, select: { id: true } });
+    if (clash) throw new AppError('PERIOD_ALREADY_LINKED', 'Bu dönem okula zaten ekli', 409);
+    await prisma.schoolPeriod.create({ data: { schoolId, periodId: input.periodId } });
+    logger.info('school.period.linked', { schoolId, periodId: input.periodId, actorId });
+    return { ok: true };
+  }
+}
+
+export class RemoveSchoolPeriodUseCase {
+  async execute(schoolId: string, periodId: string, actorId?: string | null) {
+    const link = await prisma.schoolPeriod.findUnique({ where: { schoolId_periodId: { schoolId, periodId } }, select: { id: true } });
+    if (!link) throw new AppError('PERIOD_LINK_NOT_FOUND', 'Dönem yetkilendirmesi bulunamadı', 404);
+    const remaining = await prisma.schoolPeriod.count({ where: { schoolId } });
+    if (remaining <= 1) throw new AppError('LAST_PERIOD', 'Okulun en az bir dönemi olmalı', 409);
+    await prisma.schoolPeriod.delete({ where: { id: link.id } });
+    logger.info('school.period.unlinked', { schoolId, periodId, actorId });
+    return { ok: true };
   }
 }
 

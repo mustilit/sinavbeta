@@ -14,11 +14,11 @@ import { toast } from "sonner";
 
 const ROLE_LABEL = { SCHOOL_ADMIN: "Okul Yön.", BRANCH_ADMIN: "Şube Yön.", DEPT_HEAD: "Zümre Bşk.", TEACHER: "Öğretmen", STUDENT: "Öğrenci" };
 const ROLE_COLOR = { SCHOOL_ADMIN: "bg-violet-100 text-violet-700", BRANCH_ADMIN: "bg-blue-100 text-blue-700", DEPT_HEAD: "bg-amber-100 text-amber-700", TEACHER: "bg-emerald-100 text-emerald-700", STUDENT: "bg-slate-100 text-slate-600" };
+// Öğrenciler buradan değil, sınıf sayfasından Excel ile eklenir — yalnız öğretmen ve üstü.
 const CREATE_ROLES = [
   { value: "TEACHER", label: "Öğretmen" },
-  { value: "STUDENT", label: "Öğrenci" },
-  { value: "BRANCH_ADMIN", label: "Şube Yöneticisi" },
   { value: "DEPT_HEAD", label: "Zümre Başkanı" },
+  { value: "BRANCH_ADMIN", label: "Şube Yöneticisi" },
 ];
 
 /** Okul Yöneticisi — kullanıcı yönetimi (ekle/listele/pasifleştir/şifre sıfırla). */
@@ -27,18 +27,18 @@ export default function SchoolUsers() {
   const qc = useQueryClient();
   const isAdmin = user?.school?.schoolRole === "SCHOOL_ADMIN";
   const [roleFilter, setRoleFilter] = useState("all");
+  const [branchFilter, setBranchFilter] = useState("all");
   const [q, setQ] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const [addRole, setAddRole] = useState("STUDENT");
+  const [addRole, setAddRole] = useState("TEACHER");
   const [creds, setCreds] = useState(null);
 
   const { data: branches = [] } = useQuery({ queryKey: ["esinif", "branches"], queryFn: schoolApi.listBranches, enabled: isAdmin });
-  const { data: classrooms = [] } = useQuery({ queryKey: ["esinif", "classrooms", "all"], queryFn: () => schoolApi.listClassrooms(), enabled: isAdmin });
   const { data: departments = [] } = useQuery({ queryKey: ["esinif", "departments"], queryFn: schoolApi.listDepartments, enabled: isAdmin });
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
-    queryKey: ["esinif", "users", roleFilter, q],
-    queryFn: ({ pageParam }) => schoolApi.listUsers({ role: roleFilter === "all" ? undefined : roleFilter, q: q || undefined, cursor: pageParam, limit: 30 }),
+    queryKey: ["esinif", "users", roleFilter, branchFilter, q],
+    queryFn: ({ pageParam }) => schoolApi.listUsers({ role: roleFilter === "all" ? undefined : roleFilter, branchId: branchFilter === "all" ? undefined : branchFilter, q: q || undefined, cursor: pageParam, limit: 30 }),
     initialPageParam: null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
@@ -68,7 +68,6 @@ export default function SchoolUsers() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const body = { schoolRole: addRole, firstName: f.get("firstName") || undefined, lastName: f.get("lastName") || undefined };
-    if (addRole === "STUDENT") { body.branchId = f.get("branchId") || undefined; body.classroomId = f.get("classroomId") || undefined; }
     if (addRole === "BRANCH_ADMIN") body.branchId = f.get("branchId") || undefined;
     if (addRole === "TEACHER" || addRole === "DEPT_HEAD") body.departmentId = f.get("departmentId") || undefined;
     createUser.mutate(body);
@@ -79,9 +78,9 @@ export default function SchoolUsers() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><Users className="w-5 h-5 text-indigo-600" /></div>
-          <div><h1 className="text-2xl font-bold text-slate-900">Kullanıcılar</h1><p className="text-sm text-slate-500">Öğretmen ve öğrenci hesapları</p></div>
+          <div><h1 className="text-2xl font-bold text-slate-900">Kullanıcılar</h1><p className="text-sm text-slate-500">Öğretmen ve yönetici hesapları (öğrenciler sınıf sayfasından eklenir)</p></div>
         </div>
-        {isAdmin && <Button onClick={() => { setAddRole("STUDENT"); setAddOpen(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Kullanıcı Ekle</Button>}
+        {isAdmin && <Button onClick={() => { setAddRole("TEACHER"); setAddOpen(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Kullanıcı Ekle</Button>}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -96,6 +95,15 @@ export default function SchoolUsers() {
             {Object.entries(ROLE_LABEL).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
           </SelectContent>
         </Select>
+        {isAdmin && (
+          <Select value={branchFilter} onValueChange={setBranchFilter}>
+            <SelectTrigger className="w-44" aria-label="Şube filtresi"><SelectValue placeholder="Şube" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm şubeler</SelectItem>
+              {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {isLoading ? (
@@ -145,16 +153,10 @@ export default function SchoolUsers() {
               <div><Label htmlFor="u-fn">Ad</Label><Input id="u-fn" name="firstName" maxLength={60} /></div>
               <div><Label htmlFor="u-ln">Soyad</Label><Input id="u-ln" name="lastName" maxLength={60} /></div>
             </div>
-            {(addRole === "STUDENT" || addRole === "BRANCH_ADMIN") && (
+            {addRole === "BRANCH_ADMIN" && (
               <div>
                 <Label>Şube</Label>
                 <Select name="branchId"><SelectTrigger><SelectValue placeholder="Şube seç (opsiyonel)" /></SelectTrigger><SelectContent>{branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent></Select>
-              </div>
-            )}
-            {addRole === "STUDENT" && (
-              <div>
-                <Label>Sınıf</Label>
-                <Select name="classroomId"><SelectTrigger><SelectValue placeholder="Sınıf seç (opsiyonel)" /></SelectTrigger><SelectContent>{classrooms.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
               </div>
             )}
             {(addRole === "TEACHER" || addRole === "DEPT_HEAD") && (

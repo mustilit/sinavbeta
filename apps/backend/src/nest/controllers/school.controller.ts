@@ -49,6 +49,7 @@ class AssignStudentsDto { @IsArray() @IsString({ each: true }) schoolUserIds!: s
 class BulkStudentRowDto {
   @IsOptional() @IsString() @MaxLength(60) firstName?: string;
   @IsOptional() @IsString() @MaxLength(60) lastName?: string;
+  @IsOptional() @IsString() @MaxLength(40) studentNo?: string;
 }
 class BulkStudentsDto {
   @IsArray() @ArrayMaxSize(300) @ValidateNested({ each: true }) @Type(() => BulkStudentRowDto)
@@ -183,11 +184,12 @@ export class SchoolController {
   listUsers(
     @Query('role') role: string | undefined,
     @Query('q') q: string | undefined,
+    @Query('branchId') branchId: string | undefined,
     @Query('cursor') cursor: string | undefined,
     @Query('limit') limit: string | undefined,
     @Req() req: any,
   ) {
-    return this.listUsersUC.execute({ role, q, cursor: cursor || null, limit: limit ? Number(limit) : undefined }, req?.user?.id);
+    return this.listUsersUC.execute({ role, q, branchId, cursor: cursor || null, limit: limit ? Number(limit) : undefined }, req?.user?.id);
   }
   @Post('users') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Kullanıcı ekle; { username, tempPassword } döner' }) @ApiErrorResponses()
   createUser(@Body() dto: CreateSchoolUserDto, @Req() req: any) { return this.createUserUC.execute(dto, req?.user?.id); }

@@ -4,12 +4,11 @@ import { adminSchools } from "@/api/dalClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import CredentialsDialog from "@/components/school/CredentialsDialog";
-import { School, CalendarDays, Plus, UserCog, Power, Users, Search, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { School, CalendarDays, Plus, UserCog, Power, Search, ChevronLeft, ChevronRight, ChevronDown, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -30,6 +29,8 @@ export default function AdminSchools() {
   const [createOpen, setCreateOpen] = useState(false);
   const [periodOpen, setPeriodOpen] = useState(false);
   const [assignFor, setAssignFor] = useState(null); // school row
+  const [periodAddFor, setPeriodAddFor] = useState(null); // school row → dönem ekle
+  const [expanded, setExpanded] = useState(() => new Set());
   const [creds, setCreds] = useState(null);
 
   // Filtreler — metin alanları debounce'lanır; seçimler anında uygulanır.
@@ -91,6 +92,17 @@ export default function AdminSchools() {
     onSuccess: () => { toast.success("Güncellendi"); qc.invalidateQueries({ queryKey: ["esinif", "schools"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Güncellenemedi"),
   });
+  const addPeriod = useMutation({
+    mutationFn: ({ id, periodId }) => adminSchools.addPeriod(id, periodId),
+    onSuccess: () => { toast.success("Dönem eklendi"); qc.invalidateQueries({ queryKey: ["esinif", "schools"] }); setPeriodAddFor(null); },
+    onError: (e) => toast.error(e?.response?.data?.error?.message ?? e?.response?.data?.message ?? "Dönem eklenemedi"),
+  });
+  const removePeriod = useMutation({
+    mutationFn: ({ id, periodId }) => adminSchools.removePeriod(id, periodId),
+    onSuccess: () => { toast.success("Dönem kaldırıldı"); qc.invalidateQueries({ queryKey: ["esinif", "schools"] }); },
+    onError: (e) => toast.error(e?.response?.data?.error?.message ?? e?.response?.data?.message ?? "Kaldırılamadı"),
+  });
+  const toggleExpand = (id) => setExpanded((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const submitSchool = (e) => {
     e.preventDefault();
@@ -163,39 +175,61 @@ export default function AdminSchools() {
           </div>
           {periods.length === 0 && <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">Önce bir akademik dönem oluşturun.</p>}
           {isLoading ? (
-            <div className="grid sm:grid-cols-2 gap-4">{[0, 1].map((i) => <div key={i} className="h-28 bg-slate-100 rounded-xl animate-pulse" />)}</div>
+            <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}</div>
           ) : schools.length === 0 ? (
             <div className="text-center py-16 text-slate-500"><School className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{hasFilters ? "Filtreye uygun okul bulunamadı." : "Henüz okul yok."}</p></div>
           ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
-              {schools.map((s) => (
-                <Card key={s.id} className={s.isActive ? "" : "opacity-60"}>
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-slate-900">{s.name}</p>
-                          <Badge className="bg-indigo-100 text-indigo-700 font-mono">{s.code}</Badge>
-                          {!s.isActive && <Badge className="bg-slate-200 text-slate-600">Pasif</Badge>}
+            <div className="rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
+              {schools.map((s) => {
+                const isOpen = expanded.has(s.id);
+                const schoolPeriods = s.periods ?? [];
+                const linkedIds = new Set(schoolPeriods.map((p) => p.id));
+                const addable = periods.filter((p) => !linkedIds.has(p.id));
+                return (
+                  <div key={s.id} className={s.isActive ? "" : "opacity-60"}>
+                    {/* Tek satır */}
+                    <div className="flex items-center gap-3 px-3 py-2.5">
+                      <button type="button" onClick={() => toggleExpand(s.id)} className="w-5 h-5 flex items-center justify-center text-slate-400 shrink-0" aria-label={isOpen ? "Daralt" : "Genişlet"}>
+                        {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </button>
+                      <School className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span className="font-semibold text-slate-900 truncate max-w-[200px]">{s.name}</span>
+                      <Badge className="bg-indigo-100 text-indigo-700 font-mono text-[10px]">{s.code}</Badge>
+                      {!s.isActive && <Badge className="bg-slate-200 text-slate-600 text-[10px]">Pasif</Badge>}
+                      <span className="text-xs text-slate-400 hidden md:inline truncate">{SCHOOL_TYPES.find((t) => t.value === s.schoolType)?.label} · {schoolPeriods.length} dönem · {s.userCount}/{s.maxUsers || "∞"} kullanıcı</span>
+                      <span className="flex-1" />
+                      <span className="text-xs text-slate-500 hidden lg:inline truncate max-w-[200px]">{s.adminEmail || "yönetici atanmadı"}</span>
+                      <div className="flex gap-1 shrink-0">
+                        <Button size="sm" variant="outline" onClick={() => setAssignFor(s)} className="gap-1 text-xs h-8"><UserCog className="w-3.5 h-3.5" /> Yönetici</Button>
+                        <Button size="sm" variant="outline" onClick={() => setPeriodAddFor(s)} className="gap-1 text-xs h-8"><CalendarDays className="w-3.5 h-3.5" /> Dönem</Button>
+                        <Button size="sm" variant="outline" onClick={() => toggleActive.mutate(s)} className={`gap-1 text-xs h-8 ${s.isActive ? "text-rose-600 border-rose-200 hover:bg-rose-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}><Power className="w-3.5 h-3.5" /> {s.isActive ? "Pasifleştir" : "Aktifleştir"}</Button>
+                      </div>
+                    </div>
+                    {/* Dönem ağacı */}
+                    {isOpen && (
+                      <div className="ml-9 mr-3 mb-3 border-l-2 border-slate-100 pl-3 space-y-2">
+                        <p className="text-xs text-slate-500 pt-1">Yetkili dönemler — okul bu dönemlerde eğitim verebilir.</p>
+                        <div className="flex flex-wrap gap-2">
+                          {schoolPeriods.map((p) => (
+                            <span key={p.id} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs">
+                              <CalendarDays className="w-3 h-3 text-slate-400" /> {p.name}
+                              <button type="button" onClick={() => removePeriod.mutate({ id: s.id, periodId: p.id })} disabled={schoolPeriods.length <= 1} title={schoolPeriods.length <= 1 ? "En az bir dönem olmalı" : "Kaldır"} className="text-slate-400 hover:text-rose-600 disabled:opacity-30">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                          <Button size="sm" variant="outline" onClick={() => setPeriodAddFor(s)} disabled={addable.length === 0} className="gap-1 text-xs h-7"><Plus className="w-3 h-3" /> Dönem Ekle</Button>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">{s.city || "—"} · {SCHOOL_TYPES.find((t) => t.value === s.schoolType)?.label} · {s.period?.name}</p>
+                        <div className="flex items-center gap-4 text-xs text-slate-500 pt-1">
+                          <span>{s.branchCount} şube · {s.departmentCount} zümre</span>
+                          <span>Canlı: {s.usedLiveCount}/{s.annualLiveLimit || "∞"}</span>
+                          {s.adminEmail && <span>Yönetici: {s.adminEmail}{s.adminName ? ` (${s.adminName})` : ""}</span>}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {s.userCount}/{s.maxUsers || "∞"} kullanıcı</span>
-                      <span>{s.branchCount} şube · {s.departmentCount} zümre</span>
-                      <span>Canlı: {s.usedLiveCount}/{s.annualLiveLimit || "∞"}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                      <span className="text-xs text-slate-500">Yönetici: {s.adminEmail ? <span className="text-slate-700">{s.adminEmail}{s.adminName ? ` (${s.adminName})` : ""}</span> : "atanmadı"}</span>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => setAssignFor(s)} className="gap-1 text-xs"><UserCog className="w-3.5 h-3.5" /> {s.adminEmail ? "Değiştir" : "Yönetici Ata"}</Button>
-                        <Button size="sm" variant="outline" onClick={() => toggleActive.mutate(s)} className={`gap-1 text-xs ${s.isActive ? "text-rose-600 border-rose-200 hover:bg-rose-50" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"}`}><Power className="w-3.5 h-3.5" /> {s.isActive ? "Pasifleştir" : "Aktifleştir"}</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
           {totalPages > 1 && (
@@ -297,6 +331,34 @@ export default function AdminSchools() {
               <Button type="submit" disabled={assignAdmin.isPending} className="bg-indigo-600 hover:bg-indigo-700">{assignAdmin.isPending ? "Atanıyor…" : "Ata ve Oluştur"}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dönem ekle (okula yetkilendirme) */}
+      <Dialog open={!!periodAddFor} onOpenChange={(o) => !o && setPeriodAddFor(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Dönem Ekle — {periodAddFor?.name}</DialogTitle></DialogHeader>
+          {(() => {
+            const linked = new Set((periodAddFor?.periods ?? []).map((p) => p.id));
+            const addable = periods.filter((p) => !linked.has(p.id));
+            return (
+              <form onSubmit={(e) => { e.preventDefault(); const periodId = new FormData(e.currentTarget).get("periodId"); if (!periodId) return toast.error("Dönem seçin"); addPeriod.mutate({ id: periodAddFor.id, periodId }); }} className="space-y-3">
+                <p className="text-sm text-slate-500">Okulu bu döneme yetkilendir. Okul birden fazla dönemde eğitim verebilir.</p>
+                <div>
+                  <Label>Dönem</Label>
+                  <Select name="periodId">
+                    <SelectTrigger><SelectValue placeholder={addable.length ? "Dönem seç" : "Eklenecek dönem yok"} /></SelectTrigger>
+                    <SelectContent>{addable.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                  {addable.length === 0 && <p className="text-xs text-amber-600 mt-1">Tüm dönemler ekli. Yeni dönem "Dönemler" sekmesinden oluşturulur.</p>}
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button type="button" variant="outline" onClick={() => setPeriodAddFor(null)}>İptal</Button>
+                  <Button type="submit" disabled={addPeriod.isPending || addable.length === 0} className="bg-indigo-600 hover:bg-indigo-700">Ekle</Button>
+                </DialogFooter>
+              </form>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
