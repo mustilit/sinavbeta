@@ -5,13 +5,14 @@
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     schoolUser: { findFirst: jest.fn() },
-    schoolAssignment: { findFirst: jest.fn() },
+    schoolAssignment: { findFirst: jest.fn(), findMany: jest.fn() },
     schoolSubmission: { findUnique: jest.fn(), create: jest.fn() },
     schoolSubmissionAnswer: { upsert: jest.fn() },
   },
 }));
 
 import {
+  ListStudentAssignmentsUseCase,
   GetStudentAssignmentUseCase,
   GetStudentResultUseCase,
   StartSubmissionUseCase,
@@ -111,5 +112,38 @@ describe('SaveAnswerUseCase — teslim sonrası kilit', () => {
     const r = await new SaveAnswerUseCase().execute('a1', { questionId: 'q1', selectedOptionId: 'o1' }, 'stu1');
     expect(r).toEqual({ ok: true });
     expect(p.schoolSubmissionAnswer.upsert).toHaveBeenCalled();
+  });
+});
+
+describe('ListStudentAssignmentsUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); p.schoolUser.findFirst.mockResolvedValue(student); });
+  const row = (over = {}) => ({
+    id: 'a1', title: 'Ödev', status: 'ACTIVE', availableFrom: past, dueDate: future, allowLateSubmit: false,
+    showResultAfter: 'SUBMIT', resultsReleased: false,
+    exam: { title: 'S', examType: 'TEST', durationMinutes: 30 },
+    submissions: [], ...over,
+  });
+
+  it('sınıfı yoksa boş liste', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...student, classroomId: null });
+    const r = await new ListStudentAssignmentsUseCase().execute({ filter: 'all' }, 'u1');
+    expect(r.items).toEqual([]);
+  });
+  it('pending filtresi: teslim edilmemişler', async () => {
+    p.schoolAssignment.findMany.mockResolvedValue([
+      row({ id: 'a1', submissions: [] }),
+      row({ id: 'a2', submissions: [{ id: 's2', status: 'GRADED', totalScore: 8, maxScore: 10 }] }),
+    ]);
+    const r = await new ListStudentAssignmentsUseCase().execute({ filter: 'pending' }, 'u1');
+    expect(r.items.map((x: any) => x.id)).toEqual(['a1']);
+  });
+  it('submitted filtresi: teslim edilenler + skor', async () => {
+    p.schoolAssignment.findMany.mockResolvedValue([
+      row({ id: 'a1', submissions: [] }),
+      row({ id: 'a2', submissions: [{ id: 's2', status: 'GRADED', totalScore: 8, maxScore: 10 }] }),
+    ]);
+    const r = await new ListStudentAssignmentsUseCase().execute({ filter: 'submitted' }, 'u1');
+    expect(r.items).toHaveLength(1);
+    expect(r.items[0]).toMatchObject({ id: 'a2', submitted: true, score: 8, maxScore: 10, examType: 'TEST' });
   });
 });

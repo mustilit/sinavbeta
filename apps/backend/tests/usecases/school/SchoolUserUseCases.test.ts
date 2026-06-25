@@ -4,17 +4,20 @@
  */
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
-    schoolUser: { findFirst: jest.fn(), count: jest.fn(), create: jest.fn() },
+    schoolUser: { findFirst: jest.fn(), count: jest.fn(), create: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     school: { findUnique: jest.fn() },
     branch: { findFirst: jest.fn() },
     classroom: { findFirst: jest.fn() },
     department: { findFirst: jest.fn() },
-    user: { create: jest.fn() },
+    user: { create: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
 
-import { CreateSchoolUserUseCase, BulkCreateStudentsUseCase } from '../../../src/application/use-cases/school/SchoolUserUseCases';
+import {
+  CreateSchoolUserUseCase, BulkCreateStudentsUseCase,
+  ListSchoolUsersUseCase, SetSchoolUserActiveUseCase, ResetSchoolUserPasswordUseCase,
+} from '../../../src/application/use-cases/school/SchoolUserUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 
 const p = prisma as any;
@@ -125,5 +128,56 @@ describe('BulkCreateStudentsUseCase (Excel)', () => {
     expect(res.created[0]).toMatchObject({ name: 'Ali Veli', username: 'ANK-S-0001' });
     expect(res.created[1].username).toBe('ANK-S-0002');
     expect(res.created[0].tempPassword).toHaveLength(8);
+  });
+});
+
+describe('ListSchoolUsersUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); });
+  it('şube filtresi where e geçer + studentNo döner', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null });
+    p.schoolUser.findMany.mockResolvedValue([
+      { id: 'su1', username: 'ALEF-S-0001', studentNo: '101', schoolRole: 'STUDENT', isActive: true, createdAt: new Date(),
+        user: { firstName: 'Ali', lastName: 'V' }, branch: { name: 'B1' }, classroom: { name: '5-A' }, department: null },
+    ]);
+    const r = await new ListSchoolUsersUseCase().execute({ branchId: 'b1', limit: 30 }, 'u0');
+    expect(r.items[0]).toMatchObject({ username: 'ALEF-S-0001', studentNo: '101', fullName: 'Ali V', classroomName: '5-A' });
+    expect(p.schoolUser.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ branchId: 'b1' }) }));
+  });
+  it('hasMore: nextCursor döner', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null });
+    const rows = Array.from({ length: 31 }, (_, i) => ({ id: `su${i}`, username: `U${i}`, studentNo: null, schoolRole: 'TEACHER', isActive: true, createdAt: new Date(), user: { firstName: null, lastName: null }, branch: null, classroom: null, department: null }));
+    p.schoolUser.findMany.mockResolvedValue(rows);
+    const r = await new ListSchoolUsersUseCase().execute({ limit: 30 }, 'u0');
+    expect(r.items).toHaveLength(30);
+    expect(r.nextCursor).toBe('su29');
+  });
+});
+
+describe('SetSchoolUserActiveUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); p.schoolUser.findFirst.mockResolvedValue({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null }); });
+  it('kullanıcı yoksa USER_NOT_FOUND', async () => {
+    p.schoolUser.findFirst.mockResolvedValueOnce({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null }).mockResolvedValueOnce(null);
+    await expect(new SetSchoolUserActiveUseCase().execute('x', { isActive: false }, 'u0')).rejects.toMatchObject({ code: 'USER_NOT_FOUND' });
+  });
+  it('başarı: aktiflik güncellenir', async () => {
+    p.schoolUser.findFirst.mockResolvedValueOnce({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null }).mockResolvedValueOnce({ id: 'su9' });
+    p.schoolUser.update.mockResolvedValue({ id: 'su9', isActive: false });
+    const r = await new SetSchoolUserActiveUseCase().execute('su9', { isActive: false }, 'u0');
+    expect(r).toMatchObject({ id: 'su9', isActive: false });
+  });
+});
+
+describe('ResetSchoolUserPasswordUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); });
+  it('kullanıcı yoksa USER_NOT_FOUND', async () => {
+    p.schoolUser.findFirst.mockResolvedValueOnce({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null }).mockResolvedValueOnce(null);
+    await expect(new ResetSchoolUserPasswordUseCase().execute('x', 'u0')).rejects.toMatchObject({ code: 'USER_NOT_FOUND' });
+  });
+  it('başarı: yeni geçici şifre döner', async () => {
+    p.schoolUser.findFirst.mockResolvedValueOnce({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null }).mockResolvedValueOnce({ id: 'su9', userId: 'u9', username: 'ALEF-T-0001' });
+    p.user.update.mockResolvedValue({});
+    const r = await new ResetSchoolUserPasswordUseCase().execute('su9', 'u0');
+    expect(r.username).toBe('ALEF-T-0001');
+    expect(r.tempPassword).toHaveLength(8);
   });
 });

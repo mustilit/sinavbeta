@@ -3,16 +3,19 @@
  */
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
-    schoolUser: { findFirst: jest.fn() },
+    schoolUser: { findFirst: jest.fn(), count: jest.fn() },
     schoolExam: { findFirst: jest.fn() },
     classroom: { findMany: jest.fn() },
-    schoolAssignment: { create: jest.fn() },
+    schoolAssignment: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
 jest.mock('../../../src/common/tenant', () => ({ getDefaultTenantId: () => 'ten1' }));
 
-import { CreateAssignmentUseCase, effectiveStatus } from '../../../src/application/use-cases/school/SchoolAssignmentUseCases';
+import {
+  CreateAssignmentUseCase, effectiveStatus,
+  ListAssignmentsUseCase, GetAssignmentReportUseCase, ReleaseAssignmentResultsUseCase, CloseAssignmentUseCase,
+} from '../../../src/application/use-cases/school/SchoolAssignmentUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 
 const p = prisma as any;
@@ -74,5 +77,63 @@ describe('effectiveStatus', () => {
   });
   it('CLOSED kalır', () => {
     expect(effectiveStatus({ status: 'CLOSED', availableFrom: new Date(Date.now() - 1e6), dueDate: new Date(Date.now() + 1e6) })).toBe('CLOSED');
+  });
+});
+
+describe('ListAssignmentsUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); p.schoolUser.findFirst.mockResolvedValue(teacher); });
+  it('öğretmen yalnız kendi ödevleri (createdById filtresi)', async () => {
+    p.schoolAssignment.findMany.mockResolvedValue([
+      { id: 'a1', title: 'Ödev', availableFrom: new Date(Date.now() - 1e6), dueDate: new Date(Date.now() + 1e6), status: 'SCHEDULED', showResultAfter: 'SUBMIT', resultsReleased: false, createdAt: new Date(), exam: { title: 'S', examType: 'TEST' }, classroom: { name: '5-A' }, _count: { submissions: 3 } },
+    ]);
+    const r = await new ListAssignmentsUseCase().execute({}, 'u1');
+    expect(r[0]).toMatchObject({ id: 'a1', examType: 'TEST', classroomName: '5-A', submissionCount: 3, status: 'ACTIVE' });
+    expect(p.schoolAssignment.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ createdById: 'u1' }) }));
+  });
+});
+
+describe('GetAssignmentReportUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); p.schoolUser.findFirst.mockResolvedValue(teacher); });
+  it('ödev yoksa ASSIGNMENT_NOT_FOUND', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue(null);
+    await expect(new GetAssignmentReportUseCase().execute('x', 'u1')).rejects.toMatchObject({ code: 'ASSIGNMENT_NOT_FOUND' });
+  });
+  it('istatistik + teslim listesi', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({
+      id: 'a1', title: 'Ödev', availableFrom: new Date(Date.now() - 1e6), dueDate: new Date(Date.now() + 1e6), status: 'ACTIVE', showResultAfter: 'SUBMIT', resultsReleased: false,
+      exam: { title: 'S', examType: 'TEST', totalPoints: 10 }, classroom: { name: '5-A', id: 'c1' },
+      submissions: [
+        { id: 's1', status: 'GRADED', totalScore: 8, maxScore: 10, submittedAt: new Date(), student: { username: 'ALEF-S-0001', firstName: 'Ali', lastName: 'V' } },
+        { id: 's2', status: 'IN_PROGRESS', totalScore: null, maxScore: null, submittedAt: null, student: { username: 'ALEF-S-0002', firstName: null, lastName: null } },
+      ],
+    });
+    p.schoolUser.count.mockResolvedValue(4);
+    const r = await new GetAssignmentReportUseCase().execute('a1', 'u1');
+    expect(r.stats).toMatchObject({ totalStudents: 4, submittedCount: 1, submissionRate: 25, avgScore: 8, maxScore: 8, minScore: 8 });
+    expect(r.submissions).toHaveLength(2);
+  });
+});
+
+describe('ReleaseAssignmentResultsUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); p.schoolUser.findFirst.mockResolvedValue(teacher); });
+  it('başkasının ödevi + öğretmen → FORBIDDEN', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', createdById: 'other' });
+    await expect(new ReleaseAssignmentResultsUseCase().execute('a1', 'u1')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+  it('kendi ödevi → yayımlanır', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', createdById: 'u1' });
+    p.schoolAssignment.update.mockResolvedValue({});
+    const r = await new ReleaseAssignmentResultsUseCase().execute('a1', 'u1');
+    expect(r).toEqual({ ok: true });
+  });
+});
+
+describe('CloseAssignmentUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); p.schoolUser.findFirst.mockResolvedValue(teacher); });
+  it('kapatma/açma', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', createdById: 'u1' });
+    p.schoolAssignment.update.mockResolvedValue({});
+    const r = await new CloseAssignmentUseCase().execute('a1', { status: 'CLOSED' }, 'u1');
+    expect(r).toEqual({ id: 'a1', status: 'CLOSED' });
   });
 });
