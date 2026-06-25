@@ -85,7 +85,7 @@ export class PrismaUserRepository implements IUserRepository {
                  role::text AS role, status::text AS status,
                  "educatorApprovedAt", "passwordResetTokenExpiresAt",
                  metadata, "createdAt", "updatedAt"
-          FROM users WHERE username = ${value} LIMIT 1
+          FROM users WHERE LOWER(username) = LOWER(${value}) LIMIT 1
         `
       : prisma.$queryRaw<any[]>`
           SELECT id, email, username, "passwordHash",
