@@ -73,7 +73,15 @@ export default function StudentResult() {
                     </div>
                   ) : (
                     <div className="mt-2 space-y-2">
-                      <div className="rounded-lg bg-slate-50 p-3 text-sm"><p className="text-xs text-slate-400 mb-1">Cevabınız</p>{q.textAnswer || <span className="text-slate-400">—</span>}</div>
+                      <div className="rounded-lg bg-slate-50 p-3 text-sm">
+                        <p className="text-xs text-slate-400 mb-1">Cevabınız</p>
+                        {q.textAnswer || (!q.imageUrls?.length && <span className="text-slate-400">—</span>)}
+                        {q.imageUrls?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {q.imageUrls.map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer"><img src={u} alt={`cevap ${k + 1}`} className="h-20 w-20 object-cover rounded-lg border border-slate-200" /></a>)}
+                          </div>
+                        )}
+                      </div>
                       {q.solutionText && <div className="rounded-lg bg-emerald-50 p-3 text-sm"><p className="text-xs text-emerald-600 mb-1">Çözüm</p>{q.solutionText}</div>}
                       {q.earnedPoints != null && <p className="text-xs text-slate-500">Puan: {q.earnedPoints}/{q.points}</p>}
                     </div>

@@ -100,6 +100,7 @@ export class GetStudentAssignmentUseCase {
         // Öğrencinin mevcut cevabı (resume)
         selectedOptionId: answerByQ.get(q.id)?.selectedOptionId ?? null,
         textAnswer: answerByQ.get(q.id)?.textAnswer ?? null,
+        imageUrls: answerByQ.get(q.id)?.imageUrls ?? [],
       })),
     };
   }
@@ -132,7 +133,7 @@ export class StartSubmissionUseCase {
 }
 
 export class SaveAnswerUseCase {
-  async execute(assignmentId: string, input: { questionId: string; selectedOptionId?: string | null; textAnswer?: string | null }, actorId?: string) {
+  async execute(assignmentId: string, input: { questionId: string; selectedOptionId?: string | null; textAnswer?: string | null; imageUrls?: string[] }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'STUDENT');
     await getOpenSubmission(assignmentId, actorId as string, ctx.classroomId);
@@ -140,11 +141,13 @@ export class SaveAnswerUseCase {
     if (!sub) throw new AppError('NOT_STARTED', 'Önce ödevi başlatın', 409);
     if (sub.status !== 'IN_PROGRESS') throw new AppError('ALREADY_SUBMITTED', 'Teslim edilmiş ödev değiştirilemez', 409);
     if (!input.questionId) throw new AppError('QUESTION_REQUIRED', 'Soru gerekli', 400);
+    // Yazılı foto cevap: en fazla 5 görsel
+    const imageUrls = Array.isArray(input.imageUrls) ? input.imageUrls.filter((u) => typeof u === 'string' && u.trim()).slice(0, 5) : [];
 
     await prisma.schoolSubmissionAnswer.upsert({
       where: { submissionId_questionId: { submissionId: sub.id, questionId: input.questionId } },
-      create: { submissionId: sub.id, questionId: input.questionId, selectedOptionId: input.selectedOptionId ?? null, textAnswer: (input.textAnswer ?? '').trim() || null },
-      update: { selectedOptionId: input.selectedOptionId ?? null, textAnswer: (input.textAnswer ?? '').trim() || null },
+      create: { submissionId: sub.id, questionId: input.questionId, selectedOptionId: input.selectedOptionId ?? null, textAnswer: (input.textAnswer ?? '').trim() || null, imageUrls },
+      update: { selectedOptionId: input.selectedOptionId ?? null, textAnswer: (input.textAnswer ?? '').trim() || null, imageUrls },
     });
     return { ok: true };
   }
@@ -248,6 +251,7 @@ export class GetStudentResultUseCase {
               }
             : {
                 textAnswer: ans?.textAnswer ?? null,
+                imageUrls: ans?.imageUrls ?? [],
                 earnedPoints: ans?.earnedPoints ?? null, // öğretmen puanlarsa (Sprint 4)
               }),
         };

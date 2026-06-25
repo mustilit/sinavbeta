@@ -124,6 +124,7 @@ export const PAGE_ROLES = {
   StudentAssignments: [],
   StudentSolve: [],
   StudentResult: [],
+  SchoolGradeSubmission: [],
   ManageTopics: [ROLES.ADMIN],
   ManageUsers: [ROLES.ADMIN],
   ManageTests: [ROLES.ADMIN],

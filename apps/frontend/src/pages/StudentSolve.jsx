@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, ChevronRight, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { Clock, ChevronRight, Send, CheckCircle2, AlertCircle, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 
 /** E-Sınıf — Öğrenci ödev çözme. TEST/WRITTEN liste; TUNNEL sıralı (geri yok). Autosave + süre. */
@@ -38,7 +38,7 @@ export default function StudentSolve() {
     if (!a.open) return;
     if (!started.current) { started.current = true; start.mutate(); }
     const init = {};
-    for (const q of a.questions) init[q.id] = { selectedOptionId: q.selectedOptionId ?? null, textAnswer: q.textAnswer ?? "" };
+    for (const q of a.questions) init[q.id] = { selectedOptionId: q.selectedOptionId ?? null, textAnswer: q.textAnswer ?? "", imageUrls: q.imageUrls ?? [] };
     setAnswers(init);
     if (a.durationMinutes) setRemaining(a.durationMinutes * 60);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,13 +52,24 @@ export default function StudentSolve() {
     return () => clearTimeout(t);
   }, [remaining]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const uploadFor = async (qid, file) => {
+    if (!file) return;
+    const cur = answers[qid]?.imageUrls ?? [];
+    if (cur.length >= 5) return toast.error("En fazla 5 görsel");
+    try {
+      const url = await studentAssignments.uploadImage(file);
+      if (url) persist(qid, { imageUrls: [...cur, url] });
+    } catch { toast.error("Görsel yüklenemedi"); }
+  };
+  const removeImage = (qid, url) => persist(qid, { imageUrls: (answers[qid]?.imageUrls ?? []).filter((u) => u !== url) });
+
   const persist = (qid, patch) => {
     setAnswers((prev) => {
       const next = { ...prev, [qid]: { ...prev[qid], ...patch } };
       // Debounce sunucuya kaydet (autosave)
       clearTimeout(saveTimers.current[qid]);
       saveTimers.current[qid] = setTimeout(() => {
-        save.mutate({ questionId: qid, selectedOptionId: next[qid].selectedOptionId ?? null, textAnswer: next[qid].textAnswer ?? null });
+        save.mutate({ questionId: qid, selectedOptionId: next[qid].selectedOptionId ?? null, textAnswer: next[qid].textAnswer ?? null, imageUrls: next[qid].imageUrls ?? [] });
       }, 600);
       return next;
     });
@@ -97,8 +108,23 @@ export default function StudentSolve() {
             })}
           </div>
         ) : (
-          <div className="pl-10">
-            <Textarea value={answers[q.id]?.textAnswer ?? ""} onChange={(e) => persist(q.id, { textAnswer: e.target.value })} rows={4} placeholder="Cevabınız…" maxLength={8000} />
+          <div className="pl-10 space-y-2">
+            <Textarea value={answers[q.id]?.textAnswer ?? ""} onChange={(e) => persist(q.id, { textAnswer: e.target.value })} rows={4} placeholder="Cevabınız… (yazabilir veya kağıttaki cevabın fotoğrafını yükleyebilirsiniz)" maxLength={8000} />
+            <div className="flex flex-wrap items-center gap-2">
+              {(answers[q.id]?.imageUrls ?? []).map((u) => (
+                <div key={u} className="relative">
+                  <img src={u} alt="cevap" className="h-20 w-20 object-cover rounded-lg border border-slate-200" />
+                  <button type="button" onClick={() => removeImage(q.id, u)} className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Sil"><X className="w-3 h-3" /></button>
+                </div>
+              ))}
+              {(answers[q.id]?.imageUrls ?? []).length < 5 && (
+                <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500">
+                  <ImagePlus className="w-5 h-5" />
+                  <span className="text-[10px]">Fotoğraf</span>
+                  <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={(e) => { uploadFor(q.id, e.target.files?.[0]); e.target.value = ""; }} />
+                </label>
+              )}
+            </div>
           </div>
         )}
       </CardContent>

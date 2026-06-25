@@ -2235,6 +2235,12 @@ export const school = {
     releaseResults: async (id) => (await api.post(`/school/assignments/${id}/release-results`)).data,
     setStatus: async (id, status) => (await api.patch(`/school/assignments/${id}/status`, { status })).data,
   },
+
+  // Yazılı değerlendirme (Sprint 4)
+  grading: {
+    get: async (submissionId) => (await api.get(`/school/submissions/${submissionId}/grading`)).data,
+    grade: async (submissionId, body) => (await api.post(`/school/submissions/${submissionId}/grade`, body)).data,
+  },
 };
 
 // E-Sınıf öğrenci ödev çözme (Sprint 3)
@@ -2249,6 +2255,13 @@ export const studentAssignments = {
   saveAnswer: async (id, body) => (await api.put(`/student/assignments/${id}/answer`, body)).data,
   submit: async (id) => (await api.post(`/student/assignments/${id}/submit`)).data,
   result: async (id) => (await api.get(`/student/assignments/${id}/result`)).data,
+  /** Yazılı foto cevap yükle → URL döner (Sharp pipeline). */
+  uploadImage: async (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const { data } = await api.post('/upload/image', fd);
+    return data.url || data.fileUrl || data.file_url || '';
+  },
 };
 
 export default api;

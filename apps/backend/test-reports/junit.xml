@@ -1,65 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="27" failures="0" errors="0" time="2.425">
-  <testsuite name="SubmitAssignmentUseCase" errors="0" failures="0" skipped="0" timestamp="2026-06-25T05:03:57" time="0.812" tests="6">
-    <testcase classname="SubmitAssignmentUseCase TEST: doğru/yanlış otomatik puanlanır, GRADED + skor döner" name="SubmitAssignmentUseCase TEST: doğru/yanlış otomatik puanlanır, GRADED + skor döner" time="0.008">
+<testsuites name="jest tests" tests="6" failures="0" errors="0" time="1.458">
+  <testsuite name="GradeSubmissionUseCase" errors="0" failures="0" skipped="0" timestamp="2026-06-25T05:23:52" time="0.831" tests="6">
+    <testcase classname="GradeSubmissionUseCase başarı: puanlar clamp edilir, toplam + GRADED döner" name="GradeSubmissionUseCase başarı: puanlar clamp edilir, toplam + GRADED döner" time="0.006">
     </testcase>
-    <testcase classname="SubmitAssignmentUseCase TEST: hepsi doğru → tam puan" name="SubmitAssignmentUseCase TEST: hepsi doğru → tam puan" time="0.002">
+    <testcase classname="GradeSubmissionUseCase negatif puan 0 a clamp" name="GradeSubmissionUseCase negatif puan 0 a clamp" time="0.001">
     </testcase>
-    <testcase classname="SubmitAssignmentUseCase WRITTEN: otomatik puanlanmaz → SUBMITTED, skor null, maxScore toplam" name="SubmitAssignmentUseCase WRITTEN: otomatik puanlanmaz → SUBMITTED, skor null, maxScore toplam" time="0.001">
+    <testcase classname="GradeSubmissionUseCase başkasının ödevi (yetkisiz) → FORBIDDEN" name="GradeSubmissionUseCase başkasının ödevi (yetkisiz) → FORBIDDEN" time="0.002">
     </testcase>
-    <testcase classname="SubmitAssignmentUseCase zaten teslim → ALREADY_SUBMITTED" name="SubmitAssignmentUseCase zaten teslim → ALREADY_SUBMITTED" time="0.002">
+    <testcase classname="GradeSubmissionUseCase zümre başkanı kendi zümresini puanlayabilir" name="GradeSubmissionUseCase zümre başkanı kendi zümresini puanlayabilir" time="0.001">
     </testcase>
-    <testcase classname="SubmitAssignmentUseCase süresi geçmiş + geç teslim kapalı → ASSIGNMENT_CLOSED" name="SubmitAssignmentUseCase süresi geçmiş + geç teslim kapalı → ASSIGNMENT_CLOSED" time="0.001">
+    <testcase classname="GradeSubmissionUseCase teslim edilmemiş (IN_PROGRESS) → NOT_SUBMITTED" name="GradeSubmissionUseCase teslim edilmemiş (IN_PROGRESS) → NOT_SUBMITTED" time="0.001">
     </testcase>
-    <testcase classname="SubmitAssignmentUseCase öğrenci değilse → FORBIDDEN_SCHOOL_ROLE" name="SubmitAssignmentUseCase öğrenci değilse → FORBIDDEN_SCHOOL_ROLE" time="0.001">
-    </testcase>
-  </testsuite>
-  <testsuite name="CreateSchoolExamUseCase" errors="0" failures="0" skipped="0" timestamp="2026-06-25T05:03:58" time="0.102" tests="11">
-    <testcase classname="CreateSchoolExamUseCase zümresi olmayan öğretmen → NO_DEPARTMENT" name="CreateSchoolExamUseCase zümresi olmayan öğretmen → NO_DEPARTMENT" time="0.001">
-    </testcase>
-    <testcase classname="CreateSchoolExamUseCase geçersiz tür → INVALID_EXAM_TYPE" name="CreateSchoolExamUseCase geçersiz tür → INVALID_EXAM_TYPE" time="0.001">
-    </testcase>
-    <testcase classname="CreateSchoolExamUseCase öğrenci oluşturamaz → FORBIDDEN_SCHOOL_ROLE" name="CreateSchoolExamUseCase öğrenci oluşturamaz → FORBIDDEN_SCHOOL_ROLE" time="0.001">
-    </testcase>
-    <testcase classname="CreateSchoolExamUseCase başarı: ders zümreden türetilir, departmentId atanır" name="CreateSchoolExamUseCase başarı: ders zümreden türetilir, departmentId atanır" time="0.001">
-    </testcase>
-    <testcase classname="SaveSchoolExamQuestionsUseCase TEST: tam 1 doğru şık değilse → ONE_CORRECT_REQUIRED" name="SaveSchoolExamQuestionsUseCase TEST: tam 1 doğru şık değilse → ONE_CORRECT_REQUIRED" time="0.001">
-    </testcase>
-    <testcase classname="SaveSchoolExamQuestionsUseCase TEST: 2 şıktan az → TOO_FEW_OPTIONS" name="SaveSchoolExamQuestionsUseCase TEST: 2 şıktan az → TOO_FEW_OPTIONS" time="0.001">
-    </testcase>
-    <testcase classname="SaveSchoolExamQuestionsUseCase WRITTEN: çözüm yoksa → SOLUTION_REQUIRED" name="SaveSchoolExamQuestionsUseCase WRITTEN: çözüm yoksa → SOLUTION_REQUIRED" time="0.001">
-    </testcase>
-    <testcase classname="SaveSchoolExamQuestionsUseCase başkasının sınavı (yetkisiz) → FORBIDDEN" name="SaveSchoolExamQuestionsUseCase başkasının sınavı (yetkisiz) → FORBIDDEN" time="0.001">
-    </testcase>
-    <testcase classname="SaveSchoolExamQuestionsUseCase TEST başarı: totalPoints hesaplanır" name="SaveSchoolExamQuestionsUseCase TEST başarı: totalPoints hesaplanır" time="0.002">
-    </testcase>
-    <testcase classname="ListSchoolExamPoolUseCase (görünürlük) öğretmen: zümre VEYA SCHOOL VEYA kendi filtresi uygulanır" name="ListSchoolExamPoolUseCase (görünürlük) öğretmen: zümre VEYA SCHOOL VEYA kendi filtresi uygulanır" time="0.001">
-    </testcase>
-    <testcase classname="ListSchoolExamPoolUseCase (görünürlük) okul yöneticisi: görünürlük filtresi YOK (tümü)" name="ListSchoolExamPoolUseCase (görünürlük) okul yöneticisi: görünürlük filtresi YOK (tümü)" time="0">
-    </testcase>
-  </testsuite>
-  <testsuite name="CreateSchoolUserUseCase" errors="0" failures="0" skipped="0" timestamp="2026-06-25T05:03:58" time="0.597" tests="5">
-    <testcase classname="CreateSchoolUserUseCase okul kullanıcısı değilse NOT_SCHOOL_USER (403)" name="CreateSchoolUserUseCase okul kullanıcısı değilse NOT_SCHOOL_USER (403)" time="0.002">
-    </testcase>
-    <testcase classname="CreateSchoolUserUseCase SCHOOL_ADMIN değilse FORBIDDEN_SCHOOL_ROLE (403)" name="CreateSchoolUserUseCase SCHOOL_ADMIN değilse FORBIDDEN_SCHOOL_ROLE (403)" time="0">
-    </testcase>
-    <testcase classname="CreateSchoolUserUseCase SCHOOL_ADMIN rolü buradan oluşturulamaz → INVALID_ROLE" name="CreateSchoolUserUseCase SCHOOL_ADMIN rolü buradan oluşturulamaz → INVALID_ROLE" time="0.001">
-    </testcase>
-    <testcase classname="CreateSchoolUserUseCase kota dolu → USER_QUOTA_EXCEEDED (409)" name="CreateSchoolUserUseCase kota dolu → USER_QUOTA_EXCEEDED (409)" time="0.001">
-    </testcase>
-    <testcase classname="CreateSchoolUserUseCase başarı: otomatik username + geçici şifre döner" name="CreateSchoolUserUseCase başarı: otomatik username + geçici şifre döner" time="0.518">
-    </testcase>
-  </testsuite>
-  <testsuite name="formatSchoolUsername" errors="0" failures="0" skipped="0" timestamp="2026-06-25T05:03:58" time="0.216" tests="5">
-    <testcase classname="formatSchoolUsername KOD-ROL-0000 formatı (4 hane sıfır dolgulu)" name="formatSchoolUsername KOD-ROL-0000 formatı (4 hane sıfır dolgulu)" time="0.013">
-    </testcase>
-    <testcase classname="formatSchoolUsername 1000+ sıra numarasında dolgu büyür" name="formatSchoolUsername 1000+ sıra numarasında dolgu büyür" time="0.001">
-    </testcase>
-    <testcase classname="generateTempPassword varsayılan 8 karakter" name="generateTempPassword varsayılan 8 karakter" time="0.001">
-    </testcase>
-    <testcase classname="generateTempPassword karışabilen karakter içermez (0,O,1,l,I)" name="generateTempPassword karışabilen karakter içermez (0,O,1,l,I)" time="0.047">
-    </testcase>
-    <testcase classname="generateTempPassword istenen uzunlukta üretir" name="generateTempPassword istenen uzunlukta üretir" time="0">
+    <testcase classname="GradeSubmissionUseCase TEST (yazılı değil) → NOT_WRITTEN" name="GradeSubmissionUseCase TEST (yazılı değil) → NOT_WRITTEN" time="0.001">
     </testcase>
   </testsuite>
 </testsuites>

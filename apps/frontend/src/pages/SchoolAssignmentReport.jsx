@@ -50,7 +50,7 @@ export default function SchoolAssignmentReport() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-600 text-xs">
-            <tr><th className="px-3 py-2 text-left">Öğrenci</th><th className="px-3 py-2 text-left">Durum</th><th className="px-3 py-2 text-right">Puan</th><th className="px-3 py-2 text-left">Teslim</th></tr>
+            <tr><th className="px-3 py-2 text-left">Öğrenci</th><th className="px-3 py-2 text-left">Durum</th><th className="px-3 py-2 text-right">Puan</th><th className="px-3 py-2 text-left">Teslim</th>{r.examType === "WRITTEN" && <th className="px-3 py-2 text-right">İşlem</th>}</tr>
           </thead>
           <tbody>
             {r.submissions.length === 0 ? (
@@ -63,6 +63,13 @@ export default function SchoolAssignmentReport() {
                   <td className="px-3 py-2"><span className={`text-xs font-medium ${st.color}`}>{st.label}</span></td>
                   <td className="px-3 py-2 text-right font-medium text-slate-900">{s.totalScore != null ? `${s.totalScore}/${s.maxScore ?? r.maxPoints}` : "—"}</td>
                   <td className="px-3 py-2 text-slate-500 text-xs">{s.submittedAt ? format(new Date(s.submittedAt), "d MMM HH:mm", { locale: tr }) : "—"}</td>
+                  {r.examType === "WRITTEN" && (
+                    <td className="px-3 py-2 text-right">
+                      {(s.status === "SUBMITTED" || s.status === "GRADED") && (
+                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => navigate(buildPageUrl("SchoolGradeSubmission", { id: s.id }))}>{s.status === "GRADED" ? "Düzenle" : "Değerlendir"}</Button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}
