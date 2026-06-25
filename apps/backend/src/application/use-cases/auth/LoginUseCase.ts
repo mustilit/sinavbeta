@@ -66,18 +66,24 @@ export class LoginUseCase {
     dto: { email: string; password: string },
     ctx?: AuditContext,
   ): Promise<LoginExecuteResult> {
-    // Girdi normalize edilir — boşluk içeren e-postalar ve tip dönüşüm sorunları giderilir
-    const email = dto?.email ? String(dto.email).trim().toLowerCase() : '';
+    // Girdi normalize edilir. Tanımlayıcı e-posta VEYA kullanıcı adı olabilir:
+    // E-Sınıf (okul) kullanıcıları e-posta yerine kullanıcı adıyla giriş yapar
+    // (örn. ANK-A-0001). "@" içeriyorsa e-posta, içermiyorsa kullanıcı adı sayılır.
+    const identifier = dto?.email ? String(dto.email).trim() : '';
     const password = dto?.password != null ? String(dto.password) : '';
-    if (!email || !password) {
-      this.logLoginFail(ctx, undefined, email, 'missing_credentials');
+    if (!identifier || !password) {
+      this.logLoginFail(ctx, undefined, identifier, 'missing_credentials');
       throw new Error('INVALID_CREDENTIALS');
     }
 
-    const user = await this.userRepository.findByEmail(email);
-    // Kullanıcı bulunamasa da aynı hata fırlatılır — e-posta numaralandırmasını önler
+    const isEmail = identifier.includes('@');
+    const email = isEmail ? identifier.toLowerCase() : identifier;
+    const user = isEmail
+      ? await this.userRepository.findByEmail(email)
+      : await this.userRepository.findByUsername(identifier);
+    // Kullanıcı bulunamasa da aynı hata fırlatılır — numaralandırmayı önler
     if (!user) {
-      this.logLoginFail(ctx, undefined, email, 'user_not_found');
+      this.logLoginFail(ctx, undefined, identifier, 'user_not_found');
       throw new Error('INVALID_CREDENTIALS');
     }
 

@@ -504,11 +504,14 @@ export class AuthController {
   @RequireCaptcha()
   @UseGuards(LoginBruteforceGuard)
   async login(@Body() body: any, @Req() req: any) {
-    const email = body?.email != null ? String(body.email).trim().toLowerCase() : '';
+    // Tanımlayıcı e-posta VEYA kullanıcı adı olabilir (E-Sınıf okul kullanıcıları
+    // kullanıcı adıyla girer). Küçük harfe çevirmeyiz — kullanıcı adı büyük/küçük
+    // harf duyarlıdır; LoginUseCase "@" içeriyorsa e-posta olarak lowercase'ler.
+    const email = body?.email != null ? String(body.email).trim() : '';
     const password = body?.password != null ? String(body.password) : '';
     if (!email || !password) {
       throw new HttpException(
-        { error: 'E-posta ve şifre gerekli.' },
+        { error: 'E-posta veya kullanıcı adı ve şifre gerekli.' },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -528,9 +531,11 @@ export class AuthController {
       const ip = (req.headers?.['x-forwarded-for']
         ? String(req.headers['x-forwarded-for']).split(',')[0].trim()
         : req.ip || 'unknown');
+      // Brute-force sayaç anahtarı guard'da küçük harfe normalize edilir
+      // (kullanıcı adı veya e-posta). Başarıda temizlerken aynı normalize uygulanır.
       await Promise.allSettled([
         delKey(`login:ip:${ip}`),
-        delKey(`login:email:${email}`),
+        delKey(`login:email:${email.toLowerCase()}`),
       ]);
       return result;
     } catch (err: any) {

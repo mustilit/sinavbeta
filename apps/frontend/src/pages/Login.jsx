@@ -14,6 +14,8 @@ import { GraduationCap } from 'lucide-react';
 export default function Login() {
   const { t } = useTranslation(['auth', 'common']);
   const [searchParams] = useSearchParams();
+  // E-Sınıf (okul) girişi: kullanıcı adıyla giriş (e-posta zorunlu değil).
+  const isSchool = searchParams.get('context') === 'school';
   // Email pre-fill (VerifyEmail success akışında veya kayıt linkinde gelir)
   const emailFromQuery = searchParams.get('email') ?? '';
   const [email, setEmail] = useState(emailFromQuery);
@@ -89,13 +91,19 @@ export default function Login() {
         )}
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 mb-1">{t('auth:login.email')}</label>
+            <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 mb-1">
+              {isSchool ? t('auth:login.usernameOrEmail', { defaultValue: 'Kullanıcı Adı veya E-posta' }) : t('auth:login.email')}
+            </label>
             <Input
               id="login-email"
-              type="email"
+              // Okul kullanıcısı kullanıcı adıyla girer → type="text" (tarayıcı "@" zorlamaz).
+              type={isSchool ? 'text' : 'email'}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('auth:login.emailPlaceholder')}
+              placeholder={isSchool ? 'ANK-A-0001' : t('auth:login.emailPlaceholder')}
               required
               className="w-full"
             />
