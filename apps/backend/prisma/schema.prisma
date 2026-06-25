@@ -2481,6 +2481,7 @@ model Branch {
   adminUser   User?        @relation("BranchAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
   levels      SchoolLevel[]
   classrooms  Classroom[]
+  departments Department[]
   schoolUsers SchoolUser[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -2499,10 +2500,11 @@ model SchoolLevel {
   branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
   gradeLevel  Int // 1-12
   adminUserId String? // seviye sorumlusu (yalnız bağlantı/etiket; rol değiştirmez)
-  adminUser   User?       @relation("SchoolLevelAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
+  adminUser   User?        @relation("SchoolLevelAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
   classrooms  Classroom[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  departments Department[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@unique([branchId, gradeLevel])
   @@index([schoolId])
@@ -2536,6 +2538,12 @@ model Department {
   id         String       @id @default(uuid())
   schoolId   String
   school     School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  // Kapsam: levelId dolu → seviyeye özel; branchId dolu+levelId boş → şube geneli;
+  // ikisi de boş → tüm okul (genel). branchId, levelId'den türetilir (level.branchId).
+  branchId   String?
+  branch     Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  levelId    String?
+  level      SchoolLevel? @relation(fields: [levelId], references: [id], onDelete: Cascade)
   name       String // "Matematik Zümresi"
   subject    String // "Matematik"
   headUserId String?
@@ -2546,6 +2554,8 @@ model Department {
   updatedAt  DateTime     @updatedAt
 
   @@index([schoolId])
+  @@index([branchId])
+  @@index([levelId])
   @@map("departments")
 }
 

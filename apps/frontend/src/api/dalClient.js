@@ -2204,8 +2204,10 @@ export const school = {
   assignClassroomAdmin: async (id, body) => (await api.post(`/school/classrooms/${id}/assign-admin`, body)).data,
   deleteClassroom: async (id) => (await api.delete(`/school/classrooms/${id}`)).data,
   // Zümre
+  departmentTree: async () => (await api.get('/school/department-tree')).data,
   listDepartments: async () => (await api.get('/school/departments')).data,
   createDepartment: async (body) => (await api.post('/school/departments', body)).data,
+  deleteDepartment: async (id) => (await api.delete(`/school/departments/${id}`)).data,
   assignMembers: async (id, body) => (await api.post(`/school/departments/${id}/members`, body)).data,
   // Kullanıcılar
   listUsers: async ({ role, q, cursor, limit = 30 } = {}) => {

@@ -17,6 +17,8 @@ import {
   GetSchoolTreeUseCase,
   CreateDepartmentUseCase,
   ListDepartmentsUseCase,
+  GetDepartmentTreeUseCase,
+  DeleteDepartmentUseCase,
   AssignDepartmentMembersUseCase,
   GetSchoolQuotaUseCase,
 } from '../../application/use-cases/school/SchoolOrgUseCases';
@@ -41,6 +43,8 @@ class AssignStudentsDto { @IsArray() @IsString({ each: true }) schoolUserIds!: s
 class CreateDepartmentDto {
   @IsString() @MaxLength(80) name!: string;
   @IsString() @MaxLength(60) subject!: string;
+  @IsOptional() @IsString() levelId?: string;   // seviyeye özel zümre
+  @IsOptional() @IsString() branchId?: string;  // şube geneli zümre (levelId yoksa)
 }
 class AssignMembersDto {
   @IsArray() @IsString({ each: true }) schoolUserIds!: string[];
@@ -75,6 +79,8 @@ export class SchoolController {
   private treeUC = new GetSchoolTreeUseCase();
   private createDeptUC = new CreateDepartmentUseCase();
   private listDeptsUC = new ListDepartmentsUseCase();
+  private deptTreeUC = new GetDepartmentTreeUseCase();
+  private deleteDeptUC = new DeleteDepartmentUseCase();
   private assignMembersUC = new AssignDepartmentMembersUseCase();
   private quotaUC = new GetSchoolQuotaUseCase();
   private createUserUC = new CreateSchoolUserUseCase();
@@ -125,10 +131,14 @@ export class SchoolController {
   deleteClassroom(@Param('id') id: string, @Req() req: any) { return this.deleteClassroomUC.execute(id, req?.user?.id); }
 
   // ── Zümre ──
+  @Get('department-tree') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Zümre ağacı (Tüm Okul + Şube → Seviye)' }) @ApiErrorResponses()
+  departmentTree(@Req() req: any) { return this.deptTreeUC.execute(req?.user?.id); }
   @Get('departments') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Zümre listesi' }) @ApiErrorResponses()
   listDepartments(@Req() req: any) { return this.listDeptsUC.execute(req?.user?.id); }
   @Post('departments') @ApiBearerAuth('bearer') @ApiErrorResponses()
   createDepartment(@Body() dto: CreateDepartmentDto, @Req() req: any) { return this.createDeptUC.execute(dto, req?.user?.id); }
+  @Delete('departments/:id') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  deleteDepartment(@Param('id') id: string, @Req() req: any) { return this.deleteDeptUC.execute(id, req?.user?.id); }
   @Post('departments/:id/members') @ApiBearerAuth('bearer') @ApiErrorResponses()
   assignMembers(@Param('id') id: string, @Body() dto: AssignMembersDto, @Req() req: any) {
     return this.assignMembersUC.execute(id, dto, req?.user?.id);

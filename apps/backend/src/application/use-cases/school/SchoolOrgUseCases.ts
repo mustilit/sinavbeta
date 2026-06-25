@@ -283,15 +283,37 @@ export class AssignStudentsToClassroomUseCase {
 
 // ── Zümre ──────────────────────────────────────────────────────────────────
 export class CreateDepartmentUseCase {
-  async execute(input: { name: string; subject: string }, actorId?: string) {
+  /**
+   * Kapsam: levelId verilirse seviyeye özel; yoksa branchId verilirse şube geneli;
+   * ikisi de yoksa tüm okul (genel). branchId, seviyeden türetilir.
+   */
+  async execute(input: { name: string; subject: string; levelId?: string | null; branchId?: string | null }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN');
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
     const name = (input.name ?? '').trim();
     const subject = (input.subject ?? '').trim();
     if (!name) throw new AppError('NAME_REQUIRED', 'Zümre adı zorunlu', 400);
     if (!subject) throw new AppError('SUBJECT_REQUIRED', 'Ders adı zorunlu', 400);
-    const created = await prisma.department.create({ data: { schoolId: ctx.schoolId, name, subject } });
-    logger.info('school.department.created', { id: created.id, actorId });
+
+    let branchId: string | null = null;
+    let levelId: string | null = null;
+    if (input.levelId) {
+      const level = await prisma.schoolLevel.findFirst({ where: { id: input.levelId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+      if (!level) throw new AppError('LEVEL_NOT_FOUND', 'Seviye bulunamadı', 404);
+      branchId = level.branchId;
+      levelId = level.id;
+    } else if (input.branchId) {
+      const branch = await prisma.branch.findFirst({ where: { id: input.branchId, schoolId: ctx.schoolId }, select: { id: true } });
+      if (!branch) throw new AppError('BRANCH_NOT_FOUND', 'Şube bulunamadı', 404);
+      branchId = branch.id;
+    }
+    // Şube yöneticisi yalnız kendi şubesinde; tüm-okul (genel) zümre açamaz.
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && (!branchId || branchId !== ctx.branchId)) {
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde zümre açabilirsiniz', 403);
+    }
+
+    const created = await prisma.department.create({ data: { schoolId: ctx.schoolId, branchId, levelId, name, subject } });
+    logger.info('school.department.created', { id: created.id, branchId, levelId, actorId });
     return created;
   }
 }
@@ -305,6 +327,8 @@ export class ListDepartmentsUseCase {
       orderBy: [{ name: 'asc' }],
       include: {
         headUser: { select: { id: true, username: true } },
+        level: { select: { gradeLevel: true } },
+        branch: { select: { name: true } },
         _count: { select: { members: true } },
       },
     });
@@ -312,10 +336,75 @@ export class ListDepartmentsUseCase {
       id: d.id,
       name: d.name,
       subject: d.subject,
+      // Kapsam etiketi (dropdown'larda ayırt etmek için)
+      scope: d.levelId ? 'LEVEL' : d.branchId ? 'BRANCH' : 'SCHOOL',
+      gradeLevel: d.level?.gradeLevel ?? null,
+      branchName: d.branch?.name ?? null,
       headUsername: d.headUser?.username ?? null,
       memberCount: d._count.members,
       createdAt: d.createdAt,
     }));
+  }
+}
+
+/** Zümre ağacı: Tüm Okul (genel) + her Şube (şube geneli zümreler) → her Seviye (seviyeye özel). */
+export class GetDepartmentTreeUseCase {
+  async execute(actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const onlyBranch = ctx.schoolRole === 'BRANCH_ADMIN' ? (ctx.branchId ?? '__none__') : undefined;
+
+    const depts = await prisma.department.findMany({
+      where: { schoolId: ctx.schoolId, ...(onlyBranch ? { branchId: onlyBranch } : {}) },
+      orderBy: [{ subject: 'asc' }, { name: 'asc' }],
+      include: {
+        headUser: { select: { username: true, firstName: true, lastName: true } },
+        _count: { select: { members: true } },
+      },
+    });
+    const branches = await prisma.branch.findMany({
+      where: { schoolId: ctx.schoolId, ...(onlyBranch ? { id: onlyBranch } : {}) },
+      orderBy: [{ createdAt: 'asc' }],
+      include: { levels: { orderBy: [{ gradeLevel: 'asc' }] } },
+    });
+
+    const label = (u: { username: string; firstName: string | null; lastName: string | null } | null) =>
+      u ? ([u.firstName, u.lastName].filter(Boolean).join(' ') || u.username) : null;
+    const map = (d: (typeof depts)[number]) => ({ id: d.id, name: d.name, subject: d.subject, headLabel: label(d.headUser), memberCount: d._count.members });
+
+    const byBranch = new Map<string, ReturnType<typeof map>[]>();
+    const byLevel = new Map<string, ReturnType<typeof map>[]>();
+    const schoolWide: ReturnType<typeof map>[] = [];
+    for (const d of depts) {
+      const m = map(d);
+      if (d.levelId) { const a = byLevel.get(d.levelId) ?? []; a.push(m); byLevel.set(d.levelId, a); }
+      else if (d.branchId) { const a = byBranch.get(d.branchId) ?? []; a.push(m); byBranch.set(d.branchId, a); }
+      else schoolWide.push(m);
+    }
+
+    return {
+      schoolWide,
+      branches: branches.map((b) => ({
+        id: b.id,
+        name: b.name,
+        departments: byBranch.get(b.id) ?? [],
+        levels: b.levels.map((l) => ({ id: l.id, gradeLevel: l.gradeLevel, departments: byLevel.get(l.id) ?? [] })),
+      })),
+    };
+  }
+}
+
+export class DeleteDepartmentUseCase {
+  async execute(departmentId: string, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const dept = await prisma.department.findFirst({ where: { id: departmentId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, _count: { select: { members: true } } } });
+    if (!dept) throw new AppError('DEPARTMENT_NOT_FOUND', 'Zümre bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && dept.branchId !== ctx.branchId) throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    if (dept._count.members > 0) throw new AppError('DEPARTMENT_NOT_EMPTY', 'Önce zümredeki öğretmenleri çıkarın', 409);
+    await prisma.department.delete({ where: { id: departmentId } });
+    logger.info('school.department.deleted', { departmentId, actorId });
+    return { ok: true };
   }
 }
 

@@ -114,6 +114,33 @@ describe('AssignStudentsToClassroomUseCase', () => {
   });
 });
 
+describe('CreateDepartmentUseCase (kapsam)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    p.schoolUser.findFirst.mockResolvedValue(admin);
+    p.schoolLevel.findFirst.mockResolvedValue({ id: 'lv1', branchId: 'b1' });
+    p.branch.findFirst.mockResolvedValue({ id: 'b1' });
+    p.department.create.mockImplementation(async ({ data }: any) => ({ id: 'd1', ...data }));
+  });
+
+  it('seviyeye özel: levelId → branchId seviyeden türetilir', async () => {
+    const r = await new CreateDepartmentUseCase().execute({ name: 'Mat', subject: 'Matematik', levelId: 'lv1' }, 'u0');
+    expect(r.levelId).toBe('lv1'); expect(r.branchId).toBe('b1');
+  });
+  it('şube geneli: branchId → levelId null', async () => {
+    const r = await new CreateDepartmentUseCase().execute({ name: 'Mat', subject: 'Matematik', branchId: 'b1' }, 'u0');
+    expect(r.branchId).toBe('b1'); expect(r.levelId).toBeNull();
+  });
+  it('tüm okul: kapsam yok → ikisi de null', async () => {
+    const r = await new CreateDepartmentUseCase().execute({ name: 'Mat', subject: 'Matematik' }, 'u0');
+    expect(r.branchId).toBeNull(); expect(r.levelId).toBeNull();
+  });
+  it('şube yöneticisi tüm-okul zümresi açamaz → FORBIDDEN_SCHOOL_ROLE', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...admin, schoolRole: 'BRANCH_ADMIN', branchId: 'b1' });
+    await expect(new CreateDepartmentUseCase().execute({ name: 'Mat', subject: 'Matematik' }, 'u0')).rejects.toMatchObject({ code: 'FORBIDDEN_SCHOOL_ROLE' });
+  });
+});
+
 describe('AssignDepartmentMembersUseCase', () => {
   beforeEach(() => {
     jest.clearAllMocks();
