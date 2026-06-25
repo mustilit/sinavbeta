@@ -172,6 +172,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     ...(schoolCtx?.canViewStructure ? [{ name: t("sidebar.esinif.branches", { defaultValue: "Şubeler & Sınıflar" }), page: "SchoolBranches", icon: BookMarked }] : []),
     { name: t("sidebar.esinif.examPool", { defaultValue: "Sınav Havuzu" }), page: "SchoolExamPool", icon: BookOpen },
     { name: t("sidebar.esinif.assignments", { defaultValue: "Ödevler" }), page: "SchoolAssignments", icon: Layers },
+    ...(schoolCtx?.canViewStructure ? [{ name: t("sidebar.esinif.reports", { defaultValue: "Raporlar" }), page: "SchoolReports", icon: BarChart3 }] : []),
     { name: t("sidebar.esinif.live", { defaultValue: "Canlı Sınav" }), page: "SchoolLive", icon: Zap },
   ];
   const isSchoolStudent = schoolCtx?.schoolRole === "STUDENT";

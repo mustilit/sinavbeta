@@ -32,7 +32,9 @@ function avgClass(p) {
 export default function SchoolReports() {
   const { user } = useAuth();
   const role = user?.school?.schoolRole;
-  const canView = role === "SCHOOL_ADMIN" || role === "BRANCH_ADMIN";
+  const isManager = role === "SCHOOL_ADMIN" || role === "BRANCH_ADMIN";
+  // Alt roller (seviye sorumlusu / sınıf öğretmeni / zümre başkanı) kapsamı kadar görür.
+  const canView = !!role && (isManager || user?.school?.canViewStructure);
 
   const [tab, setTab] = useState("branches"); // branches | levels | classrooms
   const [range, setRange] = useState("all");
@@ -41,15 +43,9 @@ export default function SchoolReports() {
   const [departmentId, setDepartmentId] = useState("ALL");
   const [detailFor, setDetailFor] = useState(null); // classroom row
 
-  // Filtre seçenekleri
-  const { data: allClasses = [] } = useQuery({ queryKey: ["esinif", "classrooms", "all"], queryFn: () => schoolApi.listClassrooms(), enabled: canView });
-  const { data: departments = [] } = useQuery({ queryKey: ["esinif", "departments"], queryFn: schoolApi.listDepartments, enabled: canView });
-
-  const grades = useMemo(() => [...new Set(allClasses.map((c) => c.gradeLevel))].sort((a, b) => a - b), [allClasses]);
-  const classOptions = useMemo(
-    () => allClasses.filter((c) => gradeLevel === "ALL" || c.gradeLevel === Number(gradeLevel)),
-    [allClasses, gradeLevel],
-  );
+  // Filtre seçenekleri — yönetici tüm okuldan; alt roller kapsam (breakdown) verisinden türetir.
+  const { data: allClasses = [] } = useQuery({ queryKey: ["esinif", "classrooms", "all"], queryFn: () => schoolApi.listClassrooms(), enabled: isManager });
+  const { data: departments = [] } = useQuery({ queryKey: ["esinif", "departments"], queryFn: schoolApi.listDepartments, enabled: isManager });
 
   const from = useMemo(() => {
     const r = RANGES.find((x) => x.value === range);
@@ -76,6 +72,11 @@ export default function SchoolReports() {
   const branches = data?.branches ?? [];
   const levels = data?.levels ?? [];
   const classrooms = data?.classrooms ?? [];
+  // Alt roller için filtre seçenekleri breakdown verisinden türetilir (kapsam dışını göstermez)
+  const grades = isManager
+    ? [...new Set(allClasses.map((c) => c.gradeLevel))].sort((a, b) => a - b)
+    : [...new Set(levels.map((l) => l.gradeLevel))].sort((a, b) => a - b);
+  const classOptions = (isManager ? allClasses : classrooms).filter((c) => gradeLevel === "ALL" || c.gradeLevel === Number(gradeLevel));
   const byDepartment = data?.byDepartment ?? [];
   const timeseries = data?.timeseries ?? [];
   const highlights = data?.highlights ?? { bestBranch: null, bestClassByLevel: [] };
@@ -117,10 +118,12 @@ export default function SchoolReports() {
           <label className="text-xs text-slate-500 mb-1 block">Sınıf</label>
           <Select value={classroomId} onValueChange={setClassroomId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ALL">Tüm sınıflar</SelectItem>{classOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
         </div>
-        <div>
-          <label className="text-xs text-slate-500 mb-1 block">Zümre</label>
-          <Select value={departmentId} onValueChange={setDepartmentId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ALL">Tüm zümreler</SelectItem>{departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select>
-        </div>
+        {isManager && (
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">Zümre</label>
+            <Select value={departmentId} onValueChange={setDepartmentId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ALL">Tüm zümreler</SelectItem>{departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select>
+          </div>
+        )}
       </div>
 
       {/* Sekmeler */}

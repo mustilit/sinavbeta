@@ -166,3 +166,14 @@ export async function resolveSchoolScope(userId: string | undefined): Promise<Sc
 export function scopeIsEmpty(scope: SchoolScope): boolean {
   return !scope.wholeSchool && !scope.fullBranchIds.length && !scope.fullLevelIds.length && !scope.soloClassroomIds.length;
 }
+
+/** Kapsama uygun Classroom where parçası (schoolId dahil). wholeSchool → tüm okul. */
+export function scopedClassroomWhere(scope: SchoolScope): Record<string, unknown> {
+  if (scope.wholeSchool) return { schoolId: scope.schoolId };
+  const or: Array<Record<string, unknown>> = [];
+  if (scope.fullBranchIds.length) or.push({ branchId: { in: scope.fullBranchIds } });
+  if (scope.fullLevelIds.length) or.push({ levelId: { in: scope.fullLevelIds } });
+  if (scope.soloClassroomIds.length) or.push({ id: { in: scope.soloClassroomIds } });
+  if (!or.length) return { id: '__none__' }; // hiçbir şey
+  return { schoolId: scope.schoolId, OR: or };
+}

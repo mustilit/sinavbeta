@@ -2,7 +2,12 @@
  * E-Sınıf Raporlama use-case'leri — overview / şube / filtreli kırılım / sınıf detayı.
  */
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
-  prisma: { schoolUser: { findFirst: jest.fn() } },
+  prisma: {
+    schoolUser: { findFirst: jest.fn(), findUnique: jest.fn() },
+    schoolLevel: { findMany: jest.fn() },
+    classroom: { findMany: jest.fn() },
+    department: { findMany: jest.fn() },
+  },
 }));
 jest.mock('../../../src/infrastructure/database/dbRouter', () => ({ prismaRead: jest.fn() }));
 
@@ -22,6 +27,11 @@ const admin = { id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchI
 beforeEach(() => {
   jest.clearAllMocks();
   p.schoolUser.findFirst.mockResolvedValue(admin);
+  // resolveSchoolScope yardımcıları (prisma; prismaRead'den ayrı)
+  p.schoolUser.findUnique.mockResolvedValue({ userId: 'u0', departmentId: null });
+  p.schoolLevel.findMany.mockResolvedValue([]);
+  p.classroom.findMany.mockResolvedValue([]);
+  p.department.findMany.mockResolvedValue([]);
 });
 
 describe('GetSchoolReportUseCase (overview)', () => {
@@ -88,7 +98,7 @@ describe('GetFilteredReportUseCase', () => {
     expect(r.highlights.bestBranch).toMatchObject({ id: 'b1' });
     expect(r.highlights.bestClassByLevel[0].classroom).toMatchObject({ id: 'c1' });
   });
-  it('şube yöneticisi yalnız kendi şubesi (branchScope)', async () => {
+  it('şube yöneticisi yalnız kendi şubesi (kapsam OR)', async () => {
     p.schoolUser.findFirst.mockResolvedValue({ ...admin, schoolRole: 'BRANCH_ADMIN', branchId: 'b1' });
     const classroomFindMany = jest.fn().mockResolvedValue([]);
     read.mockReturnValue({
@@ -98,7 +108,8 @@ describe('GetFilteredReportUseCase', () => {
       schoolSubmission: { findMany: jest.fn().mockResolvedValue([]) },
     });
     await new GetFilteredReportUseCase().execute({}, 'u0');
-    expect(classroomFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ branchId: 'b1' }) }));
+    const where = classroomFindMany.mock.calls[0][0].where;
+    expect(where.OR).toEqual(expect.arrayContaining([{ branchId: { in: ['b1'] } }]));
   });
 });
 
