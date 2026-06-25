@@ -6,7 +6,7 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopeIsEmpty } from './schoolHelpers';
 
 // ── Şube ──────────────────────────────────────────────────────────────────
 export class CreateBranchUseCase {
@@ -180,12 +180,28 @@ export class DeleteClassroomUseCase {
 /** Şube → Seviye → Sınıf ağacı (yöneticiler + öğrenci sayıları ile). */
 export class GetSchoolTreeUseCase {
   async execute(actorId?: string) {
-    const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
-    const onlyBranch = ctx.schoolRole === 'BRANCH_ADMIN' ? (ctx.branchId ?? '__none__') : undefined;
+    // Görüntüleme kapsamı: SCHOOL_ADMIN tüm okul; alt roller yetki alanı kadar.
+    const scope = await resolveSchoolScope(actorId);
+    if (scopeIsEmpty(scope)) return [];
+
+    // Kapsamdaki şubeleri belirle (tam şube + tam seviyelerin şubesi + tekil sınıfların şubesi)
+    let branchIdFilter: string[] | null = null;
+    if (!scope.wholeSchool) {
+      const ids = new Set(scope.fullBranchIds);
+      if (scope.fullLevelIds.length) {
+        const lv = await prisma.schoolLevel.findMany({ where: { id: { in: scope.fullLevelIds } }, select: { branchId: true } });
+        lv.forEach((l) => ids.add(l.branchId));
+      }
+      if (scope.soloClassroomIds.length) {
+        const cl = await prisma.classroom.findMany({ where: { id: { in: scope.soloClassroomIds } }, select: { branchId: true } });
+        cl.forEach((c) => ids.add(c.branchId));
+      }
+      if (!ids.size) return [];
+      branchIdFilter = [...ids];
+    }
 
     const branches = await prisma.branch.findMany({
-      where: { schoolId: ctx.schoolId, ...(onlyBranch ? { id: onlyBranch } : {}) },
+      where: { schoolId: scope.schoolId, ...(branchIdFilter ? { id: { in: branchIdFilter } } : {}) },
       orderBy: [{ createdAt: 'asc' }],
       include: {
         adminUser: { select: { id: true, username: true, firstName: true, lastName: true } },
@@ -207,27 +223,37 @@ export class GetSchoolTreeUseCase {
 
     const label = (u: { username: string; firstName: string | null; lastName: string | null } | null) =>
       u ? ([u.firstName, u.lastName].filter(Boolean).join(' ') || u.username) : null;
+    const fullBranch = new Set(scope.fullBranchIds);
+    const fullLevel = new Set(scope.fullLevelIds);
+    const solo = new Set(scope.soloClassroomIds);
 
-    return branches.map((b) => ({
-      id: b.id,
-      name: b.name,
-      adminUserId: b.adminUserId,
-      adminLabel: label(b.adminUser),
-      levels: b.levels.map((l) => ({
-        id: l.id,
-        gradeLevel: l.gradeLevel,
-        adminUserId: l.adminUserId,
-        adminLabel: label(l.adminUser),
-        classrooms: l.classrooms.map((c) => ({
-          id: c.id,
-          name: c.name,
-          gradeLevel: c.gradeLevel,
-          adminUserId: c.adminUserId,
-          adminLabel: label(c.adminUser),
-          studentCount: c._count.students,
-        })),
-      })),
-    }));
+    const out = [];
+    for (const b of branches) {
+      const branchAll = scope.wholeSchool || fullBranch.has(b.id);
+      const levels = [];
+      for (const l of b.levels) {
+        const levelAll = branchAll || fullLevel.has(l.id);
+        const classrooms = (levelAll ? l.classrooms : l.classrooms.filter((c) => solo.has(c.id)));
+        if (!levelAll && classrooms.length === 0) continue; // kapsam dışı seviye
+        levels.push({
+          id: l.id,
+          gradeLevel: l.gradeLevel,
+          adminUserId: l.adminUserId,
+          adminLabel: label(l.adminUser),
+          classrooms: classrooms.map((c) => ({
+            id: c.id,
+            name: c.name,
+            gradeLevel: c.gradeLevel,
+            adminUserId: c.adminUserId,
+            adminLabel: label(c.adminUser),
+            studentCount: c._count.students,
+          })),
+        });
+      }
+      if (!branchAll && levels.length === 0) continue; // kapsam dışı şube
+      out.push({ id: b.id, name: b.name, adminUserId: b.adminUserId, adminLabel: label(b.adminUser), levels });
+    }
+    return out;
   }
 }
 

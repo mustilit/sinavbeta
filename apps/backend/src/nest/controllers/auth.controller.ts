@@ -174,7 +174,17 @@ export class AuthController {
           branchId: su.branchId,
           schoolName: su.school?.name ?? null,
           schoolCode: su.school?.code ?? null,
+          // Alt roller (seviye sorumlusu / sınıf öğretmeni / zümre başkanı) yönetim
+          // yapısını yetki alanı kadar görebilir — sidebar bu bayrakla menüyü açar.
+          canViewStructure: false,
         };
+        try {
+          const { resolveSchoolScope, scopeIsEmpty } = await import('../../application/use-cases/school/schoolHelpers');
+          const scope = await resolveSchoolScope(user.id);
+          userResponse.school.canViewStructure = !scopeIsEmpty(scope);
+        } catch {
+          /* kapsam çözülemezse yapı menüsü kapalı kalır */
+        }
       }
     } catch {
       /* okul bağlamı kritik değil — yoksa marketplace kullanıcısı gibi davran */

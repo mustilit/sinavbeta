@@ -167,6 +167,8 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   ];
   const teacherLinks = [
     { name: t("sidebar.esinif.panel", { defaultValue: "Okul Paneli" }), page: "SchoolPanel", icon: Home },
+    // Seviye sorumlusu / sınıf öğretmeni / zümre başkanı yetki alanı kadar yapıyı görür
+    ...(schoolCtx?.canViewStructure ? [{ name: t("sidebar.esinif.branches", { defaultValue: "Şubeler & Sınıflar" }), page: "SchoolBranches", icon: BookMarked }] : []),
     { name: t("sidebar.esinif.examPool", { defaultValue: "Sınav Havuzu" }), page: "SchoolExamPool", icon: BookOpen },
     { name: t("sidebar.esinif.assignments", { defaultValue: "Ödevler" }), page: "SchoolAssignments", icon: Layers },
     { name: t("sidebar.esinif.live", { defaultValue: "Canlı Sınav" }), page: "SchoolLive", icon: Zap },
