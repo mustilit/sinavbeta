@@ -7,7 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, nextSchoolUsername, generateTempPassword, type SchoolRoleStr } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, isManagerForBranch, resolveSchoolScope, scopeIsEmpty, nextSchoolUsername, generateTempPassword, type SchoolRoleStr } from './schoolHelpers';
 
 const ASSIGNABLE: SchoolRoleStr[] = ['BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER', 'STUDENT'];
 
@@ -105,15 +105,15 @@ export class BulkCreateStudentsUseCase {
     actorId?: string,
   ): Promise<{ count: number; created: Array<{ name: string; username: string; studentNo: string | null; tempPassword: string }> }> {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
 
     const school = await prisma.school.findUnique({ where: { id: ctx.schoolId }, select: { id: true, code: true, tenantId: true, maxUsers: true } });
     if (!school) throw new AppError('SCHOOL_NOT_FOUND', 'Okul bulunamadı', 404);
 
-    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, adminUserId: true, level: { select: { adminUserId: true } } } });
     if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
-    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== classroom.branchId) {
-      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenize öğrenci ekleyebilirsiniz', 403);
+    // Yetki: yönetici, sınıf öğretmeni (kendi sınıfı) veya seviyenin sorumlusu.
+    if (!isManagerForBranch(ctx, classroom.branchId) && classroom.adminUserId !== ctx.userId && classroom.level?.adminUserId !== ctx.userId) {
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu sınıfa öğrenci ekleme yetkiniz yok', 403);
     }
 
     const rows = (input.students ?? [])
@@ -169,9 +169,28 @@ export class BulkCreateStudentsUseCase {
 export class ListSchoolUsersUseCase {
   async execute(input: { role?: string; q?: string; branchId?: string; cursor?: string | null; limit?: number }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
     const take = Math.min(Math.max(input.limit ?? 30, 1), 100);
     const text = (input.q ?? '').trim();
+
+    // Yönetici değilse: kapsamına (designation) göre kendi şube(ler)iyle sınırlı liste —
+    // sınıf öğretmeni/seviye sorumlusu/zümre başkanı atama seçici (picker) açabilsin.
+    let scopedBranchFilter: Record<string, unknown> = {};
+    if (ctx.schoolRole !== 'SCHOOL_ADMIN' && ctx.schoolRole !== 'BRANCH_ADMIN') {
+      const scope = await resolveSchoolScope(actorId);
+      if (scopeIsEmpty(scope) && !scope.departmentIds.length) throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu işlem için yetkiniz yok', 403);
+      if (!scope.wholeSchool) {
+        const branchIds = new Set<string>(scope.fullBranchIds);
+        if (scope.fullLevelIds.length) {
+          const lv = await prisma.schoolLevel.findMany({ where: { id: { in: scope.fullLevelIds } }, select: { branchId: true } });
+          lv.forEach((l) => l.branchId && branchIds.add(l.branchId));
+        }
+        if (scope.soloClassroomIds.length) {
+          const cl = await prisma.classroom.findMany({ where: { id: { in: scope.soloClassroomIds } }, select: { branchId: true } });
+          cl.forEach((c) => c.branchId && branchIds.add(c.branchId));
+        }
+        scopedBranchFilter = branchIds.size ? { branchId: { in: [...branchIds] } } : { id: '__none__' };
+      }
+    }
 
     const rows = await prisma.schoolUser.findMany({
       where: {
@@ -179,6 +198,7 @@ export class ListSchoolUsersUseCase {
         ...(input.role && ASSIGNABLE.concat('SCHOOL_ADMIN' as any).includes(input.role as any) ? { schoolRole: input.role as any } : {}),
         // Şube yöneticisi yalnız kendi şubesi; okul yöneticisi seçtiği şube ile filtreler
         ...(ctx.schoolRole === 'BRANCH_ADMIN' ? { branchId: ctx.branchId ?? '__none__' } : (input.branchId ? { branchId: input.branchId } : {})),
+        ...scopedBranchFilter,
         ...(text ? { username: { contains: text, mode: 'insensitive' as const } } : {}),
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],

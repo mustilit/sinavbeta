@@ -49,6 +49,7 @@ export function generateTempPassword(len = 8): string {
 
 export type SchoolContext = {
   schoolUserId: string;
+  userId: string; // actor User.id (designation kontrolleri için: adminUserId/headUserId)
   schoolId: string;
   schoolRole: SchoolRoleStr;
   branchId: string | null;
@@ -69,6 +70,7 @@ export async function resolveSchoolContext(userId: string | undefined): Promise<
   if (!su) throw new AppError('NOT_SCHOOL_USER', 'Bu hesap bir okula bağlı değil', 403);
   return {
     schoolUserId: su.id,
+    userId,
     schoolId: su.schoolId,
     schoolRole: su.schoolRole as SchoolRoleStr,
     branchId: su.branchId,
@@ -82,6 +84,13 @@ export function requireSchoolRole(ctx: SchoolContext, ...roles: SchoolRoleStr[])
   if (!roles.includes(ctx.schoolRole)) {
     throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu işlem için yetkiniz yok', 403);
   }
+}
+
+/** Okul/şube yöneticisi mi (verilen şube için)? Sınırlı yönetim yetki kontrollerinde temel. */
+export function isManagerForBranch(ctx: SchoolContext, branchId: string | null): boolean {
+  if (ctx.schoolRole === 'SCHOOL_ADMIN') return true;
+  if (ctx.schoolRole === 'BRANCH_ADMIN') return !!branchId && ctx.branchId === branchId;
+  return false;
 }
 
 /**

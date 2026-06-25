@@ -6,7 +6,7 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopeIsEmpty } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopeIsEmpty, isManagerForBranch } from './schoolHelpers';
 
 // ── Şube ──────────────────────────────────────────────────────────────────
 export class CreateBranchUseCase {
@@ -126,17 +126,17 @@ export class CreateClassroomUseCase {
   /** Sınıf bir SEVİYE altında oluşturulur; şube/gradeLevel seviyeden türetilir. */
   async execute(input: { levelId: string; name: string }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
     const name = (input.name ?? '').trim();
     if (!name) throw new AppError('NAME_REQUIRED', 'Sınıf adı zorunlu', 400);
 
     const level = await prisma.schoolLevel.findFirst({
       where: { id: input.levelId, schoolId: ctx.schoolId },
-      select: { id: true, branchId: true, gradeLevel: true },
+      select: { id: true, branchId: true, gradeLevel: true, adminUserId: true },
     });
     if (!level) throw new AppError('LEVEL_NOT_FOUND', 'Seviye bulunamadı', 404);
-    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== level.branchId)
-      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenize sınıf ekleyebilirsiniz', 403);
+    // Yetki: okul/şube yöneticisi veya bu seviyenin sorumlusu (seviye sorumlusu).
+    if (!isManagerForBranch(ctx, level.branchId) && level.adminUserId !== ctx.userId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu seviyeye sınıf ekleme yetkiniz yok', 403);
 
     const created = await prisma.classroom.create({
       data: { schoolId: ctx.schoolId, branchId: level.branchId, levelId: level.id, name, gradeLevel: level.gradeLevel },
@@ -149,11 +149,11 @@ export class CreateClassroomUseCase {
 export class AssignClassroomAdminUseCase {
   async execute(classroomId: string, input: { schoolUserId: string }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
-    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, level: { select: { adminUserId: true } } } });
     if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
-    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== classroom.branchId)
-      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    // Yetki: okul/şube yöneticisi veya bu sınıfın seviyesinin sorumlusu.
+    if (!isManagerForBranch(ctx, classroom.branchId) && classroom.level?.adminUserId !== ctx.userId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu sınıfta işlem yetkiniz yok', 403);
     const su = await prisma.schoolUser.findFirst({ where: { id: input.schoolUserId, schoolId: ctx.schoolId }, select: { userId: true } });
     if (!su) throw new AppError('USER_NOT_FOUND', 'Kullanıcı bulunamadı', 404);
     await prisma.classroom.update({ where: { id: classroomId }, data: { adminUserId: su.userId } });
@@ -165,11 +165,10 @@ export class AssignClassroomAdminUseCase {
 export class DeleteClassroomUseCase {
   async execute(classroomId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
-    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, _count: { select: { students: true } } } });
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, level: { select: { adminUserId: true } }, _count: { select: { students: true } } } });
     if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
-    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== classroom.branchId)
-      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    if (!isManagerForBranch(ctx, classroom.branchId) && classroom.level?.adminUserId !== ctx.userId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu sınıfta işlem yetkiniz yok', 403);
     if (classroom._count.students > 0) throw new AppError('CLASSROOM_NOT_EMPTY', 'Önce sınıftaki öğrencileri çıkarın', 409);
     await prisma.classroom.delete({ where: { id: classroomId } });
     logger.info('school.classroom.deleted', { classroomId, actorId });
@@ -285,9 +284,11 @@ export class ListClassroomsUseCase {
 export class AssignStudentsToClassroomUseCase {
   async execute(classroomId: string, input: { schoolUserIds: string[] }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
-    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, adminUserId: true, level: { select: { adminUserId: true } } } });
     if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    // Yetki: yönetici, sınıf öğretmeni (kendi sınıfı) veya seviyenin sorumlusu.
+    if (!isManagerForBranch(ctx, classroom.branchId) && classroom.adminUserId !== ctx.userId && classroom.level?.adminUserId !== ctx.userId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu sınıfta işlem yetkiniz yok', 403);
 
     const ids = [...new Set(input.schoolUserIds ?? [])];
     if (ids.length === 0) throw new AppError('NO_STUDENTS', 'En az bir öğrenci seçin', 400);
@@ -412,7 +413,7 @@ export class GetDepartmentTreeUseCase {
 
     const label = (u: { username: string; firstName: string | null; lastName: string | null } | null) =>
       u ? ([u.firstName, u.lastName].filter(Boolean).join(' ') || u.username) : null;
-    const map = (d: (typeof depts)[number]) => ({ id: d.id, name: d.name, subject: d.subject, headLabel: label(d.headUser), memberCount: d._count.members });
+    const map = (d: (typeof depts)[number]) => ({ id: d.id, name: d.name, subject: d.subject, headUserId: d.headUserId, headLabel: label(d.headUser), memberCount: d._count.members });
 
     const byBranch = new Map<string, ReturnType<typeof map>[]>();
     const byLevel = new Map<string, ReturnType<typeof map>[]>();
@@ -455,10 +456,11 @@ export class DeleteDepartmentUseCase {
 export class GetDepartmentMembersUseCase {
   async execute(departmentId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
     const dept = await prisma.department.findFirst({ where: { id: departmentId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, headUserId: true } });
     if (!dept) throw new AppError('DEPARTMENT_NOT_FOUND', 'Zümre bulunamadı', 404);
-    if (ctx.schoolRole === 'BRANCH_ADMIN' && dept.branchId !== ctx.branchId) throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    // Yetki: yönetici veya bu zümrenin başkanı (aday listesini görebilsin).
+    if (!isManagerForBranch(ctx, dept.branchId) && dept.headUserId !== ctx.userId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu zümrede işlem yetkiniz yok', 403);
 
     const teachers = await prisma.schoolUser.findMany({
       where: { schoolId: ctx.schoolId, schoolRole: { in: ['TEACHER', 'DEPT_HEAD'] as any } },
@@ -485,10 +487,11 @@ export class GetDepartmentMembersUseCase {
 export class AssignDepartmentMembersUseCase {
   async execute(departmentId: string, input: { schoolUserIds: string[]; headSchoolUserId?: string | null }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
-    const dept = await prisma.department.findFirst({ where: { id: departmentId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+    const dept = await prisma.department.findFirst({ where: { id: departmentId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, headUserId: true } });
     if (!dept) throw new AppError('DEPARTMENT_NOT_FOUND', 'Zümre bulunamadı', 404);
-    if (ctx.schoolRole === 'BRANCH_ADMIN' && dept.branchId !== ctx.branchId) throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    // Yetki: yönetici veya bu zümrenin başkanı (kendi zümresi).
+    if (!isManagerForBranch(ctx, dept.branchId) && dept.headUserId !== ctx.userId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu zümrede işlem yetkiniz yok', 403);
 
     const desiredIds = [...new Set(input.schoolUserIds ?? [])];
     const valid = desiredIds.length
