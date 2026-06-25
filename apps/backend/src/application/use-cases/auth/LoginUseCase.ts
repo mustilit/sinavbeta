@@ -106,7 +106,22 @@ export class LoginUseCase {
     // uyarı maili gönderilir, giriş serbest. Bu blok 2FA dalından ÖNCE çalışır → 2FA açık
     // olsa bile admin önce cihazı onaylamadan pendingMfaToken dahi alamaz.
     if (this.notifyDevice) {
-      const requireTrust = user.role === 'ADMIN' || user.role === 'WORKER';
+      // ADMIN/WORKER her zaman; E-Sınıf Okul Yöneticisi (SchoolUser.schoolRole
+      // === 'SCHOOL_ADMIN') de yeni/bilinmeyen cihazda e-posta ile onay vermeden
+      // içeri alınmaz. Okul yöneticisi gerçek e-postasıyla atanır → doğrulama maili ulaşır.
+      let requireTrust = user.role === 'ADMIN' || user.role === 'WORKER';
+      if (!requireTrust) {
+        try {
+          const sa = await prisma.schoolUser.findFirst({
+            where: { userId: user.id, schoolRole: 'SCHOOL_ADMIN' as any, isActive: true },
+            select: { id: true },
+          });
+          requireTrust = !!sa;
+        } catch {
+          // fail-soft: okul rolü çözülemezse cihaz kapısını zorlamayız (login DB zaten çalıştı)
+          requireTrust = false;
+        }
+      }
       let device: { requiresVerification: boolean } | undefined;
       try {
         device = await this.notifyDevice.execute({

@@ -2162,11 +2162,22 @@ export const candidateWritten = {
 export const adminSchools = {
   listPeriods: async () => (await api.get('/admin/academic-periods')).data,
   createPeriod: async (body) => (await api.post('/admin/academic-periods', body)).data,
-  list: async () => (await api.get('/admin/schools')).data,
+  /** { items, total, page, pageSize, totalPages } döner. Filtre: q, schoolType, adminEmail, periodId */
+  list: async ({ q, schoolType, adminEmail, periodId, page, pageSize } = {}) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (schoolType) params.set('schoolType', schoolType);
+    if (adminEmail) params.set('adminEmail', adminEmail);
+    if (periodId) params.set('periodId', periodId);
+    if (page) params.set('page', String(page));
+    if (pageSize) params.set('pageSize', String(pageSize));
+    const qs = params.toString();
+    return (await api.get(`/admin/schools${qs ? `?${qs}` : ''}`)).data;
+  },
   create: async (body) => (await api.post('/admin/schools', body)).data,
   update: async (id, body) => (await api.patch(`/admin/schools/${id}`, body)).data,
   deactivate: async (id) => (await api.delete(`/admin/schools/${id}`)).data,
-  /** { username, tempPassword } döner */
+  /** body: { email, firstName?, lastName? } → { email, tempPassword } döner */
   assignAdmin: async (id, body) => (await api.post(`/admin/schools/${id}/assign-admin`, body)).data,
 };
 

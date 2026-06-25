@@ -81,6 +81,11 @@ export default function Login() {
           <span className="text-2xl font-bold text-slate-900">{t('common:sidebar.brandName')}</span>
         </Link>
         <h1 className="text-2xl font-bold text-slate-900 mb-6 text-center">{t('auth:login.title')}</h1>
+        {isSchool && (
+          <div className="mb-4 px-4 py-3 rounded-lg bg-indigo-50 border border-indigo-200 text-sm text-indigo-900">
+            {t('auth:login.schoolHint', { defaultValue: 'Kullanıcı adı ve şifreniz okulunuz/kurumunuz tarafından size verilecektir. Giriş yapamıyor iseniz lütfen yetkili kişiden bilgilerinizi öğreniniz.' })}
+          </div>
+        )}
         {sessionReplaced && (
           <div
             role="alert"

@@ -8,9 +8,10 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { getDefaultTenantId } from '../../../common/tenant';
 import { logger } from '../../../infrastructure/logger/logger';
-import { formatSchoolUsername, generateTempPassword } from './schoolHelpers';
+import { generateTempPassword } from './schoolHelpers';
 
 const CODE_RE = /^[A-Z0-9]{3,5}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ── Akademik Dönem ──────────────────────────────────────────────────────────
 export class CreateAcademicPeriodUseCase {
@@ -71,17 +72,49 @@ export class CreateSchoolUseCase {
 }
 
 export class ListSchoolsUseCase {
-  async execute() {
-    const rows = await prisma.school.findMany({
-      where: { deletedAt: null },
-      orderBy: [{ createdAt: 'desc' }],
-      include: {
-        period: { select: { id: true, name: true } },
-        adminUser: { select: { id: true, username: true } },
-        _count: { select: { schoolUsers: true, branches: true, departments: true } },
-      },
-    });
-    return rows.map((s) => ({
+  async execute(
+    params: {
+      q?: string;
+      schoolType?: string;
+      adminEmail?: string;
+      periodId?: string;
+      page?: number;
+      pageSize?: number;
+    } = {},
+  ) {
+    const page = Math.max(1, Math.floor(params.page ?? 1));
+    const pageSize = Math.min(100, Math.max(1, Math.floor(params.pageSize ?? 12)));
+    const q = (params.q ?? '').trim();
+    const adminEmail = (params.adminEmail ?? '').trim();
+
+    const where: Record<string, unknown> = { deletedAt: null };
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { code: { contains: q, mode: 'insensitive' } },
+        { city: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+    if (params.schoolType) where.schoolType = params.schoolType as any;
+    if (params.periodId) where.periodId = params.periodId;
+    if (adminEmail) where.adminUser = { email: { contains: adminEmail, mode: 'insensitive' } };
+
+    const [total, rows] = await Promise.all([
+      prisma.school.count({ where: where as any }),
+      prisma.school.findMany({
+        where: where as any,
+        orderBy: [{ createdAt: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          period: { select: { id: true, name: true } },
+          adminUser: { select: { id: true, username: true, email: true, firstName: true, lastName: true } },
+          _count: { select: { schoolUsers: true, branches: true, departments: true } },
+        },
+      }),
+    ]);
+
+    const items = rows.map((s) => ({
       id: s.id,
       name: s.name,
       code: s.code,
@@ -89,6 +122,8 @@ export class ListSchoolsUseCase {
       schoolType: s.schoolType,
       period: s.period,
       adminUsername: s.adminUser?.username ?? null,
+      adminEmail: s.adminUser?.email ?? null,
+      adminName: [s.adminUser?.firstName, s.adminUser?.lastName].filter(Boolean).join(' ') || null,
       maxUsers: s.maxUsers,
       userCount: s._count.schoolUsers,
       branchCount: s._count.branches,
@@ -98,6 +133,8 @@ export class ListSchoolsUseCase {
       isActive: s.isActive,
       createdAt: s.createdAt,
     }));
+
+    return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
   }
 }
 
@@ -139,30 +176,37 @@ export class DeactivateSchoolUseCase {
 }
 
 /**
- * Okul Yöneticisi atama — yeni bir User + SchoolUser(SCHOOL_ADMIN) oluşturur,
- * otomatik username (KOD-A-0001) + geçici şifre üretir, School.adminUserId'yi bağlar.
+ * Okul Yöneticisi atama — yöneticinin GERÇEK e-posta adresiyle yeni bir
+ * User + SchoolUser(SCHOOL_ADMIN) oluşturur. Sistem otomatik kullanıcı adı ÜRETMEZ;
+ * yönetici e-postasıyla giriş yapar. Yalnızca geçici şifre üretilir.
+ * `username` (şema zorunlu/unique) e-posta değerine ayarlanır — ayrı bir tanımlayıcı yok.
  * Var olan yöneticiyi değiştirmek için eski bağlantı bırakılır (yeni admin atanır).
  */
 export class AssignSchoolAdminUseCase {
   async execute(
     schoolId: string,
-    input: { firstName?: string; lastName?: string },
+    input: { email: string; firstName?: string; lastName?: string },
     actorId?: string | null,
-  ): Promise<{ username: string; tempPassword: string }> {
+  ): Promise<{ email: string; tempPassword: string }> {
     const school = await prisma.school.findUnique({ where: { id: schoolId }, select: { id: true, code: true, tenantId: true } });
     if (!school) throw new AppError('SCHOOL_NOT_FOUND', 'Okul bulunamadı', 404);
+
+    const email = (input.email ?? '').trim().toLowerCase();
+    if (!EMAIL_RE.test(email)) throw new AppError('INVALID_EMAIL', 'Geçerli bir e-posta adresi girin', 400);
+
+    // E-posta sistemde kayıtlıysa hesap çakışması olur — mevcut bir hesabı sessizce
+    // okul yöneticisine dönüştürmeyiz.
+    const clash = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (clash) throw new AppError('EMAIL_TAKEN', 'Bu e-posta zaten kayıtlı', 409);
 
     const tempPassword = generateTempPassword();
     const passwordHash = await bcrypt.hash(tempPassword, 12);
 
-    const result = await prisma.$transaction(async (tx) => {
-      const seq = (await tx.schoolUser.count({ where: { schoolId, schoolRole: 'SCHOOL_ADMIN' as any } })) + 1;
-      const username = formatSchoolUsername(school.code, 'SCHOOL_ADMIN', seq);
-
+    await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
-          email: `${username.toLowerCase()}@esinif.local`,
-          username,
+          email,
+          username: email, // okul yöneticisi e-posta ile giriş yapar; ayrı kullanıcı adı üretilmez
           firstName: (input.firstName ?? '').trim() || null,
           lastName: (input.lastName ?? '').trim() || null,
           passwordHash,
@@ -175,14 +219,13 @@ export class AssignSchoolAdminUseCase {
       });
 
       await tx.schoolUser.create({
-        data: { userId: user.id, schoolId, schoolRole: 'SCHOOL_ADMIN' as any, username },
+        data: { userId: user.id, schoolId, schoolRole: 'SCHOOL_ADMIN' as any, username: email },
       });
 
       await tx.school.update({ where: { id: schoolId }, data: { adminUserId: user.id } });
-      return { username };
     });
 
-    logger.info('school.admin_assigned', { schoolId, username: result.username, actorId });
-    return { username: result.username, tempPassword };
+    logger.info('school.admin_assigned', { schoolId, email, actorId });
+    return { email, tempPassword };
   }
 }

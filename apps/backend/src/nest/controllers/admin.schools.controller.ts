@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Req } from '@nestjs/common';
-import { IsString, IsOptional, IsInt, Min, IsIn, IsISO8601, IsBoolean, MaxLength } from 'class-validator';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Req } from '@nestjs/common';
+import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsInt, Min, IsIn, IsISO8601, IsBoolean, IsEmail, MaxLength } from 'class-validator';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../swagger/decorators';
 import { Roles } from '../decorators/roles.decorator';
@@ -40,8 +41,18 @@ class UpdateSchoolDto {
 }
 
 class AssignSchoolAdminDto {
+  @IsEmail() @MaxLength(160) email!: string;
   @IsOptional() @IsString() @MaxLength(60) firstName?: string;
   @IsOptional() @IsString() @MaxLength(60) lastName?: string;
+}
+
+class ListSchoolsQueryDto {
+  @IsOptional() @IsString() @MaxLength(80) q?: string;
+  @IsOptional() @IsIn(['PRIMARY', 'MIDDLE', 'HIGH', 'MIXED']) schoolType?: string;
+  @IsOptional() @IsString() @MaxLength(160) adminEmail?: string;
+  @IsOptional() @IsString() periodId?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) pageSize?: number;
 }
 
 /** Platform Admin — E-Sınıf okul + dönem yönetimi. */
@@ -78,10 +89,10 @@ export class AdminSchoolsController {
   @Get('schools')
   @Roles('ADMIN')
   @ApiBearerAuth('bearer')
-  @ApiOkResponse({ description: 'Okul listesi' })
+  @ApiOkResponse({ description: 'Okul listesi (filtre + sayfalama)' })
   @ApiErrorResponses()
-  listSchools() {
-    return this.listSchoolsUC.execute();
+  listSchools(@Query() q: ListSchoolsQueryDto) {
+    return this.listSchoolsUC.execute(q);
   }
 
   @Post('schools')

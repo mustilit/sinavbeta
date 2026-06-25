@@ -13,8 +13,13 @@ export default function CredentialsDialog({ open, onClose, creds, title = "Kulla
   const [copied, setCopied] = useState(false);
   if (!creds) return null;
 
+  // Okul yöneticisi e-posta ile, öğrenci/öğretmen kullanıcı adı ile giriş yapar.
+  const isEmail = !creds.username && !!creds.email;
+  const identifier = creds.username ?? creds.email;
+  const identifierLabel = isEmail ? "E-posta" : "Kullanıcı adı";
+
   const copyAll = async () => {
-    const text = `Kullanıcı adı: ${creds.username}\nGeçici şifre: ${creds.tempPassword}`;
+    const text = `${identifierLabel}: ${identifier}\nGeçici şifre: ${creds.tempPassword}`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -42,8 +47,8 @@ export default function CredentialsDialog({ open, onClose, creds, title = "Kulla
           </p>
           <div className="rounded-lg border border-slate-200 divide-y divide-slate-100">
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-slate-500">Kullanıcı adı</span>
-              <span className="font-mono font-semibold text-slate-900">{creds.username}</span>
+              <span className="text-sm text-slate-500">{identifierLabel}</span>
+              <span className="font-mono font-semibold text-slate-900">{identifier}</span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-slate-500">Geçici şifre</span>

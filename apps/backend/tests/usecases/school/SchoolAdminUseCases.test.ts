@@ -6,7 +6,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     academicPeriod: { create: jest.fn(), findUnique: jest.fn() },
     school: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     schoolUser: { count: jest.fn(), create: jest.fn(), findUnique: jest.fn() },
-    user: { create: jest.fn() },
+    user: { create: jest.fn(), findUnique: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
@@ -63,12 +63,13 @@ describe('CreateSchoolUseCase', () => {
   });
 });
 
-describe('AssignSchoolAdminUseCase', () => {
+describe('AssignSchoolAdminUseCase (e-posta ile)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     p.school.findUnique.mockResolvedValue({ id: 'sch1', code: 'ANK', tenantId: 'ten1' });
+    p.user.findUnique.mockResolvedValue(null); // e-posta boşta
     p.$transaction.mockImplementation(async (fn: any) => fn({
-      schoolUser: { count: jest.fn().mockResolvedValue(0), create: jest.fn().mockResolvedValue({ id: 'su1' }) },
+      schoolUser: { create: jest.fn().mockResolvedValue({ id: 'su1' }) },
       user: { create: jest.fn().mockResolvedValue({ id: 'u1' }) },
       school: { update: jest.fn() },
     }));
@@ -76,11 +77,19 @@ describe('AssignSchoolAdminUseCase', () => {
 
   it('okul yoksa → SCHOOL_NOT_FOUND', async () => {
     p.school.findUnique.mockResolvedValue(null);
-    await expect(new AssignSchoolAdminUseCase().execute('yok', {}, 'a1')).rejects.toMatchObject({ code: 'SCHOOL_NOT_FOUND' });
+    await expect(new AssignSchoolAdminUseCase().execute('yok', { email: 'mudur@okul.com' }, 'a1')).rejects.toMatchObject({ code: 'SCHOOL_NOT_FOUND' });
   });
-  it('başarı: username (ANK-A-0001) + geçici şifre döner', async () => {
-    const r = await new AssignSchoolAdminUseCase().execute('sch1', { firstName: 'Ayşe' }, 'a1');
-    expect(r.username).toBe('ANK-A-0001');
+  it('geçersiz e-posta → INVALID_EMAIL', async () => {
+    await expect(new AssignSchoolAdminUseCase().execute('sch1', { email: 'gecersiz' }, 'a1')).rejects.toMatchObject({ code: 'INVALID_EMAIL' });
+  });
+  it('e-posta zaten kayıtlıysa → EMAIL_TAKEN', async () => {
+    p.user.findUnique.mockResolvedValue({ id: 'existing' });
+    await expect(new AssignSchoolAdminUseCase().execute('sch1', { email: 'var@okul.com' }, 'a1')).rejects.toMatchObject({ code: 'EMAIL_TAKEN' });
+  });
+  it('başarı: e-posta (lowercase) + geçici şifre döner; kullanıcı adı üretilmez', async () => {
+    const r = await new AssignSchoolAdminUseCase().execute('sch1', { email: 'Mudur@Okul.com', firstName: 'Ayşe' }, 'a1');
+    expect(r.email).toBe('mudur@okul.com');
     expect(r.tempPassword).toHaveLength(8);
+    expect((r as any).username).toBeUndefined();
   });
 });
