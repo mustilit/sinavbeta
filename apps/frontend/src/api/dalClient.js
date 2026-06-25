@@ -2201,6 +2201,8 @@ export const school = {
   },
   createClassroom: async (body) => (await api.post('/school/classrooms', body)).data,
   assignStudents: async (id, schoolUserIds) => (await api.post(`/school/classrooms/${id}/students`, { schoolUserIds })).data,
+  /** Excel: toplu öğrenci oluştur → { count, created:[{name,username,tempPassword}] } */
+  bulkCreateStudents: async (id, students) => (await api.post(`/school/classrooms/${id}/students/bulk`, { students })).data,
   assignClassroomAdmin: async (id, body) => (await api.post(`/school/classrooms/${id}/assign-admin`, body)).data,
   deleteClassroom: async (id) => (await api.delete(`/school/classrooms/${id}`)).data,
   // Zümre

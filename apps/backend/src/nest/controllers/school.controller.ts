@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Req } from '@nestjs/common';
-import { IsString, IsOptional, IsInt, Min, Max, IsIn, IsArray, IsBoolean, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsInt, Min, Max, IsIn, IsArray, IsBoolean, MaxLength, ValidateNested, ArrayMaxSize } from 'class-validator';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../swagger/decorators';
 import {
@@ -28,6 +29,7 @@ import {
 } from '../../application/use-cases/school/SchoolOrgUseCases';
 import {
   CreateSchoolUserUseCase,
+  BulkCreateStudentsUseCase,
   ListSchoolUsersUseCase,
   SetSchoolUserActiveUseCase,
   ResetSchoolUserPasswordUseCase,
@@ -44,6 +46,14 @@ class CreateClassroomDto {
   @IsString() @MaxLength(40) name!: string;
 }
 class AssignStudentsDto { @IsArray() @IsString({ each: true }) schoolUserIds!: string[]; }
+class BulkStudentRowDto {
+  @IsOptional() @IsString() @MaxLength(60) firstName?: string;
+  @IsOptional() @IsString() @MaxLength(60) lastName?: string;
+}
+class BulkStudentsDto {
+  @IsArray() @ArrayMaxSize(300) @ValidateNested({ each: true }) @Type(() => BulkStudentRowDto)
+  students!: BulkStudentRowDto[];
+}
 class CreateDepartmentDto {
   @IsString() @MaxLength(80) name!: string;
   @IsString() @MaxLength(60) subject!: string;
@@ -79,6 +89,7 @@ export class SchoolController {
   private createClassroomUC = new CreateClassroomUseCase();
   private listClassroomsUC = new ListClassroomsUseCase();
   private assignStudentsUC = new AssignStudentsToClassroomUseCase();
+  private bulkStudentsUC = new BulkCreateStudentsUseCase();
   private assignClassroomAdminUC = new AssignClassroomAdminUseCase();
   private deleteClassroomUC = new DeleteClassroomUseCase();
   private treeUC = new GetSchoolTreeUseCase();
@@ -131,6 +142,10 @@ export class SchoolController {
   @Post('classrooms/:id/students') @ApiBearerAuth('bearer') @ApiErrorResponses()
   assignStudents(@Param('id') id: string, @Body() dto: AssignStudentsDto, @Req() req: any) {
     return this.assignStudentsUC.execute(id, dto, req?.user?.id);
+  }
+  @Post('classrooms/:id/students/bulk') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Excel: toplu öğrenci oluştur; { count, created:[{name,username,tempPassword}] }' }) @ApiErrorResponses()
+  bulkStudents(@Param('id') id: string, @Body() dto: BulkStudentsDto, @Req() req: any) {
+    return this.bulkStudentsUC.execute(id, dto, req?.user?.id);
   }
   @Post('classrooms/:id/assign-admin') @ApiBearerAuth('bearer') @ApiErrorResponses()
   assignClassroomAdmin(@Param('id') id: string, @Body() dto: AssignAdminDto, @Req() req: any) {

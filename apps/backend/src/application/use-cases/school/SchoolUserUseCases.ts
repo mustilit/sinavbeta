@@ -89,6 +89,81 @@ export class CreateSchoolUserUseCase {
   }
 }
 
+const MAX_BULK_STUDENTS = 300;
+
+/**
+ * Excel içe aktarımı — bir sınıfa toplu ÖĞRENCI oluşturur (Ad + Soyad).
+ * Her öğrenci: User + SchoolUser(STUDENT), otomatik username + geçici şifre.
+ * Şifreler TEK SEFER döner (liste görüntüleme için). Kota (maxUsers) aşılırsa hata.
+ */
+export class BulkCreateStudentsUseCase {
+  async execute(
+    classroomId: string,
+    input: { students: Array<{ firstName?: string; lastName?: string }> },
+    actorId?: string,
+  ): Promise<{ count: number; created: Array<{ name: string; username: string; tempPassword: string }> }> {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+
+    const school = await prisma.school.findUnique({ where: { id: ctx.schoolId }, select: { id: true, code: true, tenantId: true, maxUsers: true } });
+    if (!school) throw new AppError('SCHOOL_NOT_FOUND', 'Okul bulunamadı', 404);
+
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+    if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== classroom.branchId) {
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenize öğrenci ekleyebilirsiniz', 403);
+    }
+
+    const rows = (input.students ?? [])
+      .map((s) => ({ firstName: (s.firstName ?? '').trim(), lastName: (s.lastName ?? '').trim() }))
+      .filter((s) => s.firstName || s.lastName);
+    if (rows.length === 0) throw new AppError('NO_STUDENTS', 'Geçerli öğrenci satırı yok (Ad/Soyad)', 400);
+    if (rows.length > MAX_BULK_STUDENTS) throw new AppError('TOO_MANY', `Tek seferde en fazla ${MAX_BULK_STUDENTS} öğrenci`, 400);
+
+    if (school.maxUsers > 0) {
+      const activeCount = await prisma.schoolUser.count({ where: { schoolId: ctx.schoolId, isActive: true } });
+      if (activeCount + rows.length > school.maxUsers) {
+        throw new AppError('USER_QUOTA_EXCEEDED', `Kota yetersiz: kalan ${Math.max(0, school.maxUsers - activeCount)}, istenen ${rows.length}`, 409);
+      }
+    }
+
+    // Şifre üretimi + hash transaction DIŞINDA (CPU yoğun; tx'i kısa tut)
+    const withHash = await Promise.all(rows.map(async (r) => {
+      const tempPassword = generateTempPassword();
+      return { firstName: r.firstName, lastName: r.lastName, tempPassword, passwordHash: await bcrypt.hash(tempPassword, 12) };
+    }));
+
+    const created = await prisma.$transaction(async (tx) => {
+      const out: Array<{ name: string; username: string; tempPassword: string }> = [];
+      for (const p of withHash) {
+        const username = await nextSchoolUsername(tx, ctx.schoolId, school.code, 'STUDENT');
+        const user = await tx.user.create({
+          data: {
+            email: `${username.toLowerCase()}@esinif.local`,
+            username,
+            firstName: p.firstName || null,
+            lastName: p.lastName || null,
+            passwordHash: p.passwordHash,
+            role: 'CANDIDATE',
+            status: 'ACTIVE',
+            emailVerified: true,
+            tenantId: school.tenantId,
+            metadata: { schoolUser: true } as object,
+          },
+        });
+        await tx.schoolUser.create({
+          data: { userId: user.id, schoolId: ctx.schoolId, schoolRole: 'STUDENT' as any, username, branchId: classroom.branchId, classroomId: classroom.id },
+        });
+        out.push({ name: `${p.firstName} ${p.lastName}`.trim(), username, tempPassword: p.tempPassword });
+      }
+      return out;
+    }, { timeout: 30000 });
+
+    logger.info('school.students.bulk_created', { classroomId, count: created.length, actorId });
+    return { count: created.length, created };
+  }
+}
+
 export class ListSchoolUsersUseCase {
   async execute(input: { role?: string; q?: string; cursor?: string | null; limit?: number }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
