@@ -68,26 +68,166 @@ export class AssignBranchAdminUseCase {
   }
 }
 
-// ── Sınıf ──────────────────────────────────────────────────────────────────
-export class CreateClassroomUseCase {
-  async execute(input: { branchId: string; name: string; gradeLevel: number }, actorId?: string) {
+// ── Seviye (SchoolLevel) ─────────────────────────────────────────────────────
+export class CreateLevelUseCase {
+  async execute(input: { branchId: string; gradeLevel: number }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
-    const name = (input.name ?? '').trim();
-    if (!name) throw new AppError('NAME_REQUIRED', 'Sınıf adı zorunlu', 400);
     const grade = Math.floor(input.gradeLevel);
-    if (!Number.isInteger(grade) || grade < 1 || grade > 12) throw new AppError('INVALID_GRADE', 'Sınıf seviyesi 1-12 olmalı', 400);
+    if (!Number.isInteger(grade) || grade < 1 || grade > 12) throw new AppError('INVALID_GRADE', 'Seviye 1-12 olmalı', 400);
 
     const branch = await prisma.branch.findFirst({ where: { id: input.branchId, schoolId: ctx.schoolId }, select: { id: true } });
     if (!branch) throw new AppError('BRANCH_NOT_FOUND', 'Şube bulunamadı', 404);
     if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== input.branchId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenize seviye ekleyebilirsiniz', 403);
+
+    const clash = await prisma.schoolLevel.findUnique({ where: { branchId_gradeLevel: { branchId: input.branchId, gradeLevel: grade } }, select: { id: true } });
+    if (clash) throw new AppError('LEVEL_EXISTS', 'Bu seviye şubede zaten var', 409);
+
+    const created = await prisma.schoolLevel.create({ data: { schoolId: ctx.schoolId, branchId: input.branchId, gradeLevel: grade } });
+    logger.info('school.level.created', { id: created.id, branchId: input.branchId, gradeLevel: grade, actorId });
+    return created;
+  }
+}
+
+export class AssignLevelAdminUseCase {
+  async execute(levelId: string, input: { schoolUserId: string }, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const level = await prisma.schoolLevel.findFirst({ where: { id: levelId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+    if (!level) throw new AppError('LEVEL_NOT_FOUND', 'Seviye bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== level.branchId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    const su = await prisma.schoolUser.findFirst({ where: { id: input.schoolUserId, schoolId: ctx.schoolId }, select: { userId: true } });
+    if (!su) throw new AppError('USER_NOT_FOUND', 'Kullanıcı bulunamadı', 404);
+    await prisma.schoolLevel.update({ where: { id: levelId }, data: { adminUserId: su.userId } });
+    logger.info('school.level.admin_assigned', { levelId, schoolUserId: input.schoolUserId, actorId });
+    return { ok: true };
+  }
+}
+
+export class DeleteLevelUseCase {
+  async execute(levelId: string, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const level = await prisma.schoolLevel.findFirst({ where: { id: levelId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, _count: { select: { classrooms: true } } } });
+    if (!level) throw new AppError('LEVEL_NOT_FOUND', 'Seviye bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== level.branchId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    if (level._count.classrooms > 0) throw new AppError('LEVEL_NOT_EMPTY', 'Önce seviyedeki sınıfları silin', 409);
+    await prisma.schoolLevel.delete({ where: { id: levelId } });
+    logger.info('school.level.deleted', { levelId, actorId });
+    return { ok: true };
+  }
+}
+
+// ── Sınıf ──────────────────────────────────────────────────────────────────
+export class CreateClassroomUseCase {
+  /** Sınıf bir SEVİYE altında oluşturulur; şube/gradeLevel seviyeden türetilir. */
+  async execute(input: { levelId: string; name: string }, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const name = (input.name ?? '').trim();
+    if (!name) throw new AppError('NAME_REQUIRED', 'Sınıf adı zorunlu', 400);
+
+    const level = await prisma.schoolLevel.findFirst({
+      where: { id: input.levelId, schoolId: ctx.schoolId },
+      select: { id: true, branchId: true, gradeLevel: true },
+    });
+    if (!level) throw new AppError('LEVEL_NOT_FOUND', 'Seviye bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== level.branchId)
       throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenize sınıf ekleyebilirsiniz', 403);
 
     const created = await prisma.classroom.create({
-      data: { schoolId: ctx.schoolId, branchId: input.branchId, name, gradeLevel: grade },
+      data: { schoolId: ctx.schoolId, branchId: level.branchId, levelId: level.id, name, gradeLevel: level.gradeLevel },
     });
-    logger.info('school.classroom.created', { id: created.id, branchId: input.branchId, actorId });
+    logger.info('school.classroom.created', { id: created.id, levelId: level.id, actorId });
     return created;
+  }
+}
+
+export class AssignClassroomAdminUseCase {
+  async execute(classroomId: string, input: { schoolUserId: string }, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true } });
+    if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== classroom.branchId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    const su = await prisma.schoolUser.findFirst({ where: { id: input.schoolUserId, schoolId: ctx.schoolId }, select: { userId: true } });
+    if (!su) throw new AppError('USER_NOT_FOUND', 'Kullanıcı bulunamadı', 404);
+    await prisma.classroom.update({ where: { id: classroomId }, data: { adminUserId: su.userId } });
+    logger.info('school.classroom.admin_assigned', { classroomId, schoolUserId: input.schoolUserId, actorId });
+    return { ok: true };
+  }
+}
+
+export class DeleteClassroomUseCase {
+  async execute(classroomId: string, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, _count: { select: { students: true } } } });
+    if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId !== classroom.branchId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Yalnız kendi şubenizde işlem yapabilirsiniz', 403);
+    if (classroom._count.students > 0) throw new AppError('CLASSROOM_NOT_EMPTY', 'Önce sınıftaki öğrencileri çıkarın', 409);
+    await prisma.classroom.delete({ where: { id: classroomId } });
+    logger.info('school.classroom.deleted', { classroomId, actorId });
+    return { ok: true };
+  }
+}
+
+/** Şube → Seviye → Sınıf ağacı (yöneticiler + öğrenci sayıları ile). */
+export class GetSchoolTreeUseCase {
+  async execute(actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const onlyBranch = ctx.schoolRole === 'BRANCH_ADMIN' ? (ctx.branchId ?? '__none__') : undefined;
+
+    const branches = await prisma.branch.findMany({
+      where: { schoolId: ctx.schoolId, ...(onlyBranch ? { id: onlyBranch } : {}) },
+      orderBy: [{ createdAt: 'asc' }],
+      include: {
+        adminUser: { select: { id: true, username: true, firstName: true, lastName: true } },
+        levels: {
+          orderBy: [{ gradeLevel: 'asc' }],
+          include: {
+            adminUser: { select: { id: true, username: true, firstName: true, lastName: true } },
+            classrooms: {
+              orderBy: [{ name: 'asc' }],
+              include: {
+                adminUser: { select: { id: true, username: true, firstName: true, lastName: true } },
+                _count: { select: { students: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const label = (u: { username: string; firstName: string | null; lastName: string | null } | null) =>
+      u ? ([u.firstName, u.lastName].filter(Boolean).join(' ') || u.username) : null;
+
+    return branches.map((b) => ({
+      id: b.id,
+      name: b.name,
+      adminUserId: b.adminUserId,
+      adminLabel: label(b.adminUser),
+      levels: b.levels.map((l) => ({
+        id: l.id,
+        gradeLevel: l.gradeLevel,
+        adminUserId: l.adminUserId,
+        adminLabel: label(l.adminUser),
+        classrooms: l.classrooms.map((c) => ({
+          id: c.id,
+          name: c.name,
+          gradeLevel: c.gradeLevel,
+          adminUserId: c.adminUserId,
+          adminLabel: label(c.adminUser),
+          studentCount: c._count.students,
+        })),
+      })),
+    }));
   }
 }
 

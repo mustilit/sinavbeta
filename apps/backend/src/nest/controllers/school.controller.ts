@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Req } from '@nestjs/common';
 import { IsString, IsOptional, IsInt, Min, Max, IsIn, IsArray, IsBoolean, MaxLength } from 'class-validator';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../swagger/decorators';
@@ -6,9 +6,15 @@ import {
   CreateBranchUseCase,
   ListBranchesUseCase,
   AssignBranchAdminUseCase,
+  CreateLevelUseCase,
+  AssignLevelAdminUseCase,
+  DeleteLevelUseCase,
   CreateClassroomUseCase,
   ListClassroomsUseCase,
   AssignStudentsToClassroomUseCase,
+  AssignClassroomAdminUseCase,
+  DeleteClassroomUseCase,
+  GetSchoolTreeUseCase,
   CreateDepartmentUseCase,
   ListDepartmentsUseCase,
   AssignDepartmentMembersUseCase,
@@ -22,11 +28,14 @@ import {
 } from '../../application/use-cases/school/SchoolUserUseCases';
 
 class CreateBranchDto { @IsString() @MaxLength(80) name!: string; }
-class AssignBranchAdminDto { @IsString() schoolUserId!: string; }
-class CreateClassroomDto {
+class AssignAdminDto { @IsString() schoolUserId!: string; }
+class CreateLevelDto {
   @IsString() branchId!: string;
-  @IsString() @MaxLength(40) name!: string;
   @IsInt() @Min(1) @Max(12) gradeLevel!: number;
+}
+class CreateClassroomDto {
+  @IsString() levelId!: string;
+  @IsString() @MaxLength(40) name!: string;
 }
 class AssignStudentsDto { @IsArray() @IsString({ each: true }) schoolUserIds!: string[]; }
 class CreateDepartmentDto {
@@ -55,9 +64,15 @@ export class SchoolController {
   private createBranchUC = new CreateBranchUseCase();
   private listBranchesUC = new ListBranchesUseCase();
   private assignBranchAdminUC = new AssignBranchAdminUseCase();
+  private createLevelUC = new CreateLevelUseCase();
+  private assignLevelAdminUC = new AssignLevelAdminUseCase();
+  private deleteLevelUC = new DeleteLevelUseCase();
   private createClassroomUC = new CreateClassroomUseCase();
   private listClassroomsUC = new ListClassroomsUseCase();
   private assignStudentsUC = new AssignStudentsToClassroomUseCase();
+  private assignClassroomAdminUC = new AssignClassroomAdminUseCase();
+  private deleteClassroomUC = new DeleteClassroomUseCase();
+  private treeUC = new GetSchoolTreeUseCase();
   private createDeptUC = new CreateDepartmentUseCase();
   private listDeptsUC = new ListDepartmentsUseCase();
   private assignMembersUC = new AssignDepartmentMembersUseCase();
@@ -67,15 +82,29 @@ export class SchoolController {
   private setActiveUC = new SetSchoolUserActiveUseCase();
   private resetPwUC = new ResetSchoolUserPasswordUseCase();
 
+  // ── Ağaç (Şube → Seviye → Sınıf) ──
+  @Get('tree') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Şube/Seviye/Sınıf ağacı' }) @ApiErrorResponses()
+  tree(@Req() req: any) { return this.treeUC.execute(req?.user?.id); }
+
   // ── Şube ──
   @Get('branches') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Şube listesi' }) @ApiErrorResponses()
   listBranches(@Req() req: any) { return this.listBranchesUC.execute(req?.user?.id); }
   @Post('branches') @ApiBearerAuth('bearer') @ApiErrorResponses()
   createBranch(@Body() dto: CreateBranchDto, @Req() req: any) { return this.createBranchUC.execute(dto, req?.user?.id); }
   @Post('branches/:id/assign-admin') @ApiBearerAuth('bearer') @ApiErrorResponses()
-  assignBranchAdmin(@Param('id') id: string, @Body() dto: AssignBranchAdminDto, @Req() req: any) {
+  assignBranchAdmin(@Param('id') id: string, @Body() dto: AssignAdminDto, @Req() req: any) {
     return this.assignBranchAdminUC.execute(id, dto, req?.user?.id);
   }
+
+  // ── Seviye ──
+  @Post('levels') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  createLevel(@Body() dto: CreateLevelDto, @Req() req: any) { return this.createLevelUC.execute(dto, req?.user?.id); }
+  @Post('levels/:id/assign-admin') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  assignLevelAdmin(@Param('id') id: string, @Body() dto: AssignAdminDto, @Req() req: any) {
+    return this.assignLevelAdminUC.execute(id, dto, req?.user?.id);
+  }
+  @Delete('levels/:id') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  deleteLevel(@Param('id') id: string, @Req() req: any) { return this.deleteLevelUC.execute(id, req?.user?.id); }
 
   // ── Sınıf ──
   @Get('classrooms') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Sınıf listesi' }) @ApiErrorResponses()
@@ -88,6 +117,12 @@ export class SchoolController {
   assignStudents(@Param('id') id: string, @Body() dto: AssignStudentsDto, @Req() req: any) {
     return this.assignStudentsUC.execute(id, dto, req?.user?.id);
   }
+  @Post('classrooms/:id/assign-admin') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  assignClassroomAdmin(@Param('id') id: string, @Body() dto: AssignAdminDto, @Req() req: any) {
+    return this.assignClassroomAdminUC.execute(id, dto, req?.user?.id);
+  }
+  @Delete('classrooms/:id') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  deleteClassroom(@Param('id') id: string, @Req() req: any) { return this.deleteClassroomUC.execute(id, req?.user?.id); }
 
   // ── Zümre ──
   @Get('departments') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Zümre listesi' }) @ApiErrorResponses()

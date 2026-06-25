@@ -5,7 +5,8 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     schoolUser: { findFirst: jest.fn(), findMany: jest.fn(), updateMany: jest.fn(), update: jest.fn(), count: jest.fn() },
     branch: { findFirst: jest.fn(), create: jest.fn() },
-    classroom: { findFirst: jest.fn(), create: jest.fn() },
+    schoolLevel: { findFirst: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
+    classroom: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
     department: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
     school: { findUnique: jest.fn() },
     $transaction: jest.fn(),
@@ -13,7 +14,9 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
 }));
 
 import {
+  CreateLevelUseCase,
   CreateClassroomUseCase,
+  AssignClassroomAdminUseCase,
   AssignStudentsToClassroomUseCase,
   CreateDepartmentUseCase,
   AssignDepartmentMembersUseCase,
@@ -24,28 +27,70 @@ import { prisma } from '../../../src/infrastructure/database/prisma';
 const p = prisma as any;
 const admin = { id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null };
 
-describe('CreateClassroomUseCase', () => {
+describe('CreateLevelUseCase', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     p.schoolUser.findFirst.mockResolvedValue(admin);
     p.branch.findFirst.mockResolvedValue({ id: 'b1' });
-    p.classroom.create.mockImplementation(async ({ data }: any) => ({ id: 'c1', ...data }));
+    p.schoolLevel.findUnique.mockResolvedValue(null);
+    p.schoolLevel.create.mockImplementation(async ({ data }: any) => ({ id: 'lv1', ...data }));
   });
 
   it('seviye 1-12 dışında → INVALID_GRADE', async () => {
-    await expect(new CreateClassroomUseCase().execute({ branchId: 'b1', name: '13-A', gradeLevel: 13 }, 'u0')).rejects.toMatchObject({ code: 'INVALID_GRADE' });
+    await expect(new CreateLevelUseCase().execute({ branchId: 'b1', gradeLevel: 13 }, 'u0')).rejects.toMatchObject({ code: 'INVALID_GRADE' });
   });
   it('şube okulda yoksa → BRANCH_NOT_FOUND', async () => {
     p.branch.findFirst.mockResolvedValue(null);
-    await expect(new CreateClassroomUseCase().execute({ branchId: 'x', name: '5-A', gradeLevel: 5 }, 'u0')).rejects.toMatchObject({ code: 'BRANCH_NOT_FOUND' });
+    await expect(new CreateLevelUseCase().execute({ branchId: 'x', gradeLevel: 5 }, 'u0')).rejects.toMatchObject({ code: 'BRANCH_NOT_FOUND' });
+  });
+  it('aynı seviye varsa → LEVEL_EXISTS', async () => {
+    p.schoolLevel.findUnique.mockResolvedValue({ id: 'dup' });
+    await expect(new CreateLevelUseCase().execute({ branchId: 'b1', gradeLevel: 5 }, 'u0')).rejects.toMatchObject({ code: 'LEVEL_EXISTS' });
+  });
+  it('başarı', async () => {
+    const r = await new CreateLevelUseCase().execute({ branchId: 'b1', gradeLevel: 5 }, 'u0');
+    expect(r.gradeLevel).toBe(5);
+  });
+});
+
+describe('CreateClassroomUseCase (seviye altında)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    p.schoolUser.findFirst.mockResolvedValue(admin);
+    p.schoolLevel.findFirst.mockResolvedValue({ id: 'lv1', branchId: 'b1', gradeLevel: 5 });
+    p.classroom.create.mockImplementation(async ({ data }: any) => ({ id: 'c1', ...data }));
+  });
+
+  it('seviye yoksa → LEVEL_NOT_FOUND', async () => {
+    p.schoolLevel.findFirst.mockResolvedValue(null);
+    await expect(new CreateClassroomUseCase().execute({ levelId: 'x', name: '5-A' }, 'u0')).rejects.toMatchObject({ code: 'LEVEL_NOT_FOUND' });
   });
   it('öğretmen sınıf oluşturamaz → FORBIDDEN_SCHOOL_ROLE', async () => {
     p.schoolUser.findFirst.mockResolvedValue({ ...admin, schoolRole: 'TEACHER' });
-    await expect(new CreateClassroomUseCase().execute({ branchId: 'b1', name: '5-A', gradeLevel: 5 }, 'u0')).rejects.toMatchObject({ code: 'FORBIDDEN_SCHOOL_ROLE' });
+    await expect(new CreateClassroomUseCase().execute({ levelId: 'lv1', name: '5-A' }, 'u0')).rejects.toMatchObject({ code: 'FORBIDDEN_SCHOOL_ROLE' });
   });
-  it('başarı', async () => {
-    const r = await new CreateClassroomUseCase().execute({ branchId: 'b1', name: '5-A', gradeLevel: 5 }, 'u0');
-    expect(r.name).toBe('5-A'); expect(r.gradeLevel).toBe(5);
+  it('başarı: şube/gradeLevel seviyeden türetilir', async () => {
+    const r = await new CreateClassroomUseCase().execute({ levelId: 'lv1', name: '5-A' }, 'u0');
+    expect(r.name).toBe('5-A'); expect(r.gradeLevel).toBe(5); expect(r.branchId).toBe('b1'); expect(r.levelId).toBe('lv1');
+  });
+});
+
+describe('AssignClassroomAdminUseCase', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    p.schoolUser.findFirst.mockResolvedValue(admin);
+    p.classroom.findFirst.mockResolvedValue({ id: 'c1', branchId: 'b1' });
+    p.classroom.update.mockResolvedValue({});
+  });
+  it('sınıf yoksa → CLASSROOM_NOT_FOUND', async () => {
+    p.classroom.findFirst.mockResolvedValue(null);
+    await expect(new AssignClassroomAdminUseCase().execute('x', { schoolUserId: 't1' }, 'u0')).rejects.toMatchObject({ code: 'CLASSROOM_NOT_FOUND' });
+  });
+  it('başarı: öğretmen sınıfa atanır (adminUserId = userId)', async () => {
+    p.schoolUser.findFirst.mockResolvedValueOnce(admin).mockResolvedValueOnce({ userId: 'u-teacher' });
+    const r = await new AssignClassroomAdminUseCase().execute('c1', { schoolUserId: 't1' }, 'u0');
+    expect(r).toEqual({ ok: true });
+    expect(p.classroom.update).toHaveBeenCalledWith(expect.objectContaining({ data: { adminUserId: 'u-teacher' } }));
   });
 });
 

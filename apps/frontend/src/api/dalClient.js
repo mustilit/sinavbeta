@@ -2183,10 +2183,16 @@ export const adminSchools = {
 
 /** Okul Yöneticisi / Şube Yöneticisi — okul içi yönetim (/school/*) */
 export const school = {
+  // Ağaç: Şube → Seviye → Sınıf
+  tree: async () => (await api.get('/school/tree')).data,
   // Şube
   listBranches: async () => (await api.get('/school/branches')).data,
   createBranch: async (body) => (await api.post('/school/branches', body)).data,
   assignBranchAdmin: async (id, body) => (await api.post(`/school/branches/${id}/assign-admin`, body)).data,
+  // Seviye
+  createLevel: async (body) => (await api.post('/school/levels', body)).data,
+  assignLevelAdmin: async (id, body) => (await api.post(`/school/levels/${id}/assign-admin`, body)).data,
+  deleteLevel: async (id) => (await api.delete(`/school/levels/${id}`)).data,
   // Sınıf
   listClassrooms: async ({ branchId } = {}) => {
     const qs = new URLSearchParams();
@@ -2195,6 +2201,8 @@ export const school = {
   },
   createClassroom: async (body) => (await api.post('/school/classrooms', body)).data,
   assignStudents: async (id, schoolUserIds) => (await api.post(`/school/classrooms/${id}/students`, { schoolUserIds })).data,
+  assignClassroomAdmin: async (id, body) => (await api.post(`/school/classrooms/${id}/assign-admin`, body)).data,
+  deleteClassroom: async (id) => (await api.delete(`/school/classrooms/${id}`)).data,
   // Zümre
   listDepartments: async () => (await api.get('/school/departments')).data,
   createDepartment: async (body) => (await api.post('/school/departments', body)).data,
