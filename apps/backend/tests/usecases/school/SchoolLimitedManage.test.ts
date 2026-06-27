@@ -8,12 +8,13 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     schoolLevel: { findFirst: jest.fn(), findMany: jest.fn() },
     classroom: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn() },
     department: { findFirst: jest.fn(), findMany: jest.fn() },
+    branch: { findMany: jest.fn() },
     school: { findUnique: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
 
-import { CreateClassroomUseCase, AssignStudentsToClassroomUseCase, AssignDepartmentMembersUseCase, ListClassroomsUseCase } from '../../../src/application/use-cases/school/SchoolOrgUseCases';
+import { CreateClassroomUseCase, AssignStudentsToClassroomUseCase, AssignDepartmentMembersUseCase, ListClassroomsUseCase, GetDepartmentTreeUseCase } from '../../../src/application/use-cases/school/SchoolOrgUseCases';
 import { BulkCreateStudentsUseCase } from '../../../src/application/use-cases/school/SchoolUserUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 
@@ -121,5 +122,38 @@ describe('Sınıf listesi rol-kapsamlı (ödev atama bug fix)', () => {
     p.classroom.findMany.mockResolvedValue([]); // adminUserId eşleşmesi yok → soloClassroom boş
     const r = await new ListClassroomsUseCase().execute({}, 'uX');
     expect(r).toEqual([]);
+  });
+});
+
+describe('Zümre ağacı rol-kapsamlı (kimse yukarıyı görmez)', () => {
+  const deptRow = (over: any) => ({ id: 'd1', name: 'Mat 5', subject: 'Matematik', levelId: 'lv5', branchId: 'b1', headUserId: null, headUser: null, _count: { members: 3 }, createdAt: new Date(), ...over });
+  const branchRow = { id: 'b1', name: 'Şube', levels: [{ id: 'lv5', gradeLevel: 5 }, { id: 'lv6', gradeLevel: 6 }] };
+
+  it('öğretmen yalnız üyesi olduğu zümreyi görür (kendi zümresi)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'suT', schoolId: 'sch1', schoolRole: 'TEACHER', branchId: null, departmentId: 'd1', classroomId: null });
+    p.schoolLevel.findMany.mockResolvedValue([]);                 // seviye sorumlusu değil
+    p.department.findMany.mockResolvedValueOnce([]);              // headed (başkanlık) yok
+    p.department.findMany.mockResolvedValueOnce([deptRow({})]);   // ana sorgu (OR)
+    p.branch.findMany.mockResolvedValue([branchRow]);
+    const r = await new GetDepartmentTreeUseCase().execute('uT');
+    // Ana sorgu yalnız kendi zümresini hedefler (yukarı yok)
+    expect(p.department.findMany.mock.calls[1][0].where).toMatchObject({ OR: [{ id: { in: ['d1'] } }] });
+    expect(r.schoolWide).toEqual([]);
+    expect(r.branches).toHaveLength(1);
+    expect(r.branches[0].levels).toHaveLength(1);
+    expect(r.branches[0].levels[0].departments.map((d: any) => d.id)).toEqual(['d1']);
+    expect(r.branches[0].departments).toEqual([]); // şube-geneli zümre görünmez
+  });
+
+  it('seviye sorumlusu yalnız seviyesinin zümrelerini görür (şube/okul-geneli HARİÇ)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'suL', schoolId: 'sch1', schoolRole: 'TEACHER', branchId: null, departmentId: null, classroomId: null });
+    p.schoolLevel.findMany.mockResolvedValue([{ id: 'lv5' }]);    // lv5 sorumlusu
+    p.department.findMany.mockResolvedValueOnce([]);              // headed yok
+    p.department.findMany.mockResolvedValueOnce([deptRow({})]);   // ana sorgu → seviye zümresi
+    p.branch.findMany.mockResolvedValue([branchRow]);
+    const r = await new GetDepartmentTreeUseCase().execute('uL');
+    expect(p.department.findMany.mock.calls[1][0].where).toMatchObject({ OR: [{ levelId: { in: ['lv5'] } }] });
+    expect(r.schoolWide).toEqual([]);
+    expect(r.branches[0].levels.map((l: any) => l.id)).toEqual(['lv5']); // lv6 görünmez
   });
 });

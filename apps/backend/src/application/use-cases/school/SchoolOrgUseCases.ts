@@ -388,25 +388,31 @@ export class ListDepartmentsUseCase {
 /** Zümre ağacı: Tüm Okul (genel) + her Şube (şube geneli zümreler) → her Seviye (seviyeye özel). */
 export class GetDepartmentTreeUseCase {
   async execute(actorId?: string) {
-    // Görüntüleme kapsamı: SCHOOL_ADMIN tüm okul; alt roller yetki alanı kadar.
-    const scope = await resolveSchoolScope(actorId);
-    if (scopeIsEmpty(scope)) return { schoolWide: [], branches: [] };
+    // Görüntüleme kapsamı — kimse hiyerarşide YUKARIYI görmez:
+    //  - SCHOOL_ADMIN  → tüm okul
+    //  - BRANCH_ADMIN  → yalnız kendi şubesinin zümreleri (okul-geneli HARİÇ)
+    //  - Seviye Sorumlusu (SchoolLevel.adminUserId) → yalnız kendi seviye(ler)inin zümreleri
+    //  - Öğretmen / Zümre Başkanı → yalnız üyesi/başkanı olduğu zümre(ler)
+    const ctx = await resolveSchoolContext(actorId);
+    const schoolId = ctx.schoolId;
+    const isSchoolAdmin = ctx.schoolRole === 'SCHOOL_ADMIN';
 
-    // Kapsamdaki şube + gösterilecek seviye kümeleri
-    const levelBranch = scope.fullLevelIds.length
-      ? await prisma.schoolLevel.findMany({ where: { id: { in: scope.fullLevelIds } }, select: { id: true, branchId: true } })
-      : [];
-    const soloCls = scope.soloClassroomIds.length
-      ? await prisma.classroom.findMany({ where: { id: { in: scope.soloClassroomIds } }, select: { branchId: true, levelId: true } })
-      : [];
-    const branchIdSet = new Set(scope.fullBranchIds);
-    levelBranch.forEach((l) => branchIdSet.add(l.branchId));
-    soloCls.forEach((c) => branchIdSet.add(c.branchId));
-    const shownLevelIds = new Set<string>([...scope.fullLevelIds, ...soloCls.map((c) => c.levelId).filter((x): x is string => !!x)]);
-    const fullBranch = new Set(scope.fullBranchIds);
-
-    const deptWhere = scope.wholeSchool ? { schoolId: scope.schoolId } : { schoolId: scope.schoolId, branchId: { in: [...branchIdSet] } };
-    const branchWhere = scope.wholeSchool ? { schoolId: scope.schoolId } : { schoolId: scope.schoolId, id: { in: [...branchIdSet] } };
+    let deptWhere: Record<string, unknown>;
+    if (isSchoolAdmin) {
+      deptWhere = { schoolId };
+    } else {
+      const or: Array<Record<string, unknown>> = [];
+      if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId) or.push({ branchId: ctx.branchId });
+      const myLevels = await prisma.schoolLevel.findMany({ where: { schoolId, adminUserId: ctx.userId }, select: { id: true } });
+      if (myLevels.length) or.push({ levelId: { in: myLevels.map((l) => l.id) } });
+      const myDeptIds = new Set<string>();
+      if (ctx.departmentId) myDeptIds.add(ctx.departmentId);
+      const headed = await prisma.department.findMany({ where: { schoolId, headUserId: ctx.userId }, select: { id: true } });
+      headed.forEach((d) => myDeptIds.add(d.id));
+      if (myDeptIds.size) or.push({ id: { in: [...myDeptIds] } });
+      if (or.length === 0) return { schoolWide: [], branches: [] };
+      deptWhere = { schoolId, OR: or };
+    }
 
     const depts = await prisma.department.findMany({
       where: deptWhere,
@@ -416,32 +422,36 @@ export class GetDepartmentTreeUseCase {
         _count: { select: { members: true } },
       },
     });
-    const branches = await prisma.branch.findMany({
-      where: branchWhere,
-      orderBy: [{ createdAt: 'asc' }],
-      include: { levels: { orderBy: [{ gradeLevel: 'asc' }] } },
-    });
 
     const label = (u: { username: string; firstName: string | null; lastName: string | null } | null) =>
       u ? ([u.firstName, u.lastName].filter(Boolean).join(' ') || u.username) : null;
     const map = (d: (typeof depts)[number]) => ({ id: d.id, name: d.name, subject: d.subject, headUserId: d.headUserId, headLabel: label(d.headUser), memberCount: d._count.members });
 
+    // Tree yalnız görünür zümrelerin bulunduğu şube/seviyeleri içerir (üst düğümler boş gelmez).
     const byBranch = new Map<string, ReturnType<typeof map>[]>();
     const byLevel = new Map<string, ReturnType<typeof map>[]>();
     const schoolWide: ReturnType<typeof map>[] = [];
+    const shownBranchIds = new Set<string>();
     for (const d of depts) {
       const m = map(d);
-      if (d.levelId) { const a = byLevel.get(d.levelId) ?? []; a.push(m); byLevel.set(d.levelId, a); }
-      else if (d.branchId) { const a = byBranch.get(d.branchId) ?? []; a.push(m); byBranch.set(d.branchId, a); }
+      if (d.levelId) { const a = byLevel.get(d.levelId) ?? []; a.push(m); byLevel.set(d.levelId, a); if (d.branchId) shownBranchIds.add(d.branchId); }
+      else if (d.branchId) { const a = byBranch.get(d.branchId) ?? []; a.push(m); byBranch.set(d.branchId, a); shownBranchIds.add(d.branchId); }
       else schoolWide.push(m);
     }
 
+    const branches = shownBranchIds.size
+      ? await prisma.branch.findMany({
+          where: { schoolId, id: { in: [...shownBranchIds] } },
+          orderBy: [{ createdAt: 'asc' }],
+          include: { levels: { orderBy: [{ gradeLevel: 'asc' }] } },
+        })
+      : [];
+
     return {
-      schoolWide, // yalnız tüm-okul kapsamında (admin) dolu gelir
+      schoolWide, // yalnız tüm-okul kapsamında (admin) veya kendi okul-geneli zümresinde dolu
       branches: branches.map((b) => {
-        const branchAll = scope.wholeSchool || fullBranch.has(b.id);
         const levels = b.levels
-          .filter((l) => branchAll || shownLevelIds.has(l.id))
+          .filter((l) => byLevel.has(l.id)) // yalnız görünür zümresi olan seviyeler
           .map((l) => ({ id: l.id, gradeLevel: l.gradeLevel, departments: byLevel.get(l.id) ?? [] }));
         return { id: b.id, name: b.name, departments: byBranch.get(b.id) ?? [], levels };
       }),
