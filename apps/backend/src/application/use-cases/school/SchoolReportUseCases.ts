@@ -4,7 +4,7 @@
  */
 import { prismaRead } from '../../../infrastructure/database/dbRouter';
 import { AppError } from '../../errors/AppError';
-import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopeIsEmpty, scopedClassroomWhere } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveReportScope } from './schoolHelpers';
 
 function pct(score: number | null, max: number | null): number | null {
   if (score == null || !max) return null;
@@ -109,32 +109,65 @@ function dateRange(from?: string, to?: string): { gte?: Date; lte?: Date } | und
 export class GetFilteredReportUseCase {
   async execute(input: ReportFilters, actorId?: string) {
     // Görüntüleme kapsamı: SCHOOL_ADMIN tüm okul; alt roller yetki alanı kadar.
-    const scope = await resolveSchoolScope(actorId);
-    if (scopeIsEmpty(scope)) return { branches: [], levels: [], classrooms: [], byDepartment: [], timeseries: [], highlights: { bestBranch: null, bestClassByLevel: [] } };
+    const emptyReport = { branches: [], levels: [], classrooms: [], byDepartment: [], timeseries: [], highlights: { bestBranch: null, bestClassByLevel: [] } };
+    // Designation tabanlı rapor kapsamı (kimse hiyerarşide yukarıyı görmez).
+    const rs = await resolveReportScope(actorId);
+    if (rs.empty) return emptyReport;
     const db = prismaRead();
     const grade = input.gradeLevel != null && !isNaN(Number(input.gradeLevel)) ? Math.floor(Number(input.gradeLevel)) : undefined;
     const submittedAt = dateRange(input.from, input.to);
-    // Zümre başkanı kendi branşını (department) görür; UI zümre filtresi de uygulanır.
-    const subjectScoped = scope.schoolRole === 'DEPT_HEAD' && scope.departmentIds.length > 0 && !scope.isSchoolAdmin;
-    const deptWhere = input.departmentId
-      ? { exam: { departmentId: input.departmentId } }
-      : (subjectScoped ? { exam: { departmentId: { in: scope.departmentIds } } } : {});
-    const clsWhere = scopedClassroomWhere(scope);
+    const baseClsFilter = { ...(grade ? { gradeLevel: grade } : {}), ...(input.classroomId ? { id: input.classroomId } : {}) };
+
+    // Erişilebilir sınıf kümeleri: tüm-ders (yönetim) ve branş-kısıtlı span (zümre başkanlığı)
+    let allClassIds: string[] = [];
+    let subjectClassIds: string[] = [];
+    if (rs.isSchoolAdmin) {
+      const all = await db.classroom.findMany({ where: { schoolId: rs.schoolId, ...baseClsFilter }, select: { id: true } });
+      allClassIds = all.map((c) => c.id);
+    } else {
+      if (rs.allSubjectWhere.length) {
+        const a = await db.classroom.findMany({ where: { schoolId: rs.schoolId, OR: rs.allSubjectWhere, ...baseClsFilter }, select: { id: true } });
+        allClassIds = a.map((c) => c.id);
+      }
+      if (rs.subjectSpanWhere.length) {
+        const s = await db.classroom.findMany({ where: { schoolId: rs.schoolId, OR: rs.subjectSpanWhere, ...baseClsFilter }, select: { id: true } });
+        subjectClassIds = s.map((c) => c.id);
+      }
+    }
+    const allSet = new Set(allClassIds);
+    const subjOnly = subjectClassIds.filter((id) => !allSet.has(id)); // yalnız branş erişimli sınıflar
+    const unionIds = [...new Set([...allClassIds, ...subjectClassIds])];
+    if (unionIds.length === 0) return emptyReport;
 
     const classrooms = await db.classroom.findMany({
-      where: { ...clsWhere, ...(grade ? { gradeLevel: grade } : {}), ...(input.classroomId ? { id: input.classroomId } : {}) },
+      where: { id: { in: unionIds } },
       select: { id: true, name: true, gradeLevel: true, branchId: true, _count: { select: { students: true } } },
     });
-    const clsIds = classrooms.map((c) => c.id);
     const branchIds = [...new Set(classrooms.map((c) => c.branchId))];
     const branches = await db.branch.findMany({ where: { id: { in: branchIds } }, select: { id: true, name: true } });
     const branchName = new Map(branches.map((b) => [b.id, b.name]));
 
+    // Görünürlük: tüm-ders sınıflarında her sınav; branş-kısıtlı sınıflarda yalnız kendi zümre sınavları.
+    // UI zümre filtresi (input.departmentId) ek olarak uygulanır.
+    const examDept = input.departmentId ? { departmentId: input.departmentId } : undefined;
+    const asgOr: Array<Record<string, unknown>> = [];
+    const subOr: Array<Record<string, unknown>> = [];
+    if (allClassIds.length) {
+      asgOr.push({ classroomId: { in: allClassIds }, ...(examDept ? { exam: examDept } : {}) });
+      subOr.push({ assignment: { classroomId: { in: allClassIds }, ...(examDept ? { exam: examDept } : {}) } });
+    }
+    if (subjOnly.length && rs.subjectDeptIds.length) {
+      const deptFilter = examDept ?? { departmentId: { in: rs.subjectDeptIds } };
+      asgOr.push({ classroomId: { in: subjOnly }, exam: deptFilter });
+      subOr.push({ assignment: { classroomId: { in: subjOnly }, exam: deptFilter } });
+    }
+    if (asgOr.length === 0) return emptyReport;
+
     const [assignments, submissions] = await Promise.all([
-      db.schoolAssignment.findMany({ where: { classroomId: { in: clsIds }, ...deptWhere }, select: { id: true, classroomId: true } }),
+      db.schoolAssignment.findMany({ where: { OR: asgOr }, select: { id: true, classroomId: true } }),
       db.schoolSubmission.findMany({
         where: {
-          assignment: { classroomId: { in: clsIds }, ...deptWhere },
+          OR: subOr,
           status: { in: ['SUBMITTED', 'GRADED'] as any },
           ...(submittedAt ? { submittedAt } : {}),
         },
@@ -228,20 +261,29 @@ export class GetFilteredReportUseCase {
 /** Tek sınıf detay raporu — zaman aralığı + zümre filtresiyle öğrenci/ödev/zümre kırılımı. */
 export class GetClassroomReportUseCase {
   async execute(classroomId: string, input: { from?: string; to?: string; departmentId?: string }, actorId?: string) {
-    const scope = await resolveSchoolScope(actorId);
-    if (scopeIsEmpty(scope)) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    const rs = await resolveReportScope(actorId);
+    if (rs.empty) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
     const db = prismaRead();
-    // Sınıf yalnız kapsam içindeyse erişilebilir.
-    const cls = await db.classroom.findFirst({
-      where: { id: classroomId, ...scopedClassroomWhere(scope) },
-      select: { id: true, name: true, gradeLevel: true, branch: { select: { name: true } }, _count: { select: { students: true } } },
-    });
+    const clsSelect = { id: true, name: true, gradeLevel: true, branch: { select: { name: true } }, _count: { select: { students: true } } };
+    // Erişim: tüm-ders mi (yönetim) yoksa branş-kısıtlı mı (zümre başkanlığı)?
+    let allSubjectAccess = rs.isSchoolAdmin;
+    let cls: any = null;
+    if (rs.isSchoolAdmin) {
+      cls = await db.classroom.findFirst({ where: { id: classroomId, schoolId: rs.schoolId }, select: clsSelect });
+    } else {
+      if (rs.allSubjectWhere.length) {
+        cls = await db.classroom.findFirst({ where: { id: classroomId, schoolId: rs.schoolId, OR: rs.allSubjectWhere }, select: clsSelect });
+        if (cls) allSubjectAccess = true;
+      }
+      if (!cls && rs.subjectSpanWhere.length) {
+        cls = await db.classroom.findFirst({ where: { id: classroomId, schoolId: rs.schoolId, OR: rs.subjectSpanWhere }, select: clsSelect });
+      }
+    }
     if (!cls) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
     const submittedAt = dateRange(input.from, input.to);
-    const subjectScoped = scope.schoolRole === 'DEPT_HEAD' && scope.departmentIds.length > 0 && !scope.isSchoolAdmin;
     const deptWhere = input.departmentId
       ? { exam: { departmentId: input.departmentId } }
-      : (subjectScoped ? { exam: { departmentId: { in: scope.departmentIds } } } : {});
+      : (allSubjectAccess ? {} : { exam: { departmentId: { in: rs.subjectDeptIds } } });
 
     const subs = await db.schoolSubmission.findMany({
       where: {

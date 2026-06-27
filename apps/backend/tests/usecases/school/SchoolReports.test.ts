@@ -109,7 +109,31 @@ describe('GetFilteredReportUseCase', () => {
     });
     await new GetFilteredReportUseCase().execute({}, 'u0');
     const where = classroomFindMany.mock.calls[0][0].where;
-    expect(where.OR).toEqual(expect.arrayContaining([{ branchId: { in: ['b1'] } }]));
+    // Designation tabanlı rapor kapsamı: şube yöneticisi → tüm-ders erişimi {branchId}
+    expect(where.OR).toEqual(expect.arrayContaining([{ branchId: 'b1' }]));
+  });
+
+  it('düz zümre üyesi (başkan değil) rapor göremez — hiyerarşide yukarı yok', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...admin, schoolRole: 'TEACHER', branchId: null, departmentId: 'd1' });
+    // p defaults: schoolLevel/classroom/department.findMany → [] (level head/class teacher/dept head DEĞİL)
+    const r = await new GetFilteredReportUseCase().execute({}, 'uMember');
+    expect(r.classrooms).toEqual([]);
+    expect(r.branches).toEqual([]);
+  });
+
+  it('sınıf öğretmeni yalnız kendi sınıfını görür (id OR)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...admin, schoolRole: 'TEACHER', branchId: null, departmentId: null });
+    p.classroom.findMany.mockResolvedValue([{ id: 'c9' }]); // adminUserId eşleşmesi → sınıf öğretmeni
+    const classroomFindMany = jest.fn().mockResolvedValue([]);
+    read.mockReturnValue({
+      classroom: { findMany: classroomFindMany },
+      branch: { findMany: jest.fn().mockResolvedValue([]) },
+      schoolAssignment: { findMany: jest.fn().mockResolvedValue([]) },
+      schoolSubmission: { findMany: jest.fn().mockResolvedValue([]) },
+    });
+    await new GetFilteredReportUseCase().execute({}, 'uClassTeacher');
+    const where = classroomFindMany.mock.calls[0][0].where;
+    expect(where.OR).toEqual(expect.arrayContaining([{ id: { in: ['c9'] } }]));
   });
 });
 

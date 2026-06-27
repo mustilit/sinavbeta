@@ -186,3 +186,59 @@ export function scopedClassroomWhere(scope: SchoolScope): Record<string, unknown
   if (!or.length) return { id: '__none__' }; // hiçbir şey
   return { schoolId: scope.schoolId, OR: or };
 }
+
+/**
+ * RAPOR erişim kapsamı — designation tabanlı (üyelik DEĞİL), hiyerarşide YUKARI yok:
+ *  - SCHOOL_ADMIN → tüm okul, tüm dersler
+ *  - BRANCH_ADMIN → kendi şubesi, tüm dersler
+ *  - Seviye Sorumlusu (SchoolLevel.adminUserId) → kendi seviye(ler)i, tüm dersler
+ *  - Sınıf Öğretmeni (Classroom.adminUserId) → kendi sınıf(lar)ı, tüm dersler
+ *  - Zümre Başkanı (Department.headUserId / DEPT_HEAD) → zümresinin sınıf span'ı, YALNIZ kendi branşı
+ * `allSubjectWhere`: tüm-ders erişimi olan sınıf WHERE parçaları (OR).
+ * `subjectSpanWhere` + `subjectDeptIds`: branşa kısıtlı (yalnız bu zümrelerin sınavları) sınıf span'ı.
+ * Düz zümre ÜYELİĞİ (başkan değil) rapor erişimi vermez — kimse yukarıyı görmez.
+ */
+export type ReportScope = {
+  schoolId: string;
+  isSchoolAdmin: boolean;
+  empty: boolean;
+  allSubjectWhere: Array<Record<string, unknown>>;
+  subjectSpanWhere: Array<Record<string, unknown>>;
+  subjectDeptIds: string[];
+};
+
+export async function resolveReportScope(userId: string | undefined): Promise<ReportScope> {
+  const ctx = await resolveSchoolContext(userId);
+  const schoolId = ctx.schoolId;
+  if (ctx.schoolRole === 'SCHOOL_ADMIN') {
+    return { schoolId, isSchoolAdmin: true, empty: false, allSubjectWhere: [], subjectSpanWhere: [], subjectDeptIds: [] };
+  }
+
+  const allSubjectWhere: Array<Record<string, unknown>> = [];
+  if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId) allSubjectWhere.push({ branchId: ctx.branchId });
+  const myLevels = await prisma.schoolLevel.findMany({ where: { schoolId, adminUserId: ctx.userId }, select: { id: true } });
+  if (myLevels.length) allSubjectWhere.push({ levelId: { in: myLevels.map((l) => l.id) } });
+  const myClasses = await prisma.classroom.findMany({ where: { schoolId, adminUserId: ctx.userId }, select: { id: true } });
+  if (myClasses.length) allSubjectWhere.push({ id: { in: myClasses.map((c) => c.id) } });
+
+  // Yalnız zümre BAŞKANLIĞI (üyelik değil) branş-kısıtlı rapor erişimi verir.
+  const headDeptIds = new Set<string>();
+  const headed = await prisma.department.findMany({ where: { schoolId, headUserId: ctx.userId }, select: { id: true } });
+  headed.forEach((d) => headDeptIds.add(d.id));
+  if (ctx.schoolRole === 'DEPT_HEAD' && ctx.departmentId) headDeptIds.add(ctx.departmentId);
+
+  const subjectSpanWhere: Array<Record<string, unknown>> = [];
+  const subjectDeptIds: string[] = [];
+  if (headDeptIds.size) {
+    const depts = await prisma.department.findMany({ where: { id: { in: [...headDeptIds] } }, select: { id: true, levelId: true, branchId: true } });
+    for (const d of depts) {
+      subjectDeptIds.push(d.id);
+      if (d.levelId) subjectSpanWhere.push({ levelId: d.levelId });
+      else if (d.branchId) subjectSpanWhere.push({ branchId: d.branchId });
+      else subjectSpanWhere.push({ schoolId }); // okul-geneli zümre → tüm okul (branşa kısıtlı)
+    }
+  }
+
+  const empty = allSubjectWhere.length === 0 && subjectSpanWhere.length === 0;
+  return { schoolId, isSchoolAdmin: false, empty, allSubjectWhere, subjectSpanWhere, subjectDeptIds };
+}
