@@ -2224,6 +2224,9 @@ export const school = {
   listSubjects: async () => (await api.get('/school/subjects')).data,
   createSubject: async (body) => (await api.post('/school/subjects', body)).data,
   deleteSubject: async (id) => (await api.delete(`/school/subjects/${id}`)).data,
+  // Sınav formu referans listeleri
+  listLevels: async () => (await api.get('/school/levels')).data,
+  listTopics: async () => (await api.get('/school/topics')).data,
   // Kullanıcılar
   listUsers: async ({ role, q, branchId, cursor, limit = 30 } = {}) => {
     const qs = new URLSearchParams();

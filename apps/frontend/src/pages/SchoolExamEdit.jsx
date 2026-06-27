@@ -39,6 +39,10 @@ export default function SchoolExamEdit() {
     queryFn: () => schoolApi.exams.get(examId),
     enabled: !!examId,
   });
+  // Referans listeleri: Ders (okul dersleri), Sınıf seviyesi (okul seviyeleri), Konu (admin)
+  const { data: subjects = [] } = useQuery({ queryKey: ["esinif", "subjects"], queryFn: schoolApi.listSubjects, enabled: !!role });
+  const { data: levels = [] } = useQuery({ queryKey: ["esinif", "levels"], queryFn: schoolApi.listLevels, enabled: !!role });
+  const { data: topics = [] } = useQuery({ queryKey: ["esinif", "topics"], queryFn: schoolApi.listTopics, enabled: !!role });
   const type = exam?.examType || examType;
   const meta = TYPE_META[type] ?? TYPE_META.TEST;
 
@@ -110,11 +114,38 @@ export default function SchoolExamEdit() {
         <CardContent className="p-5 space-y-3">
           <div><Label htmlFor="e-title">Başlık</Label><Input id="e-title" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} maxLength={200} placeholder="Örn. 1. Ünite Değerlendirme" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label htmlFor="e-subject">Ders</Label><Input id="e-subject" value={form.subject} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} placeholder="(zümreden)" /></div>
-            <div><Label htmlFor="e-grade">Sınıf seviyesi</Label><Input id="e-grade" type="number" min={1} max={12} value={form.gradeLevel} onChange={(e) => setForm((f) => ({ ...f, gradeLevel: e.target.value }))} /></div>
+            <div>
+              <Label>Ders</Label>
+              <Select value={form.subject || undefined} onValueChange={(v) => setForm((f) => ({ ...f, subject: v }))}>
+                <SelectTrigger><SelectValue placeholder="Ders seçin" /></SelectTrigger>
+                <SelectContent>
+                  {form.subject && !subjects.some((s) => s.name === form.subject) && <SelectItem value={form.subject}>{form.subject}</SelectItem>}
+                  {subjects.map((s) => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Sınıf seviyesi</Label>
+              <Select value={form.gradeLevel ? String(form.gradeLevel) : undefined} onValueChange={(v) => setForm((f) => ({ ...f, gradeLevel: v }))}>
+                <SelectTrigger><SelectValue placeholder="Seviye seçin" /></SelectTrigger>
+                <SelectContent>
+                  {form.gradeLevel && !levels.some((l) => String(l.gradeLevel) === String(form.gradeLevel)) && <SelectItem value={String(form.gradeLevel)}>{form.gradeLevel}. Sınıf</SelectItem>}
+                  {levels.map((l) => <SelectItem key={l.gradeLevel} value={String(l.gradeLevel)}>{l.gradeLevel}. Sınıf</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label htmlFor="e-topic">Konu</Label><Input id="e-topic" value={form.topic} onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))} maxLength={120} /></div>
+            <div>
+              <Label>Konu</Label>
+              <Select value={form.topic || undefined} onValueChange={(v) => setForm((f) => ({ ...f, topic: v }))}>
+                <SelectTrigger><SelectValue placeholder="Konu seçin" /></SelectTrigger>
+                <SelectContent>
+                  {form.topic && !topics.some((t) => t.name === form.topic) && <SelectItem value={form.topic}>{form.topic}</SelectItem>}
+                  {topics.map((t) => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div><Label htmlFor="e-dur">Süre (dk, boş=süresiz)</Label><Input id="e-dur" type="number" min={0} value={form.durationMinutes} onChange={(e) => setForm((f) => ({ ...f, durationMinutes: e.target.value }))} /></div>
           </div>
           <div>
@@ -122,8 +153,8 @@ export default function SchoolExamEdit() {
             <Select value={form.poolVisibility} onValueChange={(v) => setForm((f) => ({ ...f, poolVisibility: v }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="DEPARTMENT">Sadece zümrem</SelectItem>
-                <SelectItem value="SCHOOL">Tüm okul öğretmenleri</SelectItem>
+                <SelectItem value="DEPARTMENT">Ders Zümresi</SelectItem>
+                <SelectItem value="SCHOOL">Tüm okul</SelectItem>
               </SelectContent>
             </Select>
           </div>

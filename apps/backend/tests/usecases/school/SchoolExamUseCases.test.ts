@@ -79,13 +79,27 @@ describe('CreateSchoolExamUseCase', () => {
       .rejects.toMatchObject({ code: 'SUBJECT_REQUIRED' });
   });
 
-  it('okul yöneticisi: departmentId verirse o zümreye atanır', async () => {
+  it('okul yöneticisi: departmentId verirse o zümreye atanır (ders türetilir)', async () => {
     p.schoolUser.findFirst.mockResolvedValue(adminCtx);
-    p.department.findFirst.mockResolvedValue({ id: 'dept9' });
-    p.department.findUnique.mockResolvedValue({ subject: 'Tarih' });
+    p.department.findFirst.mockResolvedValue({ id: 'dept9', subject: 'Tarih' });
     const r = await new CreateSchoolExamUseCase().execute({ examType: 'TEST', title: 'Zümre Sınavı', departmentId: 'dept9' }, 'ua');
     expect(r.departmentId).toBe('dept9');
     expect(r.subject).toBe('Tarih');
+  });
+
+  it('okul yöneticisi: "Ders Zümresi" → seçilen derse ait zümreye bağlanır', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(adminCtx);
+    p.department.findFirst.mockResolvedValue({ id: 'deptMat' }); // subject=Matematik eşleşmesi
+    const r = await new CreateSchoolExamUseCase().execute({ examType: 'TEST', title: 'X', subject: 'Matematik', poolVisibility: 'DEPARTMENT' }, 'ua');
+    expect(r.departmentId).toBe('deptMat');
+    expect(r.poolVisibility).toBe('DEPARTMENT');
+  });
+
+  it('okul yöneticisi: "Tüm okul" → zümresiz (SCHOOL)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(adminCtx);
+    const r = await new CreateSchoolExamUseCase().execute({ examType: 'TEST', title: 'X', subject: 'Fen', poolVisibility: 'SCHOOL' }, 'ua');
+    expect(r.departmentId).toBeNull();
+    expect(r.poolVisibility).toBe('SCHOOL');
   });
 
   it('okul yöneticisi: geçersiz departmentId → DEPARTMENT_NOT_FOUND', async () => {
@@ -119,6 +133,12 @@ describe('Okul yöneticisi — başkasının sınavını yönetebilir', () => {
     p.schoolExam.delete.mockResolvedValue({ id: 'e1' });
     const r = await new DeleteSchoolExamUseCase().execute('e1', 'ua');
     expect(r).toBeTruthy();
+  });
+
+  it('Get: başkasının sınavı admin için editable (soru editörü açılır)', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'e1', createdById: 'other', departmentId: 'dX', poolVisibility: 'DEPARTMENT', questions: [], department: null, createdBy: { username: 'x' } });
+    const r = await new GetSchoolExamUseCase().execute('e1', 'ua');
+    expect(r).toMatchObject({ canManage: true, editable: true });
   });
 });
 

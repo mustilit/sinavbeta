@@ -26,6 +26,8 @@ import {
   AssignDepartmentMembersUseCase,
   CreateSubjectUseCase,
   ListSubjectsUseCase,
+  ListSchoolLevelsUseCase,
+  ListSchoolTopicsUseCase,
   DeleteSubjectUseCase,
   GetSchoolQuotaUseCase,
   GetSchoolPanelStatsUseCase,
@@ -107,6 +109,8 @@ export class SchoolController {
   private assignMembersUC = new AssignDepartmentMembersUseCase();
   private createSubjectUC = new CreateSubjectUseCase();
   private listSubjectsUC = new ListSubjectsUseCase();
+  private listLevelsUC = new ListSchoolLevelsUseCase();
+  private listTopicsUC = new ListSchoolTopicsUseCase();
   private deleteSubjectUC = new DeleteSubjectUseCase();
   private quotaUC = new GetSchoolQuotaUseCase();
   private panelStatsUC = new GetSchoolPanelStatsUseCase();
@@ -190,6 +194,12 @@ export class SchoolController {
   createSubject(@Body() dto: CreateSubjectDto, @Req() req: any) { return this.createSubjectUC.execute(dto, req?.user?.id); }
   @Delete('subjects/:id') @ApiBearerAuth('bearer') @ApiErrorResponses()
   deleteSubject(@Param('id') id: string, @Req() req: any) { return this.deleteSubjectUC.execute(id, req?.user?.id); }
+
+  // ── Sınav formu referans listeleri (seviye + admin konu) ──
+  @Get('levels') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Okul seviye listesi (1-12)' }) @ApiErrorResponses()
+  listLevels(@Req() req: any) { return this.listLevelsUC.execute(req?.user?.id); }
+  @Get('topics') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Admin konu listesi' }) @ApiErrorResponses()
+  listTopics(@Req() req: any) { return this.listTopicsUC.execute(req?.user?.id); }
 
   // ── Kullanıcılar ──
   @Get('users') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Okul kullanıcı listesi (cursor)' }) @ApiErrorResponses()

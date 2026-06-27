@@ -35,34 +35,43 @@ export class CreateSchoolExamUseCase {
     if (!title) throw new AppError('TITLE_REQUIRED', 'Sınav başlığı zorunlu', 400);
     if (title.length > MAX_TITLE) throw new AppError('TITLE_TOO_LONG', `Başlık en fazla ${MAX_TITLE} karakter`, 400);
 
-    // Zümre çözümü: okul yöneticisi istediği zümreyi seçebilir (veya boş → okul geneli havuz);
-    // öğretmen/zümre başkanı kendi zümresine bağlıdır.
+    // Havuz görünürlüğü isteği: "Ders Zümresi" (DEPARTMENT, varsayılan) / "Tüm okul" (SCHOOL).
+    const wantDept = input.poolVisibility !== 'SCHOOL';
+    let subject = (input.subject ?? '').trim();
+
+    // Zümre çözümü:
+    //  - Öğretmen/zümre başkanı → kendi zümresi (ders zümresi).
+    //  - Okul yöneticisi → açık departmentId verilirse o; yoksa "Ders Zümresi" seçiliyse
+    //    seçilen DERSE ait zümreye bağlanır (subject eşleşmesi); "Tüm okul" ise zümresiz.
     let departmentId: string | null;
     if (ctx.schoolRole === 'SCHOOL_ADMIN') {
       if (input.departmentId) {
-        const d = await prisma.department.findFirst({ where: { id: input.departmentId, schoolId: ctx.schoolId }, select: { id: true } });
+        const d = await prisma.department.findFirst({ where: { id: input.departmentId, schoolId: ctx.schoolId }, select: { id: true, subject: true } });
         if (!d) throw new AppError('DEPARTMENT_NOT_FOUND', 'Zümre bulunamadı', 404);
         departmentId = d.id;
+        if (!subject) subject = d.subject ?? '';
+      } else if (wantDept && subject) {
+        // Seçilen dersin zümresine bağla; eşleşen zümre yoksa okul geneli olur.
+        const d = await prisma.department.findFirst({ where: { schoolId: ctx.schoolId, subject: { equals: subject, mode: 'insensitive' } }, orderBy: [{ levelId: 'asc' }], select: { id: true } });
+        departmentId = d?.id ?? null;
       } else {
         departmentId = null; // okul geneli
       }
     } else {
       if (!ctx.departmentId) throw new AppError('NO_DEPARTMENT', 'Sınav oluşturmak için bir zümreye atanmış olmalısınız', 409);
       departmentId = ctx.departmentId;
+      if (!subject) {
+        const dept = await prisma.department.findUnique({ where: { id: departmentId }, select: { subject: true } });
+        subject = dept?.subject ?? '';
+      }
     }
 
-    // Ders: verilmezse zümrenin dersinden türet (zümre varsa)
-    let subject = (input.subject ?? '').trim();
-    if (!subject && departmentId) {
-      const dept = await prisma.department.findUnique({ where: { id: departmentId }, select: { subject: true } });
-      subject = dept?.subject ?? '';
-    }
     if (!subject) throw new AppError('SUBJECT_REQUIRED', 'Ders zorunlu', 400);
 
     const grade = input.gradeLevel != null ? Math.floor(input.gradeLevel) : null;
     if (grade != null && (grade < 1 || grade > 12)) throw new AppError('INVALID_GRADE', 'Sınıf seviyesi 1-12 olmalı', 400);
     // Zümre yoksa havuz görünürlüğü okul geneli olmalı (zümre kapsamı anlamsız).
-    const visibility = !departmentId ? 'SCHOOL' : (input.poolVisibility === 'SCHOOL' ? 'SCHOOL' : 'DEPARTMENT');
+    const visibility = !departmentId ? 'SCHOOL' : (wantDept ? 'DEPARTMENT' : 'SCHOOL');
 
     const created = await prisma.schoolExam.create({
       data: {
@@ -194,10 +203,11 @@ export class GetSchoolExamUseCase {
     const isManagerView = ctx.schoolRole === 'SCHOOL_ADMIN' || ctx.schoolRole === 'BRANCH_ADMIN';
     const visible = isManagerView || exam.poolVisibility === 'SCHOOL' || exam.departmentId === ctx.departmentId || exam.createdById === actorId;
     if (!visible) throw new AppError('FORBIDDEN', 'Bu sınava erişiminiz yok', 403);
+    const editable = canManage(exam, ctx, actorId as string); // okul yöneticisi + sahip + zümre başkanı düzenleyebilir
     return {
       ...exam,
-      canManage: canManage(exam, ctx, actorId as string),
-      editable: !isManagerView,
+      canManage: editable,
+      editable,
     };
   }
 }

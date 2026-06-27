@@ -642,6 +642,26 @@ export class ListSubjectsUseCase {
   }
 }
 
+/** Okul içindeki seviye listesi (sınıf seviyeleri 1-12, tekilleştirilmiş) — sınav formu dropdown'u. */
+export class ListSchoolLevelsUseCase {
+  async execute(actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER');
+    const rows = await prisma.schoolLevel.findMany({ where: { schoolId: ctx.schoolId }, select: { gradeLevel: true } });
+    const distinct = [...new Set(rows.map((r) => r.gradeLevel))].sort((a, b) => a - b);
+    return distinct.map((gradeLevel) => ({ gradeLevel }));
+  }
+}
+
+/** Admin Konu (Topic) listesi — okul personeli sınav formunda konu seçer. Topic global'dir. */
+export class ListSchoolTopicsUseCase {
+  async execute(actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER');
+    return prisma.topic.findMany({ where: { active: true }, orderBy: [{ name: 'asc' }], select: { id: true, name: true } });
+  }
+}
+
 export class DeleteSubjectUseCase {
   async execute(id: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
