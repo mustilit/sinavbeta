@@ -33,11 +33,12 @@ class UpdateExamDto {
   @IsOptional() @IsIn(['DEPARTMENT', 'SCHOOL']) poolVisibility?: string;
 }
 class OptionDto {
-  @IsString() @MaxLength(500) content!: string;
+  @IsOptional() @IsString() @MaxLength(500) content?: string;
+  @IsOptional() @IsString() mediaUrl?: string;
   @IsOptional() @IsBoolean() isCorrect?: boolean;
 }
 class QuestionDto {
-  @IsString() @MaxLength(4000) content!: string;
+  @IsOptional() @IsString() @MaxLength(4000) content?: string;
   @IsOptional() @IsString() mediaUrl?: string;
   @IsOptional() @IsInt() @Min(1) points?: number;
   @IsOptional() @IsString() @MaxLength(4000) solutionText?: string;

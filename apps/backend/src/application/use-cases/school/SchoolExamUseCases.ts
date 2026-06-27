@@ -131,7 +131,7 @@ export class UpdateSchoolExamUseCase {
 export class SaveSchoolExamQuestionsUseCase {
   async execute(
     examId: string,
-    input: { questions: Array<{ content: string; mediaUrl?: string; points?: number; solutionText?: string; solutionMediaUrl?: string; options?: Array<{ content: string; isCorrect?: boolean }> }> },
+    input: { questions: Array<{ content?: string; mediaUrl?: string; points?: number; solutionText?: string; solutionMediaUrl?: string; options?: Array<{ content?: string; mediaUrl?: string; isCorrect?: boolean }> }> },
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
@@ -145,41 +145,40 @@ export class SaveSchoolExamQuestionsUseCase {
 
     const isChoice = exam.examType === 'TEST' || exam.examType === 'TUNNEL';
     let totalPoints = 0;
-    // Doğrulama
-    qs.forEach((q, i) => {
-      if (!q.content || !q.content.trim()) throw new AppError('QUESTION_CONTENT_REQUIRED', `Soru ${i + 1}: içerik zorunlu`, 400);
+    // Doğrulama — market test editörü deseni: içerik VEYA görsel yeterli; boş şıklar elenir.
+    const norm = qs.map((q, i) => {
+      if (!q.content?.trim() && !q.mediaUrl) throw new AppError('QUESTION_CONTENT_REQUIRED', `Soru ${i + 1}: içerik veya görsel zorunlu`, 400);
       const pts = q.points != null ? Math.max(1, Math.floor(q.points)) : 1;
       totalPoints += pts;
+      let filledOpts: Array<{ content?: string; mediaUrl?: string; isCorrect?: boolean }> = [];
       if (isChoice) {
-        const opts = q.options ?? [];
-        if (opts.length < 2) throw new AppError('TOO_FEW_OPTIONS', `Soru ${i + 1}: en az 2 şık gerekli`, 400);
-        const correct = opts.filter((o) => o.isCorrect).length;
-        if (correct !== 1) throw new AppError('ONE_CORRECT_REQUIRED', `Soru ${i + 1}: tam olarak 1 doğru şık olmalı`, 400);
-        opts.forEach((o, j) => { if (!o.content || !o.content.trim()) throw new AppError('OPTION_CONTENT_REQUIRED', `Soru ${i + 1}, şık ${j + 1}: içerik zorunlu`, 400); });
-      } else {
-        // WRITTEN: çözüm referansı zorunlu
-        if (!q.solutionText || !q.solutionText.trim()) throw new AppError('SOLUTION_REQUIRED', `Soru ${i + 1}: çözüm metni zorunlu`, 400);
+        filledOpts = (q.options ?? []).filter((o) => o.content?.trim() || o.mediaUrl);
+        if (filledOpts.length < 2) throw new AppError('TOO_FEW_OPTIONS', `Soru ${i + 1}: en az 2 şık gerekli`, 400);
+        if (filledOpts.filter((o) => o.isCorrect).length !== 1) throw new AppError('ONE_CORRECT_REQUIRED', `Soru ${i + 1}: tam olarak 1 doğru şık olmalı`, 400);
+      } else if (!q.solutionText?.trim()) {
+        throw new AppError('SOLUTION_REQUIRED', `Soru ${i + 1}: çözüm metni zorunlu`, 400);
       }
+      return { ...q, points: pts, filledOpts };
     });
 
     await prisma.$transaction(async (tx) => {
       await tx.schoolQuestion.deleteMany({ where: { examId } }); // cascade options
-      for (let i = 0; i < qs.length; i++) {
-        const q = qs[i];
+      for (let i = 0; i < norm.length; i++) {
+        const q = norm[i];
         const created = await tx.schoolQuestion.create({
           data: {
             examId,
-            content: q.content.trim(),
+            content: (q.content ?? '').trim(),
             mediaUrl: (q.mediaUrl ?? '').trim() || null,
             order: i + 1,
-            points: q.points != null ? Math.max(1, Math.floor(q.points)) : 1,
+            points: q.points,
             solutionText: (q.solutionText ?? '').trim() || null,
             solutionMediaUrl: (q.solutionMediaUrl ?? '').trim() || null,
           },
         });
-        if (isChoice && q.options?.length) {
+        if (isChoice && q.filledOpts.length) {
           await tx.schoolQuestionOption.createMany({
-            data: q.options.map((o, j) => ({ questionId: created.id, content: o.content.trim(), isCorrect: !!o.isCorrect, order: j + 1 })),
+            data: q.filledOpts.map((o, j) => ({ questionId: created.id, content: (o.content ?? '').trim(), mediaUrl: (o.mediaUrl ?? '').trim() || null, isCorrect: !!o.isCorrect, order: j + 1 })),
           });
         }
       }

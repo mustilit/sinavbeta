@@ -2700,6 +2700,7 @@ model SchoolQuestionOption {
   questionId String
   question   SchoolQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   content    String
+  mediaUrl   String? // şık görseli (market test editörü deseni)
   isCorrect  Boolean        @default(false)
   order      Int // 1-tabanlı (A,B,C,D...)
 
