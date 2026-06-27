@@ -2314,6 +2314,8 @@ export const school = {
     host: async (id) => (await api.get(`/school/live/${id}/host`)).data,
     start: async (id) => (await api.post(`/school/live/${id}/start`)).data,
     advance: async (id) => (await api.post(`/school/live/${id}/advance`)).data,
+    prev: async (id) => (await api.post(`/school/live/${id}/prev`)).data,
+    toggleStats: async (id) => (await api.post(`/school/live/${id}/toggle-stats`)).data,
     end: async (id) => (await api.post(`/school/live/${id}/end`)).data,
   },
 };
@@ -2333,6 +2335,7 @@ export const studentReport = {
 export const studentLive = {
   join: async (joinCode) => (await api.post('/school/live/join', { joinCode })).data,
   state: async (id) => (await api.get(`/school/live/${id}/state`)).data,
+  ping: async (id) => (await api.post(`/school/live/${id}/ping`)).data,
   answer: async (id, body) => (await api.post(`/school/live/${id}/answer`, body)).data,
 };
 

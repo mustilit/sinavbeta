@@ -91,7 +91,14 @@ async function scopedSession(sessionId: string, ctx: SchoolContext) {
   return s;
 }
 
-/** Host görünümü — sorular (doğru dahil) + katılımcı + güncel soru cevap dağılımı. */
+// Aktif katılımcı eşiği — son 20 sn içinde ping atan (market ile aynı heartbeat penceresi).
+const ACTIVE_WINDOW_MS = 20000;
+
+/**
+ * Host görünümü — market LiveSessionHost.jsx ile BİREBİR aynı state şekli:
+ * currentQuestion (doğru dahil) + stats[qid] (şık dağılımı + içerik + doğru) + aktif
+ * katılımcı. roundNumber/round2/maxParticipants alanları okul tarafında yok (1/null).
+ */
 export class GetSchoolLiveHostStateUseCase {
   async execute(sessionId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
@@ -103,16 +110,24 @@ export class GetSchoolLiveHostStateUseCase {
     });
     if (!s) throw new AppError('SESSION_NOT_FOUND', 'Oturum bulunamadı', 404);
     const cur = s.questions[s.currentQuestionIdx] ?? null;
-    let distribution: Array<{ optionId: string; count: number }> = [];
+    const activeParticipantCount = await prisma.liveParticipant.count({
+      where: { sessionId: s.id, lastSeenAt: { gte: new Date(Date.now() - ACTIVE_WINDOW_MS) } },
+    });
+    const stats: Record<string, Array<{ optionId: string; content: string; isCorrect: boolean; count: number }>> = {};
     if (cur) {
       const grouped = await prisma.liveAnswer.groupBy({ by: ['optionId'], where: { questionId: cur.id }, _count: { _all: true } });
-      distribution = grouped.filter((g) => g.optionId).map((g) => ({ optionId: g.optionId as string, count: g._count._all }));
+      const countByOpt = new Map(grouped.filter((g) => g.optionId).map((g) => [g.optionId as string, g._count._all]));
+      stats[cur.id] = cur.options.map((o) => ({ optionId: o.id, content: o.content, isCorrect: o.isCorrect, count: countByOpt.get(o.id) ?? 0 }));
     }
     return {
-      id: s.id, title: s.title, joinCode: s.joinCode, status: s.status, currentQuestionIdx: s.currentQuestionIdx,
-      participantCount: s._count.participants, questionCount: s.questions.length,
-      questions: s.questions.map((q) => ({ id: q.id, content: q.content, mediaUrl: q.mediaUrl ?? null, options: q.options.map((o) => ({ id: o.id, content: o.content, mediaUrl: o.mediaUrl ?? null, isCorrect: o.isCorrect })) })),
-      currentDistribution: distribution,
+      id: s.id, title: s.title, joinCode: s.joinCode, status: s.status,
+      currentQuestionIdx: s.currentQuestionIdx, totalQuestions: s.questions.length,
+      participantCount: s._count.participants, activeParticipantCount,
+      showStats: s.showStats, roundNumber: 1, round2: null, maxParticipants: null,
+      currentQuestion: cur
+        ? { id: cur.id, content: cur.content, mediaUrl: cur.mediaUrl ?? null, options: cur.options.map((o) => ({ id: o.id, content: o.content, mediaUrl: o.mediaUrl ?? null, isCorrect: o.isCorrect })) }
+        : null,
+      stats,
     };
   }
 }
@@ -136,6 +151,39 @@ export class AdvanceSchoolLiveSessionUseCase {
     const next = Math.min(s.currentQuestionIdx + 1, qCount - 1);
     await prisma.liveSession.update({ where: { id: sessionId }, data: { currentQuestionIdx: next } });
     return { currentQuestionIdx: next };
+  }
+}
+
+/** Önceki soruya dön (market 'prev' — inceleme/geri navigasyon). */
+export class PrevSchoolLiveSessionUseCase {
+  async execute(sessionId: string, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
+    const s = await scopedSession(sessionId, ctx);
+    const prev = Math.max(0, s.currentQuestionIdx - 1);
+    await prisma.liveSession.update({ where: { id: sessionId }, data: { currentQuestionIdx: prev } });
+    return { currentQuestionIdx: prev };
+  }
+}
+
+/** İstatistik (şık dağılımı) görünürlüğünü aç/kapat (market 'toggleStats'). */
+export class ToggleSchoolLiveStatsUseCase {
+  async execute(sessionId: string, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
+    const s = await scopedSession(sessionId, ctx);
+    const updated = await prisma.liveSession.update({ where: { id: sessionId }, data: { showStats: !s.showStats }, select: { showStats: true } });
+    return { showStats: updated.showStats };
+  }
+}
+
+/** Öğrenci heartbeat — aktif katılımcı sayımı için lastSeenAt günceller (market 'ping'). */
+export class PingSchoolLiveSessionUseCase {
+  async execute(sessionId: string, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'STUDENT');
+    await prisma.liveParticipant.updateMany({ where: { sessionId, userId: actorId as string }, data: { lastSeenAt: new Date() } });
+    return { ok: true };
   }
 }
 
@@ -174,39 +222,67 @@ export class JoinSchoolLiveSessionUseCase {
   }
 }
 
-/** Öğrenci görünümü — güncel soru (doğru SIZDIRMAZ) + kendi cevabı + durum. */
+/**
+ * Öğrenci görünümü — market LiveSessionJoin.jsx ile BİREBİR aynı state şekli:
+ * DRAFT (bekleme), ACTIVE (currentQuestion — doğru SIZDIRMAZ; eğitici istatistik
+ * açtıysa stats[qid] gelir), ENDED (myResults: skor + soru bazlı detay).
+ */
 export class GetSchoolLiveParticipantStateUseCase {
   async execute(sessionId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'STUDENT');
     const s = await prisma.liveSession.findFirst({
       where: { id: sessionId, schoolId: ctx.schoolId },
-      include: { questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } } },
+      include: { questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } }, _count: { select: { participants: true } } },
     });
     if (!s) throw new AppError('SESSION_NOT_FOUND', 'Oturum bulunamadı', 404);
     const part = await prisma.liveParticipant.findUnique({ where: { sessionId_userId: { sessionId, userId: actorId as string } }, select: { id: true } });
     if (!part) throw new AppError('NOT_JOINED', 'Önce katılın', 409);
 
-    if (s.status === 'ENDED') {
-      // Sonuç: doğru sayısı
-      const answers = await prisma.liveAnswer.findMany({ where: { participantId: part.id }, include: { option: { select: { isCorrect: true } } } });
-      const correct = answers.filter((a) => a.option?.isCorrect).length;
-      return { status: 'ENDED', score: correct, total: s.questions.length };
-    }
-    if (s.status === 'DRAFT') return { status: 'DRAFT' };
+    const base = { id: s.id, title: s.title, participantCount: s._count.participants, totalQuestions: s.questions.length, roundNumber: 1 };
 
+    if (s.status === 'DRAFT') return { ...base, status: 'DRAFT' };
+
+    if (s.status === 'ENDED') {
+      const answers = await prisma.liveAnswer.findMany({ where: { participantId: part.id }, include: { option: { select: { id: true, content: true, isCorrect: true } } } });
+      const byQ = new Map(answers.map((a) => [a.questionId, a]));
+      const detail = s.questions.map((q) => {
+        const a = byQ.get(q.id);
+        const correctOpt = q.options.find((o) => o.isCorrect);
+        return {
+          questionId: q.id,
+          questionContent: q.content,
+          chosenOptionId: a?.optionId ?? null,
+          chosenOptionContent: a?.option?.content ?? null,
+          correctOptionContent: correctOpt?.content ?? null,
+          isCorrect: !!a?.option?.isCorrect,
+        };
+      });
+      const correct = detail.filter((d) => d.isCorrect).length;
+      return { ...base, status: 'ENDED', myResults: { correct, total: s.questions.length, answers: detail, round1Results: null } };
+    }
+
+    // ACTIVE
     const cur = s.questions[s.currentQuestionIdx] ?? null;
-    let myOptionId: string | null = null;
+    let myAnswer: string | null = null;
     if (cur) {
       const ans = await prisma.liveAnswer.findUnique({ where: { questionId_participantId: { questionId: cur.id, participantId: part.id } }, select: { optionId: true } });
-      myOptionId = ans?.optionId ?? null;
+      myAnswer = ans?.optionId ?? null;
+    }
+    let stats: Record<string, Array<{ optionId: string; content: string; isCorrect: boolean; count: number }>> | undefined;
+    if (s.showStats && cur) {
+      const grouped = await prisma.liveAnswer.groupBy({ by: ['optionId'], where: { questionId: cur.id }, _count: { _all: true } });
+      const countByOpt = new Map(grouped.filter((g) => g.optionId).map((g) => [g.optionId as string, g._count._all]));
+      stats = { [cur.id]: cur.options.map((o) => ({ optionId: o.id, content: o.content, isCorrect: o.isCorrect, count: countByOpt.get(o.id) ?? 0 })) };
     }
     return {
+      ...base,
       status: 'ACTIVE',
       currentQuestionIdx: s.currentQuestionIdx,
-      questionCount: s.questions.length,
-      question: cur ? { id: cur.id, content: cur.content, mediaUrl: cur.mediaUrl ?? null, options: cur.options.map((o) => ({ id: o.id, content: o.content, mediaUrl: o.mediaUrl ?? null })) } : null,
-      myOptionId,
+      showStats: s.showStats,
+      currentQuestion: cur ? { id: cur.id, content: cur.content, mediaUrl: cur.mediaUrl ?? null, options: cur.options.map((o) => ({ id: o.id, content: o.content, mediaUrl: o.mediaUrl ?? null })) } : null,
+      myAnswer,
+      ...(stats ? { stats } : {}),
     };
   }
 }

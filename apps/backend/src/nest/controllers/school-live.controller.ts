@@ -9,6 +9,9 @@ import {
   GetSchoolLiveHostStateUseCase,
   StartSchoolLiveSessionUseCase,
   AdvanceSchoolLiveSessionUseCase,
+  PrevSchoolLiveSessionUseCase,
+  ToggleSchoolLiveStatsUseCase,
+  PingSchoolLiveSessionUseCase,
   EndSchoolLiveSessionUseCase,
   JoinSchoolLiveSessionUseCase,
   GetSchoolLiveParticipantStateUseCase,
@@ -31,6 +34,9 @@ export class SchoolLiveController {
   private hostUC = new GetSchoolLiveHostStateUseCase();
   private startUC = new StartSchoolLiveSessionUseCase();
   private advanceUC = new AdvanceSchoolLiveSessionUseCase();
+  private prevUC = new PrevSchoolLiveSessionUseCase();
+  private toggleStatsUC = new ToggleSchoolLiveStatsUseCase();
+  private pingUC = new PingSchoolLiveSessionUseCase();
   private endUC = new EndSchoolLiveSessionUseCase();
   private joinUC = new JoinSchoolLiveSessionUseCase();
   private stateUC = new GetSchoolLiveParticipantStateUseCase();
@@ -47,6 +53,10 @@ export class SchoolLiveController {
   start(@Param('id') id: string, @Req() req: any) { return this.startUC.execute(id, req?.user?.id); }
   @Post(':id/advance') @ApiBearerAuth('bearer') @ApiErrorResponses()
   advance(@Param('id') id: string, @Req() req: any) { return this.advanceUC.execute(id, req?.user?.id); }
+  @Post(':id/prev') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  prev(@Param('id') id: string, @Req() req: any) { return this.prevUC.execute(id, req?.user?.id); }
+  @Post(':id/toggle-stats') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  toggleStats(@Param('id') id: string, @Req() req: any) { return this.toggleStatsUC.execute(id, req?.user?.id); }
   @Post(':id/end') @ApiBearerAuth('bearer') @ApiErrorResponses()
   end(@Param('id') id: string, @Req() req: any) { return this.endUC.execute(id, req?.user?.id); }
 
@@ -55,6 +65,8 @@ export class SchoolLiveController {
   join(@Body() dto: JoinDto, @Req() req: any) { return this.joinUC.execute(dto, req?.user?.id); }
   @Get(':id/state') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Öğrenci durumu (polling)' }) @ApiErrorResponses()
   state(@Param('id') id: string, @Req() req: any) { return this.stateUC.execute(id, req?.user?.id); }
+  @Post(':id/ping') @ApiBearerAuth('bearer') @ApiErrorResponses()
+  ping(@Param('id') id: string, @Req() req: any) { return this.pingUC.execute(id, req?.user?.id); }
   @Post(':id/answer') @ApiBearerAuth('bearer') @ApiErrorResponses()
   answer(@Param('id') id: string, @Body() dto: AnswerDto, @Req() req: any) { return this.answerUC.execute(id, dto, req?.user?.id); }
 }
