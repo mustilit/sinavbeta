@@ -112,13 +112,21 @@ export class LoginUseCase {
       let requireTrust = user.role === 'ADMIN' || user.role === 'WORKER';
       if (!requireTrust) {
         try {
-          const sa = await prisma.schoolUser.findFirst({
-            where: { userId: user.id, schoolRole: 'SCHOOL_ADMIN' as any, isActive: true },
-            select: { id: true },
-          });
-          requireTrust = !!sa;
+          // Okul Yöneticisi cihaz onayı admin kontrolünde (AdminSettings flag, varsayılan kapalı).
+          // Flag açık değilse SCHOOL_ADMIN cihaz doğrulamasına tabi tutulmaz.
+          const saRows = (await prisma.$queryRaw`
+            SELECT "schoolAdminDeviceCheckEnabled" FROM admin_settings WHERE id = 1 LIMIT 1
+          `) as Array<{ schoolAdminDeviceCheckEnabled: boolean }>;
+          const schoolDeviceCheckEnabled = saRows[0]?.schoolAdminDeviceCheckEnabled ?? false;
+          if (schoolDeviceCheckEnabled) {
+            const sa = await prisma.schoolUser.findFirst({
+              where: { userId: user.id, schoolRole: 'SCHOOL_ADMIN' as any, isActive: true },
+              select: { id: true },
+            });
+            requireTrust = !!sa;
+          }
         } catch {
-          // fail-soft: okul rolü çözülemezse cihaz kapısını zorlamayız (login DB zaten çalıştı)
+          // fail-soft: ayar/okul rolü çözülemezse cihaz kapısını zorlamayız (login DB zaten çalıştı)
           requireTrust = false;
         }
       }

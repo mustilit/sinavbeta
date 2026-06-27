@@ -1083,6 +1083,7 @@ model AdminSettings {
   testAttemptsEnabled              Boolean   @default(true) // Test Durdur (çözüm başlatma)
   adPurchasesEnabled               Boolean   @default(true) // Reklam Satın Alma Durdur
   twoFactorSystemEnabled           Boolean   @default(false) // 2FA sistem geneli aç/kapat (admin kontrolü)
+  schoolAdminDeviceCheckEnabled    Boolean   @default(false) // Okul Yöneticisi yeni-cihaz onayı (admin kontrolü; varsayılan kapalı)
   minPackagePriceCents             Int       @default(100) // Minimum paket fiyatı (kuruş)
   minTunnelPriceCents              Int       @default(0) // Minimum tünel fiyatı (kuruş; 0 = ücretsiz serbest)
   minWrittenPriceCents             Int       @default(0) // Minimum yazılı paket fiyatı (kuruş; 0 = ücretsiz serbest)

@@ -14,6 +14,9 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     user: {
       findUnique: jest.fn(),
     },
+    schoolUser: {
+      findFirst: jest.fn(),
+    },
     $queryRaw: jest.fn(),
     $executeRaw: jest.fn(),
   },
@@ -198,6 +201,34 @@ describe('LoginUseCase', () => {
       const result = await uc.execute({ email: 'admin@b.com', password: 'pw' });
       expect((result as any).token).toBe('signed.jwt.token');
       expect(mockPrisma.$executeRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('SCHOOL_ADMIN + cihaz onayı flag AÇIK + requiresVerification:true → DEVICE_VERIFICATION_REQUIRED', async () => {
+      mockPrisma.$queryRaw.mockResolvedValue([{ schoolAdminDeviceCheckEnabled: true }]);
+      mockPrisma.schoolUser.findFirst.mockResolvedValue({ id: 'su1' });
+      const deps = buildDeps({
+        userRepository: { findByEmail: jest.fn().mockResolvedValue(makeUser({ role: 'CANDIDATE' })) },
+      });
+      const notifyDevice = makeNotifyDevice(true);
+      const uc = new LoginUseCase(
+        deps.userRepository, deps.passwordService, deps.jwtService, deps.audit, notifyDevice as any,
+      );
+      await expect(uc.execute({ email: 'sa@b.com', password: 'pw' })).rejects.toThrow('DEVICE_VERIFICATION_REQUIRED');
+      expect(deps.jwtService.sign).not.toHaveBeenCalled();
+    });
+
+    it('SCHOOL_ADMIN + cihaz onayı flag KAPALI → cihaz onayı istenmez, token döner', async () => {
+      // default $queryRaw → schoolAdminDeviceCheckEnabled yok (false kabul edilir)
+      const deps = buildDeps({
+        userRepository: { findByEmail: jest.fn().mockResolvedValue(makeUser({ role: 'CANDIDATE' })) },
+      });
+      const notifyDevice = makeNotifyDevice(true);
+      const uc = new LoginUseCase(
+        deps.userRepository, deps.passwordService, deps.jwtService, deps.audit, notifyDevice as any,
+      );
+      const result = await uc.execute({ email: 'sa@b.com', password: 'pw' });
+      expect((result as any).token).toBe('signed.jwt.token');
+      expect(mockPrisma.schoolUser.findFirst).not.toHaveBeenCalled();
     });
   });
 

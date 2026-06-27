@@ -47,6 +47,11 @@ export class UpdateAdminSettingsDto {
   @IsBoolean()
   twoFactorSystemEnabled?: boolean;
 
+  @ApiPropertyOptional({ description: 'Okul Yöneticisi yeni-cihaz onayı aç/kapat — kapalıyken cihaz doğrulaması istenmez' })
+  @IsOptional()
+  @IsBoolean()
+  schoolAdminDeviceCheckEnabled?: boolean;
+
   @ApiPropertyOptional({ example: 100, description: 'Minimum paket fiyatı (kuruş, ör. 100 = 1 ₺)' })
   @IsOptional()
   @IsInt()

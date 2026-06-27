@@ -644,6 +644,37 @@ export default function AdminSystemControls() {
             </div>
           )}
 
+          {/* Güvenlik — Okul Yöneticisi cihaz onayı (admin kontrolü) */}
+          {!isLoading && (
+            <div className="bg-white rounded-2xl border-2 border-slate-100 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-indigo-50 text-indigo-600">
+                    <ShieldAlert className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-slate-900 text-lg">Okul Yöneticisi Cihaz Onayı</h3>
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">Güvenlik</span>
+                    </div>
+                    <p className="text-sm text-slate-500 mt-1">Açıkken okul yöneticileri yeni/bilinmeyen bir cihazdan giriş yaparken e-posta ile cihaz onayı vermek zorundadır. Kapalıyken cihaz onayı istenmez.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleToggle("schoolAdminDeviceCheckEnabled", !settings?.schoolAdminDeviceCheckEnabled)}
+                  disabled={savingKey === "schoolAdminDeviceCheckEnabled"}
+                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 ${settings?.schoolAdminDeviceCheckEnabled ? "bg-indigo-600" : "bg-slate-200"} disabled:opacity-60 disabled:cursor-wait`}
+                  aria-pressed={!!settings?.schoolAdminDeviceCheckEnabled}
+                >
+                  <span className={`pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out ${settings?.schoolAdminDeviceCheckEnabled ? "translate-x-7" : "translate-x-0"}`} />
+                </button>
+              </div>
+              <div className={`mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${settings?.schoolAdminDeviceCheckEnabled ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+                {settings?.schoolAdminDeviceCheckEnabled ? "Aktif — yeni cihazda e-posta onayı zorunlu." : "Pasif — cihaz onayı istenmiyor."}
+              </div>
+            </div>
+          )}
+
           {/* Info box */}
           <div className="flex items-start gap-3 p-5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600">
             <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-slate-400" />

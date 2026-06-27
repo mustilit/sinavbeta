@@ -50,6 +50,7 @@ export class AdminSettingsController {
         testAttemptsEnabled: dto.testAttemptsEnabled,
         adPurchasesEnabled: dto.adPurchasesEnabled,
         twoFactorSystemEnabled: dto.twoFactorSystemEnabled,
+        schoolAdminDeviceCheckEnabled: dto.schoolAdminDeviceCheckEnabled,
         minPackagePriceCents: dto.minPackagePriceCents,
         minTunnelPriceCents: dto.minTunnelPriceCents,
         minWrittenPriceCents: dto.minWrittenPriceCents,

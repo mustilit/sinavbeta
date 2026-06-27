@@ -23,6 +23,7 @@ export interface UpdateAdminSettingsInput {
   testAttemptsEnabled?: boolean;
   adPurchasesEnabled?: boolean;
   twoFactorSystemEnabled?: boolean;
+  schoolAdminDeviceCheckEnabled?: boolean;
   minPackagePriceCents?: number;
   minTunnelPriceCents?: number;
   minWrittenPriceCents?: number;
@@ -77,6 +78,7 @@ export class UpdateAdminSettingsUseCase {
         testAttemptsEnabled: input.testAttemptsEnabled ?? true,
         adPurchasesEnabled: input.adPurchasesEnabled ?? true,
         twoFactorSystemEnabled: input.twoFactorSystemEnabled ?? false,
+        schoolAdminDeviceCheckEnabled: input.schoolAdminDeviceCheckEnabled ?? false,
       },
       update: {
         ...(input.commissionPercent !== undefined && { commissionPercent: input.commissionPercent }),
@@ -87,6 +89,7 @@ export class UpdateAdminSettingsUseCase {
         ...(input.testAttemptsEnabled !== undefined && { testAttemptsEnabled: input.testAttemptsEnabled }),
         ...(input.adPurchasesEnabled !== undefined && { adPurchasesEnabled: input.adPurchasesEnabled }),
         ...(input.twoFactorSystemEnabled !== undefined && { twoFactorSystemEnabled: input.twoFactorSystemEnabled }),
+        ...(input.schoolAdminDeviceCheckEnabled !== undefined && { schoolAdminDeviceCheckEnabled: input.schoolAdminDeviceCheckEnabled }),
       },
     });
 
@@ -231,6 +234,7 @@ export class UpdateAdminSettingsUseCase {
       testAttemptsEnabled: row.testAttemptsEnabled ?? true,
       adPurchasesEnabled: (row as any).adPurchasesEnabled ?? true,
       twoFactorSystemEnabled: (row as any).twoFactorSystemEnabled ?? false,
+      schoolAdminDeviceCheckEnabled: (row as any).schoolAdminDeviceCheckEnabled ?? false,
       minPackagePriceCents,
       minTunnelPriceCents: (row as any).minTunnelPriceCents ?? 0,
       minWrittenPriceCents: (row as any).minWrittenPriceCents ?? 0,
@@ -299,6 +303,7 @@ export class UpdateAdminSettingsUseCase {
         testAttemptsEnabled: row.testAttemptsEnabled ?? true,
         adPurchasesEnabled: (row as any).adPurchasesEnabled ?? true,
         twoFactorSystemEnabled: (row as any).twoFactorSystemEnabled ?? false,
+        schoolAdminDeviceCheckEnabled: (row as any).schoolAdminDeviceCheckEnabled ?? false,
         minPackagePriceCents: mpp,
         minTunnelPriceCents: (row as any).minTunnelPriceCents ?? 0,
         minWrittenPriceCents: (row as any).minWrittenPriceCents ?? 0,

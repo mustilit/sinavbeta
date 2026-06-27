@@ -103,6 +103,8 @@ export type AdminSettings = {
   adPurchasesEnabled: boolean;
   /** 2FA sistem geneli aç/kapat. false iken hiçbir kullanıcı 2FA aktif edemez. */
   twoFactorSystemEnabled: boolean;
+  /** Okul Yöneticisi yeni-cihaz onayı. false iken SCHOOL_ADMIN cihaz doğrulaması istenmez (varsayılan kapalı). */
+  schoolAdminDeviceCheckEnabled: boolean;
   /** Minimum paket fiyatı (kuruş). Eğitici bu değerin altında fiyat giremez. */
   minPackagePriceCents: number;
   /** Minimum tünel fiyatı (kuruş; 0 = ücretsiz serbest). */
