@@ -2241,6 +2241,8 @@ export const school = {
   resetPassword: async (id) => (await api.post(`/school/users/${id}/reset-password`)).data,
   // Kota
   quota: async () => (await api.get('/school/quota')).data,
+  /** Panel özet sayıları → { branches, levels, classrooms, departments, subjects, teachers, students, users, assignments } */
+  panelStats: async () => (await api.get('/school/panel-stats')).data,
 
   // Sınav havuzu (Sprint 2) — öğretmen/zümre başkanı
   exams: {

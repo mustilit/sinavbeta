@@ -28,6 +28,7 @@ import {
   ListSubjectsUseCase,
   DeleteSubjectUseCase,
   GetSchoolQuotaUseCase,
+  GetSchoolPanelStatsUseCase,
 } from '../../application/use-cases/school/SchoolOrgUseCases';
 import {
   CreateSchoolUserUseCase,
@@ -108,6 +109,7 @@ export class SchoolController {
   private listSubjectsUC = new ListSubjectsUseCase();
   private deleteSubjectUC = new DeleteSubjectUseCase();
   private quotaUC = new GetSchoolQuotaUseCase();
+  private panelStatsUC = new GetSchoolPanelStatsUseCase();
   private createUserUC = new CreateSchoolUserUseCase();
   private listUsersUC = new ListSchoolUsersUseCase();
   private setActiveUC = new SetSchoolUserActiveUseCase();
@@ -213,4 +215,6 @@ export class SchoolController {
   // ── Kota ──
   @Get('quota') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Kullanıcı + canlı sınav kotası' }) @ApiErrorResponses()
   quota(@Req() req: any) { return this.quotaUC.execute(req?.user?.id); }
+  @Get('panel-stats') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Panel özet sayıları (şube/sınıf/öğretmen/öğrenci/zümre/ders/ödev)' }) @ApiErrorResponses()
+  panelStats(@Req() req: any) { return this.panelStatsUC.execute(req?.user?.id); }
 }

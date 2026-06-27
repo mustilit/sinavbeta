@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import CredentialsDialog from "@/components/school/CredentialsDialog";
-import { Users, Plus, Power, KeyRound, Search, AlertCircle } from "lucide-react";
+import { StudentImportDialog, BulkCredentialsDialog } from "@/components/school/studentImport";
+import { Users, Plus, Power, KeyRound, Search, AlertCircle, GraduationCap, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 const ROLE_LABEL = { SCHOOL_ADMIN: "Okul Yön.", BRANCH_ADMIN: "Şube Yön.", DEPT_HEAD: "Zümre Bşk.", TEACHER: "Öğretmen", STUDENT: "Öğrenci" };
@@ -26,19 +27,24 @@ export default function SchoolUsers() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const isAdmin = user?.school?.schoolRole === "SCHOOL_ADMIN";
+  const [tab, setTab] = useState("staff"); // "staff" (Eğitimciler) | "students" (Öğrenciler)
   const [roleFilter, setRoleFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
   const [q, setQ] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [addRole, setAddRole] = useState("TEACHER");
   const [creds, setCreds] = useState(null);
+  const [studentImportOpen, setStudentImportOpen] = useState(false);
+  const [bulkCreds, setBulkCreds] = useState(null);
 
   const { data: branches = [] } = useQuery({ queryKey: ["esinif", "branches"], queryFn: schoolApi.listBranches, enabled: isAdmin });
   const { data: departments = [] } = useQuery({ queryKey: ["esinif", "departments"], queryFn: schoolApi.listDepartments, enabled: isAdmin });
 
+  // Eğitimciler sekmesi: rol verilmezse backend öğrenci HARİÇ döner; Öğrenciler sekmesi: role=STUDENT
+  const effectiveRole = tab === "students" ? "STUDENT" : (roleFilter === "all" ? undefined : roleFilter);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
-    queryKey: ["esinif", "users", roleFilter, branchFilter, q],
-    queryFn: ({ pageParam }) => schoolApi.listUsers({ role: roleFilter === "all" ? undefined : roleFilter, branchId: branchFilter === "all" ? undefined : branchFilter, q: q || undefined, cursor: pageParam, limit: 30 }),
+    queryKey: ["esinif", "users", tab, roleFilter, branchFilter, q],
+    queryFn: ({ pageParam }) => schoolApi.listUsers({ role: effectiveRole, branchId: branchFilter === "all" ? undefined : branchFilter, q: q || undefined, cursor: pageParam, limit: 30 }),
     initialPageParam: null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
@@ -78,9 +84,21 @@ export default function SchoolUsers() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><Users className="w-5 h-5 text-indigo-600" /></div>
-          <div><h1 className="text-2xl font-bold text-slate-900">Kullanıcılar</h1><p className="text-sm text-slate-500">Öğretmen ve yönetici hesapları (öğrenciler sınıf sayfasından eklenir)</p></div>
+          <div><h1 className="text-2xl font-bold text-slate-900">Kullanıcılar</h1><p className="text-sm text-slate-500">Eğitimci ve öğrenci hesapları</p></div>
         </div>
-        {isAdmin && <Button onClick={() => { setAddRole("TEACHER"); setAddOpen(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Kullanıcı Ekle</Button>}
+        {isAdmin && (tab === "staff"
+          ? <Button onClick={() => { setAddRole("TEACHER"); setAddOpen(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Kullanıcı Ekle</Button>
+          : <Button onClick={() => setStudentImportOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Upload className="w-4 h-4" /> Öğrenci Ekle</Button>)}
+      </div>
+
+      {/* Sekmeler: Eğitimciler / Öğrenciler */}
+      <div className="flex items-center gap-1 border-b border-slate-200">
+        {[["staff", "Eğitimciler", Users], ["students", "Öğrenciler", GraduationCap]].map(([key, label, Icon]) => (
+          <button key={key} type="button" onClick={() => { setTab(key); setRoleFilter("all"); }}
+            className={"inline-flex items-center gap-2 border-b-2 -mb-px px-4 py-2.5 min-h-10 text-sm font-medium transition-colors " + (tab === key ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900")}>
+            <Icon className="w-4 h-4" /> {label}
+          </button>
+        ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -88,13 +106,15 @@ export default function SchoolUsers() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kullanıcı adı ara…" className="pl-10" />
         </div>
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm roller</SelectItem>
-            {Object.entries(ROLE_LABEL).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {tab === "staff" && (
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm eğitimciler</SelectItem>
+              {CREATE_ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
         {isAdmin && (
           <Select value={branchFilter} onValueChange={setBranchFilter}>
             <SelectTrigger className="w-44" aria-label="Şube filtresi"><SelectValue placeholder="Şube" /></SelectTrigger>
@@ -175,6 +195,14 @@ export default function SchoolUsers() {
       </Dialog>
 
       <CredentialsDialog open={!!creds} onClose={() => setCreds(null)} creds={creds} />
+
+      {/* Öğrenci ekle (Excel ile toplu) — Öğrenciler sekmesi */}
+      <StudentImportDialog
+        open={studentImportOpen}
+        onClose={() => setStudentImportOpen(false)}
+        onCreated={(created) => { setBulkCreds(created); qc.invalidateQueries({ queryKey: ["esinif", "users"] }); qc.invalidateQueries({ queryKey: ["esinif", "quota"] }); }}
+      />
+      <BulkCredentialsDialog creds={bulkCreds} onClose={() => setBulkCreds(null)} />
     </div>
   );
 }

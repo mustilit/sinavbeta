@@ -496,19 +496,25 @@ export class GetDepartmentTreeUseCase {
       else schoolWide.push(m);
     }
 
-    const branches = shownBranchIds.size
-      ? await prisma.branch.findMany({
-          where: { schoolId, id: { in: [...shownBranchIds] } },
-          orderBy: [{ createdAt: 'asc' }],
-          include: { levels: { orderBy: [{ gradeLevel: 'asc' }] } },
-        })
-      : [];
+    // Yöneticiler TÜM yapıyı görür (boş seviyelere de zümre eklenebilsin); alt roller
+    // yalnız zümresi olan düğümleri. Sınıf YOK (zümre ağacı yalnız şube→seviye).
+    const isBranchAdmin = ctx.schoolRole === 'BRANCH_ADMIN';
+    const showFullStructure = isSchoolAdmin || isBranchAdmin;
+    const branchWhere = isSchoolAdmin
+      ? { schoolId }
+      : isBranchAdmin
+        ? { schoolId, id: ctx.branchId ?? '__none__' }
+        : { schoolId, id: { in: shownBranchIds.size ? [...shownBranchIds] : ['__none__'] } };
+    const branches = await prisma.branch.findMany({
+      where: branchWhere,
+      orderBy: [{ createdAt: 'asc' }],
+      include: { levels: { orderBy: [{ gradeLevel: 'asc' }] } },
+    });
 
     return {
       schoolWide, // yalnız tüm-okul kapsamında (admin) veya kendi okul-geneli zümresinde dolu
       branches: branches.map((b) => {
-        const levels = b.levels
-          .filter((l) => byLevel.has(l.id)) // yalnız görünür zümresi olan seviyeler
+        const levels = (showFullStructure ? b.levels : b.levels.filter((l) => byLevel.has(l.id)))
           .map((l) => ({ id: l.id, gradeLevel: l.gradeLevel, departments: byLevel.get(l.id) ?? [] }));
         return { id: b.id, name: b.name, departments: byBranch.get(b.id) ?? [], levels };
       }),
@@ -667,5 +673,24 @@ export class GetSchoolQuotaUseCase {
       usedLiveCount: school.usedLiveCount,
       remainingLive: Math.max(0, school.annualLiveLimit - school.usedLiveCount),
     };
+  }
+}
+
+/** Okul paneli özet sayıları (kartlarda gösterilir). Okul-geneli; herhangi bir okul kullanıcısı. */
+export class GetSchoolPanelStatsUseCase {
+  async execute(actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    const schoolId = ctx.schoolId;
+    const [branches, levels, classrooms, departments, subjects, teachers, students, assignments] = await Promise.all([
+      prisma.branch.count({ where: { schoolId } }),
+      prisma.schoolLevel.count({ where: { schoolId } }),
+      prisma.classroom.count({ where: { schoolId } }),
+      prisma.department.count({ where: { schoolId } }),
+      prisma.schoolSubject.count({ where: { schoolId } }),
+      prisma.schoolUser.count({ where: { schoolId, isActive: true, schoolRole: { in: ['TEACHER', 'DEPT_HEAD', 'BRANCH_ADMIN'] as any } } }),
+      prisma.schoolUser.count({ where: { schoolId, isActive: true, schoolRole: 'STUDENT' as any } }),
+      prisma.schoolAssignment.count({ where: { schoolId } }),
+    ]);
+    return { branches, levels, classrooms, departments, subjects, teachers, students, users: teachers + students, assignments };
   }
 }

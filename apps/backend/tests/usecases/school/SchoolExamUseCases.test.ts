@@ -5,7 +5,8 @@
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     schoolUser: { findFirst: jest.fn() },
-    department: { findUnique: jest.fn() },
+    schoolLevel: { findMany: jest.fn(async () => []) },
+    department: { findUnique: jest.fn(), findMany: jest.fn(async () => []) },
     schoolExam: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn(), delete: jest.fn() },
     schoolQuestion: { deleteMany: jest.fn(), create: jest.fn() },
     schoolQuestionOption: { createMany: jest.fn() },
@@ -112,13 +113,22 @@ describe('SaveSchoolExamQuestionsUseCase', () => {
 describe('ListSchoolExamPoolUseCase (görünürlük)', () => {
   beforeEach(() => { jest.clearAllMocks(); p.schoolExam.findMany.mockResolvedValue([]); });
 
-  it('öğretmen: zümre VEYA SCHOOL VEYA kendi filtresi uygulanır', async () => {
-    p.schoolUser.findFirst.mockResolvedValue(teacherCtx);
+  it('öğretmen (zümre üyesi): yalnız kendi zümresinin sınavları (departmentId)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(teacherCtx); // departmentId: 'dept1'
+    p.schoolLevel.findMany.mockResolvedValue([]);
+    p.department.findMany.mockResolvedValue([]);
     await new ListSchoolExamPoolUseCase().execute({}, 'u1');
     const where = p.schoolExam.findMany.mock.calls[0][0].where;
-    expect(where.OR).toEqual(expect.arrayContaining([
-      { departmentId: 'dept1' }, { poolVisibility: 'SCHOOL' }, { createdById: 'u1' },
-    ]));
+    expect(where.OR).toEqual(expect.arrayContaining([{ departmentId: { in: ['dept1'] } }]));
+  });
+
+  it('seviye sorumlusu: kendi seviyesinin zümre sınavları (department.levelId)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacherCtx, departmentId: null });
+    p.schoolLevel.findMany.mockResolvedValue([{ id: 'lv5' }]);
+    p.department.findMany.mockResolvedValue([]);
+    await new ListSchoolExamPoolUseCase().execute({}, 'u1');
+    const where = p.schoolExam.findMany.mock.calls[0][0].where;
+    expect(where.OR).toEqual(expect.arrayContaining([{ department: { levelId: { in: ['lv5'] } } }]));
   });
 
   it('okul yöneticisi: görünürlük filtresi YOK (tümü)', async () => {

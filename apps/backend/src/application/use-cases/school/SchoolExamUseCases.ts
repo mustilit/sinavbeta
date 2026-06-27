@@ -189,21 +189,37 @@ export class GetSchoolExamUseCase {
 export class ListSchoolExamPoolUseCase {
   async execute(input: { examType?: string; gradeLevel?: number; includeArchived?: boolean; q?: string }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    const isManagerView = ctx.schoolRole === 'SCHOOL_ADMIN' || ctx.schoolRole === 'BRANCH_ADMIN';
+    const schoolId = ctx.schoolId;
     const text = (input.q ?? '').trim();
 
-    const visibilityWhere = isManagerView
-      ? {}
-      : { OR: [{ departmentId: ctx.departmentId ?? '__none__' }, { poolVisibility: 'SCHOOL' as any }, { createdById: actorId }] };
+    // Sınav havuzu kapsamı (kimse hiyerarşide yukarıyı görmez):
+    //  - SCHOOL_ADMIN → tüm okul
+    //  - BRANCH_ADMIN → kendi şubesinin zümre sınavları (department.branchId)
+    //  - Seviye Sorumlusu → kendi seviye(ler)inin zümre sınavları (department.levelId)
+    //  - Zümre (öğretmen üye + başkan) → kendi zümresinin sınavları (departmentId)
+    let scopeWhere: Record<string, unknown> | null = null;
+    if (ctx.schoolRole !== 'SCHOOL_ADMIN') {
+      const or: Array<Record<string, unknown>> = [];
+      if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId) or.push({ department: { branchId: ctx.branchId } });
+      const myLevels = await prisma.schoolLevel.findMany({ where: { schoolId, adminUserId: ctx.userId }, select: { id: true } });
+      if (myLevels.length) or.push({ department: { levelId: { in: myLevels.map((l) => l.id) } } });
+      const myDeptIds = new Set<string>();
+      if (ctx.departmentId) myDeptIds.add(ctx.departmentId);
+      const headed = await prisma.department.findMany({ where: { schoolId, headUserId: ctx.userId }, select: { id: true } });
+      headed.forEach((d) => myDeptIds.add(d.id));
+      if (myDeptIds.size) or.push({ departmentId: { in: [...myDeptIds] } });
+      if (or.length === 0) return [];
+      scopeWhere = { OR: or };
+    }
 
     const rows = await prisma.schoolExam.findMany({
       where: {
-        schoolId: ctx.schoolId,
+        schoolId,
         ...(input.includeArchived ? {} : { isArchived: false }),
         ...(input.examType && EXAM_TYPES.includes(input.examType as ExamType) ? { examType: input.examType as any } : {}),
         ...(input.gradeLevel != null ? { gradeLevel: Math.floor(input.gradeLevel) } : {}),
         ...(text ? { title: { contains: text, mode: 'insensitive' as const } } : {}),
-        ...visibilityWhere,
+        ...(scopeWhere ?? {}),
       },
       orderBy: [{ createdAt: 'desc' }],
       include: { department: { select: { name: true } }, createdBy: { select: { username: true } }, _count: { select: { questions: true } } },

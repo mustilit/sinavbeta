@@ -4,7 +4,7 @@ import { school as schoolApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Building2, BookOpen, Radio, ChevronRight, GraduationCap, AlertCircle } from "lucide-react";
+import { Users, Building2, BookOpen, Radio, ChevronRight, GraduationCap, AlertCircle, Library, BarChart3 } from "lucide-react";
 
 const ADMIN_ROLES = ["SCHOOL_ADMIN", "BRANCH_ADMIN"];
 const TEACHER_ROLES = ["TEACHER", "DEPT_HEAD"];
@@ -27,6 +27,11 @@ export default function SchoolPanel() {
     queryKey: ["esinif", "quota"],
     queryFn: schoolApi.quota,
     enabled: isManager,
+  });
+  const { data: stats } = useQuery({
+    queryKey: ["esinif", "panel-stats"],
+    queryFn: schoolApi.panelStats,
+    enabled: !!ctx?.schoolRole,
   });
 
   if (!ctx?.schoolRole) {
@@ -77,10 +82,13 @@ export default function SchoolPanel() {
     );
   }
 
+  const n = (v) => (stats ? v : "…");
   const cards = [
-    { to: "SchoolUsers", icon: Users, label: "Kullanıcılar", desc: "Öğretmen ve öğrenci yönetimi" },
-    { to: "SchoolBranches", icon: Building2, label: "Şubeler & Sınıflar", desc: "Şube ve sınıf düzeni" },
-    { to: "SchoolDepartments", icon: BookOpen, label: "Zümreler", desc: "Zümre ve öğretmen atama" },
+    { to: "SchoolUsers", icon: Users, label: "Kullanıcılar", desc: "Öğretmen ve öğrenci yönetimi", stat: `${n(stats?.teachers ?? 0)} öğretmen · ${n(stats?.students ?? 0)} öğrenci` },
+    { to: "SchoolBranches", icon: Building2, label: "Şubeler & Sınıflar", desc: "Şube ve sınıf düzeni", stat: `${n(stats?.branches ?? 0)} şube · ${n(stats?.levels ?? 0)} seviye · ${n(stats?.classrooms ?? 0)} sınıf` },
+    { to: "SchoolDepartments", icon: BookOpen, label: "Zümreler", desc: "Zümre ve öğretmen atama", stat: `${n(stats?.departments ?? 0)} zümre` },
+    { to: "SchoolSubjects", icon: Library, label: "Dersler", desc: "Ders (branş) tanımları", stat: `${n(stats?.subjects ?? 0)} ders` },
+    { to: "SchoolReports", icon: BarChart3, label: "Raporlar", desc: "Şube/seviye/sınıf başarımı", stat: `${n(stats?.assignments ?? 0)} ödev` },
   ];
 
   return (
@@ -117,7 +125,7 @@ export default function SchoolPanel() {
 
       {/* Hızlı erişim */}
       <div className="grid sm:grid-cols-3 gap-4">
-        {cards.map(({ to, icon: Icon, label, desc }) => (
+        {cards.map(({ to, icon: Icon, label, desc, stat }) => (
           <Link key={to} to={createPageUrl(to)} className="group">
             <Card className="hover:shadow-lg hover:shadow-slate-200/60 transition-all">
               <CardContent className="p-5">
@@ -127,6 +135,7 @@ export default function SchoolPanel() {
                 </div>
                 <p className="font-semibold text-slate-900 mt-3">{label}</p>
                 <p className="text-sm text-slate-500">{desc}</p>
+                <p className="mt-2 text-sm font-medium text-indigo-600">{stat}</p>
               </CardContent>
             </Card>
           </Link>
