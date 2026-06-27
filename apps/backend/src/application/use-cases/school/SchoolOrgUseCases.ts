@@ -176,6 +176,21 @@ export class DeleteClassroomUseCase {
   }
 }
 
+/** Sınıfı pasife al / aktife al (soft — silme yerine). Öğrenciler ve veriler korunur. */
+export class SetClassroomActiveUseCase {
+  async execute(classroomId: string, input: { isActive: boolean }, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, level: { select: { adminUserId: true } } } });
+    if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    // Yetki: yönetici veya seviyenin sorumlusu (silme/atama ile aynı).
+    if (!isManagerForBranch(ctx, classroom.branchId) && classroom.level?.adminUserId !== ctx.userId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu sınıfta işlem yetkiniz yok', 403);
+    const updated = await prisma.classroom.update({ where: { id: classroomId }, data: { isActive: !!input.isActive } });
+    logger.info('school.classroom.active_set', { classroomId, isActive: !!input.isActive, actorId });
+    return { id: updated.id, isActive: updated.isActive };
+  }
+}
+
 /** Şube → Seviye → Sınıf ağacı (yöneticiler + öğrenci sayıları ile). */
 export class GetSchoolTreeUseCase {
   async execute(actorId?: string) {
@@ -255,6 +270,7 @@ export class GetSchoolTreeUseCase {
             id: c.id,
             name: c.name,
             gradeLevel: c.gradeLevel,
+            isActive: c.isActive,
             adminUserId: c.adminUserId,
             adminLabel: label(c.adminUser),
             studentCount: c._count.students,
@@ -328,6 +344,29 @@ export class AssignStudentsToClassroomUseCase {
     });
     logger.info('school.classroom.students_assigned', { classroomId, count: res.count, actorId });
     return { assigned: res.count };
+  }
+}
+
+/** Sınıftan öğrenci çıkarır (classroomId null). Yalnız bu sınıftaki öğrenciler etkilenir. */
+export class RemoveStudentsFromClassroomUseCase {
+  async execute(classroomId: string, input: { schoolUserIds: string[] }, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, schoolId: ctx.schoolId }, select: { id: true, branchId: true, adminUserId: true, level: { select: { adminUserId: true } } } });
+    if (!classroom) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    // Yetki: yönetici, sınıf öğretmeni (kendi sınıfı) veya seviyenin sorumlusu (atama ile aynı).
+    if (!isManagerForBranch(ctx, classroom.branchId) && classroom.adminUserId !== ctx.userId && classroom.level?.adminUserId !== ctx.userId)
+      throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu sınıfta işlem yetkiniz yok', 403);
+
+    const ids = [...new Set(input.schoolUserIds ?? [])];
+    if (ids.length === 0) throw new AppError('NO_STUDENTS', 'En az bir öğrenci seçin', 400);
+
+    // Yalnız gerçekten bu sınıfta olan öğrenciler çıkarılır (başka sınıfı etkilemez).
+    const res = await prisma.schoolUser.updateMany({
+      where: { id: { in: ids }, schoolId: ctx.schoolId, classroomId, schoolRole: 'STUDENT' as any },
+      data: { classroomId: null },
+    });
+    logger.info('school.classroom.students_removed', { classroomId, count: res.count, actorId });
+    return { removed: res.count };
   }
 }
 
@@ -431,13 +470,19 @@ export class GetDepartmentTreeUseCase {
       orderBy: [{ subject: 'asc' }, { name: 'asc' }],
       include: {
         headUser: { select: { username: true, firstName: true, lastName: true } },
+        members: { select: { username: true, user: { select: { firstName: true, lastName: true } } }, orderBy: [{ username: 'asc' }] },
         _count: { select: { members: true } },
       },
     });
 
     const label = (u: { username: string; firstName: string | null; lastName: string | null } | null) =>
       u ? ([u.firstName, u.lastName].filter(Boolean).join(' ') || u.username) : null;
-    const map = (d: (typeof depts)[number]) => ({ id: d.id, name: d.name, subject: d.subject, headUserId: d.headUserId, headLabel: label(d.headUser), memberCount: d._count.members });
+    const map = (d: (typeof depts)[number]) => ({
+      id: d.id, name: d.name, subject: d.subject, headUserId: d.headUserId, headLabel: label(d.headUser),
+      memberCount: d._count.members,
+      // Salt-okuma üye adları (herkes görebilir; müdahale yetkisi ayrı).
+      members: (d.members ?? []).map((m) => ([m.user?.firstName, m.user?.lastName].filter(Boolean).join(' ') || m.username)),
+    });
 
     // Tree yalnız görünür zümrelerin bulunduğu şube/seviyeleri içerir (üst düğümler boş gelmez).
     const byBranch = new Map<string, ReturnType<typeof map>[]>();

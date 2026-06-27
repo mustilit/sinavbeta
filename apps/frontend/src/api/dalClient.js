@@ -2205,10 +2205,14 @@ export const school = {
   },
   createClassroom: async (body) => (await api.post('/school/classrooms', body)).data,
   assignStudents: async (id, schoolUserIds) => (await api.post(`/school/classrooms/${id}/students`, { schoolUserIds })).data,
+  /** Sınıftan öğrenci çıkar → { removed } */
+  removeStudents: async (id, schoolUserIds) => (await api.post(`/school/classrooms/${id}/students/remove`, { schoolUserIds })).data,
   /** Excel: toplu öğrenci oluştur → { count, created:[{name,username,tempPassword}] } */
   bulkCreateStudents: async (id, students) => (await api.post(`/school/classrooms/${id}/students/bulk`, { students })).data,
   assignClassroomAdmin: async (id, body) => (await api.post(`/school/classrooms/${id}/assign-admin`, body)).data,
   deleteClassroom: async (id) => (await api.delete(`/school/classrooms/${id}`)).data,
+  /** Sınıfı pasife/aktife al (silme yok) → { id, isActive } */
+  setClassroomActive: async (id, isActive) => (await api.patch(`/school/classrooms/${id}/active`, { isActive })).data,
   // Zümre
   departmentTree: async () => (await api.get('/school/department-tree')).data,
   listDepartments: async () => (await api.get('/school/departments')).data,

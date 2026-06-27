@@ -13,8 +13,10 @@ import {
   CreateClassroomUseCase,
   ListClassroomsUseCase,
   AssignStudentsToClassroomUseCase,
+  RemoveStudentsFromClassroomUseCase,
   AssignClassroomAdminUseCase,
   DeleteClassroomUseCase,
+  SetClassroomActiveUseCase,
   GetSchoolTreeUseCase,
   CreateDepartmentUseCase,
   ListDepartmentsUseCase,
@@ -90,9 +92,11 @@ export class SchoolController {
   private createClassroomUC = new CreateClassroomUseCase();
   private listClassroomsUC = new ListClassroomsUseCase();
   private assignStudentsUC = new AssignStudentsToClassroomUseCase();
+  private removeStudentsUC = new RemoveStudentsFromClassroomUseCase();
   private bulkStudentsUC = new BulkCreateStudentsUseCase();
   private assignClassroomAdminUC = new AssignClassroomAdminUseCase();
   private deleteClassroomUC = new DeleteClassroomUseCase();
+  private setClassroomActiveUC = new SetClassroomActiveUseCase();
   private treeUC = new GetSchoolTreeUseCase();
   private createDeptUC = new CreateDepartmentUseCase();
   private listDeptsUC = new ListDepartmentsUseCase();
@@ -148,12 +152,18 @@ export class SchoolController {
   bulkStudents(@Param('id') id: string, @Body() dto: BulkStudentsDto, @Req() req: any) {
     return this.bulkStudentsUC.execute(id, dto, req?.user?.id);
   }
+  @Post('classrooms/:id/students/remove') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Sınıftan öğrenci çıkar; { removed }' }) @ApiErrorResponses()
+  removeStudents(@Param('id') id: string, @Body() dto: AssignStudentsDto, @Req() req: any) {
+    return this.removeStudentsUC.execute(id, dto, req?.user?.id);
+  }
   @Post('classrooms/:id/assign-admin') @ApiBearerAuth('bearer') @ApiErrorResponses()
   assignClassroomAdmin(@Param('id') id: string, @Body() dto: AssignAdminDto, @Req() req: any) {
     return this.assignClassroomAdminUC.execute(id, dto, req?.user?.id);
   }
   @Delete('classrooms/:id') @ApiBearerAuth('bearer') @ApiErrorResponses()
   deleteClassroom(@Param('id') id: string, @Req() req: any) { return this.deleteClassroomUC.execute(id, req?.user?.id); }
+  @Patch('classrooms/:id/active') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Sınıfı pasife/aktife al; { id, isActive }' }) @ApiErrorResponses()
+  setClassroomActive(@Param('id') id: string, @Body() body: { isActive: boolean }, @Req() req: any) { return this.setClassroomActiveUC.execute(id, { isActive: !!body?.isActive }, req?.user?.id); }
 
   // ── Zümre ──
   @Get('department-tree') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Zümre ağacı (Tüm Okul + Şube → Seviye)' }) @ApiErrorResponses()

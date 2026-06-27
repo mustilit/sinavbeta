@@ -2544,6 +2544,7 @@ model Classroom {
   level       SchoolLevel?       @relation(fields: [levelId], references: [id], onDelete: SetNull)
   name        String // "5-A"
   gradeLevel  Int // 5, 6, 7, 8
+  isActive    Boolean            @default(true) // pasife alma (soft); silme yok
   adminUserId String? // sınıf öğretmeni (yalnız bağlantı/etiket; rol değiştirmez)
   adminUser   User?              @relation("ClassroomAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
   students    SchoolUser[]       @relation("ClassroomStudents")

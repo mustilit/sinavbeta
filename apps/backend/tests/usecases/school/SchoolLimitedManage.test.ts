@@ -126,7 +126,7 @@ describe('Sınıf listesi rol-kapsamlı (ödev atama bug fix)', () => {
 });
 
 describe('Zümre ağacı rol-kapsamlı (kimse yukarıyı görmez)', () => {
-  const deptRow = (over: any) => ({ id: 'd1', name: 'Mat 5', subject: 'Matematik', levelId: 'lv5', branchId: 'b1', headUserId: null, headUser: null, _count: { members: 3 }, createdAt: new Date(), ...over });
+  const deptRow = (over: any) => ({ id: 'd1', name: 'Mat 5', subject: 'Matematik', levelId: 'lv5', branchId: 'b1', headUserId: null, headUser: null, members: [], _count: { members: 3 }, createdAt: new Date(), ...over });
   const branchRow = { id: 'b1', name: 'Şube', levels: [{ id: 'lv5', gradeLevel: 5 }, { id: 'lv6', gradeLevel: 6 }] };
 
   it('öğretmen yalnız üyesi olduğu zümreyi görür (kendi zümresi)', async () => {

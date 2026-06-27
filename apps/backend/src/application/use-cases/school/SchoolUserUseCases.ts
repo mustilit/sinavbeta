@@ -195,7 +195,10 @@ export class ListSchoolUsersUseCase {
     const rows = await prisma.schoolUser.findMany({
       where: {
         schoolId: ctx.schoolId,
-        ...(input.role && ASSIGNABLE.concat('SCHOOL_ADMIN' as any).includes(input.role as any) ? { schoolRole: input.role as any } : {}),
+        // Rol verilmişse o role; verilmemişse öğrenci HARİÇ (yönetici/personel seçicileri öğrenci getirmez).
+        ...(input.role && ASSIGNABLE.concat('SCHOOL_ADMIN' as any).includes(input.role as any)
+          ? { schoolRole: input.role as any }
+          : { schoolRole: { not: 'STUDENT' as any } }),
         // Şube yöneticisi yalnız kendi şubesi; okul yöneticisi seçtiği şube ile filtreler
         ...(ctx.schoolRole === 'BRANCH_ADMIN' ? { branchId: ctx.branchId ?? '__none__' } : (input.branchId ? { branchId: input.branchId } : {})),
         ...scopedBranchFilter,
@@ -218,7 +221,9 @@ export class ListSchoolUsersUseCase {
       studentNo: su.studentNo ?? null,
       fullName: `${su.user.firstName ?? ''} ${su.user.lastName ?? ''}`.trim() || null,
       schoolRole: su.schoolRole,
+      branchId: su.branchId ?? null,
       branchName: su.branch?.name ?? null,
+      classroomId: su.classroomId ?? null,
       classroomName: su.classroom?.name ?? null,
       departmentName: su.department?.name ?? null,
       isActive: su.isActive,
