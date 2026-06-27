@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PaginationBar from "@/components/ui/PaginationBar";
 import { candidateTunnels as api } from "@/api/dalClient";
 import { createPageUrl } from "@/utils";
+import { EXAM_LANGUAGES, examLanguageName } from "@/lib/examLanguages";
 
 const PAGE_SIZE = 9;
 
@@ -38,6 +39,7 @@ export function TunnelGrid({ mode = "discover" }) {
   const [examType, setExamType] = useState("all");
   const [gradeLevel, setGradeLevel] = useState("all");
   const [topic, setTopic] = useState("all");
+  const [language, setLanguage] = useState("all");
   const [educator, setEducator] = useState("all"); // yalnız discover (Keşfet)
   const [priceRange, setPriceRange] = useState("all"); // yalnız discover
   const [status, setStatus] = useState("all"); // yalnız mine
@@ -60,6 +62,7 @@ export function TunnelGrid({ mode = "discover" }) {
         if (examType !== "all" && t.examTypeName !== examType) return false;
         if (gradeLevel !== "all" && (t.gradeLevelName || "Genel") !== gradeLevel) return false;
         if (topic !== "all" && t.topicName !== topic) return false;
+        if (language !== "all" && (t.language || "tr") !== language) return false;
         if (mode === "discover") {
           if (educator !== "all" && t.educatorUsername !== educator) return false;
           if (!inPrice(t.priceCents)) return false;
@@ -73,17 +76,17 @@ export function TunnelGrid({ mode = "discover" }) {
         return true;
       });
     },
-    [all, search, examType, gradeLevel, topic, educator, priceRange, status, mode],
+    [all, search, examType, gradeLevel, topic, language, educator, priceRange, status, mode],
   );
 
-  useEffect(() => { setPage(1); }, [search, examType, gradeLevel, topic, educator, priceRange, status, mode]);
+  useEffect(() => { setPage(1); }, [search, examType, gradeLevel, topic, language, educator, priceRange, status, mode]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const hasActiveFilters =
-    !!search || examType !== "all" || gradeLevel !== "all" || topic !== "all" || educator !== "all" || priceRange !== "all" || status !== "all";
+    !!search || examType !== "all" || gradeLevel !== "all" || topic !== "all" || language !== "all" || educator !== "all" || priceRange !== "all" || status !== "all";
   const clearFilters = () => {
-    setSearch(""); setExamType("all"); setGradeLevel("all"); setTopic("all"); setEducator("all"); setPriceRange("all"); setStatus("all");
+    setSearch(""); setExamType("all"); setGradeLevel("all"); setTopic("all"); setLanguage("all"); setEducator("all"); setPriceRange("all"); setStatus("all");
   };
 
   const detailUrl = (t) => createPageUrl("TunnelDetail") + `?id=${t.id}`;
@@ -188,6 +191,16 @@ export function TunnelGrid({ mode = "discover" }) {
               <SelectContent>
                 <SelectItem value="all">Tümü</SelectItem>
                 {topics.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="sm:flex-1 sm:min-w-[150px]">
+            <label className="mb-2 block text-sm font-medium text-slate-700">Sınav Dili</label>
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger aria-label="Sınav Dili"><SelectValue placeholder="Tümü" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tümü</SelectItem>
+                {EXAM_LANGUAGES.map((code) => <SelectItem key={code} value={code}>{examLanguageName(code)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

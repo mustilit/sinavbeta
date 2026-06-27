@@ -13,6 +13,7 @@ import { PaymentModal } from "@/components/ui/PaymentModal";
 import { buildPageUrl, useLoginRedirect } from "@/lib/navigation";
 import { toast } from "sonner";
 import { Loader2, BookOpen, FileText, Star, User, Award, TrendingUp, ShoppingCart, CheckCircle, Play, Eye } from "lucide-react";
+import { examLanguageName } from "@/lib/examLanguages";
 
 /**
  * WrittenTestDetail — yazılı (açık uçlu) paket detay.
@@ -127,6 +128,7 @@ function WrittenTestDetail() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">{t("pages:writtenDetail.aboutTitle", { defaultValue: "Yazılı Hakkında" })}</h2>
             <p className="text-slate-600 leading-relaxed">{pkg.description || t("pages:writtenDetail.aboutNoDescription", { defaultValue: "" })}</p>
+            <p className="text-sm text-slate-500 mt-4">{t("pages:examLanguage.detailLine", { lang: examLanguageName(pkg.language, t) })}</p>
             <p className="mt-3 text-xs text-slate-400">{t("pages:writtenDetail.selfEvalNote")}</p>
           </div>
 

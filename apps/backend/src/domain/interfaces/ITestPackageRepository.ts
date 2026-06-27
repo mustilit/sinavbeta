@@ -37,6 +37,7 @@ export interface TestPackageRecord {
   coverImageUrl: string | null;
   priceCents: number;
   difficulty: string;
+  language: string;
   isActive: boolean;
   publishedAt: Date | null;
   createdAt: Date;
@@ -51,6 +52,7 @@ export interface CreateTestPackageInput {
   description?: string | null;
   priceCents: number;
   difficulty?: string;
+  language?: string;
   coverImageUrl?: string | null;
 }
 
@@ -58,6 +60,7 @@ export interface UpdateTestPackageInput {
   title?: string;
   description?: string | null;
   priceCents?: number;
+  language?: string;
   coverImageUrl?: string | null;
 }
 

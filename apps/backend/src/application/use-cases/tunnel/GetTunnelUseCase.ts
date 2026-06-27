@@ -47,6 +47,7 @@ export function serializeTunnelDetail(t: any) {
     status: t.status,
     priceCents: t.priceCents,
     currency: t.currency,
+    language: t.language ?? 'tr',
     layerCount: t.layerCount,
     optionsPerQuestion: t.optionsPerQuestion,
     advanceStreak: t.advanceStreak,

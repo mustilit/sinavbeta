@@ -32,6 +32,7 @@ import { parseDocxToQuestions, parsePdfToQuestions } from "@/lib/importQuestions
 import { TestPreviewModal } from "@/components/TestPreviewModal";
 import { ModerationStatusBadge } from "@/components/test/ModerationStatusBadge";
 import PackageCoverUpload from "@/components/test/PackageCoverUpload";
+import { EXAM_LANGUAGES, examLanguageName } from "@/lib/examLanguages";
 
 const LETTERS = ["A", "B", "C", "D", "E"];
 const uid = () => Math.random().toString(36).slice(2);
@@ -753,6 +754,7 @@ export default function EditTest() {
       examTypeId:    pkgDetail.examTypeId   ?? "",
       gradeLevelId:  (pkgDetail.tests ?? []).find(tt => tt.gradeLevelId)?.gradeLevelId ?? "",
       difficulty:    pkgDetail.difficulty   ?? "medium",
+      language:      pkgDetail.language     ?? "tr",
       coverImageUrl: pkgDetail.cover_image  ?? pkgDetail.coverImageUrl ?? "",
     });
     const mapped = (pkgDetail.tests ?? []).map(tt => ({
@@ -798,6 +800,7 @@ export default function EditTest() {
       await api.patch(`/packages/${packageId}`, {
         title: pkgData.title, description: pkgData.description || null,
         priceCents: Math.round((pkgData.priceCents || 0) * 100), difficulty: pkgData.difficulty,
+        language: pkgData.language || "tr",
         coverImageUrl: pkgData.coverImageUrl || null,
       });
 
@@ -1072,6 +1075,17 @@ export default function EditTest() {
                   <SelectItem value="easy">{t("pages:testForm.package.difficulty.easy")}</SelectItem>
                   <SelectItem value="medium">{t("pages:testForm.package.difficulty.medium")}</SelectItem>
                   <SelectItem value="hard">{t("pages:testForm.package.difficulty.hard")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("pages:examLanguage.label")}</Label>
+              <Select value={pkgData.language || "tr"} onValueChange={v => setPkgData({ ...pkgData, language: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {EXAM_LANGUAGES.map((code) => (
+                    <SelectItem key={code} value={code}>{examLanguageName(code, t)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

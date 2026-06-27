@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsOptional, MinLength, Min } from 'class-validator';
+import { IsString, IsInt, IsOptional, MinLength, Min, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdatePackageDto {
@@ -18,6 +18,12 @@ export class UpdatePackageDto {
   @IsInt()
   @Min(0)
   priceCents?: number;
+
+  @ApiPropertyOptional({ example: 'tr', description: 'Sınav dili', enum: ['tr', 'en', 'de', 'fr', 'es', 'ar'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['tr', 'en', 'de', 'fr', 'es', 'ar'])
+  language?: string;
 
   @ApiPropertyOptional({ description: 'Paket kapak görseli URL — null gönderilirse mevcut görsel silinir' })
   @IsOptional()

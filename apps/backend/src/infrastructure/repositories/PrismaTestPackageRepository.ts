@@ -52,6 +52,7 @@ export class PrismaTestPackageRepository implements ITestPackageRepository {
       coverImageUrl: pkg.coverImageUrl ?? null,
       priceCents: pkg.priceCents,
       difficulty: pkg.difficulty ?? 'medium',
+      language: pkg.language ?? 'tr',
       isActive: pkg.isActive,
       publishedAt: pkg.publishedAt ?? null,
       createdAt: pkg.createdAt,
@@ -70,6 +71,7 @@ export class PrismaTestPackageRepository implements ITestPackageRepository {
         coverImageUrl: input.coverImageUrl ?? null,
         priceCents: input.priceCents,
         difficulty: input.difficulty ?? 'medium',
+        language: input.language ?? 'tr',
       },
     });
     return this.mapRecord(pkg);
@@ -124,6 +126,7 @@ export class PrismaTestPackageRepository implements ITestPackageRepository {
         ...(input.title !== undefined && { title: input.title }),
         ...(input.description !== undefined && { description: input.description }),
         ...(input.priceCents !== undefined && { priceCents: input.priceCents }),
+        ...(input.language !== undefined && { language: input.language }),
         ...(input.coverImageUrl !== undefined && { coverImageUrl: input.coverImageUrl }),
       },
     });

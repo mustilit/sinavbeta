@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Loader2, Search, SlidersHorizontal, Star, X } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { EXAM_LANGUAGES, examLanguageName } from "@/lib/examLanguages";
 
 /** Paket çözülme durumu kovası (MyTests deseni): test state'lerinden türetilir. */
 function pkgCompletionBucket(pkg) {
@@ -32,6 +33,7 @@ export function WrittenPackageGrid({ mode = "discover" }) {
   // Filtre state (discover) — Explore ile aynı
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [selectedEducator, setSelectedEducator] = useState("");
   const [minRating, setMinRating] = useState(0);
@@ -98,6 +100,7 @@ export function WrittenPackageGrid({ mode = "discover" }) {
           (p.description ?? "").toLowerCase().includes(q) ||
           (p.educatorName ?? "").toLowerCase().includes(q);
         const matchesDifficulty = !selectedDifficulty || p.difficulty === selectedDifficulty;
+        const matchesLanguage = !selectedLanguage || (p.language || "tr") === selectedLanguage;
         const matchesEducator = !eduQ || (p.educatorName ?? "").toLowerCase().includes(eduQ);
         const matchesRating = !minRating || (p.avgRating || 0) >= minRating;
         let matchesPrice = true;
@@ -105,11 +108,11 @@ export function WrittenPackageGrid({ mode = "discover" }) {
         else if (priceRange === "251to500") matchesPrice = price >= 251 && price <= 500;
         else if (priceRange === "501to1000") matchesPrice = price >= 501 && price <= 1000;
         else if (priceRange === "over1000") matchesPrice = price > 1000;
-        return matchesSearch && matchesDifficulty && matchesEducator && matchesRating && matchesPrice && matchesGrade(p);
+        return matchesSearch && matchesDifficulty && matchesLanguage && matchesEducator && matchesRating && matchesPrice && matchesGrade(p);
       });
 
-  const hasActiveFilters = searchQuery || selectedDifficulty || priceRange || minRating > 0 || selectedEducator || !!selectedGrade;
-  const clearFilters = () => { setSearchQuery(""); setSelectedDifficulty(""); setPriceRange(""); setSelectedEducator(""); setMinRating(0); setSelectedGrade(null); };
+  const hasActiveFilters = searchQuery || selectedDifficulty || selectedLanguage || priceRange || minRating > 0 || selectedEducator || !!selectedGrade;
+  const clearFilters = () => { setSearchQuery(""); setSelectedDifficulty(""); setSelectedLanguage(""); setPriceRange(""); setSelectedEducator(""); setMinRating(0); setSelectedGrade(null); };
 
   const mineHasActiveFilters = mineEducator !== "all" || mineCompletion !== "all" || !!selectedGrade;
   const clearMineFilters = () => { setMineEducator("all"); setMineCompletion("all"); setSelectedGrade(null); };
@@ -151,6 +154,18 @@ export function WrittenPackageGrid({ mode = "discover" }) {
                   <SelectItem value="easy">{t("pages:testCard.difficulty.easy")}</SelectItem>
                   <SelectItem value="medium">{t("pages:testCard.difficulty.medium")}</SelectItem>
                   <SelectItem value="hard">{t("pages:testCard.difficulty.hard")}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <SelectTrigger aria-label={t("pages:examLanguage.label")} className="w-full lg:w-36 h-12">
+                  <SelectValue placeholder={t("pages:examLanguage.label")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>{t("pages:examLanguage.all")}</SelectItem>
+                  {EXAM_LANGUAGES.map((code) => (
+                    <SelectItem key={code} value={code}>{examLanguageName(code, t)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 

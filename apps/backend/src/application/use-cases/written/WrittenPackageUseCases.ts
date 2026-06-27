@@ -5,6 +5,7 @@
 import { Logger } from '@nestjs/common';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { normalizeExamLanguage } from '../../../common/examLanguages';
 
 const MAX_TITLE = 200;
 const logger = new Logger('WrittenPackage');
@@ -38,6 +39,7 @@ type CreateInput = {
   description?: string | null;
   priceCents?: number;
   difficulty?: string | null;
+  language?: string | null;
   examTypeId?: string | null;
   gradeLevelId?: string | null;
   coverImageUrl?: string | null;
@@ -80,6 +82,7 @@ export class CreateWrittenPackageUseCase {
         description: (input.description ?? '').trim() || null,
         priceCents,
         difficulty: (input.difficulty ?? 'medium').trim() || 'medium',
+        language: normalizeExamLanguage(input.language),
         coverImageUrl: (input.coverImageUrl ?? '').trim() || null,
         isActive: true,
       },
@@ -96,6 +99,7 @@ type UpdateInput = {
   description?: string | null;
   priceCents?: number;
   difficulty?: string | null;
+  language?: string | null;
   gradeLevelId?: string | null;
   coverImageUrl?: string | null;
 };
@@ -125,6 +129,7 @@ export class UpdateWrittenPackageUseCase {
       data.priceCents = priceCents;
     }
     if (input.difficulty !== undefined) data.difficulty = (input.difficulty ?? '').trim() || 'medium';
+    if (input.language !== undefined) data.language = normalizeExamLanguage(input.language);
     if (input.gradeLevelId !== undefined) data.gradeLevelId = input.gradeLevelId || null;
     if (input.coverImageUrl !== undefined) data.coverImageUrl = (input.coverImageUrl ?? '').trim() || null;
 

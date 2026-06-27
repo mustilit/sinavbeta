@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsOptional, IsInt, Min, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsInt, Min, MinLength, MaxLength, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /** Wizard 1 — tünel oluşturma (sınav türü + konu + başlık). */
@@ -33,6 +33,12 @@ export class CreateTunnelDto {
   @IsInt()
   @Min(0)
   priceCents?: number;
+
+  @ApiPropertyOptional({ description: 'Sınav dili', enum: ['tr', 'en', 'de', 'fr', 'es', 'ar'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['tr', 'en', 'de', 'fr', 'es', 'ar'])
+  language?: string;
 
   @ApiPropertyOptional({ description: 'Kapak görseli URL' })
   @IsOptional()

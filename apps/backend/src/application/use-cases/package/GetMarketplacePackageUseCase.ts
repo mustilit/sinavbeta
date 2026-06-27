@@ -17,6 +17,7 @@ export interface MarketplacePackageDetail {
   coverImageUrl: string | null;
   priceCents: number;
   difficulty: string;
+  language: string;
   publishedAt: string;
   educatorId: string | null;
   educatorUsername: string | null;
@@ -109,6 +110,7 @@ export class GetMarketplacePackageUseCase {
       coverImageUrl: pkg.coverImageUrl ?? null,
       priceCents: pkg.priceCents,
       difficulty: pkg.difficulty ?? 'medium',
+      language: pkg.language ?? 'tr',
       publishedAt: (pkg.publishedAt as Date).toISOString(),
       educatorId: pkg.educatorId ?? null,
       educatorUsername: pkg.educator?.username ?? null,

@@ -25,6 +25,7 @@ import { Link } from "react-router-dom";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 import PackageCoverUpload from "@/components/test/PackageCoverUpload";
 import api from "@/lib/api/apiClient";
+import { EXAM_LANGUAGES, examLanguageName } from "@/lib/examLanguages";
 
 // ─── Sabitler ───────────────────────────────────────────────────────────────
 const STEP_DEFS = [
@@ -61,6 +62,7 @@ function buildWrittenSnapshot(m) {
       examTypeId: pkg.examTypeId ?? "",
       gradeLevelId: pkg.gradeLevelId ?? "",
       priceCents: pkg.priceCents ?? "",
+      language: pkg.language ?? "tr",
       coverImageUrl: pkg.coverImageUrl ?? "",
     },
     tests: (m?.tests ?? []).map((te) => ({
@@ -610,6 +612,7 @@ function CreateWrittenTest() {
     examTypeId: "",
     gradeLevelId: "",
     priceCents: "",
+    language: "tr",
     coverImageUrl: "",
   });
   const [tests, setTests] = useState([emptyTest()]);
@@ -724,6 +727,7 @@ function CreateWrittenTest() {
         examTypeId: pkgData.examTypeId || undefined,
         gradeLevelId: pkgData.gradeLevelId || undefined,
         priceCents: Math.round(priceVal * 100),
+        language: pkgData.language || "tr",
         coverImageUrl: pkgData.coverImageUrl || undefined,
       });
 
@@ -883,6 +887,18 @@ function CreateWrittenTest() {
                     <SelectItem value="__none">{t("pages:writtenTestForm.package.gradeLevelNone", { defaultValue: "Genel" })}</SelectItem>
                     {gradeLevels.map((g) => (
                       <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("pages:examLanguage.label")}</Label>
+                <Select value={pkgData.language || "tr"} onValueChange={(v) => setPkgData((p) => ({ ...p, language: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EXAM_LANGUAGES.map((code) => (
+                      <SelectItem key={code} value={code}>{examLanguageName(code, t)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

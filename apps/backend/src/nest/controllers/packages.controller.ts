@@ -58,6 +58,7 @@ export class PackagesController {
       description: dto.description ?? null,
       priceCents: dto.priceCents,
       difficulty: dto.difficulty,
+      language: dto.language,
       coverImageUrl: dto.coverImageUrl ?? null,
     });
   }
@@ -83,6 +84,7 @@ export class PackagesController {
       title: dto.title,
       description: dto.description,
       priceCents: dto.priceCents,
+      language: dto.language,
       coverImageUrl: dto.coverImageUrl,
     });
   }

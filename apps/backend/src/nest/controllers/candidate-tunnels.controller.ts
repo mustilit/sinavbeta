@@ -40,8 +40,8 @@ export class CandidateTunnelsController {
   @Get()
   @Public()
   @ApiOkResponse({ description: 'Yayınlanmış tüneller (herkese açık — gezinme)' })
-  async list(@Req() req: any, @Query('examTypeId') examTypeId?: string, @Query('gradeLevelId') gradeLevelId?: string, @Query('topicId') topicId?: string) {
-    return this.listUC.execute({ examTypeId, gradeLevelId, topicId }, req.user?.id);
+  async list(@Req() req: any, @Query('examTypeId') examTypeId?: string, @Query('gradeLevelId') gradeLevelId?: string, @Query('topicId') topicId?: string, @Query('language') language?: string) {
+    return this.listUC.execute({ examTypeId, gradeLevelId, topicId, language: language?.trim() || undefined }, req.user?.id);
   }
 
   @Get('reports')

@@ -94,10 +94,10 @@ export class ListMyWrittenPurchasesUseCase {
 
 /** Yayımlanmış yazılı paketler (pazar listesi — kart alanları). */
 export class ListPublishedWrittenPackagesUseCase {
-  async execute(params?: { limit?: number; cursor?: string | null; gradeLevelId?: string | null; featured?: boolean; viewerId?: string | null }) {
+  async execute(params?: { limit?: number; cursor?: string | null; gradeLevelId?: string | null; language?: string | null; featured?: boolean; viewerId?: string | null }) {
     const take = Math.min(Math.max(params?.limit ?? 20, 1), 100);
     const rows = await prisma.writtenPackage.findMany({
-      where: { isActive: true, publishedAt: { not: null }, ...(params?.gradeLevelId ? { gradeLevelId: params.gradeLevelId } : {}) },
+      where: { isActive: true, publishedAt: { not: null }, ...(params?.gradeLevelId ? { gradeLevelId: params.gradeLevelId } : {}), ...(params?.language ? { language: params.language } : {}) },
       orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
       take: take + 1,
       ...(params?.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
@@ -109,6 +109,7 @@ export class ListPublishedWrittenPackagesUseCase {
         priceCents: true,
         currency: true,
         difficulty: true,
+        language: true,
         publishedAt: true,
         educatorId: true,
         gradeLevelId: true,
@@ -137,6 +138,7 @@ export class ListPublishedWrittenPackagesUseCase {
       priceCents: p.priceCents,
       currency: p.currency,
       difficulty: p.difficulty,
+      language: (p as any).language ?? 'tr',
       testCount: p.tests.length,
       totalQuestions: p.tests.reduce((s, t) => s + (t.questionCount ?? 0), 0),
       avgRating: ratingByPkg.get(p.id) != null ? Math.round((ratingByPkg.get(p.id) as number) * 10) / 10 : null,
@@ -259,6 +261,7 @@ export class GetPublishedWrittenPackageUseCase {
         priceCents: true,
         currency: true,
         difficulty: true,
+        language: true,
         isActive: true,
         publishedAt: true,
         educatorId: true,
@@ -294,6 +297,7 @@ export class GetPublishedWrittenPackageUseCase {
       priceCents: pkg.priceCents,
       currency: pkg.currency,
       difficulty: pkg.difficulty,
+      language: (pkg as any).language ?? 'tr',
       educatorId: pkg.educatorId,
       educatorName: pkg.educatorId ? educators.get(pkg.educatorId) ?? null : null,
       educatorUsername: pkg.educatorId ? educators.get(pkg.educatorId) ?? null : null,

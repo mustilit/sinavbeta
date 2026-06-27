@@ -2,6 +2,7 @@ import { AppError } from '../../errors/AppError';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { ITestPackageRepository } from '../../../domain/interfaces/ITestPackageRepository';
 import { getDefaultTenantId } from '../../../common/tenant';
+import { normalizeExamLanguage } from '../../../common/examLanguages';
 
 export class CreateTestPackageUseCase {
   constructor(private readonly repo: ITestPackageRepository) {}
@@ -11,6 +12,7 @@ export class CreateTestPackageUseCase {
     description?: string | null;
     priceCents: number;
     difficulty?: string;
+    language?: string;
     coverImageUrl?: string | null;
   }) {
     // Kill-switch kontrolü
@@ -49,6 +51,7 @@ export class CreateTestPackageUseCase {
       description: input.description ?? null,
       priceCents: input.priceCents,
       difficulty,
+      language: normalizeExamLanguage(input.language),
       coverImageUrl: input.coverImageUrl ?? null,
     });
   }

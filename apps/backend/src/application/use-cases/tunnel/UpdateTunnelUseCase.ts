@@ -2,6 +2,7 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { serializeTunnelDetail } from './GetTunnelUseCase';
 import { logger } from '../../../infrastructure/logger/logger';
+import { normalizeExamLanguage } from '../../../common/examLanguages';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_TITLE = 200;
@@ -14,6 +15,7 @@ type Input = {
   gradeLevelId?: string;
   topicId?: string;
   priceCents?: number;
+  language?: string;
   coverImageUrl?: string | null;
 };
 
@@ -46,6 +48,7 @@ export class UpdateTunnelUseCase {
     }
     if (input.description !== undefined) data.description = (input.description ?? '').trim() || null;
     if (input.coverImageUrl !== undefined) data.coverImageUrl = (input.coverImageUrl ?? '').trim() || null;
+    if (input.language !== undefined) data.language = normalizeExamLanguage(input.language);
 
     if (input.examTypeId !== undefined) {
       if (!input.examTypeId || !UUID_RE.test(input.examTypeId))

@@ -1,5 +1,6 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
+import { normalizeExamLanguage } from '../../../common/examLanguages';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_TITLE = 200;
@@ -11,6 +12,7 @@ type Input = {
   gradeLevelId?: string | null;
   topicId: string;
   priceCents?: number;
+  language?: string;
   coverImageUrl?: string | null;
 };
 
@@ -74,6 +76,7 @@ export class CreateTunnelUseCase {
         description: (input.description ?? '').trim() || null,
         coverImageUrl: (input.coverImageUrl ?? '').trim() || null,
         priceCents,
+        language: normalizeExamLanguage(input.language),
         layerCount,
         optionsPerQuestion,
         advanceStreak,

@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 export interface ListMarketplacePackagesFilters {
   examTypeId?: string;
   gradeLevelId?: string;
+  language?: string;
   limit?: number;
   /** Serbest metin araması — tsvector üzerinde çalışır */
   q?: string;
@@ -16,6 +17,7 @@ export interface MarketplacePackageItem {
   coverImageUrl: string | null;
   priceCents: number;
   difficulty: string;
+  language: string;
   publishedAt: string;
   educatorId: string | null;
   educatorUsername: string | null;
@@ -71,6 +73,9 @@ export class ListMarketplacePackagesUseCase {
               AND et3."deletedAt" IS NULL
           )`
         : Prisma.sql``;
+      const languageClause = filters?.language
+        ? Prisma.sql`AND tp.language = ${filters.language}`
+        : Prisma.sql``;
 
       // Arama kapsamı: paket title/description (tsvector) + educator username (ILIKE)
       // + paket içindeki testlerin sınav türü adı (LGS, KPSS, MSÜ vb. shortcode'lar).
@@ -83,6 +88,7 @@ export class ListMarketplacePackagesUseCase {
           tp."coverImageUrl",
           tp."priceCents",
           tp.difficulty,
+          tp.language,
           tp."publishedAt",
           tp."educatorId",
           u.username       AS "educatorUsername",
@@ -105,6 +111,7 @@ export class ListMarketplacePackagesUseCase {
           )
           ${examTypeClause}
           ${gradeLevelClause}
+          ${languageClause}
         ORDER BY rank DESC, tp."publishedAt" DESC
         LIMIT ${limit}
       `;
@@ -121,6 +128,7 @@ export class ListMarketplacePackagesUseCase {
         where: {
           publishedAt: { not: null },
           ...(testsWhereForFilter && { tests: testsWhereForFilter }),
+          ...(filters?.language && { language: filters.language }),
         },
         orderBy: { publishedAt: 'desc' },
         take: limit,
@@ -131,6 +139,7 @@ export class ListMarketplacePackagesUseCase {
           coverImageUrl: true,
           priceCents: true,
           difficulty: true,
+          language: true,
           publishedAt: true,
           educatorId: true,
           educator: { select: { id: true, username: true } },
@@ -143,6 +152,7 @@ export class ListMarketplacePackagesUseCase {
         coverImageUrl: p.coverImageUrl ?? null,
         priceCents: p.priceCents,
         difficulty: p.difficulty,
+        language: p.language ?? 'tr',
         publishedAt: p.publishedAt,
         educatorId: p.educatorId,
         educatorUsername: p.educator?.username ?? null,
@@ -229,6 +239,7 @@ export class ListMarketplacePackagesUseCase {
         coverImageUrl: pkg.coverImageUrl ?? null,
         priceCents: pkg.priceCents ?? 0,
         difficulty: pkg.difficulty ?? 'medium',
+        language: pkg.language ?? 'tr',
         publishedAt,
         educatorId: pkg.educatorId ?? null,
         educatorUsername: pkg.educatorUsername ?? null,

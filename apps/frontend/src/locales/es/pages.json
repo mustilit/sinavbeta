@@ -1,4 +1,10 @@
 {
+  "examLanguage": {
+    "label": "Idioma del examen",
+    "all": "Todos los idiomas",
+    "detailLine": "Este examen está en {{lang}}.",
+    "names": { "tr": "Turco", "en": "Inglés", "de": "Alemán", "fr": "Francés", "es": "Español", "ar": "Árabe" }
+  },
   "card": {
     "free": "Gratis",
     "boosted": "Destacado",

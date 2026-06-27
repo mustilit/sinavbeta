@@ -1,4 +1,10 @@
 {
+  "examLanguage": {
+    "label": "Prüfungssprache",
+    "all": "Alle Sprachen",
+    "detailLine": "Diese Prüfung ist auf {{lang}}.",
+    "names": { "tr": "Türkisch", "en": "Englisch", "de": "Deutsch", "fr": "Französisch", "es": "Spanisch", "ar": "Arabisch" }
+  },
   "card": {
     "free": "Kostenlos",
     "boosted": "Hervorgehoben",

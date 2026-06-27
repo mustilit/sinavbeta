@@ -774,6 +774,7 @@ model TestPackage {
   priceCents    Int
   currency      Currency  @default(TRY)
   difficulty    String    @default("medium")
+  language      String    @default("tr") // Sınav dili (soruların hazırlandığı dil): tr/en/de/fr/es/ar
   isActive      Boolean   @default(true)
   publishedAt   DateTime?
   createdAt     DateTime  @default(now())
@@ -1989,6 +1990,7 @@ model Tunnel {
   coverImageUrl      String?
   priceCents         Int      @default(0)
   currency           Currency @default(TRY)
+  language           String   @default("tr") // Sınav dili (soruların hazırlandığı dil): tr/en/de/fr/es/ar
   // Oluşturma anında admin ayarından snapshot — admin sonradan değiştirse mevcut tünel bozulmaz.
   layerCount         Int
   optionsPerQuestion Int
@@ -2220,6 +2222,7 @@ model WrittenPackage {
   priceCents    Int       @default(0)
   currency      Currency  @default(TRY)
   difficulty    String    @default("medium")
+  language      String    @default("tr") // Sınav dili (soruların hazırlandığı dil): tr/en/de/fr/es/ar
   isActive      Boolean   @default(true)
   publishedAt   DateTime?
   createdAt     DateTime  @default(now())

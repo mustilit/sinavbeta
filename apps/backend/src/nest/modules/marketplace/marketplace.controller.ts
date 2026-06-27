@@ -73,12 +73,14 @@ export class MarketplaceController {
   async listPackages(
     @Query('examTypeId') examTypeId?: string,
     @Query('gradeLevelId') gradeLevelId?: string,
+    @Query('language') language?: string,
     @Query('limit') limit?: string,
     @Query('q') q?: string,
   ) {
     return this.listPackagesUC.execute({
       examTypeId,
       gradeLevelId,
+      language: language?.trim() || undefined,
       limit: limit ? parseInt(limit, 10) : 20,
       q: q?.trim() || undefined,
     });

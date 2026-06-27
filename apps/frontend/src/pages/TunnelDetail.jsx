@@ -14,6 +14,7 @@ import { candidateTunnels as api, entities } from "@/api/dalClient";
 import http from "@/lib/api/apiClient";
 import { createPageUrl } from "@/utils";
 import { useLoginRedirect } from "@/lib/navigation";
+import { examLanguageName } from "@/lib/examLanguages";
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -178,6 +179,10 @@ export default function TunnelDetail() {
               <p className="whitespace-pre-wrap text-slate-600">{t.description}</p>
             </div>
           )}
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <p className="text-sm text-slate-600">{`Bu sınavın dili ${examLanguageName(t.language)}'dir.`}</p>
+          </div>
 
           {/* Eğitici — TestDetail ile aynı (avatar + Takip Et + özet istatistik) */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6">

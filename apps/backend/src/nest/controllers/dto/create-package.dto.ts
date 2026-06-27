@@ -23,6 +23,12 @@ export class CreatePackageDto {
   @IsIn(['easy', 'medium', 'hard'])
   difficulty?: string;
 
+  @ApiPropertyOptional({ example: 'tr', description: 'Sınav dili (soruların hazırlandığı dil)', enum: ['tr', 'en', 'de', 'fr', 'es', 'ar'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['tr', 'en', 'de', 'fr', 'es', 'ar'])
+  language?: string;
+
   @ApiPropertyOptional({ description: 'Paket kapak görseli URL (yükleme sonrası /uploads/... döner)' })
   @IsOptional()
   @IsString()

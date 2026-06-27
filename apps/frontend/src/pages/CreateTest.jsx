@@ -37,6 +37,7 @@ import { tr } from "date-fns/locale";
 import { TestPreviewModal } from "@/components/TestPreviewModal";
 import { ModerationStatusBadge } from "@/components/test/ModerationStatusBadge";
 import PackageCoverUpload from "@/components/test/PackageCoverUpload";
+import { EXAM_LANGUAGES, examLanguageName } from "@/lib/examLanguages";
 
 // ─── Sabitler ───────────────────────────────────────────────────────────────
 // STEPS i18n'i gerektiren label içerdiği için fonksiyon (component içinde build edilir).
@@ -1006,6 +1007,7 @@ export default function CreateTest() {
     examTypeId: "",
     gradeLevelId: "",
     difficulty: "medium",
+    language: "tr",
     coverImageUrl: "",
   });
 
@@ -1142,6 +1144,7 @@ export default function CreateTest() {
         priceCents: Math.round((pkgData.priceCents || 0) * 100),
         examTypeId: pkgData.examTypeId || undefined,
         difficulty: pkgData.difficulty || "medium",
+        language: pkgData.language || "tr",
         coverImageUrl: pkgData.coverImageUrl || undefined,
       });
 
@@ -1435,6 +1438,18 @@ export default function CreateTest() {
                   <SelectItem value="easy">{t("pages:testForm.package.difficulty.easy")}</SelectItem>
                   <SelectItem value="medium">{t("pages:testForm.package.difficulty.medium")}</SelectItem>
                   <SelectItem value="hard">{t("pages:testForm.package.difficulty.hard")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pkg-language">{t("pages:examLanguage.label")}</Label>
+              <Select value={pkgData.language || "tr"} onValueChange={(v) => setPkgData({ ...pkgData, language: v })}>
+                <SelectTrigger id="pkg-language"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {EXAM_LANGUAGES.map((code) => (
+                    <SelectItem key={code} value={code}>{examLanguageName(code, t)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

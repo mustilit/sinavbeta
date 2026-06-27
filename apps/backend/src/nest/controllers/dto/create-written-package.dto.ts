@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min, MinLength, MaxLength, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, MinLength, MaxLength, IsUrl, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /** Eğitici yazılı paket oluşturma. */
@@ -26,6 +26,12 @@ export class CreateWrittenPackageDto {
   @IsString()
   @MaxLength(50)
   difficulty?: string;
+
+  @ApiPropertyOptional({ description: 'Sınav dili', enum: ['tr', 'en', 'de', 'fr', 'es', 'ar'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['tr', 'en', 'de', 'fr', 'es', 'ar'])
+  language?: string;
 
   @ApiPropertyOptional({ description: 'Sınav türü ID' })
   @IsOptional()

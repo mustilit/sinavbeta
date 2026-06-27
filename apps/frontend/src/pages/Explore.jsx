@@ -14,6 +14,7 @@ import { TunnelInfoModal, useTunnelIntro } from "@/components/tunnel/TunnelInfoM
 import { WrittenPackageGrid } from "@/components/written/WrittenPackageGrid";
 import { Search, SlidersHorizontal, X, Star, ArrowUpDown, HelpCircle } from "lucide-react";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
+import { EXAM_LANGUAGES, examLanguageName } from "@/lib/examLanguages";
 
 export default function Explore() {
   const { t } = useTranslation(["pages"]);
@@ -28,6 +29,7 @@ export default function Explore() {
   const [selectedExamType, setSelectedExamType] = useState(initialExamType);
   const [selectedGrade, setSelectedGrade] = useState(initialGrade);
   const [selectedDifficulty, setSelectedDifficulty] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [minRating, setMinRating] = useState(0);
   const [selectedEducator, setSelectedEducator] = useState("");
@@ -142,6 +144,7 @@ export default function Explore() {
     if (purchasedIds.has(test.id)) return false;
 
     const matchesDifficulty = !selectedDifficulty || test.difficulty === selectedDifficulty;
+    const matchesLanguage = !selectedLanguage || (test.language || "tr") === selectedLanguage;
     const matchesRating = !minRating || (test.average_rating || 0) >= minRating;
     // Eğitici filtresi text search'e dönüştürüldü — sistemdeki tüm eğiticileri
     // dropdown'a yığmak (binlerce) UX açısından mümkün değil. İsim VEYA email
@@ -157,7 +160,7 @@ export default function Explore() {
     else if (priceRange === "501to1000") matchesPrice = test.price >= 501 && test.price <= 1000;
     else if (priceRange === "over1000") matchesPrice = test.price > 1000;
 
-    return matchesDifficulty && matchesPrice && matchesRating && matchesEducator;
+    return matchesDifficulty && matchesLanguage && matchesPrice && matchesRating && matchesEducator;
   });
 
   // İlgi alanı (takip edilen sınav türü) bazlı ranking: aday'ın takip ettiği
@@ -194,12 +197,13 @@ export default function Explore() {
     setSelectedExamType("");
     setSelectedGrade("");
     setSelectedDifficulty("");
+    setSelectedLanguage("");
     setPriceRange("");
     setMinRating(0);
     setSelectedEducator("");
   };
 
-  const hasActiveFilters = searchQuery || selectedExamType || selectedGrade || selectedDifficulty || priceRange || minRating > 0 || selectedEducator;
+  const hasActiveFilters = searchQuery || selectedExamType || selectedGrade || selectedDifficulty || selectedLanguage || priceRange || minRating > 0 || selectedEducator;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -288,6 +292,18 @@ export default function Explore() {
                 <SelectItem value="easy">{t("pages:testCard.difficulty.easy")}</SelectItem>
                 <SelectItem value="medium">{t("pages:testCard.difficulty.medium")}</SelectItem>
                 <SelectItem value="hard">{t("pages:testCard.difficulty.hard")}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+              <SelectTrigger aria-label={t("pages:examLanguage.label")} className="w-full lg:w-36 h-12">
+                <SelectValue placeholder={t("pages:examLanguage.label")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>{t("pages:examLanguage.all")}</SelectItem>
+                {EXAM_LANGUAGES.map((code) => (
+                  <SelectItem key={code} value={code}>{examLanguageName(code, t)}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
 

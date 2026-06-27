@@ -9,6 +9,7 @@ function pubSummary(t: any) {
     coverImageUrl: t.coverImageUrl ?? null,
     priceCents: t.priceCents,
     currency: t.currency,
+    language: t.language ?? 'tr',
     layerCount: t.layerCount,
     examTypeName: t.examType?.name ?? null,
     gradeLevelId: t.gradeLevelId ?? null,
@@ -23,13 +24,14 @@ function pubSummary(t: any) {
 /** Aday: yayınlanmış tünellerin pazar listesi (soru/cevap içermez).
  *  actorId verilirse her tünel için purchased + attemptStatus döner (kart durumu). */
 export class ListPublishedTunnelsUseCase {
-  async execute(filter?: { examTypeId?: string; gradeLevelId?: string; topicId?: string }, actorId?: string | null) {
+  async execute(filter?: { examTypeId?: string; gradeLevelId?: string; topicId?: string; language?: string }, actorId?: string | null) {
     const rows = await prisma.tunnel.findMany({
       where: {
         status: 'PUBLISHED',
         ...(filter?.examTypeId ? { examTypeId: filter.examTypeId } : {}),
         ...(filter?.gradeLevelId ? { gradeLevelId: filter.gradeLevelId } : {}),
         ...(filter?.topicId ? { topicId: filter.topicId } : {}),
+        ...(filter?.language ? { language: filter.language } : {}),
       },
       orderBy: [{ publishedAt: 'desc' }],
       include: {

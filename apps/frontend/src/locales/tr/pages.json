@@ -1,4 +1,10 @@
 {
+  "examLanguage": {
+    "label": "Sınav Dili",
+    "all": "Tüm diller",
+    "detailLine": "Bu sınavın dili {{lang}}'dir.",
+    "names": { "tr": "Türkçe", "en": "İngilizce", "de": "Almanca", "fr": "Fransızca", "es": "İspanyolca", "ar": "Arapça" }
+  },
   "card": {
     "free": "Ücretsiz",
     "boosted": "Öne Çıkan",

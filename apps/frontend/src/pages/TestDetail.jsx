@@ -33,6 +33,7 @@ import {
 import { toast } from "sonner";
 import { useAppNavigate, useLoginRedirect } from "@/lib/navigation";
 import { useServiceStatus } from "@/lib/useServiceStatus";
+import { examLanguageName } from "@/lib/examLanguages";
 
 /**
  * TestDetail
@@ -411,6 +412,9 @@ export default function TestDetail() {
             <p className="text-slate-600 leading-relaxed">
               {/* test.description user-generated — çevrilmez, sadece yokken fallback i18n */}
               {test.description || t("pages:testDetail.about.noDescription")}
+            </p>
+            <p className="text-sm text-slate-500 mt-4">
+              {t("pages:examLanguage.detailLine", { lang: examLanguageName(test.language, t) })}
             </p>
           </div>
 

@@ -26,6 +26,7 @@ import {
 import { Link } from "react-router-dom";
 import { buildPageUrl, useAppNavigate } from "@/lib/navigation";
 import PackageCoverUpload from "@/components/test/PackageCoverUpload";
+import { EXAM_LANGUAGES, examLanguageName } from "@/lib/examLanguages";
 
 // ─── Yardimcilar ────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2);
@@ -49,7 +50,7 @@ function buildWrittenSnapshot(m) {
   return {
     pkgData: {
       title: pkg.title ?? "", description: pkg.description ?? "", examTypeId: pkg.examTypeId ?? "",
-      gradeLevelId: pkg.gradeLevelId ?? "", priceCents: pkg.priceCents ?? "", coverImageUrl: pkg.coverImageUrl ?? "",
+      gradeLevelId: pkg.gradeLevelId ?? "", priceCents: pkg.priceCents ?? "", language: pkg.language ?? "tr", coverImageUrl: pkg.coverImageUrl ?? "",
     },
     tests: (m?.tests ?? []).map((te) => ({
       _k: te._k, id: te.id ?? null, title: te.title ?? "",
@@ -626,6 +627,7 @@ function EditWrittenTest() {
       examTypeId: pkgDetail.examTypeId ?? "",
       gradeLevelId: pkgDetail.gradeLevelId ?? "",
       priceCents: pkgDetail.priceCents != null ? pkgDetail.priceCents / 100 : 0,
+      language: pkgDetail.language ?? "tr",
       coverImageUrl: pkgDetail.cover_image ?? pkgDetail.coverImageUrl ?? "",
     });
     const mapped = (pkgDetail.tests ?? []).map((tt) => ({
@@ -679,6 +681,7 @@ function EditWrittenTest() {
         examTypeId: pkgData.examTypeId || undefined,
         gradeLevelId: pkgData.gradeLevelId || undefined,
         priceCents: Math.round((pkgData.priceCents || 0) * 100),
+        language: pkgData.language || "tr",
         coverImageUrl: pkgData.coverImageUrl || null,
       });
 
@@ -908,6 +911,18 @@ function EditWrittenTest() {
                     <SelectItem value="__none">{t("pages:writtenTestForm.package.gradeLevelNone", { defaultValue: "Genel" })}</SelectItem>
                     {gradeLevels.map((g) => (
                       <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("pages:examLanguage.label")}</Label>
+                <Select value={pkgData.language || "tr"} onValueChange={(v) => setPkgData((p) => ({ ...p, language: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EXAM_LANGUAGES.map((code) => (
+                      <SelectItem key={code} value={code}>{examLanguageName(code, t)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

@@ -22,6 +22,7 @@ import { useAutoSave } from "@/lib/useAutoSave";
 import { useServiceStatus } from "@/lib/useServiceStatus";
 import { parseDocxToQuestions, parsePdfToQuestions } from "@/lib/importQuestions";
 import { createPageUrl } from "@/utils";
+import { EXAM_LANGUAGES, examLanguageName } from "@/lib/examLanguages";
 
 /** Zorunlu alan yıldızı. */
 function Req() {
@@ -69,6 +70,7 @@ function buildTunnelSnapshot(m) {
     examTypeId: m.examTypeId || "",
     topicId: m.topicId || "",
     priceTL: m.priceTL || "",
+    language: m.language || "tr",
     coverImageUrl: m.coverImageUrl || "",
     layers: stripLayersForDraft(m.layers),
   };
@@ -113,6 +115,7 @@ export default function CreateTunnel() {
   const [gradeLevelId, setGradeLevelId] = useState("");
   const [topicId, setTopicId] = useState("");
   const [priceTL, setPriceTL] = useState("");
+  const [language, setLanguage] = useState("tr");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const metaLoaded = useRef(false);
 
@@ -161,8 +164,8 @@ export default function CreateTunnel() {
   const [draftInfo, setDraftInfo] = useState(null);
 
   const getFormData = useCallback(
-    () => buildTunnelSnapshot({ title, description, examTypeId, gradeLevelId, topicId, priceTL, coverImageUrl, layers }),
-    [title, description, examTypeId, gradeLevelId, topicId, priceTL, coverImageUrl, layers],
+    () => buildTunnelSnapshot({ title, description, examTypeId, gradeLevelId, topicId, priceTL, language, coverImageUrl, layers }),
+    [title, description, examTypeId, gradeLevelId, topicId, priceTL, language, coverImageUrl, layers],
   );
 
   const { scheduleSave, loadDraft, clearDraft, lastSavedAt } = useAutoSave(
@@ -222,6 +225,7 @@ export default function CreateTunnel() {
     setGradeLevelId(d.gradeLevelId || "");
     setTopicId(d.topicId || "");
     setPriceTL(d.priceTL || "");
+    setLanguage(d.language || "tr");
     setCoverImageUrl(d.coverImageUrl || "");
     setLayers((d.layers ?? []).map((l) => ({
       index: l.index,
@@ -300,6 +304,7 @@ export default function CreateTunnel() {
       setGradeLevelId(tunnel.gradeLevel?.id ?? "");
       setTopicId(tunnel.topic?.id ?? "");
       setPriceTL(tunnel.priceCents ? String(tunnel.priceCents / 100) : "");
+      setLanguage(tunnel.language ?? "tr");
       setCoverImageUrl(tunnel.coverImageUrl ?? "");
       metaLoaded.current = true;
     }
@@ -314,6 +319,7 @@ export default function CreateTunnel() {
         gradeLevelId: gradeLevelId || undefined,
         topicId,
         priceCents: Math.round((parseFloat(priceTL) || 0) * 100),
+        language,
         coverImageUrl: coverImageUrl || undefined,
       }),
     onSuccess: (t) => {
@@ -335,6 +341,7 @@ export default function CreateTunnel() {
         gradeLevelId: gradeLevelId || undefined,
         topicId,
         priceCents: Math.round((parseFloat(priceTL) || 0) * 100),
+        language,
         coverImageUrl: coverImageUrl || "",
       }),
     onSuccess: () => {
@@ -483,6 +490,15 @@ export default function CreateTunnel() {
               ) : (
                 <p className="mt-1 text-xs text-slate-400">0 = ücretsiz</p>
               )}
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Sınav Dili</label>
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger className="max-w-[200px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {EXAM_LANGUAGES.map((code) => <SelectItem key={code} value={code}>{examLanguageName(code)}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex justify-between pt-2">
               {editing ? (

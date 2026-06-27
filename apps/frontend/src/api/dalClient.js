@@ -1131,6 +1131,7 @@ function packageAdapter(pkg) {
     price: pkg.priceCents != null ? pkg.priceCents / 100 : 0,
     priceCents: pkg.priceCents ?? 0,
     difficulty: pkg.difficulty ?? 'medium',
+    language: pkg.language ?? 'tr',
     cover_image: pkg.coverImageUrl ?? null,
     has_solutions: pkg.hasSolutions ?? false,
     is_published: !!pkg.publishedAt,
