@@ -207,6 +207,38 @@ export type ReportScope = {
   subjectDeptIds: string[];
 };
 
+/** Canlı sınav oluşturanın kapsam snapshot'ı (en dar designation; üst roller görsün diye parent'lar da set edilir). */
+export async function resolveLiveCreatorScope(ctx: SchoolContext): Promise<{ schoolBranchId: string | null; schoolLevelId: string | null; schoolClassroomId: string | null; schoolDepartmentId: string | null }> {
+  const empty = { schoolBranchId: null, schoolLevelId: null, schoolClassroomId: null, schoolDepartmentId: null };
+  if (ctx.schoolRole === 'SCHOOL_ADMIN') return empty;
+  if (ctx.schoolRole === 'BRANCH_ADMIN') return { ...empty, schoolBranchId: ctx.branchId ?? null };
+  const cls = await prisma.classroom.findFirst({ where: { schoolId: ctx.schoolId, adminUserId: ctx.userId }, select: { id: true, levelId: true, branchId: true } });
+  if (cls) return { schoolBranchId: cls.branchId, schoolLevelId: cls.levelId ?? null, schoolClassroomId: cls.id, schoolDepartmentId: null };
+  const lvl = await prisma.schoolLevel.findFirst({ where: { schoolId: ctx.schoolId, adminUserId: ctx.userId }, select: { id: true, branchId: true } });
+  if (lvl) return { schoolBranchId: lvl.branchId, schoolLevelId: lvl.id, schoolClassroomId: null, schoolDepartmentId: null };
+  let deptId = ctx.departmentId ?? null;
+  if (!deptId) { const h = await prisma.department.findFirst({ where: { schoolId: ctx.schoolId, headUserId: ctx.userId }, select: { id: true } }); deptId = h?.id ?? null; }
+  if (deptId) { const d = await prisma.department.findUnique({ where: { id: deptId }, select: { branchId: true, levelId: true } }); return { schoolBranchId: d?.branchId ?? null, schoolLevelId: d?.levelId ?? null, schoolClassroomId: null, schoolDepartmentId: deptId }; }
+  return empty;
+}
+
+/** Canlı sınav görünürlük/erişim where parçası: viewer'ın hiyerarşisi + kendi oluşturduğu. null = tüm okul (admin). */
+export async function liveScopeWhere(ctx: SchoolContext): Promise<Record<string, unknown> | null> {
+  if (ctx.schoolRole === 'SCHOOL_ADMIN') return null;
+  const or: Array<Record<string, unknown>> = [{ educatorId: ctx.userId }];
+  if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId) or.push({ schoolBranchId: ctx.branchId });
+  const myLevels = await prisma.schoolLevel.findMany({ where: { schoolId: ctx.schoolId, adminUserId: ctx.userId }, select: { id: true } });
+  if (myLevels.length) or.push({ schoolLevelId: { in: myLevels.map((l) => l.id) } });
+  const myClasses = await prisma.classroom.findMany({ where: { schoolId: ctx.schoolId, adminUserId: ctx.userId }, select: { id: true } });
+  if (myClasses.length) or.push({ schoolClassroomId: { in: myClasses.map((c) => c.id) } });
+  const deptIds = new Set<string>();
+  if (ctx.departmentId) deptIds.add(ctx.departmentId);
+  const headed = await prisma.department.findMany({ where: { schoolId: ctx.schoolId, headUserId: ctx.userId }, select: { id: true } });
+  headed.forEach((d) => deptIds.add(d.id));
+  if (deptIds.size) or.push({ schoolDepartmentId: { in: [...deptIds] } });
+  return { OR: or };
+}
+
 export async function resolveReportScope(userId: string | undefined): Promise<ReportScope> {
   const ctx = await resolveSchoolContext(userId);
   const schoolId = ctx.schoolId;

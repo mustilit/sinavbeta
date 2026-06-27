@@ -1393,6 +1393,11 @@ model LiveSession {
   parentSessionId         String?
   // E-Sınıf — okul canlı sınavı (marketplace'ten ayrı akış; null = marketplace oturumu)
   schoolId                String?
+  // E-Sınıf hiyerarşik görünürlük — oluşturanın kapsamı (snapshot; null = okul geneli/marketplace)
+  schoolBranchId          String?
+  schoolLevelId           String?
+  schoolClassroomId       String?
+  schoolDepartmentId      String?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 

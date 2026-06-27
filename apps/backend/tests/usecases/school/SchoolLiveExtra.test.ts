@@ -4,7 +4,10 @@
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     schoolUser: { findFirst: jest.fn() },
-    school: { update: jest.fn() },
+    schoolLevel: { findFirst: jest.fn(async () => null), findMany: jest.fn(async () => []) },
+    classroom: { findFirst: jest.fn(async () => null), findMany: jest.fn(async () => []) },
+    department: { findFirst: jest.fn(async () => null), findUnique: jest.fn(async () => null), findMany: jest.fn(async () => []) },
+    school: { update: jest.fn(), findUnique: jest.fn() },
     liveSession: { findMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     liveQuestion: { count: jest.fn() },
     liveAnswer: { groupBy: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), upsert: jest.fn() },

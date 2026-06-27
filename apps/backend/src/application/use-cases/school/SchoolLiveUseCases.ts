@@ -6,7 +6,10 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveLiveCreatorScope, liveScopeWhere, type SchoolContext } from './schoolHelpers';
+
+// Canlı sınav: tüm okul personeli (yönetici + zümre + öğretmen) görür ve oluşturur.
+const LIVE_STAFF_ROLES = ['SCHOOL_ADMIN', 'BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER'] as const;
 
 async function uniqueJoinCode(): Promise<string> {
   for (let i = 0; i < 50; i++) {
@@ -23,7 +26,7 @@ export class CreateSchoolLiveSessionUseCase {
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
     const title = (input.title ?? '').trim();
     if (!title) throw new AppError('TITLE_REQUIRED', 'Başlık zorunlu', 400);
     const qs = input.questions ?? [];
@@ -46,9 +49,10 @@ export class CreateSchoolLiveSessionUseCase {
     }
 
     const joinCode = await uniqueJoinCode();
+    const scope = await resolveLiveCreatorScope(ctx); // hiyerarşik görünürlük snapshot'ı
     const session = await prisma.$transaction(async (tx) => {
       const s = await tx.liveSession.create({
-        data: { educatorId: actorId as string, schoolId: ctx.schoolId, title, joinCode, status: 'DRAFT', paidAt: new Date() },
+        data: { educatorId: actorId as string, schoolId: ctx.schoolId, title, joinCode, status: 'DRAFT', paidAt: new Date(), ...scope },
       });
       for (let i = 0; i < qs.length; i++) {
         const q = qs[i];
@@ -65,9 +69,10 @@ export class CreateSchoolLiveSessionUseCase {
 export class ListSchoolLiveSessionsUseCase {
   async execute(actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
+    const scope = await liveScopeWhere(ctx); // hiyerarşik görünürlük (admin: tümü)
     const rows = await prisma.liveSession.findMany({
-      where: { schoolId: ctx.schoolId, educatorId: actorId },
+      where: { schoolId: ctx.schoolId, ...(scope ?? {}) },
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, joinCode: true, status: true, currentQuestionIdx: true, _count: { select: { questions: true, participants: true } }, createdAt: true },
     });
@@ -75,8 +80,11 @@ export class ListSchoolLiveSessionsUseCase {
   }
 }
 
-async function ownSession(sessionId: string, ctx: { schoolId: string }, actorId: string) {
-  const s = await prisma.liveSession.findFirst({ where: { id: sessionId, schoolId: ctx.schoolId, educatorId: actorId } });
+// Kapsam içindeki oturum (kendi hiyerarşisi); admin tüm okul. Yönetici kendi
+// hiyerarşisindeki oturumları da yönetebilir (görmenin doğal uzantısı).
+async function scopedSession(sessionId: string, ctx: SchoolContext) {
+  const scope = await liveScopeWhere(ctx);
+  const s = await prisma.liveSession.findFirst({ where: { id: sessionId, schoolId: ctx.schoolId, ...(scope ?? {}) } });
   if (!s) throw new AppError('SESSION_NOT_FOUND', 'Oturum bulunamadı', 404);
   return s;
 }
@@ -85,9 +93,10 @@ async function ownSession(sessionId: string, ctx: { schoolId: string }, actorId:
 export class GetSchoolLiveHostStateUseCase {
   async execute(sessionId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
+    const scope = await liveScopeWhere(ctx);
     const s = await prisma.liveSession.findFirst({
-      where: { id: sessionId, schoolId: ctx.schoolId, educatorId: actorId },
+      where: { id: sessionId, schoolId: ctx.schoolId, ...(scope ?? {}) },
       include: { questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } }, _count: { select: { participants: true } } },
     });
     if (!s) throw new AppError('SESSION_NOT_FOUND', 'Oturum bulunamadı', 404);
@@ -109,8 +118,8 @@ export class GetSchoolLiveHostStateUseCase {
 export class StartSchoolLiveSessionUseCase {
   async execute(sessionId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
-    await ownSession(sessionId, ctx, actorId as string);
+    requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
+    await scopedSession(sessionId, ctx);
     await prisma.liveSession.update({ where: { id: sessionId }, data: { status: 'ACTIVE', startedAt: new Date(), currentQuestionIdx: 0 } });
     return { ok: true };
   }
@@ -119,8 +128,8 @@ export class StartSchoolLiveSessionUseCase {
 export class AdvanceSchoolLiveSessionUseCase {
   async execute(sessionId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
-    const s = await ownSession(sessionId, ctx, actorId as string);
+    requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
+    const s = await scopedSession(sessionId, ctx);
     const qCount = await prisma.liveQuestion.count({ where: { sessionId } });
     const next = Math.min(s.currentQuestionIdx + 1, qCount - 1);
     await prisma.liveSession.update({ where: { id: sessionId }, data: { currentQuestionIdx: next } });
@@ -131,8 +140,8 @@ export class AdvanceSchoolLiveSessionUseCase {
 export class EndSchoolLiveSessionUseCase {
   async execute(sessionId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
-    const s = await ownSession(sessionId, ctx, actorId as string);
+    requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
+    const s = await scopedSession(sessionId, ctx);
     if (s.status === 'ENDED') return { ok: true, alreadyEnded: true };
     await prisma.$transaction([
       prisma.liveSession.update({ where: { id: sessionId }, data: { status: 'ENDED', endedAt: new Date() } }),

@@ -21,7 +21,7 @@ export default function SchoolLive() {
   const navigate = useAppNavigate();
   const qc = useQueryClient();
   const role = user?.school?.schoolRole;
-  const canCreate = role === "TEACHER" || role === "DEPT_HEAD";
+  const canCreate = ["SCHOOL_ADMIN", "BRANCH_ADMIN", "DEPT_HEAD", "TEACHER"].includes(role);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState([emptyQ()]);
