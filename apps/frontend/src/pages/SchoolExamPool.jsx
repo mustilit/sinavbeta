@@ -23,7 +23,8 @@ export default function SchoolExamPool() {
   const navigate = useAppNavigate();
   const qc = useQueryClient();
   const role = user?.school?.schoolRole;
-  const canCreate = role === "TEACHER" || role === "DEPT_HEAD";
+  // Okul yöneticisi havuzda tam yetkili (kayıt + güncelleme); öğretmen/zümre başkanı da oluşturur.
+  const canCreate = role === "SCHOOL_ADMIN" || role === "TEACHER" || role === "DEPT_HEAD";
   const [examType, setExamType] = useState("all");
   const [q, setQ] = useState("");
   const [includeArchived, setIncludeArchived] = useState(false);

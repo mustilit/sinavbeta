@@ -13,8 +13,9 @@ type ExamType = 'TEST' | 'TUNNEL' | 'WRITTEN';
 const EXAM_TYPES: ExamType[] = ['TEST', 'TUNNEL', 'WRITTEN'];
 const MAX_TITLE = 200;
 
-/** Sınavı düzenleyebilir mi: sahibi VEYA aynı zümrenin başkanı. */
+/** Sınavı düzenleyebilir mi: okul yöneticisi (tüm okul) VEYA sahibi VEYA aynı zümrenin başkanı. */
 function canManage(exam: { createdById: string; departmentId: string | null }, ctx: SchoolContext, actorId: string): boolean {
+  if (ctx.schoolRole === 'SCHOOL_ADMIN') return true; // okul yöneticisi tüm okul havuzunda tam yetkili
   if (exam.createdById === actorId) return true;
   if (ctx.schoolRole === 'DEPT_HEAD' && exam.departmentId && exam.departmentId === ctx.departmentId) return true;
   return false;
@@ -22,35 +23,51 @@ function canManage(exam: { createdById: string; departmentId: string | null }, c
 
 export class CreateSchoolExamUseCase {
   async execute(
-    input: { examType: string; title: string; subject?: string; gradeLevel?: number; topic?: string; durationMinutes?: number; poolVisibility?: string },
+    input: { examType: string; title: string; subject?: string; gradeLevel?: number; topic?: string; durationMinutes?: number; poolVisibility?: string; departmentId?: string },
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'TEACHER', 'DEPT_HEAD');
 
     const examType = input.examType as ExamType;
     if (!EXAM_TYPES.includes(examType)) throw new AppError('INVALID_EXAM_TYPE', 'Geçersiz sınav türü', 400);
     const title = (input.title ?? '').trim();
     if (!title) throw new AppError('TITLE_REQUIRED', 'Sınav başlığı zorunlu', 400);
     if (title.length > MAX_TITLE) throw new AppError('TITLE_TOO_LONG', `Başlık en fazla ${MAX_TITLE} karakter`, 400);
-    if (!ctx.departmentId) throw new AppError('NO_DEPARTMENT', 'Sınav oluşturmak için bir zümreye atanmış olmalısınız', 409);
 
-    // Ders: verilmezse zümrenin dersinden türet
+    // Zümre çözümü: okul yöneticisi istediği zümreyi seçebilir (veya boş → okul geneli havuz);
+    // öğretmen/zümre başkanı kendi zümresine bağlıdır.
+    let departmentId: string | null;
+    if (ctx.schoolRole === 'SCHOOL_ADMIN') {
+      if (input.departmentId) {
+        const d = await prisma.department.findFirst({ where: { id: input.departmentId, schoolId: ctx.schoolId }, select: { id: true } });
+        if (!d) throw new AppError('DEPARTMENT_NOT_FOUND', 'Zümre bulunamadı', 404);
+        departmentId = d.id;
+      } else {
+        departmentId = null; // okul geneli
+      }
+    } else {
+      if (!ctx.departmentId) throw new AppError('NO_DEPARTMENT', 'Sınav oluşturmak için bir zümreye atanmış olmalısınız', 409);
+      departmentId = ctx.departmentId;
+    }
+
+    // Ders: verilmezse zümrenin dersinden türet (zümre varsa)
     let subject = (input.subject ?? '').trim();
-    if (!subject) {
-      const dept = await prisma.department.findUnique({ where: { id: ctx.departmentId }, select: { subject: true } });
+    if (!subject && departmentId) {
+      const dept = await prisma.department.findUnique({ where: { id: departmentId }, select: { subject: true } });
       subject = dept?.subject ?? '';
     }
     if (!subject) throw new AppError('SUBJECT_REQUIRED', 'Ders zorunlu', 400);
 
     const grade = input.gradeLevel != null ? Math.floor(input.gradeLevel) : null;
     if (grade != null && (grade < 1 || grade > 12)) throw new AppError('INVALID_GRADE', 'Sınıf seviyesi 1-12 olmalı', 400);
-    const visibility = input.poolVisibility === 'SCHOOL' ? 'SCHOOL' : 'DEPARTMENT';
+    // Zümre yoksa havuz görünürlüğü okul geneli olmalı (zümre kapsamı anlamsız).
+    const visibility = !departmentId ? 'SCHOOL' : (input.poolVisibility === 'SCHOOL' ? 'SCHOOL' : 'DEPARTMENT');
 
     const created = await prisma.schoolExam.create({
       data: {
         schoolId: ctx.schoolId,
-        departmentId: ctx.departmentId,
+        departmentId,
         createdById: actorId as string,
         examType: examType as any,
         subject,
@@ -74,7 +91,7 @@ export class UpdateSchoolExamUseCase {
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'TEACHER', 'DEPT_HEAD');
     const exam = await prisma.schoolExam.findFirst({ where: { id: examId, schoolId: ctx.schoolId }, select: { id: true, createdById: true, departmentId: true } });
     if (!exam) throw new AppError('EXAM_NOT_FOUND', 'Sınav bulunamadı', 404);
     if (!canManage(exam, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Bu sınavı düzenleyemezsiniz', 403);
@@ -109,7 +126,7 @@ export class SaveSchoolExamQuestionsUseCase {
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'TEACHER', 'DEPT_HEAD');
     const exam = await prisma.schoolExam.findFirst({ where: { id: examId, schoolId: ctx.schoolId }, select: { id: true, createdById: true, departmentId: true, examType: true } });
     if (!exam) throw new AppError('EXAM_NOT_FOUND', 'Sınav bulunamadı', 404);
     if (!canManage(exam, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Bu sınavı düzenleyemezsiniz', 403);
@@ -247,7 +264,7 @@ export class ListSchoolExamPoolUseCase {
 export class ArchiveSchoolExamUseCase {
   async execute(examId: string, input: { isArchived: boolean }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'TEACHER', 'DEPT_HEAD');
     const exam = await prisma.schoolExam.findFirst({ where: { id: examId, schoolId: ctx.schoolId }, select: { id: true, createdById: true, departmentId: true } });
     if (!exam) throw new AppError('EXAM_NOT_FOUND', 'Sınav bulunamadı', 404);
     if (!canManage(exam, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Yetkiniz yok', 403);
@@ -260,7 +277,7 @@ export class ArchiveSchoolExamUseCase {
 export class DeleteSchoolExamUseCase {
   async execute(examId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'TEACHER', 'DEPT_HEAD');
     const exam = await prisma.schoolExam.findFirst({ where: { id: examId, schoolId: ctx.schoolId }, select: { id: true, createdById: true, departmentId: true } });
     if (!exam) throw new AppError('EXAM_NOT_FOUND', 'Sınav bulunamadı', 404);
     if (!canManage(exam, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Yetkiniz yok', 403);

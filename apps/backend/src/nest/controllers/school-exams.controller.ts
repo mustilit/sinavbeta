@@ -21,6 +21,8 @@ class CreateExamDto {
   @IsOptional() @IsString() @MaxLength(120) topic?: string;
   @IsOptional() @IsInt() @Min(0) durationMinutes?: number;
   @IsOptional() @IsIn(['DEPARTMENT', 'SCHOOL']) poolVisibility?: string;
+  // Okul yöneticisi sınavı bir zümreye atayabilir (boş → okul geneli havuz).
+  @IsOptional() @IsString() departmentId?: string;
 }
 class UpdateExamDto {
   @IsOptional() @IsString() @MaxLength(200) title?: string;

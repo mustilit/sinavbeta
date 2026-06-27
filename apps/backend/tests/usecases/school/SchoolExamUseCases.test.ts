@@ -6,7 +6,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
     schoolUser: { findFirst: jest.fn() },
     schoolLevel: { findMany: jest.fn(async () => []) },
-    department: { findUnique: jest.fn(), findMany: jest.fn(async () => []) },
+    department: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(async () => []) },
     schoolExam: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn(), delete: jest.fn() },
     schoolQuestion: { deleteMany: jest.fn(), create: jest.fn() },
     schoolQuestionOption: { createMany: jest.fn() },
@@ -60,6 +60,65 @@ describe('CreateSchoolExamUseCase', () => {
     expect(r.departmentId).toBe('dept1');
     expect(r.examType).toBe('TUNNEL');
     expect(r.title).toBe('Konu Testi');
+  });
+
+  // ── Okul yöneticisi tam yetki ──
+  const adminCtx = { id: 'sua', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null };
+
+  it('okul yöneticisi: zümresiz okul-geneli sınav oluşturur (subject zorunlu)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(adminCtx);
+    const r = await new CreateSchoolExamUseCase().execute({ examType: 'TEST', title: 'Genel Deneme', subject: 'Fen' }, 'ua');
+    expect(r.departmentId).toBeNull();
+    expect(r.subject).toBe('Fen');
+    expect(r.poolVisibility).toBe('SCHOOL'); // zümre yoksa okul geneli
+  });
+
+  it('okul yöneticisi: subject vermezse SUBJECT_REQUIRED (türetilecek zümre yok)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(adminCtx);
+    await expect(new CreateSchoolExamUseCase().execute({ examType: 'TEST', title: 'X' }, 'ua'))
+      .rejects.toMatchObject({ code: 'SUBJECT_REQUIRED' });
+  });
+
+  it('okul yöneticisi: departmentId verirse o zümreye atanır', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(adminCtx);
+    p.department.findFirst.mockResolvedValue({ id: 'dept9' });
+    p.department.findUnique.mockResolvedValue({ subject: 'Tarih' });
+    const r = await new CreateSchoolExamUseCase().execute({ examType: 'TEST', title: 'Zümre Sınavı', departmentId: 'dept9' }, 'ua');
+    expect(r.departmentId).toBe('dept9');
+    expect(r.subject).toBe('Tarih');
+  });
+
+  it('okul yöneticisi: geçersiz departmentId → DEPARTMENT_NOT_FOUND', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(adminCtx);
+    p.department.findFirst.mockResolvedValue(null);
+    await expect(new CreateSchoolExamUseCase().execute({ examType: 'TEST', title: 'X', subject: 'Fen', departmentId: 'yok' }, 'ua'))
+      .rejects.toMatchObject({ code: 'DEPARTMENT_NOT_FOUND' });
+  });
+});
+
+describe('Okul yöneticisi — başkasının sınavını yönetebilir', () => {
+  const adminCtx = { id: 'sua', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null };
+  beforeEach(() => { jest.clearAllMocks(); p.schoolUser.findFirst.mockResolvedValue(adminCtx); });
+
+  it('Update: başkasının sınavını günceller (canManage)', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'e1', createdById: 'other', departmentId: 'dX' });
+    p.schoolExam.update.mockResolvedValue({ id: 'e1', title: 'Y' });
+    const r = await new UpdateSchoolExamUseCase().execute('e1', { title: 'Y' }, 'ua');
+    expect(r.title).toBe('Y');
+  });
+
+  it('Archive: başkasının sınavını pasife alır', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'e1', createdById: 'other', departmentId: 'dX' });
+    p.schoolExam.update.mockResolvedValue({ id: 'e1', isArchived: true });
+    const r = await new ArchiveSchoolExamUseCase().execute('e1', { isArchived: true }, 'ua');
+    expect(r.isArchived).toBe(true);
+  });
+
+  it('Delete: başkasının sınavını siler', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'e1', createdById: 'other', departmentId: 'dX' });
+    p.schoolExam.delete.mockResolvedValue({ id: 'e1' });
+    const r = await new DeleteSchoolExamUseCase().execute('e1', 'ua');
+    expect(r).toBeTruthy();
   });
 });
 
