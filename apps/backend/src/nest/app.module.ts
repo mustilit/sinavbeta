@@ -31,6 +31,7 @@ import { SchoolStudentController, SchoolStudentReportController } from './contro
 import { SchoolGradingController } from './controllers/school-grading.controller';
 import { SchoolReportsController } from './controllers/school-reports.controller';
 import { SchoolLiveController } from './controllers/school-live.controller';
+import { SchoolTunnelController } from './controllers/school-tunnel.controller';
 import { ReviewsController } from './controllers/reviews.controller';
 import { EducatorsController } from './controllers/educators.controller';
 import { FollowsController } from './controllers/follows.controller';
@@ -447,6 +448,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     SchoolReportsController,
     // E-Sınıf — Sprint 4-B okul canlı sınavı
     SchoolLiveController,
+    SchoolTunnelController,
   ],
   providers: [
     SeedService,

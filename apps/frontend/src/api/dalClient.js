@@ -2342,6 +2342,13 @@ export const studentLive = {
   answer: async (id, body) => (await api.post(`/school/live/${id}/answer`, body)).data,
 };
 
+// E-Sınıf öğrenci tünel adaptif çözme
+export const schoolTunnel = {
+  start: async (examId) => (await api.post(`/school/tunnel/${examId}/start`)).data,
+  state: async (examId) => (await api.get(`/school/tunnel/${examId}/state`)).data,
+  answer: async (examId, optionId) => (await api.post(`/school/tunnel/${examId}/answer`, { optionId })).data,
+};
+
 // E-Sınıf öğrenci ödev çözme (Sprint 3)
 export const studentAssignments = {
   list: async ({ filter } = {}) => {

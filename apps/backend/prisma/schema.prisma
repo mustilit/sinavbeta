@@ -2672,6 +2672,7 @@ model SchoolExam {
   tenantId        String
   questions       SchoolQuestion[]
   assignments     SchoolAssignment[]
+  tunnelAttempts  SchoolTunnelAttempt[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -2680,6 +2681,44 @@ model SchoolExam {
   @@index([schoolId, examType])
   @@index([createdById])
   @@map("school_exams")
+}
+
+// E-Sınıf tünel adaptif çözme — öğrenci+sınav başına tek deneme (market TunnelAttempt deseni).
+// Saf motor (tunnel/engine.ts) yeniden kullanılır. Modül-dışı id'ler (studentId) scalar.
+model SchoolTunnelAttempt {
+  id                     String                 @id @default(uuid())
+  examId                 String
+  exam                   SchoolExam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId              String // User.id (scalar — e-Sınıf deseni)
+  baseLayer              Int                    @default(1) // en alttaki tam-öğrenilmemiş katman
+  upperOpen              Boolean                @default(false)
+  streakCount            Int                    @default(0)
+  currentQuestionId      String?
+  currentCorrectPosition Int?
+  currentOrderJson       String? // o anki sunum seçenek sırası (id'ler)
+  status                 String                 @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED
+  startedAt              DateTime               @default(now())
+  completedAt            DateTime?
+  lastActivityAt         DateTime               @default(now())
+  progress               SchoolTunnelProgress[]
+
+  @@unique([examId, studentId])
+  @@index([studentId])
+  @@map("school_tunnel_attempts")
+}
+
+// Soru bazlı pozisyon ustalığı (correctMask bitmask, monoton). Market TunnelQuestionProgress deseni.
+model SchoolTunnelProgress {
+  id          String              @id @default(uuid())
+  attemptId   String
+  attempt     SchoolTunnelAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId  String // SchoolQuestion.id (scalar)
+  correctMask Int                 @default(0)
+  mastered    Boolean             @default(false)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@map("school_tunnel_progress")
 }
 
 model SchoolQuestion {

@@ -84,6 +84,7 @@ export class GetStudentAssignmentUseCase {
     return {
       id: a.id,
       title: a.title,
+      examId: a.examId, // TUNNEL adaptif çözme examId ile çalışır
       examType: a.exam.examType,
       durationMinutes: a.exam.durationMinutes,
       dueDate: a.dueDate,

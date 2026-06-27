@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, ChevronRight, Send, CheckCircle2, AlertCircle, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
+import { SchoolTunnelSolver } from "@/components/school/SchoolTunnelSolver";
 
 /** E-Sınıf — Öğrenci ödev çözme. TEST/WRITTEN liste; TUNNEL sıralı (geri yok). Autosave + süre. */
 export default function StudentSolve() {
@@ -78,6 +79,16 @@ export default function StudentSolve() {
   if (isLoading) return <div className="max-w-3xl mx-auto py-20 text-center text-slate-400">Yükleniyor…</div>;
   if (isError || !a) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Ödev bulunamadı</h2></div>;
   if (!a.open) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-amber-400" /><h2 className="text-xl font-semibold text-slate-900">Ödev çözüme kapalı</h2></div>;
+
+  // TUNNEL → market tüneliyle aynı adaptif çözme (katmanlı, ustalık tabanlı).
+  if (a.examType === "TUNNEL" && a.examId) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <button onClick={() => navigate(buildPageUrl("StudentAssignments"))} className="mb-4 text-sm text-slate-500 hover:text-slate-800">← Ödevlerim</button>
+        <SchoolTunnelSolver examId={a.examId} />
+      </div>
+    );
+  }
 
   const isChoice = a.examType === "TEST" || a.examType === "TUNNEL";
   const isTunnel = a.examType === "TUNNEL";
