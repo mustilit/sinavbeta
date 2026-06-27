@@ -22,20 +22,22 @@ async function uniqueJoinCode(): Promise<string> {
 
 export class CreateSchoolLiveSessionUseCase {
   async execute(
-    input: { title: string; questions: Array<{ content: string; options: Array<{ content: string; isCorrect?: boolean }> }> },
+    input: { title: string; questions: Array<{ content?: string; mediaUrl?: string; options: Array<{ content?: string; mediaUrl?: string; isCorrect?: boolean }> }> },
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
     const title = (input.title ?? '').trim();
     if (!title) throw new AppError('TITLE_REQUIRED', 'Başlık zorunlu', 400);
-    const qs = input.questions ?? [];
-    if (qs.length === 0) throw new AppError('NO_QUESTIONS', 'En az bir soru gerekli', 400);
-    qs.forEach((q, i) => {
-      if (!q.content?.trim()) throw new AppError('QUESTION_CONTENT_REQUIRED', `Soru ${i + 1}: içerik zorunlu`, 400);
-      const opts = q.options ?? [];
-      if (opts.length < 2) throw new AppError('TOO_FEW_OPTIONS', `Soru ${i + 1}: en az 2 şık`, 400);
-      if (opts.filter((o) => o.isCorrect).length !== 1) throw new AppError('ONE_CORRECT_REQUIRED', `Soru ${i + 1}: tam 1 doğru şık`, 400);
+    const rawQs = input.questions ?? [];
+    if (rawQs.length === 0) throw new AppError('NO_QUESTIONS', 'En az bir soru gerekli', 400);
+    // Market editörü ile aynı: boş şıklar elenir; içerik VEYA görsel yeterli; tam 1 doğru.
+    const qs = rawQs.map((q, i) => {
+      if (!q.content?.trim() && !q.mediaUrl) throw new AppError('QUESTION_CONTENT_REQUIRED', `Soru ${i + 1}: içerik zorunlu`, 400);
+      const filled = (q.options ?? []).filter((o) => o.content?.trim() || o.mediaUrl);
+      if (filled.length < 2) throw new AppError('TOO_FEW_OPTIONS', `Soru ${i + 1}: en az 2 şık`, 400);
+      if (filled.filter((o) => o.isCorrect).length !== 1) throw new AppError('ONE_CORRECT_REQUIRED', `Soru ${i + 1}: tam 1 doğru şık`, 400);
+      return { content: q.content, mediaUrl: q.mediaUrl, options: filled };
     });
 
     // Kota: annualLiveLimit>0 ise (ended + aktif) < limit olmalı
@@ -56,8 +58,8 @@ export class CreateSchoolLiveSessionUseCase {
       });
       for (let i = 0; i < qs.length; i++) {
         const q = qs[i];
-        const lq = await tx.liveQuestion.create({ data: { sessionId: s.id, content: q.content.trim(), order: i + 1 } });
-        await tx.liveOption.createMany({ data: q.options.map((o, j) => ({ questionId: lq.id, content: o.content.trim(), isCorrect: !!o.isCorrect, order: j + 1 })) });
+        const lq = await tx.liveQuestion.create({ data: { sessionId: s.id, content: (q.content ?? '').trim(), mediaUrl: q.mediaUrl || null, order: i + 1 } });
+        await tx.liveOption.createMany({ data: q.options.map((o, j) => ({ questionId: lq.id, content: (o.content ?? '').trim(), mediaUrl: o.mediaUrl || null, isCorrect: !!o.isCorrect, order: j + 1 })) });
       }
       return s;
     });
@@ -109,7 +111,7 @@ export class GetSchoolLiveHostStateUseCase {
     return {
       id: s.id, title: s.title, joinCode: s.joinCode, status: s.status, currentQuestionIdx: s.currentQuestionIdx,
       participantCount: s._count.participants, questionCount: s.questions.length,
-      questions: s.questions.map((q) => ({ id: q.id, content: q.content, options: q.options.map((o) => ({ id: o.id, content: o.content, isCorrect: o.isCorrect })) })),
+      questions: s.questions.map((q) => ({ id: q.id, content: q.content, mediaUrl: q.mediaUrl ?? null, options: q.options.map((o) => ({ id: o.id, content: o.content, mediaUrl: o.mediaUrl ?? null, isCorrect: o.isCorrect })) })),
       currentDistribution: distribution,
     };
   }
@@ -203,7 +205,7 @@ export class GetSchoolLiveParticipantStateUseCase {
       status: 'ACTIVE',
       currentQuestionIdx: s.currentQuestionIdx,
       questionCount: s.questions.length,
-      question: cur ? { id: cur.id, content: cur.content, options: cur.options.map((o) => ({ id: o.id, content: o.content })) } : null,
+      question: cur ? { id: cur.id, content: cur.content, mediaUrl: cur.mediaUrl ?? null, options: cur.options.map((o) => ({ id: o.id, content: o.content, mediaUrl: o.mediaUrl ?? null })) } : null,
       myOptionId,
     };
   }

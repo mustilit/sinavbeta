@@ -15,8 +15,9 @@ import {
   SubmitSchoolLiveAnswerUseCase,
 } from '../../application/use-cases/school/SchoolLiveUseCases';
 
-class LiveOptionDto { @IsString() @MaxLength(500) content!: string; @IsOptional() @IsBoolean() isCorrect?: boolean; }
-class LiveQuestionDto { @IsString() @MaxLength(2000) content!: string; @IsArray() @ValidateNested({ each: true }) @Type(() => LiveOptionDto) options!: LiveOptionDto[]; }
+// content VEYA mediaUrl yeterli (market editörü ile aynı: görsel-yalnız soru/şık serbest).
+class LiveOptionDto { @IsOptional() @IsString() @MaxLength(500) content?: string; @IsOptional() @IsString() @MaxLength(1000) mediaUrl?: string; @IsOptional() @IsBoolean() isCorrect?: boolean; }
+class LiveQuestionDto { @IsOptional() @IsString() @MaxLength(2000) content?: string; @IsOptional() @IsString() @MaxLength(1000) mediaUrl?: string; @IsArray() @ValidateNested({ each: true }) @Type(() => LiveOptionDto) options!: LiveOptionDto[]; }
 class CreateLiveDto { @IsString() @MaxLength(200) title!: string; @IsArray() @ValidateNested({ each: true }) @Type(() => LiveQuestionDto) questions!: LiveQuestionDto[]; }
 class JoinDto { @IsString() @MaxLength(12) joinCode!: string; }
 class AnswerDto { @IsString() questionId!: string; @IsString() optionId!: string; }

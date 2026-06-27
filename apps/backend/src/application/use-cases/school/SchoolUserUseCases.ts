@@ -166,30 +166,72 @@ export class BulkCreateStudentsUseCase {
   }
 }
 
+/**
+ * Verilen şube(ler)e (ve doğrudan verilen departman/sınıf id'lerine) ait TÜM kullanıcıları
+ * kapsayan OR koşulu üretir. Aidiyet: SchoolUser.branchId (şube müdürü) ∪ şubenin
+ * departmanlarına bağlı (öğretmen/zümre başkanı) ∪ şubenin sınıflarına bağlı (sınıf
+ * öğretmeni/öğrenci). Departman şubeye doğrudan (branchId) veya seviye üzerinden
+ * (level.branchId) bağlanabilir.
+ */
+async function membershipWhere(
+  schoolId: string,
+  opts: { branchIds?: string[]; departmentIds?: string[]; classroomIds?: string[] },
+): Promise<Record<string, unknown>> {
+  const branchIds = opts.branchIds ?? [];
+  const deptIds = new Set<string>(opts.departmentIds ?? []);
+  const classIds = new Set<string>(opts.classroomIds ?? []);
+  const or: Record<string, unknown>[] = [];
+  if (branchIds.length) {
+    or.push({ branchId: { in: branchIds } });
+    const [depts, classes] = await Promise.all([
+      prisma.department.findMany({
+        where: { schoolId, OR: [{ branchId: { in: branchIds } }, { level: { branchId: { in: branchIds } } }] },
+        select: { id: true },
+      }),
+      prisma.classroom.findMany({ where: { schoolId, branchId: { in: branchIds } }, select: { id: true } }),
+    ]);
+    depts.forEach((d) => deptIds.add(d.id));
+    classes.forEach((c) => classIds.add(c.id));
+  }
+  if (deptIds.size) or.push({ departmentId: { in: [...deptIds] } });
+  if (classIds.size) or.push({ classroomId: { in: [...classIds] } });
+  // Hiç koşul yoksa (örn. boş şube) kimseyi getirme.
+  return or.length ? { OR: or } : { id: '__none__' };
+}
+
 export class ListSchoolUsersUseCase {
   async execute(input: { role?: string; q?: string; branchId?: string; cursor?: string | null; limit?: number }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     const take = Math.min(Math.max(input.limit ?? 30, 1), 100);
     const text = (input.q ?? '').trim();
 
-    // Yönetici değilse: kapsamına (designation) göre kendi şube(ler)iyle sınırlı liste —
-    // sınıf öğretmeni/seviye sorumlusu/zümre başkanı atama seçici (picker) açabilsin.
-    let scopedBranchFilter: Record<string, unknown> = {};
-    if (ctx.schoolRole !== 'SCHOOL_ADMIN' && ctx.schoolRole !== 'BRANCH_ADMIN') {
+    // Erişim kapsamı (designation) + şube süzmesini AND koşulları olarak biriktiririz.
+    // ÖNEMLİ: bir kullanıcının şubeye aidiyeti SchoolUser.branchId ile SINIRLI DEĞİLDİR —
+    // bu alan yalnız BRANCH_ADMIN'de doludur. Öğretmen/zümre başkanı departman, sınıf
+    // öğretmeni/öğrenci sınıf üzerinden şubeye bağlıdır. Bu yüzden şube süzmesi aidiyet
+    // (membershipWhere) üzerinden yapılır; aksi halde şube filtresi yalnız şube müdürünü getirir.
+    const andClauses: Record<string, unknown>[] = [];
+    if (ctx.schoolRole === 'BRANCH_ADMIN') {
+      andClauses.push(await membershipWhere(ctx.schoolId, { branchIds: ctx.branchId ? [ctx.branchId] : [] }));
+    } else if (ctx.schoolRole !== 'SCHOOL_ADMIN') {
       const scope = await resolveSchoolScope(actorId);
       if (scopeIsEmpty(scope) && !scope.departmentIds.length) throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu işlem için yetkiniz yok', 403);
       if (!scope.wholeSchool) {
-        const branchIds = new Set<string>(scope.fullBranchIds);
+        const set = new Set<string>(scope.fullBranchIds);
         if (scope.fullLevelIds.length) {
           const lv = await prisma.schoolLevel.findMany({ where: { id: { in: scope.fullLevelIds } }, select: { branchId: true } });
-          lv.forEach((l) => l.branchId && branchIds.add(l.branchId));
+          lv.forEach((l) => l.branchId && set.add(l.branchId));
         }
-        if (scope.soloClassroomIds.length) {
-          const cl = await prisma.classroom.findMany({ where: { id: { in: scope.soloClassroomIds } }, select: { branchId: true } });
-          cl.forEach((c) => c.branchId && branchIds.add(c.branchId));
-        }
-        scopedBranchFilter = branchIds.size ? { branchId: { in: [...branchIds] } } : { id: '__none__' };
+        andClauses.push(await membershipWhere(ctx.schoolId, {
+          branchIds: [...set],
+          departmentIds: scope.departmentIds,
+          classroomIds: scope.soloClassroomIds,
+        }));
       }
+    }
+    // Okul yöneticisinin (ya da kapsam dahilinde herkesin) seçtiği şube filtresi — aidiyet bazlı.
+    if (input.branchId) {
+      andClauses.push(await membershipWhere(ctx.schoolId, { branchIds: [input.branchId] }));
     }
 
     const rows = await prisma.schoolUser.findMany({
@@ -199,10 +241,8 @@ export class ListSchoolUsersUseCase {
         ...(input.role && ASSIGNABLE.concat('SCHOOL_ADMIN' as any).includes(input.role as any)
           ? { schoolRole: input.role as any }
           : { schoolRole: { not: 'STUDENT' as any } }),
-        // Şube yöneticisi yalnız kendi şubesi; okul yöneticisi seçtiği şube ile filtreler
-        ...(ctx.schoolRole === 'BRANCH_ADMIN' ? { branchId: ctx.branchId ?? '__none__' } : (input.branchId ? { branchId: input.branchId } : {})),
-        ...scopedBranchFilter,
         ...(text ? { username: { contains: text, mode: 'insensitive' as const } } : {}),
+        ...(andClauses.length ? { AND: andClauses } : {}),
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: take + 1,

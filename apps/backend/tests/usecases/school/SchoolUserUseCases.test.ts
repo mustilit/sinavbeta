@@ -7,8 +7,9 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     schoolUser: { findFirst: jest.fn(), count: jest.fn(), create: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     school: { findUnique: jest.fn() },
     branch: { findFirst: jest.fn() },
-    classroom: { findFirst: jest.fn() },
-    department: { findFirst: jest.fn() },
+    classroom: { findFirst: jest.fn(), findMany: jest.fn(async () => []) },
+    department: { findFirst: jest.fn(), findMany: jest.fn(async () => []) },
+    schoolLevel: { findMany: jest.fn(async () => []) },
     user: { create: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(),
   },
@@ -141,7 +142,27 @@ describe('ListSchoolUsersUseCase', () => {
     ]);
     const r = await new ListSchoolUsersUseCase().execute({ branchId: 'b1', limit: 30 }, 'u0');
     expect(r.items[0]).toMatchObject({ username: 'ALEF-S-0001', studentNo: '101', fullName: 'Ali V', classroomName: '5-A' });
-    expect(p.schoolUser.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ branchId: 'b1' }) }));
+    // Şube süzmesi AND→OR aidiyet koşulu ile geçer (branchId top-level DEĞİL).
+    const arg = p.schoolUser.findMany.mock.calls[0][0];
+    expect(arg.where.AND[0].OR).toEqual(expect.arrayContaining([{ branchId: { in: ['b1'] } }]));
+  });
+  it('şube filtresi: departman ve sınıf üyelerini de getirir (sadece şube müdürü değil)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null });
+    // Şube b1'in zümre + sınıfları
+    p.department.findMany.mockResolvedValue([{ id: 'd1' }, { id: 'd2' }]);
+    p.classroom.findMany.mockResolvedValue([{ id: 'c1' }]);
+    p.schoolUser.findMany.mockResolvedValue([]);
+    await new ListSchoolUsersUseCase().execute({ branchId: 'b1', limit: 30 }, 'u0');
+    const or = p.schoolUser.findMany.mock.calls[0][0].where.AND[0].OR;
+    expect(or).toEqual(expect.arrayContaining([
+      { branchId: { in: ['b1'] } },
+      { departmentId: { in: ['d1', 'd2'] } },
+      { classroomId: { in: ['c1'] } },
+    ]));
+    // Departman sorgusu hem doğrudan branchId hem seviye (level.branchId) üzerinden bağlanır
+    expect(p.department.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ OR: [{ branchId: { in: ['b1'] } }, { level: { branchId: { in: ['b1'] } } }] }),
+    }));
   });
   it('hasMore: nextCursor döner', async () => {
     p.schoolUser.findFirst.mockResolvedValue({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null });

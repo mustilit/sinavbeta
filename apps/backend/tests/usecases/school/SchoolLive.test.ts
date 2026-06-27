@@ -23,17 +23,39 @@ const student = { id: 'su2', schoolId: 'sch1', schoolRole: 'STUDENT', branchId: 
 const validQ = [{ content: 'S', options: [{ content: 'A', isCorrect: true }, { content: 'B' }] }];
 
 describe('CreateSchoolLiveSessionUseCase', () => {
+  let txOptionCreateMany: jest.Mock;
+  let txQuestionCreate: jest.Mock;
   beforeEach(() => {
     jest.clearAllMocks();
     p.schoolUser.findFirst.mockResolvedValue(teacher);
     p.school.findUnique.mockResolvedValue({ annualLiveLimit: 10, usedLiveCount: 0 });
     p.liveSession.count.mockResolvedValue(0);
     p.liveSession.findUnique.mockResolvedValue(null); // joinCode unique
+    txOptionCreateMany = jest.fn();
+    txQuestionCreate = jest.fn().mockResolvedValue({ id: 'q1' });
     p.$transaction.mockImplementation(async (fn: any) => fn({
       liveSession: { create: jest.fn().mockResolvedValue({ id: 'ls1', joinCode: '123456' }) },
-      liveQuestion: { create: jest.fn().mockResolvedValue({ id: 'q1' }) },
-      liveOption: { createMany: jest.fn() },
+      liveQuestion: { create: txQuestionCreate },
+      liveOption: { createMany: txOptionCreateMany },
     }));
+  });
+
+  it('görsel-yalnız soru + şık (metin boş) → oluşturulur', async () => {
+    const r = await new CreateSchoolLiveSessionUseCase().execute({
+      title: 'T',
+      questions: [{ content: '', mediaUrl: '/uploads/q.webp', options: [{ content: '', mediaUrl: '/uploads/a.webp', isCorrect: true }, { content: 'B' }] }],
+    }, 'u1');
+    expect(r.joinCode).toBe('123456');
+    expect(txQuestionCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ mediaUrl: '/uploads/q.webp' }) }));
+  });
+
+  it('boş şıklar elenir: 5 şıktan 2 doludysa → 2 şık yazılır', async () => {
+    await new CreateSchoolLiveSessionUseCase().execute({
+      title: 'T',
+      questions: [{ content: 'S', options: [{ content: 'A', isCorrect: true }, { content: 'B' }, { content: '' }, { content: '' }, { content: '' }] }],
+    }, 'u1');
+    expect(txOptionCreateMany).toHaveBeenCalledTimes(1);
+    expect(txOptionCreateMany.mock.calls[0][0].data).toHaveLength(2);
   });
 
   it('kota dolu → LIVE_QUOTA_EXCEEDED', async () => {
