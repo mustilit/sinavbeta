@@ -179,22 +179,34 @@ export class DeleteClassroomUseCase {
 /** Şube → Seviye → Sınıf ağacı (yöneticiler + öğrenci sayıları ile). */
 export class GetSchoolTreeUseCase {
   async execute(actorId?: string) {
-    // Görüntüleme kapsamı: SCHOOL_ADMIN tüm okul; alt roller yetki alanı kadar.
-    const scope = await resolveSchoolScope(actorId);
-    if (scopeIsEmpty(scope)) return [];
+    // Görüntüleme kapsamı — DESIGNATION tabanlı (zümre üyeliği org ağacı erişimi VERMEZ),
+    // kimse hiyerarşide YUKARIYI görmez:
+    //  - SCHOOL_ADMIN → tüm okul
+    //  - BRANCH_ADMIN → kendi şubesi
+    //  - Seviye Sorumlusu (SchoolLevel.adminUserId) → yalnız kendi seviye(ler)i
+    //  - Sınıf Öğretmeni (Classroom.adminUserId) → yalnız kendi sınıf(lar)ı
+    const ctx = await resolveSchoolContext(actorId);
+    const schoolId = ctx.schoolId;
+    const isSchoolAdmin = ctx.schoolRole === 'SCHOOL_ADMIN';
+
+    const myLevels = isSchoolAdmin ? [] : await prisma.schoolLevel.findMany({ where: { schoolId, adminUserId: ctx.userId }, select: { id: true, branchId: true } });
+    const myClasses = isSchoolAdmin ? [] : await prisma.classroom.findMany({ where: { schoolId, adminUserId: ctx.userId }, select: { id: true, branchId: true } });
+    const fullBranchSet = new Set<string>();
+    if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId) fullBranchSet.add(ctx.branchId);
+    const scope = {
+      schoolId,
+      wholeSchool: isSchoolAdmin,
+      fullBranchIds: [...fullBranchSet],
+      fullLevelIds: myLevels.map((l) => l.id),
+      soloClassroomIds: myClasses.map((c) => c.id),
+    };
 
     // Kapsamdaki şubeleri belirle (tam şube + tam seviyelerin şubesi + tekil sınıfların şubesi)
     let branchIdFilter: string[] | null = null;
     if (!scope.wholeSchool) {
-      const ids = new Set(scope.fullBranchIds);
-      if (scope.fullLevelIds.length) {
-        const lv = await prisma.schoolLevel.findMany({ where: { id: { in: scope.fullLevelIds } }, select: { branchId: true } });
-        lv.forEach((l) => ids.add(l.branchId));
-      }
-      if (scope.soloClassroomIds.length) {
-        const cl = await prisma.classroom.findMany({ where: { id: { in: scope.soloClassroomIds } }, select: { branchId: true } });
-        cl.forEach((c) => ids.add(c.branchId));
-      }
+      const ids = new Set<string>(fullBranchSet);
+      myLevels.forEach((l) => l.branchId && ids.add(l.branchId));
+      myClasses.forEach((c) => c.branchId && ids.add(c.branchId));
       if (!ids.size) return [];
       branchIdFilter = [...ids];
     }

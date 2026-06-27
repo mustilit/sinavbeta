@@ -14,7 +14,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
   },
 }));
 
-import { CreateClassroomUseCase, AssignStudentsToClassroomUseCase, AssignDepartmentMembersUseCase, ListClassroomsUseCase, GetDepartmentTreeUseCase } from '../../../src/application/use-cases/school/SchoolOrgUseCases';
+import { CreateClassroomUseCase, AssignStudentsToClassroomUseCase, AssignDepartmentMembersUseCase, ListClassroomsUseCase, GetDepartmentTreeUseCase, GetSchoolTreeUseCase } from '../../../src/application/use-cases/school/SchoolOrgUseCases';
 import { BulkCreateStudentsUseCase } from '../../../src/application/use-cases/school/SchoolUserUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 
@@ -155,5 +155,33 @@ describe('Zümre ağacı rol-kapsamlı (kimse yukarıyı görmez)', () => {
     expect(p.department.findMany.mock.calls[1][0].where).toMatchObject({ OR: [{ levelId: { in: ['lv5'] } }] });
     expect(r.schoolWide).toEqual([]);
     expect(r.branches[0].levels.map((l: any) => l.id)).toEqual(['lv5']); // lv6 görünmez
+  });
+});
+
+describe('Şube/Sınıf ağacı rol-kapsamlı (kimse yukarıyı görmez)', () => {
+  const treeBranch = {
+    id: 'b1', name: 'Şube', adminUserId: null, adminUser: null,
+    levels: [
+      { id: 'lv5', gradeLevel: 5, adminUserId: 'uL', adminUser: null, classrooms: [{ id: 'c1', name: '5-A', gradeLevel: 5, adminUserId: null, adminUser: null, _count: { students: 10 } }] },
+      { id: 'lv6', gradeLevel: 6, adminUserId: null, adminUser: null, classrooms: [{ id: 'c2', name: '6-A', gradeLevel: 6, adminUserId: null, adminUser: null, _count: { students: 8 } }] },
+    ],
+  };
+
+  it('seviye sorumlusu yalnız kendi seviyesini görür (diğer seviyeler gizli)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'suL', schoolId: 'sch1', schoolRole: 'TEACHER', branchId: null, departmentId: null, classroomId: null });
+    p.schoolLevel.findMany.mockResolvedValue([{ id: 'lv5', branchId: 'b1' }]); // lv5 sorumlusu
+    p.classroom.findMany.mockResolvedValue([]);                                // sınıf öğretmeni değil
+    p.branch.findMany.mockResolvedValue([treeBranch]);
+    const r = await new GetSchoolTreeUseCase().execute('uL');
+    expect(r).toHaveLength(1);
+    expect(r[0].levels.map((l: any) => l.id)).toEqual(['lv5']); // lv6 yok
+  });
+
+  it('hiçbir designation yoksa ağaç boş (zümre üyeliği org ağacı açmaz)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'suX', schoolId: 'sch1', schoolRole: 'TEACHER', branchId: null, departmentId: 'd1', classroomId: null });
+    p.schoolLevel.findMany.mockResolvedValue([]);
+    p.classroom.findMany.mockResolvedValue([]);
+    const r = await new GetSchoolTreeUseCase().execute('uX');
+    expect(r).toEqual([]);
   });
 });
