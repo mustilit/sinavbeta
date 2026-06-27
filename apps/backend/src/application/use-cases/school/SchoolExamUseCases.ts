@@ -73,6 +73,17 @@ export class CreateSchoolExamUseCase {
     // Zümre yoksa havuz görünürlüğü okul geneli olmalı (zümre kapsamı anlamsız).
     const visibility = !departmentId ? 'SCHOOL' : (wantDept ? 'DEPARTMENT' : 'SCHOOL');
 
+    // Tünel: oluşturma anında AdminSettings'ten katman/şık/streak snapshot'ı (market deseni).
+    let tunnelCfg: { layerCount: number; optionsPerQuestion: number; advanceStreak: number } | null = null;
+    if (examType === 'TUNNEL') {
+      const s = await prisma.adminSettings.findFirst({ select: { maxLayersPerTunnel: true, tunnelOptionsPerQuestion: true, tunnelAdvanceStreak: true } });
+      tunnelCfg = {
+        layerCount: s?.maxLayersPerTunnel ?? 7,
+        optionsPerQuestion: s?.tunnelOptionsPerQuestion ?? 10,
+        advanceStreak: s?.tunnelAdvanceStreak ?? 10,
+      };
+    }
+
     const created = await prisma.schoolExam.create({
       data: {
         schoolId: ctx.schoolId,
@@ -85,6 +96,7 @@ export class CreateSchoolExamUseCase {
         title,
         durationMinutes: input.durationMinutes != null ? Math.max(0, Math.floor(input.durationMinutes)) || null : null,
         poolVisibility: visibility as any,
+        ...(tunnelCfg ?? {}),
         tenantId: getDefaultTenantId(),
       },
     });
@@ -131,7 +143,7 @@ export class UpdateSchoolExamUseCase {
 export class SaveSchoolExamQuestionsUseCase {
   async execute(
     examId: string,
-    input: { questions: Array<{ content?: string; mediaUrl?: string; points?: number; solutionText?: string; solutionMediaUrl?: string; options?: Array<{ content?: string; mediaUrl?: string; isCorrect?: boolean }> }> },
+    input: { questions: Array<{ content?: string; mediaUrl?: string; points?: number; layerIndex?: number; solutionText?: string; solutionMediaUrl?: string; options?: Array<{ content?: string; mediaUrl?: string; isCorrect?: boolean }> }> },
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
@@ -171,6 +183,7 @@ export class SaveSchoolExamQuestionsUseCase {
             content: (q.content ?? '').trim(),
             mediaUrl: (q.mediaUrl ?? '').trim() || null,
             order: i + 1,
+            layerIndex: q.layerIndex != null ? Math.max(1, Math.floor(q.layerIndex)) : 1,
             points: q.points,
             solutionText: (q.solutionText ?? '').trim() || null,
             solutionMediaUrl: (q.solutionMediaUrl ?? '').trim() || null,

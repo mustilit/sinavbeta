@@ -2664,6 +2664,11 @@ model SchoolExam {
   totalPoints     Int                @default(0) // soru puanları toplamı (denormalize)
   poolVisibility  PoolVisibility     @default(DEPARTMENT)
   isArchived      Boolean            @default(false)
+  // Tünel (TUNNEL) konfigürasyon snapshot'ı — oluşturma anında AdminSettings'ten;
+  // TEST/WRITTEN için null. Market tünel deseni (katmanlı + adaptif).
+  layerCount         Int? // katman sayısı
+  optionsPerQuestion Int? // soru başına seçenek (1 doğru + çeldiriciler)
+  advanceStreak      Int? // üst katmanı açmak için üst üste doğru
   tenantId        String
   questions       SchoolQuestion[]
   assignments     SchoolAssignment[]
@@ -2684,6 +2689,7 @@ model SchoolQuestion {
   content          String
   mediaUrl         String?
   order            Int // 1-tabanlı
+  layerIndex       Int                    @default(1) // tünel katmanı (1=en kolay); TEST/WRITTEN'da 1
   points           Int                    @default(1)
   // WRITTEN için çözüm (öğretmen referansı); TEST/TUNNEL için opsiyonel açıklama
   solutionText     String?

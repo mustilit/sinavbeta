@@ -40,6 +40,7 @@ class OptionDto {
 class QuestionDto {
   @IsOptional() @IsString() @MaxLength(4000) content?: string;
   @IsOptional() @IsString() mediaUrl?: string;
+  @IsOptional() @IsInt() @Min(1) layerIndex?: number;
   @IsOptional() @IsInt() @Min(1) points?: number;
   @IsOptional() @IsString() @MaxLength(4000) solutionText?: string;
   @IsOptional() @IsString() solutionMediaUrl?: string;

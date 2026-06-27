@@ -10,6 +10,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     schoolExam: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn(), delete: jest.fn() },
     schoolQuestion: { deleteMany: jest.fn(), create: jest.fn() },
     schoolQuestionOption: { createMany: jest.fn() },
+    adminSettings: { findFirst: jest.fn(async () => ({ maxLayersPerTunnel: 7, tunnelOptionsPerQuestion: 10, tunnelAdvanceStreak: 10 })) },
     $transaction: jest.fn(),
   },
 }));
@@ -60,6 +61,11 @@ describe('CreateSchoolExamUseCase', () => {
     expect(r.departmentId).toBe('dept1');
     expect(r.examType).toBe('TUNNEL');
     expect(r.title).toBe('Konu Testi');
+  });
+
+  it('TUNNEL: katman/şık/streak AdminSettings\'ten snapshot alınır', async () => {
+    const r = await new CreateSchoolExamUseCase().execute({ examType: 'TUNNEL', title: 'Tünel', subject: 'Matematik' }, 'u1');
+    expect(r).toMatchObject({ layerCount: 7, optionsPerQuestion: 10, advanceStreak: 10 });
   });
 
   // ── Okul yöneticisi tam yetki ──

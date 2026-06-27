@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Save, ArrowLeft, ListChecks, ArrowDownUp, FileText, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SchoolExamQuestionsEditor, toLocalQuestions } from "@/components/school/SchoolExamQuestionsEditor";
+import { SchoolTunnelEditor, toLocalTunnelQuestions, uploadPendingTunnelImages } from "@/components/school/SchoolTunnelEditor";
 
 const TYPE_META = {
   TEST: { label: "Test", Icon: ListChecks, choice: true },
@@ -54,8 +55,8 @@ export default function SchoolExamEdit() {
       title: exam.title ?? "", subject: exam.subject ?? "", gradeLevel: exam.gradeLevel ?? "",
       topic: exam.topic ?? "", durationMinutes: exam.durationMinutes ?? "", poolVisibility: exam.poolVisibility ?? "DEPARTMENT",
     });
-    const choiceFlag = exam.examType === "TEST" || exam.examType === "TUNNEL";
-    setQuestions(toLocalQuestions(exam.questions, choiceFlag));
+    if (exam.examType === "TUNNEL") setQuestions(toLocalTunnelQuestions(exam.questions, exam.optionsPerQuestion ?? 10));
+    else setQuestions(toLocalQuestions(exam.questions, exam.examType === "TEST"));
   }, [exam]);
 
   const createMeta = useMutation({
@@ -77,7 +78,10 @@ export default function SchoolExamEdit() {
     onError: (e) => toast.error(e?.response?.data?.message ?? "Kaydedilemedi"),
   });
   const saveQuestions = useMutation({
-    mutationFn: () => schoolApi.exams.saveQuestions(examId, questions),
+    mutationFn: async () => {
+      const payload = type === "TUNNEL" ? await uploadPendingTunnelImages(questions) : questions;
+      return schoolApi.exams.saveQuestions(examId, payload);
+    },
     onSuccess: (res) => { toast.success(`${res.saved} soru kaydedildi (${res.totalPoints} puan)`); qc.invalidateQueries({ queryKey: ["esinif", "exam", examId] }); qc.invalidateQueries({ queryKey: ["esinif", "exam-pool"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Sorular kaydedilemedi"),
   });
@@ -158,7 +162,11 @@ export default function SchoolExamEdit() {
       {/* Soru editörü — yalnız sınav oluşturulduktan sonra */}
       {examId && (
         <div className="space-y-4">
-          <SchoolExamQuestionsEditor questions={questions} setQuestions={setQuestions} choice={meta.choice} />
+          {type === "TUNNEL" ? (
+            <SchoolTunnelEditor questions={questions} setQuestions={setQuestions} layerCount={exam?.layerCount ?? 7} optionCount={exam?.optionsPerQuestion ?? 10} />
+          ) : (
+            <SchoolExamQuestionsEditor questions={questions} setQuestions={setQuestions} choice={meta.choice} />
+          )}
 
           <div className="flex justify-end sticky bottom-4">
             <Button onClick={() => saveQuestions.mutate()} disabled={saveQuestions.isPending || questions.length === 0} className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-lg"><Save className="w-4 h-4" /> {saveQuestions.isPending ? "Kaydediliyor…" : "Soruları Kaydet"}</Button>
