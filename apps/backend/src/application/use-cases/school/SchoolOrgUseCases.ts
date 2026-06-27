@@ -6,7 +6,7 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopeIsEmpty, isManagerForBranch } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopeIsEmpty, scopedClassroomWhere, isManagerForBranch } from './schoolHelpers';
 
 // ── Şube ──────────────────────────────────────────────────────────────────
 export class CreateBranchUseCase {
@@ -259,13 +259,24 @@ export class GetSchoolTreeUseCase {
 export class ListClassroomsUseCase {
   async execute(input: { branchId?: string }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
-    const rows = await prisma.classroom.findMany({
-      where: {
+    // Rol-kapsamlı: yöneticiler tüm okul/şube; öğretmen/zümre başkanı/seviye sorumlusu/
+    // sınıf öğretmeni yetki alanındaki sınıfları görür (ödev atama bu listeyi kullanır).
+    const isManager = ctx.schoolRole === 'SCHOOL_ADMIN' || ctx.schoolRole === 'BRANCH_ADMIN';
+    let where: Record<string, unknown>;
+    if (isManager) {
+      where = {
         schoolId: ctx.schoolId,
         ...(input.branchId ? { branchId: input.branchId } : {}),
         ...(ctx.schoolRole === 'BRANCH_ADMIN' ? { branchId: ctx.branchId ?? '__none__' } : {}),
-      },
+      };
+    } else {
+      const scope = await resolveSchoolScope(actorId);
+      if (scopeIsEmpty(scope)) return [];
+      const scoped = scopedClassroomWhere(scope);
+      where = input.branchId ? { AND: [scoped, { branchId: input.branchId }] } : scoped;
+    }
+    const rows = await prisma.classroom.findMany({
+      where,
       orderBy: [{ gradeLevel: 'asc' }, { name: 'asc' }],
       include: { _count: { select: { students: true } } },
     });

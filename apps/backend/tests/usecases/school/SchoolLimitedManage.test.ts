@@ -4,16 +4,16 @@
  */
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
-    schoolUser: { findFirst: jest.fn(), findMany: jest.fn(), updateMany: jest.fn(), count: jest.fn() },
-    schoolLevel: { findFirst: jest.fn() },
-    classroom: { findFirst: jest.fn(), create: jest.fn() },
-    department: { findFirst: jest.fn() },
+    schoolUser: { findFirst: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), updateMany: jest.fn(), count: jest.fn() },
+    schoolLevel: { findFirst: jest.fn(), findMany: jest.fn() },
+    classroom: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn() },
+    department: { findFirst: jest.fn(), findMany: jest.fn() },
     school: { findUnique: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
 
-import { CreateClassroomUseCase, AssignStudentsToClassroomUseCase, AssignDepartmentMembersUseCase } from '../../../src/application/use-cases/school/SchoolOrgUseCases';
+import { CreateClassroomUseCase, AssignStudentsToClassroomUseCase, AssignDepartmentMembersUseCase, ListClassroomsUseCase } from '../../../src/application/use-cases/school/SchoolOrgUseCases';
 import { BulkCreateStudentsUseCase } from '../../../src/application/use-cases/school/SchoolUserUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 
@@ -95,5 +95,31 @@ describe('Zümre başkanı — üye atama', () => {
   it('başka zümreye atayamaz → FORBIDDEN_SCHOOL_ROLE', async () => {
     p.department.findFirst.mockResolvedValue({ id: 'd1', branchId: 'b1', headUserId: 'other' });
     await expect(new AssignDepartmentMembersUseCase().execute('d1', { schoolUserIds: ['t1'] }, 'uH')).rejects.toMatchObject({ code: 'FORBIDDEN_SCHOOL_ROLE' });
+  });
+});
+
+describe('Sınıf listesi rol-kapsamlı (ödev atama bug fix)', () => {
+  it('sınıf öğretmeni kendi sınıfını listeler (403 değil)', async () => {
+    // resolveSchoolContext + resolveSchoolScope için mocklar
+    p.schoolUser.findFirst.mockResolvedValue(teacherCtx);             // ctx (2 kez çağrılır)
+    p.schoolUser.findUnique.mockResolvedValue({ userId: 'uT', departmentId: null });
+    p.schoolLevel.findMany.mockResolvedValue([]);                     // seviye sorumlusu değil
+    p.department.findMany.mockResolvedValue([]);                      // başkanlık/üyelik yok
+    p.classroom.findMany
+      .mockResolvedValueOnce([{ id: 'c1' }])                          // scope: sınıf öğretmeni olduğu sınıf
+      .mockResolvedValueOnce([{ id: 'c1', name: '5-A', gradeLevel: 5, branchId: 'b1', _count: { students: 10 }, createdAt: new Date() }]); // asıl liste
+    const r = await new ListClassroomsUseCase().execute({}, 'uT');
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ id: 'c1', name: '5-A', studentCount: 10 });
+  });
+
+  it('hiçbir designation yoksa boş liste döner (sızıntı yok)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(teacherCtx);
+    p.schoolUser.findUnique.mockResolvedValue({ userId: 'uX', departmentId: null });
+    p.schoolLevel.findMany.mockResolvedValue([]);
+    p.department.findMany.mockResolvedValue([]);
+    p.classroom.findMany.mockResolvedValue([]); // adminUserId eşleşmesi yok → soloClassroom boş
+    const r = await new ListClassroomsUseCase().execute({}, 'uX');
+    expect(r).toEqual([]);
   });
 });

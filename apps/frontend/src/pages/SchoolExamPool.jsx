@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileQuestion, Plus, Search, Archive, Trash2, Pencil, ListChecks, ArrowDownUp, FileText, AlertCircle } from "lucide-react";
+import { FileQuestion, Plus, Search, Archive, Pencil, ListChecks, ArrowDownUp, FileText, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const TYPE_META = {
@@ -27,6 +27,8 @@ export default function SchoolExamPool() {
   const [examType, setExamType] = useState("all");
   const [q, setQ] = useState("");
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [dept, setDept] = useState("all");   // Zümre filtresi (departmentName)
+  const [grade, setGrade] = useState("all"); // Seviye filtresi (gradeLevel)
 
   const { data: exams = [], isLoading } = useQuery({
     queryKey: ["esinif", "exam-pool", examType, q, includeArchived],
@@ -39,11 +41,13 @@ export default function SchoolExamPool() {
     onSuccess: () => { toast.success("Güncellendi"); qc.invalidateQueries({ queryKey: ["esinif", "exam-pool"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Güncellenemedi"),
   });
-  const remove = useMutation({
-    mutationFn: (id) => schoolApi.exams.remove(id),
-    onSuccess: () => { toast.success("Silindi"); qc.invalidateQueries({ queryKey: ["esinif", "exam-pool"] }); },
-    onError: (e) => toast.error(e?.response?.data?.message ?? "Silinemedi"),
-  });
+
+  // Filtre seçenekleri sınav listesinden türetilir (Zümre + Seviye)
+  const deptOptions = [...new Set(exams.map((e) => e.departmentName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+  const gradeOptions = [...new Set(exams.map((e) => e.gradeLevel).filter((g) => g != null))].sort((a, b) => a - b);
+  const visible = exams.filter(
+    (e) => (dept === "all" || e.departmentName === dept) && (grade === "all" || String(e.gradeLevel) === grade),
+  );
 
   if (!role) {
     return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
@@ -82,16 +86,30 @@ export default function SchoolExamPool() {
             {Object.entries(TYPE_META).map(([t, m]) => <SelectItem key={t} value={t}>{m.label}</SelectItem>)}
           </SelectContent>
         </Select>
-        <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} className="rounded" /> Arşivi göster</label>
+        <Select value={dept} onValueChange={setDept}>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Zümre" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm zümreler</SelectItem>
+            {deptOptions.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={grade} onValueChange={setGrade}>
+          <SelectTrigger className="w-36"><SelectValue placeholder="Seviye" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm seviyeler</SelectItem>
+            {gradeOptions.map((g) => <SelectItem key={g} value={String(g)}>{g}. sınıf</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} className="rounded" /> Pasifleri göster</label>
       </div>
 
       {isLoading ? (
         <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse" />)}</div>
-      ) : exams.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="text-center py-16 text-slate-500"><FileQuestion className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>Sınav bulunamadı.</p></div>
       ) : (
         <div className="space-y-2">
-          {exams.map((e) => {
+          {visible.map((e) => {
             const m = TYPE_META[e.examType] ?? TYPE_META.TEST;
             return (
               <div key={e.id} className={`flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 ${e.isArchived ? "opacity-60 bg-slate-50" : "bg-white"}`}>
@@ -100,7 +118,7 @@ export default function SchoolExamPool() {
                     <Badge className={`${m.color} gap-1`}><m.Icon className="w-3 h-3" /> {m.label}</Badge>
                     <span className="font-medium text-slate-900 truncate">{e.title}</span>
                     {e.poolVisibility === "SCHOOL" && <Badge className="bg-emerald-50 text-emerald-700">Tüm okul</Badge>}
-                    {e.isArchived && <Badge className="bg-slate-200 text-slate-600">Arşiv</Badge>}
+                    {e.isArchived && <Badge className="bg-slate-200 text-slate-600">Pasif</Badge>}
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
                     {e.subject}{e.gradeLevel ? ` · ${e.gradeLevel}. sınıf` : ""} · {e.questionCount} soru · {e.totalPoints} puan
@@ -110,8 +128,7 @@ export default function SchoolExamPool() {
                 {e.canManage && (
                   <div className="flex gap-1 shrink-0">
                     <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => navigate(buildPageUrl("SchoolExamEdit", { id: e.id }))}><Pencil className="w-3.5 h-3.5" /> Düzenle</Button>
-                    <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => archive.mutate({ id: e.id, isArchived: !e.isArchived })}><Archive className="w-3.5 h-3.5" /> {e.isArchived ? "Geri al" : "Arşivle"}</Button>
-                    <Button size="sm" variant="outline" className="h-8 gap-1 text-xs text-rose-600 border-rose-200 hover:bg-rose-50" onClick={() => { if (confirm("Bu sınav silinsin mi?")) remove.mutate(e.id); }}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => archive.mutate({ id: e.id, isArchived: !e.isArchived })}><Archive className="w-3.5 h-3.5" /> {e.isArchived ? "Aktife al" : "Pasife al"}</Button>
                   </div>
                 )}
               </div>
