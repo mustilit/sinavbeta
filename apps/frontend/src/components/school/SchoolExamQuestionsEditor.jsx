@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, Trash2, Pencil, ImagePlus, X, Loader2, Upload } from "lucide-react";
+import { Plus, Trash2, Pencil, ImagePlus, X, Loader2, Eye, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { doUpload } from "@/components/live/LiveQuestionsEditor";
 
@@ -216,11 +216,44 @@ function QuestionItem({ q, index, choice, onEdit, onDelete }) {
   );
 }
 
+// ─── Önizleme kartı (salt-okunur) ────────────────────────────────────────────
+function QuestionPreviewCard({ q, index, choice }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-700 text-sm font-semibold">{index + 1}</span>
+        <div className="flex-1 min-w-0">
+          {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mb-2 max-h-56 rounded border border-slate-200" />}
+          <p className="font-medium text-slate-900">{q.content?.trim() || <span className="text-slate-400">(boş soru)</span>}</p>
+          {choice ? (
+            <div className="mt-2 space-y-1">
+              {q.options.map((o, oi) => ((o.content?.trim() || o.mediaUrl) ? (
+                <div key={oi} className={`flex items-center gap-2 text-sm rounded px-2 py-1 ${o.isCorrect ? "bg-emerald-50 text-emerald-700" : "text-slate-600"}`}>
+                  <span className="font-semibold w-4">{LETTERS[oi]}</span>
+                  {o.mediaUrl && <img src={o.mediaUrl} alt="" className="max-h-12 rounded border border-slate-200" />}
+                  {o.content && <span>{o.content}</span>}
+                  {o.isCorrect && <CheckCircle2 className="w-4 h-4 ml-auto text-emerald-600 shrink-0" />}
+                </div>
+              ) : null))}
+            </div>
+          ) : (q.solutionText?.trim() || q.solutionMediaUrl) ? (
+            <div className="mt-2 rounded-lg bg-emerald-50 p-2.5 text-sm text-emerald-800">
+              <p className="text-xs font-medium text-emerald-600 mb-0.5">Çözüm / referans</p>
+              {q.solutionMediaUrl && <img src={q.solutionMediaUrl} alt="" className="mb-1 max-h-40 rounded border border-emerald-200" />}
+              {q.solutionText && <p>{q.solutionText}</p>}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Editör ──────────────────────────────────────────────────────────────────
 export function SchoolExamQuestionsEditor({ questions, setQuestions, choice }) {
   const [editingIdx, setEditingIdx] = useState(null);
   const [autoOpenKey, setAutoOpenKey] = useState(null);
-  const [docxLoading, setDocxLoading] = useState(false);
+  const [preview, setPreview] = useState(false);
 
   const addQuestion = () => {
     const nq = choice ? emptyChoiceQ() : emptyWrittenQ();
@@ -234,68 +267,47 @@ export function SchoolExamQuestionsEditor({ questions, setQuestions, choice }) {
   const openIdx = editingIdx != null ? editingIdx : autoIdx >= 0 ? autoIdx : null;
   const completedCount = questions.filter((q) => isComplete(q, choice)).length;
 
-  const handleDOCXImport = async (file) => {
-    setDocxLoading(true);
-    try {
-      const mammoth = await import("mammoth");
-      const { value: html } = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
-      const div = document.createElement("div");
-      div.innerHTML = html;
-      const lines = Array.from(div.querySelectorAll("p, li")).map((el) => el.textContent.trim()).filter(Boolean);
-      const parsed = [];
-      let cur = null;
-      for (const line of lines) {
-        if (/^(soru:|\d+\s*\.)/i.test(line)) {
-          if (cur) parsed.push(cur);
-          cur = choice ? emptyChoiceQ() : emptyWrittenQ();
-          cur.content = line.replace(/^(soru:|\d+\s*\.\s*)/i, "").trim();
-        } else if (cur && choice && /^([A-E])\s*\)\s*(.+)/.test(line)) {
-          const m = line.match(/^([A-E])\s*\)\s*(.+)/);
-          const idx = LETTERS.indexOf(m[1]);
-          if (idx >= 0 && idx < cur.options.length) cur.options[idx].content = m[2].trim();
-        } else if (cur && choice && /^\*|cevap:/i.test(line)) {
-          const m = line.match(/^[\*]*\s*([A-E])/i);
-          if (m) { const idx = LETTERS.indexOf(m[1].toUpperCase()); if (idx >= 0) cur.options = cur.options.map((o, i) => ({ ...o, isCorrect: i === idx })); }
-        } else if (cur && !choice && /^(çözüm|cevap):/i.test(line)) {
-          cur.solutionText = line.replace(/^(çözüm|cevap):\s*/i, "").trim();
-        }
-      }
-      if (cur) parsed.push(cur);
-      if (parsed.length === 0) { toast.error("DOCX'ten soru ayrıştırılamadı. Manuel ekleyin."); return; }
-      setQuestions((prev) => {
-        const allEmpty = prev.length === 1 && !prev[0].content.trim() && (choice ? !prev[0].options.some((o) => o.content.trim()) : !prev[0].solutionText?.trim());
-        return allEmpty ? parsed : [...prev, ...parsed];
-      });
-      toast.success(`${parsed.length} soru eklendi`);
-    } catch (err) {
-      toast.error("DOCX import başarısız: " + (err?.message || "bilinmeyen hata"));
-    } finally { setDocxLoading(false); }
-  };
+  const tabBtn = (active) => `px-3 py-1.5 rounded-md text-sm font-medium ${active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h2 className="text-lg font-semibold text-slate-900">{questions.length} soru <span className="text-sm font-normal text-slate-400">({completedCount} tamamlanmış)</span></h2>
-        <div className="flex items-center gap-2">
-          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-600">
-            <Upload className="w-4 h-4" /> {docxLoading ? "Yükleniyor..." : "DOCX İçeri Aktar"}
-            <input type="file" accept=".docx" className="hidden" disabled={docxLoading} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) handleDOCXImport(f); }} />
-          </label>
-          <Button onClick={addQuestion} className="bg-amber-500 hover:bg-amber-600 gap-1"><Plus className="w-4 h-4" /> Soru Ekle</Button>
+        {/* Düzenle / Önizleme sekmesi (market önizleme adımı karşılığı) */}
+        <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+          <button type="button" onClick={() => setPreview(false)} className={tabBtn(!preview)}>Düzenle</button>
+          <button type="button" onClick={() => setPreview(true)} className={tabBtn(preview)}><span className="inline-flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> Önizleme</span></button>
         </div>
       </div>
 
-      {questions.length === 0 ? (
-        <div className="text-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-xl">Henüz soru yok. "Soru Ekle" ile başlayın.</div>
+      {preview ? (
+        questions.length === 0 ? (
+          <div className="text-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-xl">Önizlenecek soru yok.</div>
+        ) : (
+          <div className="space-y-3">
+            {questions.map((q, i) => <QuestionPreviewCard key={q._k} q={q} index={i} choice={choice} />)}
+          </div>
+        )
       ) : (
-        <div className="space-y-2">
-          {questions.map((q, i) => (
-            <QuestionItem key={q._k} q={q} index={i} choice={choice} onEdit={() => setEditingIdx(i)} onDelete={() => deleteQuestion(i)} />
-          ))}
-        </div>
+        <>
+          {questions.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-xl">Henüz soru yok. "Soru Ekle" ile başlayın.</div>
+          ) : (
+            <div className="space-y-2">
+              {questions.map((q, i) => (
+                <QuestionItem key={q._k} q={q} index={i} choice={choice} onEdit={() => setEditingIdx(i)} onDelete={() => deleteQuestion(i)} />
+              ))}
+            </div>
+          )}
+
+          {/* Soru Ekle — market ile aynı: listenin altında, tam genişlik (kesik kenar) */}
+          <button type="button" onClick={addQuestion} className="flex w-full items-center justify-center rounded-lg border border-dashed border-slate-300 py-2.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50">
+            <Plus className="mr-1 h-4 w-4" /> Soru Ekle
+          </button>
+        </>
       )}
 
-      {openIdx != null && questions[openIdx] && (
+      {openIdx != null && !preview && questions[openIdx] && (
         <QuestionEditDialog
           question={questions[openIdx]}
           index={openIdx}
