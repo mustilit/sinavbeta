@@ -70,24 +70,25 @@ describe('SchoolExamPool — Sınav Havuzu', () => {
     expect(screen.getByText('Türkçe WRITTEN 2')).toBeInTheDocument();
   });
 
-  it('silme butonu YOK; yalnız Pasife al ve Düzenle var', async () => {
+  it('silme butonu YOK; ikon-butonlar (Ödev Ata + Düzenle + Pasife al) var', async () => {
     renderPool();
     const title = await screen.findByText('Matematik TEST 1');
     const row = title.closest('div[class*="rounded-xl"]');
     expect(row).toBeTruthy();
-    const buttons = within(row).getAllByRole('button');
-    expect(buttons).toHaveLength(2); // Düzenle + Pasife al (silme kaldırıldı)
-    expect(within(row).getByText('Düzenle')).toBeInTheDocument();
-    expect(within(row).getByText('Pasife al')).toBeInTheDocument();
-    // Eski "Arşivle" etiketi gitti
+    // İkon-butonlarda erişilebilir ad aria-label'dan gelir (görsel metin yok)
+    expect(within(row).getByRole('button', { name: 'Düzenle' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Pasife al' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Ödev Ata' })).toBeInTheDocument();
+    // Silme/Arşivle YOK
+    expect(within(row).queryByRole('button', { name: /sil/i })).toBeNull();
     expect(screen.queryByText('Arşivle')).toBeNull();
   });
 
-  it('arşivli sınav "Aktife al" + "Pasif" rozeti gösterir', async () => {
+  it('arşivli sınav "Aktife al" (ikon) + "Pasif" rozeti gösterir', async () => {
     const { school } = await import('@/api/dalClient');
     school.exams.list.mockResolvedValue([{ ...EXAMS[0], isArchived: true }]);
     renderPool();
-    expect(await screen.findByText('Aktife al')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Aktife al' })).toBeInTheDocument();
     expect(screen.getByText('Pasif')).toBeInTheDocument();
   });
 });
