@@ -316,7 +316,8 @@ export class GetStudentReportUseCase {
       }
     }
     const rows = (m: Map<string, number[]>) =>
-      [...m.entries()].map(([name, ps]) => ({ name, avgPercent: avg(ps), count: ps.length })).sort((a, b) => (b.avgPercent ?? -1) - (a.avgPercent ?? -1));
+      // agg girdileri en az 1 non-null pct içerir → avgPercent non-null, ?? gereksiz
+      [...m.entries()].map(([name, ps]) => ({ name, avgPercent: avg(ps), count: ps.length })).sort((a, b) => (b.avgPercent as number) - (a.avgPercent as number));
 
     return {
       level: gradeLevel,

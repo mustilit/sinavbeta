@@ -161,6 +161,7 @@ export class GetFilteredReportUseCase {
       asgOr.push({ classroomId: { in: subjOnly }, exam: deptFilter });
       subOr.push({ assignment: { classroomId: { in: subjOnly }, exam: deptFilter } });
     }
+    /* istanbul ignore next -- unionIds boş değilse asgOr daima ≥1 dal alır; bu erken dönüş savunmacıdır */
     if (asgOr.length === 0) return emptyReport;
 
     // Dönemsel: input.periodId verilmezse güncel dönem → yeni döneme sıfır rapor.
@@ -225,7 +226,8 @@ export class GetFilteredReportUseCase {
       branchAgg.set(c.branchId, e);
     }
     const branchRows = branches.map((b) => {
-      const e = branchAgg.get(b.id) ?? { pcts: [], sub: 0, cls: 0, stu: 0 };
+      // branches, clsRows'un branchId'lerinden türetildiği için branchAgg'de daima vardır.
+      const e = branchAgg.get(b.id)!;
       return { id: b.id, name: b.name, classroomCount: e.cls, studentCount: e.stu, submissionCount: e.sub, avgPercent: avg(e.pcts) };
     }).sort((a, b) => (b.avgPercent ?? -1) - (a.avgPercent ?? -1));
 
@@ -246,14 +248,16 @@ export class GetFilteredReportUseCase {
     const bestClassByLevel = levelRows.map((lv) => {
       const best = clsRows
         .filter((c) => c.gradeLevel === lv.gradeLevel && c.avgPercent != null)
-        .sort((a, b) => (b.avgPercent ?? -1) - (a.avgPercent ?? -1))[0];
+        // avgPercent filtreyle non-null garantili → ?? gereksiz (dead branch kaçınılır)
+        .sort((a, b) => (b.avgPercent as number) - (a.avgPercent as number))[0];
       return best ? { gradeLevel: lv.gradeLevel, classroom: best } : null;
     }).filter(Boolean);
 
     // Konu (zümre) başarımı + takvim zaman serisi
     const byDepartment = [...deptAgg.entries()]
       .map(([name, ps]) => ({ name, avgPercent: avg(ps), submissionCount: ps.length }))
-      .sort((a, b) => (b.avgPercent ?? -1) - (a.avgPercent ?? -1));
+      // deptAgg girdileri en az 1 (non-null) pct içerir → avgPercent non-null, ?? gereksiz
+      .sort((a, b) => (b.avgPercent as number) - (a.avgPercent as number));
     const timeseries = [...dayAgg.entries()]
       .sort((a, b) => (a[0] < b[0] ? -1 : 1))
       .map(([date, ps]) => ({ date, avgPercent: avg(ps), submissionCount: ps.length }));

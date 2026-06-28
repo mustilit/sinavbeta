@@ -590,7 +590,8 @@ export class AssignDepartmentMembersUseCase {
     let headUserId: string | null = null;
     if (input.headSchoolUserId) {
       if (!validById.has(input.headSchoolUserId)) throw new AppError('INVALID_HEAD', 'Başkan, atanan öğretmenlerden olmalı', 400);
-      headUserId = validById.get(input.headSchoolUserId) ?? null;
+      // has() ile doğrulandı → get daima userId döner (?? null dead branch'tan kaçınılır)
+      headUserId = validById.get(input.headSchoolUserId)!;
     }
 
     const current = await prisma.schoolUser.findMany({ where: { schoolId: ctx.schoolId, departmentId }, select: { id: true } });
