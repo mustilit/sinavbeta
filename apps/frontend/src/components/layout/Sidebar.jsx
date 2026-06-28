@@ -266,20 +266,20 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
             : "p-6 flex items-center gap-2",
         )}
       >
-        <RailLabel label={t("sidebar.brandName")} enabled={collapsed}>
+        <RailLabel label={schoolCtx?.schoolName || t("sidebar.brandName")} enabled={collapsed}>
           <Link
-            to={createPageUrl("Home")}
+            to={createPageUrl(schoolCtx?.schoolRole ? "SchoolPanel" : "Home")}
             className={cn(
               "flex items-center min-w-0",
               collapsed ? "gap-3 lg:gap-0 lg:justify-center" : "gap-3",
             )}
-            aria-label={t("sidebar.brandName")}
+            aria-label={schoolCtx?.schoolName || t("sidebar.brandName")}
           >
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-xl flex items-center justify-center shrink-0">
               <GraduationCap className="w-6 h-6 text-white" />
             </div>
             <span className={cn("text-xl font-bold text-slate-900 dark:text-gray-50 truncate", labelHidden)}>
-              {t("sidebar.brandName")}
+              {schoolCtx?.schoolName || t("sidebar.brandName")}
             </span>
           </Link>
         </RailLabel>
