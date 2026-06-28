@@ -1,32 +1,63 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { studentAssignments } from "@/api/dalClient";
+import { useAuth } from "@/lib/AuthContext";
 import { useAppNavigate, buildPageUrl } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, ChevronRight, Send, CheckCircle2, AlertCircle, ImagePlus, X } from "lucide-react";
-import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TestWatermark } from "@/components/test/TestWatermark";
+import QuestionCanvas from "@/components/test/QuestionCanvas";
+import ReportQuestionModal from "@/components/test/ReportQuestionModal";
 import { SchoolTunnelSolver } from "@/components/school/SchoolTunnelSolver";
+import {
+  ArrowLeft, Clock, Sun, Pencil, Eraser, AlertTriangle, ChevronLeft, ChevronRight,
+  ImagePlus, X, CheckCircle2, AlertCircle, LogOut, Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
 
-/** E-Sınıf — Öğrenci ödev çözme. TEST/WRITTEN liste; TUNNEL sıralı (geri yok). Autosave + süre. */
+const fmt = (sec) => (sec == null ? null : `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`);
+
+/** dataURL → File (kalem çizimini /upload/image'a göndermek için). */
+async function dataUrlToFile(dataUrl, name = "cizim.png") {
+  const blob = await (await fetch(dataUrl)).blob();
+  return new File([blob], name, { type: blob.type || "image/png" });
+}
+
+/**
+ * E-Sınıf — Öğrenci soru çözme. Aday (market) çözme deneyimiyle BİREBİR:
+ * filigran (TestWatermark) + süre sayacı + bej (sepia) okuma modu + kalem/çizim
+ * (QuestionCanvas) + soru-soru gezinme + hata bildirimi + teslim onayı.
+ *  - TEST: şıklı.
+ *  - TUNNEL: adaptif → SchoolTunnelSolver (market tüneliyle aynı).
+ *  - WRITTEN: metin + kalem çizimi + fotoğraf; teslimden sonra StudentResult'ta öz-değerlendirme.
+ */
 export default function StudentSolve() {
   const [params] = useSearchParams();
   const navigate = useAppNavigate();
+  const { user } = useAuth();
   const id = params.get("id");
-  const [answers, setAnswers] = useState({}); // questionId -> { selectedOptionId, textAnswer }
-  const [idx, setIdx] = useState(0); // TUNNEL için
-  const [remaining, setRemaining] = useState(null); // saniye
+
+  const [answers, setAnswers] = useState({}); // qid -> { selectedOptionId, textAnswer, imageUrls }
+  const [drawings, setDrawings] = useState({}); // qid -> çizim url'i (imageUrls içinde de tutulur)
+  const [current, setCurrent] = useState(0);
+  const [remaining, setRemaining] = useState(null);
+  const [examTheme, setExamTheme] = useState(() => {
+    try { return localStorage.getItem("dal_exam_theme") === "sepia" ? "sepia" : "light"; } catch { return "light"; }
+  });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const saveTimers = useRef({});
   const started = useRef(false);
+  const canvasRef = useRef(null);
 
   const { data: a, isLoading, isError } = useQuery({ queryKey: ["esinif", "solve", id], queryFn: () => studentAssignments.get(id), enabled: !!id });
 
   const start = useMutation({ mutationFn: () => studentAssignments.start(id) });
   const save = useMutation({ mutationFn: (body) => studentAssignments.saveAnswer(id, body) });
-  const submit = useMutation({
+  const submitM = useMutation({
     mutationFn: () => studentAssignments.submit(id),
     onSuccess: () => { toast.success("Ödev teslim edildi"); navigate(buildPageUrl("StudentResult", { id }), { replace: true }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Teslim edilemedi"),
@@ -39,42 +70,71 @@ export default function StudentSolve() {
     if (!a.open) return;
     if (!started.current) { started.current = true; start.mutate(); }
     const init = {};
-    for (const q of a.questions) init[q.id] = { selectedOptionId: q.selectedOptionId ?? null, textAnswer: q.textAnswer ?? "", imageUrls: q.imageUrls ?? [] };
-    setAnswers(init);
+    for (const q of a.questions) {
+      init[q.id] = { selectedOptionId: q.selectedOptionId ?? null, textAnswer: q.textAnswer ?? "", imageUrls: q.imageUrls ?? [] };
+    }
+    setAnswers(init); setDrawings({});
     if (a.durationMinutes) setRemaining(a.durationMinutes * 60);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [a]);
 
+  // Bej (sepia) okuma modu — market ile aynı body class'ı
+  useEffect(() => {
+    try { localStorage.setItem("dal_exam_theme", examTheme); } catch { /* yoksay */ }
+    if (examTheme === "sepia") document.body.classList.add("exam-sepia");
+    else document.body.classList.remove("exam-sepia");
+    return () => document.body.classList.remove("exam-sepia");
+  }, [examTheme]);
+
   // Süre sayacı — bitince otomatik teslim
   useEffect(() => {
     if (remaining == null) return;
-    if (remaining <= 0) { if (!submit.isPending) submit.mutate(); return; }
+    if (remaining <= 0) { if (!submitM.isPending) submitM.mutate(); return; }
     const t = setTimeout(() => setRemaining((r) => (r == null ? r : r - 1)), 1000);
     return () => clearTimeout(t);
-  }, [remaining]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining]);
 
-  const uploadFor = async (qid, file) => {
-    if (!file) return;
-    const cur = answers[qid]?.imageUrls ?? [];
-    if (cur.length >= 5) return toast.error("En fazla 5 görsel");
-    try {
-      const url = await studentAssignments.uploadImage(file);
-      if (url) persist(qid, { imageUrls: [...cur, url] });
-    } catch { toast.error("Görsel yüklenemedi"); }
-  };
-  const removeImage = (qid, url) => persist(qid, { imageUrls: (answers[qid]?.imageUrls ?? []).filter((u) => u !== url) });
-
-  const persist = (qid, patch) => {
+  const persist = useCallback((qid, patch) => {
     setAnswers((prev) => {
       const next = { ...prev, [qid]: { ...prev[qid], ...patch } };
-      // Debounce sunucuya kaydet (autosave)
       clearTimeout(saveTimers.current[qid]);
       saveTimers.current[qid] = setTimeout(() => {
         save.mutate({ questionId: qid, selectedOptionId: next[qid].selectedOptionId ?? null, textAnswer: next[qid].textAnswer ?? null, imageUrls: next[qid].imageUrls ?? [] });
       }, 600);
       return next;
     });
+  }, [save]);
+
+  const uploadFor = async (qid, file) => {
+    if (!file) return;
+    const cur = answers[qid]?.imageUrls ?? [];
+    if (cur.length >= 5) return toast.error("En fazla 5 görsel");
+    try { const url = await studentAssignments.uploadImage(file); if (url) persist(qid, { imageUrls: [...cur, url] }); }
+    catch { toast.error("Görsel yüklenemedi"); }
   };
+  const removeImage = (qid, url) => {
+    setDrawings((d) => { const n = { ...d }; if (n[qid] === url) delete n[qid]; return n; });
+    persist(qid, { imageUrls: (answers[qid]?.imageUrls ?? []).filter((u) => u !== url) });
+  };
+
+  // Kalem çizimini yakala → yükle → cevabın imageUrls'ine ekle (eski çizimi değiştirir).
+  const captureDrawing = useCallback(async (qid) => {
+    if (!qid) return;
+    let dataUrl = null;
+    try { dataUrl = canvasRef.current?.toDataURL?.(); } catch { dataUrl = null; }
+    if (!dataUrl) return;
+    try {
+      const file = await dataUrlToFile(dataUrl);
+      const url = await studentAssignments.uploadImage(file);
+      if (!url) return;
+      const old = drawings[qid];
+      const imgs = (answers[qid]?.imageUrls ?? []).filter((u) => u !== old).concat(url);
+      setDrawings((d) => ({ ...d, [qid]: url }));
+      persist(qid, { imageUrls: imgs });
+      canvasRef.current?.clear?.();
+    } catch { toast.error("Çizim kaydedilemedi"); }
+  }, [answers, drawings, persist]);
 
   if (isLoading) return <div className="max-w-3xl mx-auto py-20 text-center text-slate-400">Yükleniyor…</div>;
   if (isError || !a) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Ödev bulunamadı</h2></div>;
@@ -90,90 +150,120 @@ export default function StudentSolve() {
     );
   }
 
-  const isChoice = a.examType === "TEST" || a.examType === "TUNNEL";
-  const isTunnel = a.examType === "TUNNEL";
-  const mmss = remaining != null ? `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}` : null;
+  const isChoice = a.examType === "TEST";
+  const questions = a.questions;
+  const q = questions[current];
+  const mmss = fmt(remaining);
+  const isDone = (x) => answers[x?.id]?.selectedOptionId || (answers[x?.id]?.textAnswer ?? "").trim() || (answers[x?.id]?.imageUrls ?? []).length;
+  const answeredCount = questions.filter(isDone).length;
 
-  const QuestionBody = ({ q, n }) => (
-    <Card>
-      <CardContent className="p-5 space-y-3">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-700 text-sm font-semibold">{n}</span>
-          <div className="flex-1">
-            <p className="text-slate-900 whitespace-pre-wrap">{q.content}</p>
-            {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mt-2 max-h-60 rounded-lg" />}
-            <p className="text-xs text-slate-400 mt-1">{q.points} puan</p>
-          </div>
-        </div>
-        {isChoice ? (
-          <div className="space-y-2 pl-10">
-            {q.options.map((o, j) => {
-              const selected = answers[q.id]?.selectedOptionId === o.id;
-              return (
-                <button key={o.id} type="button" onClick={() => persist(q.id, { selectedOptionId: o.id })}
-                  className={`w-full text-left flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${selected ? "border-indigo-500 bg-indigo-50" : "border-slate-200 hover:bg-slate-50"}`}>
-                  <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${selected ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300 text-slate-500"}`}>{String.fromCharCode(65 + j)}</span>
-                  <span className="text-sm text-slate-800">{o.content}</span>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="pl-10 space-y-2">
-            <Textarea value={answers[q.id]?.textAnswer ?? ""} onChange={(e) => persist(q.id, { textAnswer: e.target.value })} rows={4} placeholder="Cevabınız… (yazabilir veya kağıttaki cevabın fotoğrafını yükleyebilirsiniz)" maxLength={8000} />
-            <div className="flex flex-wrap items-center gap-2">
-              {(answers[q.id]?.imageUrls ?? []).map((u) => (
-                <div key={u} className="relative">
-                  <img src={u} alt="cevap" className="h-20 w-20 object-cover rounded-lg border border-slate-200" />
-                  <button type="button" onClick={() => removeImage(q.id, u)} className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Sil"><X className="w-3 h-3" /></button>
-                </div>
-              ))}
-              {(answers[q.id]?.imageUrls ?? []).length < 5 && (
-                <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500">
-                  <ImagePlus className="w-5 h-5" />
-                  <span className="text-[10px]">Fotoğraf</span>
-                  <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={(e) => { uploadFor(q.id, e.target.files?.[0]); e.target.value = ""; }} />
-                </label>
-              )}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const answeredCount = a.questions.filter((q) => answers[q.id]?.selectedOptionId || (answers[q.id]?.textAnswer ?? "").trim()).length;
+  const goTo = async (idx) => { if (!isChoice) await captureDrawing(q.id); setCurrent(idx); };
+  const doSubmit = async () => { setShowFinishConfirm(false); if (!isChoice) await captureDrawing(q.id); submitM.mutate(); };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
-      <div className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-white/90 backdrop-blur border-b border-slate-100 flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-slate-900">{a.title}</h1>
-          <p className="text-xs text-slate-500">{answeredCount}/{a.questions.length} cevaplandı{save.isPending ? " · kaydediliyor…" : ""}</p>
+    <div className="relative min-h-screen" data-exam-theme={examTheme}>
+      <div className="max-w-3xl mx-auto px-1 py-4 space-y-4">
+        {/* Üst bar — market çözme ekranıyla aynı eylemler */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate(buildPageUrl("StudentAssignments"))}><ArrowLeft className="mr-1 h-4 w-4" /> Ödevlerim</Button>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-bold text-slate-900 truncate">{a.title}</h1>
+            <p className="text-xs text-slate-500">{answeredCount}/{questions.length} cevaplandı{save.isPending ? " · kaydediliyor…" : ""}</p>
+          </div>
+          {mmss && <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-semibold ${remaining < 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-700"}`}><Clock className="h-4 w-4" /> {mmss}</span>}
+          <Button variant="ghost" size="icon" className={examTheme === "sepia" ? "bg-amber-50 text-amber-600" : "text-slate-400"} onClick={() => setExamTheme(examTheme === "sepia" ? "light" : "sepia")} aria-pressed={examTheme === "sepia"} aria-label="Bej okuma modu"><Sun className="h-4 w-4" /></Button>
+          {!isChoice && <Button variant="ghost" size="icon" className={isDrawing ? "bg-indigo-50 text-indigo-600" : "text-slate-400"} onClick={() => setIsDrawing((d) => !d)} aria-pressed={isDrawing} aria-label="Kalem"><Pencil className="h-4 w-4" /></Button>}
+          {!isChoice && isDrawing && <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => canvasRef.current?.clear?.()}><Eraser className="mr-1 h-4 w-4" /> Temizle</Button>}
+          <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => setReportOpen(true)}><AlertTriangle className="mr-1 h-4 w-4" /> Hata Bildir</Button>
         </div>
-        {mmss && <Badge className={`gap-1 ${remaining < 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-700"}`}><Clock className="w-3.5 h-3.5" /> {mmss}</Badge>}
+
+        {/* Soru kartı — filigran + (yazılıda) çizim katmanı */}
+        <div className="relative rounded-2xl border border-slate-200 bg-white p-5 select-none" onContextMenu={(e) => e.preventDefault()} onCopy={(e) => e.preventDefault()}>
+          <TestWatermark identity={{ name: user?.full_name || user?.username || user?.email, email: user?.email }} />
+          {!isChoice && <QuestionCanvas ref={canvasRef} isActive={isDrawing} questionId={q.id} onHasDrawings={() => {}} />}
+          <div className="mb-2 text-xs font-semibold text-indigo-600">Soru {current + 1} / {questions.length}</div>
+          <p className="text-slate-900 whitespace-pre-wrap">{q.content}</p>
+          {q.mediaUrl && <img src={q.mediaUrl} alt="" className="mt-3 max-h-72 rounded-lg object-contain" />}
+          <p className="text-xs text-slate-400 mt-1">{q.points} puan</p>
+
+          {isChoice ? (
+            <div className="mt-4 space-y-2">
+              {q.options.map((o, j) => {
+                const selected = answers[q.id]?.selectedOptionId === o.id;
+                return (
+                  <button key={o.id} type="button" onClick={() => persist(q.id, { selectedOptionId: o.id })}
+                    className={`w-full text-left flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${selected ? "border-indigo-500 bg-indigo-50" : "border-slate-200 hover:bg-slate-50"}`}>
+                    <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${selected ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300 text-slate-500"}`}>{String.fromCharCode(65 + j)}</span>
+                    <span className="text-sm text-slate-800">{o.content}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Cevabınız</label>
+              <Textarea value={answers[q.id]?.textAnswer ?? ""} onChange={(e) => persist(q.id, { textAnswer: e.target.value })} rows={6} placeholder="Cevabınız… (yazabilir, kalemle çizebilir veya kağıttaki cevabın fotoğrafını yükleyebilirsiniz)" maxLength={8000} />
+              <div className="flex flex-wrap items-center gap-2">
+                {(answers[q.id]?.imageUrls ?? []).map((u) => (
+                  <div key={u} className="relative">
+                    <img src={u} alt="cevap" className="h-20 w-20 object-cover rounded-lg border border-slate-200" />
+                    <button type="button" onClick={() => removeImage(q.id, u)} className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Görseli sil"><X className="w-3 h-3" /></button>
+                  </div>
+                ))}
+                {(answers[q.id]?.imageUrls ?? []).length < 5 && (
+                  <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500">
+                    <ImagePlus className="w-5 h-5" /><span className="text-[10px]">Fotoğraf</span>
+                    <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={(e) => { uploadFor(q.id, e.target.files?.[0]); e.target.value = ""; }} />
+                  </label>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Soru-soru gezinme — market ile aynı (prev/next + numaralı ızgara) */}
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="outline" size="sm" disabled={current === 0} onClick={() => goTo(Math.max(0, current - 1))}><ChevronLeft className="h-4 w-4" /> Önceki</Button>
+          <div className="flex flex-wrap justify-center gap-1">
+            {questions.map((qq, i) => (
+              <button key={qq.id} type="button" onClick={() => goTo(i)}
+                className={`h-8 w-8 rounded-md text-xs font-semibold ${i === current ? "bg-indigo-600 text-white" : isDone(qq) ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{i + 1}</button>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" disabled={current === questions.length - 1} onClick={() => goTo(Math.min(questions.length - 1, current + 1))}>Sonraki <ChevronRight className="h-4 w-4" /></Button>
+        </div>
+
+        {/* Teslim */}
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
+          <span className="text-sm text-slate-600">{answeredCount}/{questions.length} cevaplandı</span>
+          <Button onClick={() => setShowFinishConfirm(true)} disabled={submitM.isPending} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+            {submitM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Teslim Et
+          </Button>
+        </div>
       </div>
 
-      {isTunnel ? (
-        <div className="space-y-4">
-          <QuestionBody q={a.questions[idx]} n={idx + 1} />
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">Soru {idx + 1} / {a.questions.length} · Tünelde geri dönüş yok</span>
-            {idx < a.questions.length - 1 ? (
-              <Button onClick={() => setIdx((i) => i + 1)} className="bg-indigo-600 hover:bg-indigo-700 gap-1">Sonraki <ChevronRight className="w-4 h-4" /></Button>
-            ) : (
-              <Button onClick={() => { if (confirm("Ödevi teslim et?")) submit.mutate(); }} disabled={submit.isPending} className="bg-emerald-600 hover:bg-emerald-700 gap-1"><Send className="w-4 h-4" /> Teslim Et</Button>
-            )}
+      {/* Teslim onayı — market ile aynı (cevaplanan/boş) */}
+      <Dialog open={showFinishConfirm} onOpenChange={setShowFinishConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2 text-rose-700"><AlertTriangle className="h-5 w-5" /> Ödevi teslim et</DialogTitle></DialogHeader>
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center"><p className="text-2xl font-bold text-emerald-700">{answeredCount}</p><p className="text-xs text-emerald-700/80">Cevaplanan</p></div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center"><p className="text-2xl font-bold text-amber-700">{questions.length - answeredCount}</p><p className="text-xs text-amber-700/80">Boş</p></div>
+            </div>
+            <p>Teslimden sonra cevaplarınızı değiştiremezsiniz.</p>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => setShowFinishConfirm(false)} disabled={submitM.isPending}>Vazgeç</Button>
+              <Button className="bg-rose-600 text-white hover:bg-rose-700" onClick={doSubmit} disabled={submitM.isPending}>
+                {submitM.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <LogOut className="mr-1.5 h-4 w-4" />} Teslim Et
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {a.questions.map((q, i) => <QuestionBody key={q.id} q={q} n={i + 1} />)}
-          <div className="flex justify-end sticky bottom-4">
-            <Button onClick={() => { if (confirm("Ödevi teslim et? Teslimden sonra değişiklik yapamazsınız.")) submit.mutate(); }} disabled={submit.isPending} className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-lg"><CheckCircle2 className="w-4 h-4" /> {submit.isPending ? "Teslim ediliyor…" : "Teslim Et"}</Button>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
+
+      <ReportQuestionModal open={reportOpen} onClose={() => setReportOpen(false)} questionNumber={current + 1}
+        onSubmit={() => { toast.success("Hata bildirimi gönderildi"); setReportOpen(false); }} />
     </div>
   );
 }

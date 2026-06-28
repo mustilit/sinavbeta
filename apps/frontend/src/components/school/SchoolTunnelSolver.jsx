@@ -1,21 +1,36 @@
 /**
- * SchoolTunnelSolver — E-Sınıf öğrenci tünel adaptif çözme (market TakeTunnel deseni).
+ * SchoolTunnelSolver — E-Sınıf öğrenci tünel adaptif çözme (market TakeTunnel ile BİREBİR).
  * Her soru 1 doğru + çeldiricilerle gelir; doğru şık yeri değişir. Doğru cevap sonrası
  * kısa geri bildirim + sıradaki soru. İlerleme = öğrenilen soru oranı. Tamamlanınca kutlama.
+ * Aday deneyimiyle aynı koruma: filigran + bej (sepia) mod + kalem/çizim + süre + hata bildirimi.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { schoolTunnel } from "@/api/dalClient";
+import { useAuth } from "@/lib/AuthContext";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, Loader2, Trophy, AlertCircle } from "lucide-react";
+import { TestWatermark } from "@/components/test/TestWatermark";
+import QuestionCanvas from "@/components/test/QuestionCanvas";
+import ReportQuestionModal from "@/components/test/ReportQuestionModal";
+import { CheckCircle2, XCircle, Loader2, Trophy, AlertCircle, AlertTriangle, Pencil, Eraser, Sun, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 const LETTER_BG = ["bg-rose-500", "bg-blue-500", "bg-amber-500", "bg-emerald-500", "bg-violet-500"];
 const LETTERS = ["A", "B", "C", "D", "E"];
+const fmt = (sec) => `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
 
 export function SchoolTunnelSolver({ examId }) {
+  const { user } = useAuth();
   const [state, setState] = useState(null);
   const [feedback, setFeedback] = useState(null); // { selectedId, correctId, correct }
+  const [elapsed, setElapsed] = useState(0);
+  const [examTheme, setExamTheme] = useState(() => {
+    try { return localStorage.getItem("dal_exam_theme") === "sepia" ? "sepia" : "light"; } catch { return "light"; }
+  });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const canvasRef = useRef(null);
 
   const { data: started, isLoading, isError } = useQuery({
     queryKey: ["esinif", "tunnel-start", examId],
@@ -24,12 +39,22 @@ export function SchoolTunnelSolver({ examId }) {
   });
   useEffect(() => { if (started) setState(started); }, [started]);
 
+  // Geçen süre sayacı (tünelde süre limiti yok — market gibi yukarı sayar)
+  useEffect(() => { const t = setInterval(() => setElapsed((s) => s + 1), 1000); return () => clearInterval(t); }, []);
+
+  // Bej (sepia) okuma modu — market ile aynı body class'ı
+  useEffect(() => {
+    try { localStorage.setItem("dal_exam_theme", examTheme); } catch { /* yoksay */ }
+    if (examTheme === "sepia") document.body.classList.add("exam-sepia");
+    else document.body.classList.remove("exam-sepia");
+    return () => document.body.classList.remove("exam-sepia");
+  }, [examTheme]);
+
   const answer = useMutation({
     mutationFn: (optionId) => schoolTunnel.answer(examId, optionId),
     onSuccess: (res, optionId) => {
       setFeedback({ selectedId: optionId, correctId: res.correctOptionId, correct: res.correct });
-      // Kısa geri bildirim sonra sıradaki soruya geç
-      setTimeout(() => { setFeedback(null); setState(res.state); }, 900);
+      setTimeout(() => { setFeedback(null); canvasRef.current?.clear?.(); setState(res.state); }, 900);
     },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Cevap gönderilemedi"),
   });
@@ -49,7 +74,16 @@ export function SchoolTunnelSolver({ examId }) {
 
   const q = state.currentQuestion;
   return (
-    <div className="max-w-lg mx-auto py-8 space-y-5">
+    <div className="max-w-lg mx-auto py-6 space-y-4" data-exam-theme={examTheme}>
+      {/* Üst bar — market çözme ekranıyla aynı eylemler */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <span className="mr-auto inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-700"><Clock className="h-4 w-4" /> {fmt(elapsed)}</span>
+        <Button variant="ghost" size="icon" className={examTheme === "sepia" ? "bg-amber-50 text-amber-600" : "text-slate-400"} onClick={() => setExamTheme(examTheme === "sepia" ? "light" : "sepia")} aria-pressed={examTheme === "sepia"} aria-label="Bej okuma modu"><Sun className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className={isDrawing ? "bg-indigo-50 text-indigo-600" : "text-slate-400"} onClick={() => setIsDrawing((d) => !d)} aria-pressed={isDrawing} aria-label="Kalem"><Pencil className="h-4 w-4" /></Button>
+        {isDrawing && <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => canvasRef.current?.clear?.()}><Eraser className="mr-1 h-4 w-4" /> Temizle</Button>}
+        <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => setReportOpen(true)}><AlertTriangle className="mr-1 h-4 w-4" /> Hata Bildir</Button>
+      </div>
+
       <div>
         <div className="flex items-center justify-between text-sm text-slate-500 mb-1">
           <span className="font-semibold text-slate-700">{state.title}</span>
@@ -59,7 +93,10 @@ export function SchoolTunnelSolver({ examId }) {
         <p className="text-xs text-slate-400 mt-1">{state.masteredQuestions}/{state.totalQuestions} soru öğrenildi</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      {/* Soru kartı — filigran + çizim katmanı (kopya koruması) */}
+      <div className="relative bg-white rounded-2xl border border-slate-200 p-6 select-none" onContextMenu={(e) => e.preventDefault()} onCopy={(e) => e.preventDefault()}>
+        <TestWatermark identity={{ name: user?.full_name || user?.username || user?.email, email: user?.email }} />
+        <QuestionCanvas ref={canvasRef} isActive={isDrawing} questionId={q.id} onHasDrawings={() => {}} />
         {q.mediaUrl && <div className="mb-4 rounded-xl overflow-hidden border border-slate-100 max-h-60"><img src={q.mediaUrl} alt="soru" className="w-full h-full object-contain" /></div>}
         <p className="text-lg font-semibold text-slate-900 leading-snug">{q.content}</p>
       </div>
@@ -94,6 +131,9 @@ export function SchoolTunnelSolver({ examId }) {
           {feedback.correct ? "Doğru! 👏" : "Yanlış — doğru şık yeşil. Bu soru tekrar gelecek."}
         </p>
       )}
+
+      <ReportQuestionModal open={reportOpen} onClose={() => setReportOpen(false)} questionNumber={state.masteredQuestions + 1}
+        onSubmit={() => { toast.success("Hata bildirimi gönderildi"); setReportOpen(false); }} />
     </div>
   );
 }
