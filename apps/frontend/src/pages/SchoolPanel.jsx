@@ -4,7 +4,7 @@ import { school as schoolApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Building2, BookOpen, Radio, ChevronRight, GraduationCap, AlertCircle, Library, BarChart3 } from "lucide-react";
+import { Users, Building2, BookOpen, Radio, ChevronRight, GraduationCap, AlertCircle, Library, BarChart3, FileText, Zap } from "lucide-react";
 
 const ADMIN_ROLES = ["SCHOOL_ADMIN", "BRANCH_ADMIN"];
 const TEACHER_ROLES = ["TEACHER", "DEPT_HEAD"];
@@ -58,7 +58,7 @@ export default function SchoolPanel() {
             <Card className="hover:shadow-lg hover:shadow-slate-200/60 transition-all">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center"><BookOpen className="w-5 h-5 text-indigo-600" /></div>
+                  <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center"><FileText className="w-5 h-5 text-indigo-600" /></div>
                   <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
                 </div>
                 <p className="font-semibold text-slate-900 mt-3">Sınav Havuzu</p>
@@ -66,8 +66,19 @@ export default function SchoolPanel() {
               </CardContent>
             </Card>
           </Link>
+          <Link to={createPageUrl("SchoolLive")} className="group">
+            <Card className="hover:shadow-lg hover:shadow-slate-200/60 transition-all">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center"><Zap className="w-5 h-5 text-amber-600" /></div>
+                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500" />
+                </div>
+                <p className="font-semibold text-slate-900 mt-3">Canlı Test</p>
+                <p className="text-sm text-slate-500">Eş zamanlı, kodla katılımlı sınav</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
-        <p className="text-sm text-slate-400">Ödev atama ve sonuç raporları yakında bu panele eklenecek.</p>
       </div>
     );
   }
@@ -88,6 +99,8 @@ export default function SchoolPanel() {
     { to: "SchoolBranches", icon: Building2, label: "Şubeler & Sınıflar", desc: "Şube ve sınıf düzeni", stat: `${n(stats?.branches ?? 0)} şube · ${n(stats?.levels ?? 0)} seviye · ${n(stats?.classrooms ?? 0)} sınıf` },
     { to: "SchoolDepartments", icon: BookOpen, label: "Zümreler", desc: "Zümre ve öğretmen atama", stat: `${n(stats?.departments ?? 0)} zümre` },
     { to: "SchoolSubjects", icon: Library, label: "Dersler", desc: "Ders (branş) tanımları", stat: `${n(stats?.subjects ?? 0)} ders` },
+    { to: "SchoolExamPool", icon: FileText, label: "Sınav Havuzu", desc: "Test, Tünel ve Yazılı sınavlar", stat: `${n(stats?.exams ?? 0)} sınav` },
+    { to: "SchoolLive", icon: Zap, label: "Canlı Test", desc: "Eş zamanlı, kodla katılımlı sınav", stat: `${n(stats?.liveSessions ?? 0)} oturum` },
     { to: "SchoolReports", icon: BarChart3, label: "Raporlar", desc: "Şube/seviye/sınıf başarımı", stat: `${n(stats?.assignments ?? 0)} ödev` },
   ];
 

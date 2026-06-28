@@ -701,7 +701,7 @@ export class GetSchoolPanelStatsUseCase {
   async execute(actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     const schoolId = ctx.schoolId;
-    const [branches, levels, classrooms, departments, subjects, teachers, students, assignments] = await Promise.all([
+    const [branches, levels, classrooms, departments, subjects, teachers, students, assignments, exams, liveSessions] = await Promise.all([
       prisma.branch.count({ where: { schoolId } }),
       prisma.schoolLevel.count({ where: { schoolId } }),
       prisma.classroom.count({ where: { schoolId } }),
@@ -710,7 +710,9 @@ export class GetSchoolPanelStatsUseCase {
       prisma.schoolUser.count({ where: { schoolId, isActive: true, schoolRole: { in: ['TEACHER', 'DEPT_HEAD', 'BRANCH_ADMIN'] as any } } }),
       prisma.schoolUser.count({ where: { schoolId, isActive: true, schoolRole: 'STUDENT' as any } }),
       prisma.schoolAssignment.count({ where: { schoolId } }),
+      prisma.schoolExam.count({ where: { schoolId, isArchived: false } }),
+      prisma.liveSession.count({ where: { schoolId } }),
     ]);
-    return { branches, levels, classrooms, departments, subjects, teachers, students, users: teachers + students, assignments };
+    return { branches, levels, classrooms, departments, subjects, teachers, students, users: teachers + students, assignments, exams, liveSessions };
   }
 }
