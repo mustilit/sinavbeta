@@ -17,9 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, Trash2, Pencil, ImagePlus, X, Loader2, Eye, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Pencil, ImagePlus, X, Loader2, Eye, CheckCircle2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { doUpload } from "@/components/live/LiveQuestionsEditor";
+import { parseDocxToQuestions, parsePdfToQuestions } from "@/lib/importQuestions";
 
 export const uid = () => Math.random().toString(36).slice(2);
 export const LETTERS = ["A", "B", "C", "D", "E"];
@@ -254,11 +255,30 @@ export function SchoolExamQuestionsEditor({ questions, setQuestions, choice }) {
   const [editingIdx, setEditingIdx] = useState(null);
   const [autoOpenKey, setAutoOpenKey] = useState(null);
   const [preview, setPreview] = useState(false);
+  const [importing, setImporting] = useState(null); // 'docx' | 'pdf' | null
 
   const addQuestion = () => {
     const nq = choice ? emptyChoiceQ() : emptyWrittenQ();
     setQuestions((qs) => [...qs, nq]);
     setAutoOpenKey(nq._k);
+  };
+
+  // DOCX/PDF içe aktarma — market test editörüyle aynı (yalnız şıklı/TEST-TUNNEL).
+  const runImport = async (file, type) => {
+    setImporting(type);
+    try {
+      const parsed = type === "pdf"
+        ? await parsePdfToQuestions(file, emptyChoiceQ)
+        : await parseDocxToQuestions(file, emptyChoiceQ);
+      if (!parsed.length) { toast.error("İçe aktarılacak soru bulunamadı"); return; }
+      setQuestions((prev) => {
+        const allEmpty = prev.length === 1 && !prev[0].content.trim() && !prev[0].options?.some((o) => o.content.trim());
+        return allEmpty ? parsed : [...prev, ...parsed];
+      });
+      toast.success(`${parsed.length} soru içe aktarıldı`);
+    } catch (e) {
+      toast.error("İçe aktarma hatası: " + (e?.message || "bilinmeyen"));
+    } finally { setImporting(null); }
   };
   const updateQuestion = (idx, updated) => setQuestions((qs) => qs.map((q, i) => (i === idx ? { ...updated, _k: q._k } : q)));
   const deleteQuestion = (idx) => setQuestions((qs) => qs.filter((_, i) => i !== idx));
@@ -304,6 +324,20 @@ export function SchoolExamQuestionsEditor({ questions, setQuestions, choice }) {
           <button type="button" onClick={addQuestion} className="flex w-full items-center justify-center rounded-lg border border-dashed border-slate-300 py-2.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50">
             <Plus className="mr-1 h-4 w-4" /> Soru Ekle
           </button>
+
+          {/* DOCX/PDF içe aktarma — yalnız şıklı (TEST/TUNNEL); Soru Ekle'nin altında ortalı */}
+          {choice && (
+            <div className="flex items-center justify-center gap-6 pt-1">
+              <label className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+                <Upload className="w-4 h-4" /> {importing === "docx" ? "Yükleniyor..." : "DOCX İçeri Aktar"}
+                <input type="file" accept=".docx" className="hidden" disabled={!!importing} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) runImport(f, "docx"); }} />
+              </label>
+              <label className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+                <Upload className="w-4 h-4" /> {importing === "pdf" ? "Yükleniyor..." : "PDF İçeri Aktar"}
+                <input type="file" accept=".pdf" className="hidden" disabled={!!importing} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) runImport(f, "pdf"); }} />
+              </label>
+            </div>
+          )}
         </>
       )}
 

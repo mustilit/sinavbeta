@@ -15,8 +15,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Pencil, ImagePlus, X, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Pencil, ImagePlus, X, CheckCircle2, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { doUpload } from "@/components/live/LiveQuestionsEditor";
+import { parseDocxToQuestions, parsePdfToQuestions } from "@/lib/importQuestions";
 
 export const uid = () => Math.random().toString(36).slice(2);
 export const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -62,11 +64,26 @@ export async function uploadPendingTunnelImages(questions) {
 // ─── Katman editörü ──────────────────────────────────────────────────────────
 function LayerQuestions({ questions, layerIndex, optionCount, onChange }) {
   const [openKey, setOpenKey] = useState(null);
+  const [importing, setImporting] = useState(null); // 'docx' | 'pdf' | null
 
   const addQ = () => {
     const nq = emptyTunnelQ(optionCount, layerIndex);
     onChange([...questions, nq]);
     setOpenKey(nq._k);
+  };
+
+  // DOCX/PDF içe aktarma — market tünel editörüyle aynı; bu KATMANA eklenir.
+  const runImport = async (file, type) => {
+    setImporting(type);
+    try {
+      const make = () => emptyTunnelQ(optionCount, layerIndex);
+      const parsed = type === "pdf" ? await parsePdfToQuestions(file, make) : await parseDocxToQuestions(file, make);
+      if (!parsed.length) { toast.error("İçe aktarılacak soru bulunamadı"); return; }
+      onChange([...questions, ...parsed]);
+      toast.success(`${parsed.length} soru içe aktarıldı`);
+    } catch (e) {
+      toast.error("İçe aktarma hatası: " + (e?.message || "bilinmeyen"));
+    } finally { setImporting(null); }
   };
   const removeQ = (k) => onChange(questions.filter((q) => q._k !== k));
   const setQ = (k, patch) => onChange(questions.map((q) => (q._k === k ? { ...q, ...patch } : q)));
@@ -138,6 +155,18 @@ function LayerQuestions({ questions, layerIndex, optionCount, onChange }) {
       <button type="button" onClick={addQ} className="flex w-full items-center justify-center rounded-lg border border-dashed border-slate-300 py-2.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50">
         <Plus className="mr-1 h-4 w-4" /> Soru Ekle
       </button>
+
+      {/* DOCX/PDF içe aktarma — Soru Ekle'nin altında ortalı (market tünel ile aynı). Bu katmana ekler. */}
+      <div className="flex items-center justify-center gap-6 pt-1">
+        <label className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+          <Upload className="w-4 h-4" /> {importing === "docx" ? "Yükleniyor..." : "DOCX İçeri Aktar"}
+          <input type="file" accept=".docx" className="hidden" disabled={!!importing} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) runImport(f, "docx"); }} />
+        </label>
+        <label className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+          <Upload className="w-4 h-4" /> {importing === "pdf" ? "Yükleniyor..." : "PDF İçeri Aktar"}
+          <input type="file" accept=".pdf" className="hidden" disabled={!!importing} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) runImport(f, "pdf"); }} />
+        </label>
+      </div>
     </div>
   );
 }
