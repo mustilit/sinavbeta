@@ -6,7 +6,7 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { getDefaultTenantId } from '../../../common/tenant';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, type SchoolContext } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopedClassroomWhere, resolveReportScope, type SchoolContext } from './schoolHelpers';
 
 const RESULT_VIS = ['SUBMIT', 'DUE_DATE', 'TEACHER_RELEASE'];
 
@@ -19,6 +19,8 @@ export function effectiveStatus(a: { status: string; availableFrom: Date; dueDat
 }
 
 function canManageExam(exam: { createdById: string; departmentId: string | null; poolVisibility: string }, ctx: SchoolContext, actorId: string): boolean {
+  // Yönetici (okul/şube) havuzdaki sınavları atayabilir; sınıf kapsamı ayrıca kısıtlar.
+  if (ctx.schoolRole === 'SCHOOL_ADMIN' || ctx.schoolRole === 'BRANCH_ADMIN') return true;
   if (exam.poolVisibility === 'SCHOOL') return true;
   if (exam.departmentId && exam.departmentId === ctx.departmentId) return true;
   if (exam.createdById === actorId) return true;
@@ -34,7 +36,7 @@ export class CreateAssignmentUseCase {
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
-    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
+    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD', 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
 
     const exam = await prisma.schoolExam.findFirst({
       where: { id: input.examId, schoolId: ctx.schoolId, isArchived: false },
@@ -51,8 +53,14 @@ export class CreateAssignmentUseCase {
 
     const classroomIds = [...new Set(input.classroomIds ?? [])];
     if (classroomIds.length === 0) throw new AppError('NO_CLASSROOM', 'En az bir sınıf seçin', 400);
-    const validClassrooms = await prisma.classroom.findMany({ where: { id: { in: classroomIds }, schoolId: ctx.schoolId }, select: { id: true } });
-    if (validClassrooms.length === 0) throw new AppError('CLASSROOM_NOT_FOUND', 'Geçerli sınıf yok', 404);
+    // Hiyerarşi: yalnız kapsamındaki sınıflara atayabilir (okul yön.→tümü, şube→şube,
+    // seviye sorumlusu→seviye, sınıf öğretmeni→sınıf, zümre→zümre seviye/şube span'ı).
+    const scope = await resolveSchoolScope(actorId);
+    const validClassrooms = await prisma.classroom.findMany({
+      where: { AND: [{ id: { in: classroomIds } }, scopedClassroomWhere(scope)] },
+      select: { id: true },
+    });
+    if (validClassrooms.length === 0) throw new AppError('CLASSROOM_NOT_FOUND', 'Yetki alanınızda geçerli sınıf yok', 404);
 
     const showResultAfter = RESULT_VIS.includes(input.showResultAfter ?? '') ? input.showResultAfter! : 'SUBMIT';
     const title = (input.title ?? '').trim() || exam.title;
@@ -80,12 +88,26 @@ export class ListAssignmentsUseCase {
   async execute(input: { classroomId?: string }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD', 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
-    const isManager = ctx.schoolRole === 'SCHOOL_ADMIN' || ctx.schoolRole === 'BRANCH_ADMIN';
+    // Hiyerarşik görünürlük (designation tabanlı, kimse yukarıyı görmez):
+    //  - SCHOOL_ADMIN → tüm okul
+    //  - BRANCH_ADMIN → şubesi, Seviye Sorumlusu → seviyesi, Sınıf Öğretmeni → sınıfı
+    //  - Zümre Başkanı → zümresinin sınıf span'ı + YALNIZ kendi branşının sınavları
+    //  - Herkes kendi attığı ödevleri görür (createdById)
+    const scope = await resolveReportScope(actorId);
+    const scopeWhere: Record<string, unknown> = {};
+    if (!scope.isSchoolAdmin) {
+      const or: Array<Record<string, unknown>> = [{ createdById: actorId }];
+      for (const cw of scope.allSubjectWhere) or.push({ classroom: cw });
+      if (scope.subjectDeptIds.length) {
+        for (const cw of scope.subjectSpanWhere) or.push({ AND: [{ classroom: cw }, { exam: { departmentId: { in: scope.subjectDeptIds } } }] });
+      }
+      scopeWhere.AND = [{ OR: or }];
+    }
     const rows = await prisma.schoolAssignment.findMany({
       where: {
         schoolId: ctx.schoolId,
         ...(input.classroomId ? { classroomId: input.classroomId } : {}),
-        ...(isManager ? {} : { createdById: actorId }),
+        ...scopeWhere,
       },
       orderBy: [{ createdAt: 'desc' }],
       include: {

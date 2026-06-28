@@ -31,7 +31,10 @@ export default function SchoolAssignments() {
   const navigate = useAppNavigate();
   const qc = useQueryClient();
   const role = user?.school?.schoolRole;
-  const canCreate = role === "TEACHER" || role === "DEPT_HEAD";
+  // Atama: öğretmen/zümre başkanı + yöneticiler (backend kapsama göre sınırlar).
+  const canCreate = ["TEACHER", "DEPT_HEAD", "SCHOOL_ADMIN", "BRANCH_ADMIN"].includes(role);
+  // Yayımla/Aç/Kapat yalnız ödevi yöneten öğretmen/zümre başkanı (yönetici salt-izler).
+  const canManageRow = role === "TEACHER" || role === "DEPT_HEAD";
   const [open, setOpen] = useState(false);
   const [examId, setExamId] = useState("");
   const [picked, setPicked] = useState(new Set());
@@ -106,10 +109,10 @@ export default function SchoolAssignments() {
                 <div className="flex gap-1 shrink-0">
                   <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => navigate(buildPageUrl("SchoolAssignmentReport", { id: a.id }))}><BarChart3 className="w-3.5 h-3.5" /> Rapor</Button>
                   {/* Yayımla/Aç/Kapat yalnız ödevi yöneten öğretmen/zümre başkanına; yönetici izler (salt-okunur). */}
-                  {canCreate && a.showResultAfter === "TEACHER_RELEASE" && !a.resultsReleased && (
+                  {canManageRow && a.showResultAfter === "TEACHER_RELEASE" && !a.resultsReleased && (
                     <Button size="sm" variant="outline" className="h-8 gap-1 text-xs text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => release.mutate(a.id)}><Send className="w-3.5 h-3.5" /> Yayımla</Button>
                   )}
-                  {canCreate && (a.status === "CLOSED"
+                  {canManageRow && (a.status === "CLOSED"
                     ? <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => setStatus.mutate({ id: a.id, status: "ACTIVE" })}><Unlock className="w-3.5 h-3.5" /> Aç</Button>
                     : <Button size="sm" variant="outline" className="h-8 gap-1 text-xs text-rose-600 border-rose-200 hover:bg-rose-50" onClick={() => setStatus.mutate({ id: a.id, status: "CLOSED" })}><Lock className="w-3.5 h-3.5" /> Kapat</Button>)}
                 </div>

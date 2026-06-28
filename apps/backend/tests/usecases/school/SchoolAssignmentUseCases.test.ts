@@ -3,9 +3,11 @@
  */
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
-    schoolUser: { findFirst: jest.fn(), count: jest.fn() },
+    schoolUser: { findFirst: jest.fn(), findUnique: jest.fn(async () => ({ userId: 'u1', departmentId: null })), count: jest.fn() },
     schoolExam: { findFirst: jest.fn() },
-    classroom: { findMany: jest.fn() },
+    schoolLevel: { findMany: jest.fn(async () => []) },
+    department: { findMany: jest.fn(async () => []) },
+    classroom: { findMany: jest.fn(async () => []) },
     schoolAssignment: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(),
   },
@@ -66,6 +68,17 @@ describe('CreateAssignmentUseCase', () => {
     expect(r.created).toBe(2);
     expect(r.assignmentIds).toHaveLength(2);
   });
+  it('okul yöneticisi başka zümrenin DEPARTMENT sınavını atayabilir (manager bypass)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'SCHOOL_ADMIN', departmentId: null });
+    p.schoolExam.findFirst.mockResolvedValue(exam({ departmentId: 'dX', createdById: 'other', poolVisibility: 'DEPARTMENT' }));
+    p.classroom.findMany.mockResolvedValue([{ id: 'c1' }]);
+    const r = await new CreateAssignmentUseCase().execute({ examId: 'ex1', classroomIds: ['c1'], availableFrom: tomorrow, dueDate: nextWeek }, 'ua');
+    expect(r.created).toBe(1);
+  });
+  it('kapsam dışı sınıf → CLASSROOM_NOT_FOUND', async () => {
+    p.classroom.findMany.mockResolvedValue([]); // kapsam + geçerli sorgu boş
+    await expect(new CreateAssignmentUseCase().execute({ examId: 'ex1', classroomIds: ['cX'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1')).rejects.toMatchObject({ code: 'CLASSROOM_NOT_FOUND' });
+  });
 });
 
 describe('effectiveStatus', () => {
@@ -88,13 +101,31 @@ describe('ListAssignmentsUseCase', () => {
     ]);
     const r = await new ListAssignmentsUseCase().execute({}, 'u1');
     expect(r[0]).toMatchObject({ id: 'a1', examType: 'TEST', classroomName: '5-A', submissionCount: 3, status: 'ACTIVE' });
-    expect(p.schoolAssignment.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ createdById: 'u1' }) }));
+    // Designation yok → yalnız kendi attığı (OR sadece createdById)
+    expect(p.schoolAssignment.findMany.mock.calls[0][0].where.AND[0].OR).toEqual([{ createdById: 'u1' }]);
   });
-  it('okul yöneticisi: tüm okul ödevlerini görür (createdById filtresi YOK)', async () => {
+  it('okul yöneticisi: tüm okul ödevlerini görür (kapsam filtresi YOK)', async () => {
     p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'SCHOOL_ADMIN' });
     p.schoolAssignment.findMany.mockResolvedValue([]);
     await new ListAssignmentsUseCase().execute({}, 'ua');
-    expect(p.schoolAssignment.findMany.mock.calls[0][0].where).not.toHaveProperty('createdById');
+    const where = p.schoolAssignment.findMany.mock.calls[0][0].where;
+    expect(where).not.toHaveProperty('AND');
+    expect(where).not.toHaveProperty('createdById');
+  });
+  it('şube yöneticisi: kendi şubesinin ödevleri + kendi attığı', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'BRANCH_ADMIN', branchId: 'b1', departmentId: null });
+    p.schoolAssignment.findMany.mockResolvedValue([]);
+    await new ListAssignmentsUseCase().execute({}, 'ub');
+    const or = p.schoolAssignment.findMany.mock.calls[0][0].where.AND[0].OR;
+    expect(or).toEqual(expect.arrayContaining([{ createdById: 'ub' }, { classroom: { branchId: 'b1' } }]));
+  });
+  it('sınıf öğretmeni: yalnız kendi sınıf(lar)ının ödevleri + kendi attığı', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, departmentId: null });
+    p.classroom.findMany.mockResolvedValue([{ id: 'c1' }]); // adminUserId == kendisi
+    p.schoolAssignment.findMany.mockResolvedValue([]);
+    await new ListAssignmentsUseCase().execute({}, 'u1');
+    const or = p.schoolAssignment.findMany.mock.calls[0][0].where.AND[0].OR;
+    expect(or).toEqual(expect.arrayContaining([{ createdById: 'u1' }, { classroom: { id: { in: ['c1'] } } }]));
   });
 });
 
