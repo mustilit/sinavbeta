@@ -6,6 +6,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     schoolUser: { findFirst: jest.fn(), findUnique: jest.fn(async () => ({ userId: 'u1', departmentId: null })), count: jest.fn() },
     schoolExam: { findFirst: jest.fn() },
     schoolLevel: { findMany: jest.fn(async () => []) },
+    schoolSubject: { findMany: jest.fn(async () => []) },
     department: { findMany: jest.fn(async () => []) },
     classroom: { findMany: jest.fn(async () => []) },
     schoolAssignment: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
@@ -16,7 +17,7 @@ jest.mock('../../../src/common/tenant', () => ({ getDefaultTenantId: () => 'ten1
 
 import {
   CreateAssignmentUseCase, effectiveStatus,
-  ListAssignmentsUseCase, GetAssignmentReportUseCase, ReleaseAssignmentResultsUseCase, CloseAssignmentUseCase,
+  ListAssignmentsUseCase, GetAssignOptionsUseCase, GetAssignmentReportUseCase, ReleaseAssignmentResultsUseCase, CloseAssignmentUseCase,
 } from '../../../src/application/use-cases/school/SchoolAssignmentUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 
@@ -126,6 +127,28 @@ describe('ListAssignmentsUseCase', () => {
     await new ListAssignmentsUseCase().execute({}, 'u1');
     const or = p.schoolAssignment.findMany.mock.calls[0][0].where.AND[0].OR;
     expect(or).toEqual(expect.arrayContaining([{ createdById: 'u1' }, { classroom: { id: { in: ['c1'] } } }]));
+  });
+});
+
+describe('GetAssignOptionsUseCase', () => {
+  beforeEach(() => { jest.clearAllMocks(); });
+  it('okul yöneticisi: tüm seviye + tüm ders', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'SCHOOL_ADMIN', departmentId: null });
+    p.schoolLevel.findMany.mockResolvedValue([{ gradeLevel: 5 }, { gradeLevel: 6 }, { gradeLevel: 5 }]);
+    p.schoolSubject.findMany.mockResolvedValue([{ name: 'Matematik' }, { name: 'Fen' }]);
+    const r = await new GetAssignOptionsUseCase().execute('ua');
+    expect(r.levels).toEqual([{ gradeLevel: 5 }, { gradeLevel: 6 }]);
+    expect(r.subjects).toEqual([{ name: 'Matematik' }, { name: 'Fen' }]);
+  });
+  it('zümre başkanı: zümre seviyesi + yalnız kendi dersi', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'DEPT_HEAD', departmentId: 'd1' });
+    p.schoolLevel.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ gradeLevel: 7 }]);
+    p.classroom.findMany.mockResolvedValue([]);
+    p.department.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ subject: 'Matematik', levelId: 'lv7', branchId: 'b1' }]);
+    const r = await new GetAssignOptionsUseCase().execute('ud');
+    expect(r.levels).toEqual([{ gradeLevel: 7 }]);
+    expect(r.subjects).toEqual([{ name: 'Matematik' }]);
+    expect(p.schoolSubject.findMany).not.toHaveBeenCalled(); // ders havuzuna gitmez (kendi dersi)
   });
 });
 

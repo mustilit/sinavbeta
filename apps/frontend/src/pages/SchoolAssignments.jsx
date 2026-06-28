@@ -38,10 +38,22 @@ export default function SchoolAssignments() {
   const [open, setOpen] = useState(false);
   const [examId, setExamId] = useState("");
   const [picked, setPicked] = useState(new Set());
+  const [level, setLevel] = useState("");     // gradeLevel (string)
+  const [subject, setSubject] = useState(""); // ders adı
 
   const { data: assignments = [], isLoading } = useQuery({ queryKey: ["esinif", "assignments"], queryFn: () => schoolApi.assignments.list(), enabled: !!role });
   const { data: exams = [] } = useQuery({ queryKey: ["esinif", "exam-pool", "for-assign"], queryFn: () => schoolApi.exams.list(), enabled: open });
   const { data: classrooms = [] } = useQuery({ queryKey: ["esinif", "classrooms", "all"], queryFn: () => schoolApi.listClassrooms(), enabled: open });
+  // Hiyerarşik atama seçenekleri (seviye + ders) — okul yön. tümü, seviye sor. kendi seviyesi, zümre kendi seviye+dersi
+  const { data: options } = useQuery({ queryKey: ["esinif", "assign-options"], queryFn: () => schoolApi.assignments.options(), enabled: open && canCreate });
+  const levelOpts = options?.levels ?? [];
+  const subjectOpts = options?.subjects ?? [];
+  // Seçilen seviye+derse uygun sınavlar; sınıflar seçilen seviyeye göre süzülür.
+  const filteredExams = exams.filter((e) => !e.isArchived && e.questionCount > 0
+    && (!level || String(e.gradeLevel) === level)
+    && (!subject || e.subject === subject));
+  const filteredClassrooms = classrooms.filter((c) => !level || String(c.gradeLevel) === level);
+  const openCreate = () => { setExamId(""); setPicked(new Set()); setLevel(""); setSubject(""); setOpen(true); };
 
   const create = useMutation({
     mutationFn: (body) => schoolApi.assignments.create(body),
@@ -83,7 +95,7 @@ export default function SchoolAssignments() {
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><ClipboardList className="w-5 h-5 text-indigo-600" /></div>
           <div><h1 className="text-2xl font-bold text-slate-900">Ödevler</h1><p className="text-sm text-slate-500">Havuzdan sınav atayın, sonuçları izleyin</p></div>
         </div>
-        {canCreate && <Button onClick={() => setOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Yeni Ödev</Button>}
+        {canCreate && <Button onClick={openCreate} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Yeni Ödev</Button>}
       </div>
 
       {isLoading ? (
@@ -126,21 +138,58 @@ export default function SchoolAssignments() {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Yeni Ödev Ata</DialogTitle></DialogHeader>
           <form onSubmit={submit} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Seviye</Label>
+                <Select value={level} onValueChange={(v) => { setLevel(v); setExamId(""); setPicked(new Set()); }}>
+                  <SelectTrigger><SelectValue placeholder="Seviye seç" /></SelectTrigger>
+                  <SelectContent>
+                    {levelOpts.map((l) => <SelectItem key={l.gradeLevel} value={String(l.gradeLevel)}>{l.gradeLevel}. Sınıf</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Ders</Label>
+                <Select value={subject} onValueChange={(v) => { setSubject(v); setExamId(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Ders seç" /></SelectTrigger>
+                  <SelectContent>
+                    {subjectOpts.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div>
-              <Label>Havuzdan sınav</Label>
-              <Select value={examId} onValueChange={setExamId}>
-                <SelectTrigger><SelectValue placeholder="Sınav seç" /></SelectTrigger>
+              <Label>Havuzdan sınav {level && subject ? "" : <span className="text-xs font-normal text-slate-400">(önce seviye + ders seçin)</span>}</Label>
+              <Select value={examId} onValueChange={setExamId} disabled={!level || !subject}>
+                <SelectTrigger><SelectValue placeholder={level && subject ? "Sınav seç" : "Seviye + ders seçin"} /></SelectTrigger>
                 <SelectContent>
-                  {exams.filter((e) => !e.isArchived && e.questionCount > 0).map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.title} · {e.examType} · {e.questionCount} soru</SelectItem>
-                  ))}
+                  {filteredExams.length === 0
+                    ? <div className="px-3 py-2 text-xs text-slate-400">Bu seviye/derste sınav yok.</div>
+                    : filteredExams.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>{e.title} · {e.examType} · {e.questionCount} soru</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Sınıflar</Label>
+              <div className="flex items-center justify-between">
+                <Label>Sınıflar {level ? `(${level}. Sınıf)` : ""}</Label>
+                {filteredClassrooms.length > 0 && (
+                  <button type="button" className="text-xs text-indigo-600 hover:underline"
+                    onClick={() => {
+                      const allPicked = filteredClassrooms.every((c) => picked.has(c.id));
+                      setPicked((s) => {
+                        const n = new Set(s);
+                        filteredClassrooms.forEach((c) => { allPicked ? n.delete(c.id) : n.add(c.id); });
+                        return n;
+                      });
+                    }}>
+                    {filteredClassrooms.every((c) => picked.has(c.id)) ? "Seçimi kaldır" : "Tümünü seç"}
+                  </button>
+                )}
+              </div>
               <div className="max-h-40 overflow-y-auto space-y-1 mt-1 border border-slate-200 rounded-lg p-2">
-                {classrooms.length === 0 ? <p className="text-xs text-slate-400 p-2">Sınıf yok.</p> : classrooms.map((c) => (
+                {filteredClassrooms.length === 0 ? <p className="text-xs text-slate-400 p-2">{level ? "Bu seviyede sınıf yok." : "Önce seviye seçin."}</p> : filteredClassrooms.map((c) => (
                   <label key={c.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer">
                     <input type="checkbox" checked={picked.has(c.id)} onChange={() => togglePick(c.id)} className="rounded" />
                     <span className="text-sm">{c.name}</span><span className="text-xs text-slate-400">({c.studentCount} öğr.)</span>

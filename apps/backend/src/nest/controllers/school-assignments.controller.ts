@@ -5,6 +5,7 @@ import { ApiErrorResponses } from '../swagger/decorators';
 import {
   CreateAssignmentUseCase,
   ListAssignmentsUseCase,
+  GetAssignOptionsUseCase,
   GetAssignmentReportUseCase,
   ReleaseAssignmentResultsUseCase,
   CloseAssignmentUseCase,
@@ -29,12 +30,16 @@ class CloseDto { @IsIn(['CLOSED', 'ACTIVE']) status!: 'CLOSED' | 'ACTIVE'; }
 export class SchoolAssignmentsController {
   private createUC = new CreateAssignmentUseCase();
   private listUC = new ListAssignmentsUseCase();
+  private optionsUC = new GetAssignOptionsUseCase();
   private reportUC = new GetAssignmentReportUseCase();
   private releaseUC = new ReleaseAssignmentResultsUseCase();
   private closeUC = new CloseAssignmentUseCase();
 
   @Get() @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Ödev listesi' }) @ApiErrorResponses()
   list(@Query('classroomId') classroomId: string | undefined, @Req() req: any) { return this.listUC.execute({ classroomId }, req?.user?.id); }
+
+  @Get('options') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Atama seçenekleri (hiyerarşik seviye + ders)' }) @ApiErrorResponses()
+  options(@Req() req: any) { return this.optionsUC.execute(req?.user?.id); }
 
   @Post() @ApiBearerAuth('bearer') @ApiErrorResponses()
   create(@Body() dto: CreateAssignmentDto, @Req() req: any) { return this.createUC.execute(dto, req?.user?.id); }

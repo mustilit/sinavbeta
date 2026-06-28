@@ -84,6 +84,74 @@ export class CreateAssignmentUseCase {
   }
 }
 
+/**
+ * Ödev atama seçenekleri — hiyerarşik kapsamda Seviye (gradeLevel) + Ders listesi:
+ *  - SCHOOL_ADMIN → tüm seviyeler + tüm dersler
+ *  - BRANCH_ADMIN → şubesinin seviyeleri + tüm dersler
+ *  - Seviye Sorumlusu → kendi seviye(ler)i + tüm dersler
+ *  - Sınıf Öğretmeni → sınıf(lar)ının seviyesi + tüm dersler
+ *  - Zümre Başkanı/öğretmen → zümresinin seviyesi + YALNIZ kendi ders alanı
+ */
+export class GetAssignOptionsUseCase {
+  async execute(actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER');
+    const schoolId = ctx.schoolId;
+    const uid = ctx.userId;
+
+    let levelWhere: Record<string, unknown>;
+    let allSubjects = false;
+    const deptSubjects = new Set<string>();
+
+    if (ctx.schoolRole === 'SCHOOL_ADMIN') {
+      levelWhere = { schoolId };
+      allSubjects = true;
+    } else {
+      const levelIds = new Set<string>();
+      const branchIds = new Set<string>();
+      let wholeSchoolLevels = false;
+      if (ctx.schoolRole === 'BRANCH_ADMIN' && ctx.branchId) { branchIds.add(ctx.branchId); allSubjects = true; }
+      const myLevels = await prisma.schoolLevel.findMany({ where: { schoolId, adminUserId: uid }, select: { id: true } });
+      if (myLevels.length) { myLevels.forEach((l) => levelIds.add(l.id)); allSubjects = true; }
+      const myClasses = await prisma.classroom.findMany({ where: { schoolId, adminUserId: uid }, select: { levelId: true } });
+      if (myClasses.length) { myClasses.forEach((c) => c.levelId && levelIds.add(c.levelId)); allSubjects = true; }
+      const deptIds = new Set<string>();
+      if (ctx.departmentId) deptIds.add(ctx.departmentId);
+      const headed = await prisma.department.findMany({ where: { schoolId, headUserId: uid }, select: { id: true } });
+      headed.forEach((d) => deptIds.add(d.id));
+      if (deptIds.size) {
+        const depts = await prisma.department.findMany({ where: { id: { in: [...deptIds] } }, select: { subject: true, levelId: true, branchId: true } });
+        for (const d of depts) {
+          if (d.subject) deptSubjects.add(d.subject);
+          if (d.levelId) levelIds.add(d.levelId);
+          else if (d.branchId) branchIds.add(d.branchId);
+          else wholeSchoolLevels = true; // okul-geneli zümre → tüm seviyeler (branşa kısıtlı)
+        }
+      }
+      if (wholeSchoolLevels) levelWhere = { schoolId };
+      else {
+        const or: Array<Record<string, unknown>> = [];
+        if (branchIds.size) or.push({ branchId: { in: [...branchIds] } });
+        if (levelIds.size) or.push({ id: { in: [...levelIds] } });
+        levelWhere = or.length ? { schoolId, OR: or } : { id: '__none__' };
+      }
+    }
+
+    const lvls = await prisma.schoolLevel.findMany({ where: levelWhere, select: { gradeLevel: true } });
+    const gradeLevels = [...new Set(lvls.map((l) => l.gradeLevel))].sort((a, b) => a - b);
+
+    let subjects: string[];
+    if (allSubjects || deptSubjects.size === 0) {
+      const subs = await prisma.schoolSubject.findMany({ where: { schoolId }, select: { name: true }, orderBy: { name: 'asc' } });
+      subjects = subs.map((s) => s.name);
+    } else {
+      subjects = [...deptSubjects].sort();
+    }
+
+    return { levels: gradeLevels.map((gradeLevel) => ({ gradeLevel })), subjects: subjects.map((name) => ({ name })) };
+  }
+}
+
 export class ListAssignmentsUseCase {
   async execute(input: { classroomId?: string }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);

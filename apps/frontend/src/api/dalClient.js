@@ -2273,6 +2273,7 @@ export const school = {
       return (await api.get(`/school/assignments?${qs.toString()}`)).data;
     },
     create: async (body) => (await api.post('/school/assignments', body)).data,
+    options: async () => (await api.get('/school/assignments/options')).data,
     report: async (id) => (await api.get(`/school/assignments/${id}/report`)).data,
     releaseResults: async (id) => (await api.post(`/school/assignments/${id}/release-results`)).data,
     setStatus: async (id, status) => (await api.patch(`/school/assignments/${id}/status`, { status })).data,
