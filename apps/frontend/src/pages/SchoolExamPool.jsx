@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileQuestion, Plus, Search, Archive, Pencil, ListChecks, ArrowDownUp, FileText, AlertCircle } from "lucide-react";
+import { FileQuestion, Plus, Search, Archive, Pencil, ListChecks, ArrowDownUp, FileText, AlertCircle, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 
 const TYPE_META = {
@@ -25,6 +25,8 @@ export default function SchoolExamPool() {
   const role = user?.school?.schoolRole;
   // Okul yöneticisi havuzda tam yetkili (kayıt + güncelleme); öğretmen/zümre başkanı da oluşturur.
   const canCreate = role === "SCHOOL_ADMIN" || role === "TEACHER" || role === "DEPT_HEAD";
+  // Ödev atayabilenler (backend kapsamla sınırlar): öğretmen/zümre başkanı + yöneticiler.
+  const canAssign = ["SCHOOL_ADMIN", "BRANCH_ADMIN", "TEACHER", "DEPT_HEAD"].includes(role);
   const [examType, setExamType] = useState("all");
   const [q, setQ] = useState("");
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -126,12 +128,18 @@ export default function SchoolExamPool() {
                     {e.departmentName ? ` · ${e.departmentName}` : ""}{e.createdByUsername ? ` · ${e.createdByUsername}` : ""}
                   </p>
                 </div>
-                {e.canManage && (
-                  <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => navigate(buildPageUrl("SchoolExamEdit", { id: e.id }))}><Pencil className="w-3.5 h-3.5" /> Düzenle</Button>
-                    <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => archive.mutate({ id: e.id, isArchived: !e.isArchived })}><Archive className="w-3.5 h-3.5" /> {e.isArchived ? "Aktife al" : "Pasife al"}</Button>
-                  </div>
-                )}
+                {/* İkon-yalnız aksiyonlar — buton adı onmouse (title) ile görünür */}
+                <div className="flex gap-1 shrink-0">
+                  {canAssign && !e.isArchived && e.questionCount > 0 && (
+                    <Button size="icon" variant="outline" className="h-8 w-8 text-indigo-600 border-indigo-200 hover:bg-indigo-50" title="Ödev Ata" aria-label="Ödev Ata" onClick={() => navigate(buildPageUrl("SchoolAssignments", { examId: e.id }))}><ClipboardList className="w-4 h-4" /></Button>
+                  )}
+                  {e.canManage && (
+                    <>
+                      <Button size="icon" variant="outline" className="h-8 w-8" title="Düzenle" aria-label="Düzenle" onClick={() => navigate(buildPageUrl("SchoolExamEdit", { id: e.id }))}><Pencil className="w-4 h-4" /></Button>
+                      <Button size="icon" variant="outline" className="h-8 w-8" title={e.isArchived ? "Aktife al" : "Pasife al"} aria-label={e.isArchived ? "Aktife al" : "Pasife al"} onClick={() => archive.mutate({ id: e.id, isArchived: !e.isArchived })}><Archive className="w-4 h-4" /></Button>
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}

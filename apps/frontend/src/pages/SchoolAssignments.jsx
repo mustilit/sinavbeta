@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { school as schoolApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -54,6 +55,19 @@ export default function SchoolAssignments() {
     && (!subject || e.subject === subject));
   const filteredClassrooms = classrooms.filter((c) => !level || String(c.gradeLevel) === level);
   const openCreate = () => { setExamId(""); setPicked(new Set()); setLevel(""); setSubject(""); setOpen(true); };
+
+  // Sınav Havuzu'ndan "Ödev Ata" → ?examId ile gelince: dialog'u aç + seçili sınavın
+  // seviye/dersini ön-doldur + sınavı seçili getir (yalnız bir kez).
+  const [searchParams] = useSearchParams();
+  const presetExamId = searchParams.get("examId");
+  const presetAppliedRef = useRef(false);
+  useEffect(() => {
+    if (presetAppliedRef.current || !presetExamId || !canCreate) return;
+    if (exams.length === 0) { setOpen(true); return; } // exams sorgusu enabled:open → önce aç
+    const ex = exams.find((e) => e.id === presetExamId);
+    presetAppliedRef.current = true;
+    if (ex) { setLevel(String(ex.gradeLevel ?? "")); setSubject(ex.subject ?? ""); setExamId(ex.id); setOpen(true); }
+  }, [presetExamId, exams, canCreate]);
 
   const create = useMutation({
     mutationFn: (body) => schoolApi.assignments.create(body),
