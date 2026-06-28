@@ -4,7 +4,7 @@ import { school as schoolApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Building2, BookOpen, Radio, ChevronRight, GraduationCap, AlertCircle, Library, BarChart3, FileText, Zap } from "lucide-react";
+import { Users, Building2, BookOpen, Radio, ChevronRight, GraduationCap, AlertCircle, Library, BarChart3, FileText, Zap, ClipboardList } from "lucide-react";
 
 const ADMIN_ROLES = ["SCHOOL_ADMIN", "BRANCH_ADMIN"];
 const TEACHER_ROLES = ["TEACHER", "DEPT_HEAD"];
@@ -101,7 +101,8 @@ export default function SchoolPanel() {
     { to: "SchoolSubjects", icon: Library, label: "Dersler", desc: "Ders (branş) tanımları", stat: `${n(stats?.subjects ?? 0)} ders` },
     { to: "SchoolExamPool", icon: FileText, label: "Sınav Havuzu", desc: "Test, Tünel ve Yazılı sınavlar", stat: `${n(stats?.exams ?? 0)} sınav` },
     { to: "SchoolLive", icon: Zap, label: "Canlı Test", desc: "Eş zamanlı, kodla katılımlı sınav", stat: `${n(stats?.liveSessions ?? 0)} oturum` },
-    { to: "SchoolReports", icon: BarChart3, label: "Raporlar", desc: "Şube/seviye/sınıf başarımı", stat: `${n(stats?.assignments ?? 0)} ödev` },
+    { to: "SchoolAssignments", icon: ClipboardList, label: "Ödevler", desc: "Ödev atama ve teslim takibi", stat: `${n(stats?.assignments ?? 0)} ödev` },
+    { to: "SchoolReports", icon: BarChart3, label: "Raporlar", desc: "Şube/seviye/sınıf başarımı", stat: "Başarı analizi" },
   ];
 
   return (

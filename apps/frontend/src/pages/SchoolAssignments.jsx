@@ -105,12 +105,13 @@ export default function SchoolAssignments() {
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => navigate(buildPageUrl("SchoolAssignmentReport", { id: a.id }))}><BarChart3 className="w-3.5 h-3.5" /> Rapor</Button>
-                  {a.showResultAfter === "TEACHER_RELEASE" && !a.resultsReleased && (
+                  {/* Yayımla/Aç/Kapat yalnız ödevi yöneten öğretmen/zümre başkanına; yönetici izler (salt-okunur). */}
+                  {canCreate && a.showResultAfter === "TEACHER_RELEASE" && !a.resultsReleased && (
                     <Button size="sm" variant="outline" className="h-8 gap-1 text-xs text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => release.mutate(a.id)}><Send className="w-3.5 h-3.5" /> Yayımla</Button>
                   )}
-                  {a.status === "CLOSED"
+                  {canCreate && (a.status === "CLOSED"
                     ? <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => setStatus.mutate({ id: a.id, status: "ACTIVE" })}><Unlock className="w-3.5 h-3.5" /> Aç</Button>
-                    : <Button size="sm" variant="outline" className="h-8 gap-1 text-xs text-rose-600 border-rose-200 hover:bg-rose-50" onClick={() => setStatus.mutate({ id: a.id, status: "CLOSED" })}><Lock className="w-3.5 h-3.5" /> Kapat</Button>}
+                    : <Button size="sm" variant="outline" className="h-8 gap-1 text-xs text-rose-600 border-rose-200 hover:bg-rose-50" onClick={() => setStatus.mutate({ id: a.id, status: "CLOSED" })}><Lock className="w-3.5 h-3.5" /> Kapat</Button>)}
                 </div>
               </div>
             );

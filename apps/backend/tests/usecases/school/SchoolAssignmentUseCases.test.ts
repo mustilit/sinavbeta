@@ -90,6 +90,12 @@ describe('ListAssignmentsUseCase', () => {
     expect(r[0]).toMatchObject({ id: 'a1', examType: 'TEST', classroomName: '5-A', submissionCount: 3, status: 'ACTIVE' });
     expect(p.schoolAssignment.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ createdById: 'u1' }) }));
   });
+  it('okul yöneticisi: tüm okul ödevlerini görür (createdById filtresi YOK)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'SCHOOL_ADMIN' });
+    p.schoolAssignment.findMany.mockResolvedValue([]);
+    await new ListAssignmentsUseCase().execute({}, 'ua');
+    expect(p.schoolAssignment.findMany.mock.calls[0][0].where).not.toHaveProperty('createdById');
+  });
 });
 
 describe('GetAssignmentReportUseCase', () => {
