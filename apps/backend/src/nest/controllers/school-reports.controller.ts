@@ -16,6 +16,7 @@ class ReportFilterDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(12) gradeLevel?: number;
   @IsOptional() @IsString() classroomId?: string;
   @IsOptional() @IsString() departmentId?: string;
+  @IsOptional() @IsString() periodId?: string;
 }
 
 class ClassroomReportFilterDto {

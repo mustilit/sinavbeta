@@ -4,7 +4,7 @@
  */
 import { prismaRead } from '../../../infrastructure/database/dbRouter';
 import { AppError } from '../../errors/AppError';
-import { resolveSchoolContext, requireSchoolRole, resolveReportScope } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveReportScope, resolvePeriodFilter } from './schoolHelpers';
 
 function pct(score: number | null, max: number | null): number | null {
   if (score == null || !max) return null;
@@ -90,7 +90,7 @@ export class GetSchoolReportUseCase {
   }
 }
 
-type ReportFilters = { from?: string; to?: string; gradeLevel?: number; classroomId?: string; departmentId?: string };
+type ReportFilters = { from?: string; to?: string; gradeLevel?: number; classroomId?: string; departmentId?: string; periodId?: string };
 
 function dateRange(from?: string, to?: string): { gte?: Date; lte?: Date } | undefined {
   const g = from ? new Date(from) : undefined;
@@ -163,10 +163,14 @@ export class GetFilteredReportUseCase {
     }
     if (asgOr.length === 0) return emptyReport;
 
+    // Dönemsel: input.periodId verilmezse güncel dönem → yeni döneme sıfır rapor.
+    const periodId = await resolvePeriodFilter(rs.schoolId, input.periodId);
+
     const [assignments, submissions] = await Promise.all([
-      db.schoolAssignment.findMany({ where: { OR: asgOr }, select: { id: true, classroomId: true } }),
+      db.schoolAssignment.findMany({ where: periodId ? { AND: [{ OR: asgOr }, { periodId }] } : { OR: asgOr }, select: { id: true, classroomId: true } }),
       db.schoolSubmission.findMany({
         where: {
+          ...(periodId ? { assignment: { periodId } } : {}),
           OR: subOr,
           status: { in: ['SUBMITTED', 'GRADED'] as any },
           ...(submittedAt ? { submittedAt } : {}),

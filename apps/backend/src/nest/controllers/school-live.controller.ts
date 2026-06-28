@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
 import { IsString, IsArray, ValidateNested, IsBoolean, IsOptional, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
@@ -44,7 +44,7 @@ export class SchoolLiveController {
 
   // Öğretmen
   @Get() @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Öğretmen canlı oturumları' }) @ApiErrorResponses()
-  list(@Req() req: any) { return this.listUC.execute(req?.user?.id); }
+  list(@Query('periodId') periodId: string | undefined, @Req() req: any) { return this.listUC.execute(req?.user?.id, { periodId }); }
   @Post() @ApiBearerAuth('bearer') @ApiErrorResponses()
   create(@Body() dto: CreateLiveDto, @Req() req: any) { return this.createUC.execute(dto, req?.user?.id); }
   @Get(':id/host') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Host durumu (polling)' }) @ApiErrorResponses()

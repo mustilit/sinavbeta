@@ -158,9 +158,12 @@ describe('DeactivateSchoolUseCase', () => {
 
 describe('AssignSchoolPeriodUseCase', () => {
   beforeEach(() => { jest.clearAllMocks(); p.school.findUnique.mockResolvedValue({ id: 'sch1' }); p.academicPeriod.findUnique.mockResolvedValue({ id: 'per2' }); });
-  it('zaten ekliyse PERIOD_ALREADY_LINKED', async () => {
+  it('zaten ekliyse: link tekrar oluşturulmaz, sadece güncel dönem yapılır', async () => {
     p.schoolPeriod.findUnique.mockResolvedValue({ id: 'sp1' });
-    await expect(new AssignSchoolPeriodUseCase().execute('sch1', { periodId: 'per2' }, 'a1')).rejects.toMatchObject({ code: 'PERIOD_ALREADY_LINKED' });
+    const r = await new AssignSchoolPeriodUseCase().execute('sch1', { periodId: 'per2' }, 'a1');
+    expect(r).toEqual({ ok: true });
+    expect(p.schoolPeriod.create).not.toHaveBeenCalled();
+    expect(p.school.update).toHaveBeenCalledWith({ where: { id: 'sch1' }, data: { periodId: 'per2' } });
   });
   it('dönem yoksa PERIOD_NOT_FOUND', async () => {
     p.academicPeriod.findUnique.mockResolvedValue(null);

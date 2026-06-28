@@ -36,7 +36,7 @@ export class SchoolAssignmentsController {
   private closeUC = new CloseAssignmentUseCase();
 
   @Get() @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Ödev listesi' }) @ApiErrorResponses()
-  list(@Query('classroomId') classroomId: string | undefined, @Req() req: any) { return this.listUC.execute({ classroomId }, req?.user?.id); }
+  list(@Query('classroomId') classroomId: string | undefined, @Query('periodId') periodId: string | undefined, @Req() req: any) { return this.listUC.execute({ classroomId, periodId }, req?.user?.id); }
 
   @Get('options') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Atama seçenekleri (hiyerarşik seviye + ders)' }) @ApiErrorResponses()
   options(@Req() req: any) { return this.optionsUC.execute(req?.user?.id); }

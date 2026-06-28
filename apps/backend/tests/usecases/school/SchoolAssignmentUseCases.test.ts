@@ -9,6 +9,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     schoolSubject: { findMany: jest.fn(async () => []) },
     department: { findMany: jest.fn(async () => []) },
     classroom: { findMany: jest.fn(async () => []) },
+    school: { findUnique: jest.fn(async () => ({ periodId: null })) },
     schoolAssignment: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(),
   },
@@ -80,6 +81,13 @@ describe('CreateAssignmentUseCase', () => {
     p.classroom.findMany.mockResolvedValue([]); // kapsam + geçerli sorgu boş
     await expect(new CreateAssignmentUseCase().execute({ examId: 'ex1', classroomIds: ['cX'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1')).rejects.toMatchObject({ code: 'CLASSROOM_NOT_FOUND' });
   });
+  it('oluşturma: ödev okulun güncel dönemine damgalanır', async () => {
+    p.school.findUnique.mockResolvedValue({ periodId: 'p-2026' });
+    let createdData;
+    p.schoolAssignment.create.mockImplementation(async ({ data }) => { createdData = data; return { id: 'a1' }; });
+    await new CreateAssignmentUseCase().execute({ examId: 'ex1', classroomIds: ['c1'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1');
+    expect(createdData.periodId).toBe('p-2026');
+  });
 });
 
 describe('effectiveStatus', () => {
@@ -95,7 +103,15 @@ describe('effectiveStatus', () => {
 });
 
 describe('ListAssignmentsUseCase', () => {
-  beforeEach(() => { jest.clearAllMocks(); p.schoolUser.findFirst.mockResolvedValue(teacher); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    p.schoolUser.findFirst.mockResolvedValue(teacher);
+    // clearAllMocks mockResolvedValue impl'lerini sıfırlamaz → önceki describe'lerden sızıntıyı temizle
+    p.schoolLevel.findMany.mockResolvedValue([]);
+    p.classroom.findMany.mockResolvedValue([]);
+    p.department.findMany.mockResolvedValue([]);
+    p.school.findUnique.mockResolvedValue({ periodId: null });
+  });
   it('öğretmen yalnız kendi ödevleri (createdById filtresi)', async () => {
     p.schoolAssignment.findMany.mockResolvedValue([
       { id: 'a1', title: 'Ödev', availableFrom: new Date(Date.now() - 1e6), dueDate: new Date(Date.now() + 1e6), status: 'SCHEDULED', showResultAfter: 'SUBMIT', resultsReleased: false, createdAt: new Date(), exam: { title: 'S', examType: 'TEST' }, classroom: { name: '5-A' }, _count: { submissions: 3 } },
@@ -127,6 +143,20 @@ describe('ListAssignmentsUseCase', () => {
     await new ListAssignmentsUseCase().execute({}, 'u1');
     const or = p.schoolAssignment.findMany.mock.calls[0][0].where.AND[0].OR;
     expect(or).toEqual(expect.arrayContaining([{ createdById: 'u1' }, { classroom: { id: { in: ['c1'] } } }]));
+  });
+  it('dönemsel: periodId verilmezse okulun güncel dönemi süzülür', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'SCHOOL_ADMIN' });
+    p.school.findUnique.mockResolvedValue({ periodId: 'p-cur' });
+    p.schoolAssignment.findMany.mockResolvedValue([]);
+    await new ListAssignmentsUseCase().execute({}, 'ua');
+    expect(p.schoolAssignment.findMany.mock.calls[0][0].where.periodId).toBe('p-cur');
+  });
+  it('dönemsel: eski dönem (periodId) filtre olarak geçer', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'SCHOOL_ADMIN' });
+    p.school.findUnique.mockResolvedValue({ periodId: 'p-cur' });
+    p.schoolAssignment.findMany.mockResolvedValue([]);
+    await new ListAssignmentsUseCase().execute({ periodId: 'p-old' }, 'ua');
+    expect(p.schoolAssignment.findMany.mock.calls[0][0].where.periodId).toBe('p-old');
   });
 });
 

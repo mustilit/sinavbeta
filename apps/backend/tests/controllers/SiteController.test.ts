@@ -69,18 +69,18 @@ describe('SiteController', () => {
   describe('getFeaturedEducators', () => {
     it('öne çıkan eğiticileri döndürür', async () => {
       const result = await controller.getFeaturedEducators('6');
-      expect(mockListFeaturedEducators.execute).toHaveBeenCalledWith(mockPrisma, 6, undefined);
+      expect(mockListFeaturedEducators.execute).toHaveBeenCalledWith(mockPrisma, 6, undefined, undefined);
       expect(result).toBeInstanceOf(Array);
     });
 
     it('examTypeIds virgülle ayrılarak parse edilir', async () => {
       await controller.getFeaturedEducators('3', 'et-1,et-2');
-      expect(mockListFeaturedEducators.execute).toHaveBeenCalledWith(mockPrisma, 3, ['et-1', 'et-2']);
+      expect(mockListFeaturedEducators.execute).toHaveBeenCalledWith(mockPrisma, 3, ['et-1', 'et-2'], undefined);
     });
 
     it('limit geçersizse varsayılan 6 kullanılır', async () => {
       await controller.getFeaturedEducators('abc');
-      expect(mockListFeaturedEducators.execute).toHaveBeenCalledWith(mockPrisma, 6, undefined);
+      expect(mockListFeaturedEducators.execute).toHaveBeenCalledWith(mockPrisma, 6, undefined, undefined);
     });
   });
 

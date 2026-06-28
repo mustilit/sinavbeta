@@ -28,6 +28,7 @@ import {
   ListSubjectsUseCase,
   ListSchoolLevelsUseCase,
   ListSchoolTopicsUseCase,
+  ListSchoolPeriodsUseCase,
   DeleteSubjectUseCase,
   GetSchoolQuotaUseCase,
   GetSchoolPanelStatsUseCase,
@@ -111,6 +112,7 @@ export class SchoolController {
   private listSubjectsUC = new ListSubjectsUseCase();
   private listLevelsUC = new ListSchoolLevelsUseCase();
   private listTopicsUC = new ListSchoolTopicsUseCase();
+  private listPeriodsUC = new ListSchoolPeriodsUseCase();
   private deleteSubjectUC = new DeleteSubjectUseCase();
   private quotaUC = new GetSchoolQuotaUseCase();
   private panelStatsUC = new GetSchoolPanelStatsUseCase();
@@ -196,6 +198,8 @@ export class SchoolController {
   deleteSubject(@Param('id') id: string, @Req() req: any) { return this.deleteSubjectUC.execute(id, req?.user?.id); }
 
   // ── Sınav formu referans listeleri (seviye + admin konu) ──
+  @Get('periods') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Okul dönem listesi + güncel dönem' }) @ApiErrorResponses()
+  listPeriods(@Req() req: any) { return this.listPeriodsUC.execute(req?.user?.id); }
   @Get('levels') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Okul seviye listesi (1-12)' }) @ApiErrorResponses()
   listLevels(@Req() req: any) { return this.listLevelsUC.execute(req?.user?.id); }
   @Get('topics') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Admin konu listesi' }) @ApiErrorResponses()
@@ -207,11 +211,12 @@ export class SchoolController {
     @Query('role') role: string | undefined,
     @Query('q') q: string | undefined,
     @Query('branchId') branchId: string | undefined,
+    @Query('periodId') periodId: string | undefined,
     @Query('cursor') cursor: string | undefined,
     @Query('limit') limit: string | undefined,
     @Req() req: any,
   ) {
-    return this.listUsersUC.execute({ role, q, branchId, cursor: cursor || null, limit: limit ? Number(limit) : undefined }, req?.user?.id);
+    return this.listUsersUC.execute({ role, q, branchId, periodId, cursor: cursor || null, limit: limit ? Number(limit) : undefined }, req?.user?.id);
   }
   @Post('users') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Kullanıcı ekle; { username, tempPassword } döner' }) @ApiErrorResponses()
   createUser(@Body() dto: CreateSchoolUserDto, @Req() req: any) { return this.createUserUC.execute(dto, req?.user?.id); }

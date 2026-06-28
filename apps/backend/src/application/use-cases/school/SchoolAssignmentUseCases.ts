@@ -6,7 +6,7 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { getDefaultTenantId } from '../../../common/tenant';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopedClassroomWhere, resolveReportScope, type SchoolContext } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopedClassroomWhere, resolveReportScope, currentPeriodId, resolvePeriodFilter, type SchoolContext } from './schoolHelpers';
 
 const RESULT_VIS = ['SUBMIT', 'DUE_DATE', 'TEACHER_RELEASE'];
 
@@ -65,12 +65,13 @@ export class CreateAssignmentUseCase {
     const showResultAfter = RESULT_VIS.includes(input.showResultAfter ?? '') ? input.showResultAfter! : 'SUBMIT';
     const title = (input.title ?? '').trim() || exam.title;
     const status = from.getTime() <= Date.now() ? 'ACTIVE' : 'SCHEDULED';
+    const periodId = await currentPeriodId(ctx.schoolId); // güncel döneme damgala
 
     const created = await prisma.$transaction(
       validClassrooms.map((c) =>
         prisma.schoolAssignment.create({
           data: {
-            schoolId: ctx.schoolId, examId: exam.id, classroomId: c.id, createdById: actorId as string,
+            schoolId: ctx.schoolId, periodId, examId: exam.id, classroomId: c.id, createdById: actorId as string,
             title, availableFrom: from, dueDate: due,
             allowLateSubmit: !!input.allowLateSubmit, showResultAfter: showResultAfter as any,
             shuffleQuestions: !!input.shuffleQuestions, shuffleOptions: !!input.shuffleOptions,
@@ -153,9 +154,11 @@ export class GetAssignOptionsUseCase {
 }
 
 export class ListAssignmentsUseCase {
-  async execute(input: { classroomId?: string }, actorId?: string) {
+  async execute(input: { classroomId?: string; periodId?: string }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD', 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    // Dönemsel: input.periodId verilmezse güncel dönem (yeni döneme sıfır sayfa).
+    const periodId = await resolvePeriodFilter(ctx.schoolId, input.periodId);
     // Hiyerarşik görünürlük (designation tabanlı, kimse yukarıyı görmez):
     //  - SCHOOL_ADMIN → tüm okul
     //  - BRANCH_ADMIN → şubesi, Seviye Sorumlusu → seviyesi, Sınıf Öğretmeni → sınıfı
@@ -174,6 +177,7 @@ export class ListAssignmentsUseCase {
     const rows = await prisma.schoolAssignment.findMany({
       where: {
         schoolId: ctx.schoolId,
+        ...(periodId ? { periodId } : {}),
         ...(input.classroomId ? { classroomId: input.classroomId } : {}),
         ...scopeWhere,
       },

@@ -14,6 +14,7 @@ import { ClipboardList, Plus, BarChart3, Send, Lock, Unlock, AlertCircle } from 
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import { PeriodSelect } from "@/components/school/PeriodSelect";
 
 const STATUS_META = {
   SCHEDULED: { label: "Planlandı", color: "bg-amber-100 text-amber-700" },
@@ -41,8 +42,9 @@ export default function SchoolAssignments() {
   const [picked, setPicked] = useState(new Set());
   const [level, setLevel] = useState("");     // gradeLevel (string)
   const [subject, setSubject] = useState(""); // ders adı
+  const [periodId, setPeriodId] = useState("");
 
-  const { data: assignments = [], isLoading } = useQuery({ queryKey: ["esinif", "assignments"], queryFn: () => schoolApi.assignments.list(), enabled: !!role });
+  const { data: assignments = [], isLoading } = useQuery({ queryKey: ["esinif", "assignments", periodId], queryFn: () => schoolApi.assignments.list({ periodId }), enabled: !!role && !!periodId });
   const { data: exams = [] } = useQuery({ queryKey: ["esinif", "exam-pool", "for-assign"], queryFn: () => schoolApi.exams.list(), enabled: open });
   const { data: classrooms = [] } = useQuery({ queryKey: ["esinif", "classrooms", "all"], queryFn: () => schoolApi.listClassrooms(), enabled: open });
   // Hiyerarşik atama seçenekleri (seviye + ders) — okul yön. tümü, seviye sor. kendi seviyesi, zümre kendi seviye+dersi
@@ -109,7 +111,10 @@ export default function SchoolAssignments() {
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><ClipboardList className="w-5 h-5 text-indigo-600" /></div>
           <div><h1 className="text-2xl font-bold text-slate-900">Ödevler</h1><p className="text-sm text-slate-500">Havuzdan sınav atayın, sonuçları izleyin</p></div>
         </div>
-        {canCreate && <Button onClick={openCreate} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Yeni Ödev</Button>}
+        <div className="flex items-center gap-2">
+          <PeriodSelect value={periodId} onChange={setPeriodId} />
+          {canCreate && <Button onClick={openCreate} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Yeni Ödev</Button>}
+        </div>
       </div>
 
       {isLoading ? (

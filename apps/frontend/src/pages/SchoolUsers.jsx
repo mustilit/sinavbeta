@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import CredentialsDialog from "@/components/school/CredentialsDialog";
 import { StudentImportDialog, BulkCredentialsDialog } from "@/components/school/studentImport";
+import { PeriodSelect } from "@/components/school/PeriodSelect";
 import { Users, Plus, Power, KeyRound, Search, AlertCircle, GraduationCap, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +31,7 @@ export default function SchoolUsers() {
   const [tab, setTab] = useState("staff"); // "staff" (Eğitimciler) | "students" (Öğrenciler)
   const [roleFilter, setRoleFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
+  const [periodId, setPeriodId] = useState(""); // yalnız Öğrenciler sekmesi (dönemsel arşiv)
   const [q, setQ] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [addRole, setAddRole] = useState("TEACHER");
@@ -42,9 +44,10 @@ export default function SchoolUsers() {
 
   // Eğitimciler sekmesi: rol verilmezse backend öğrenci HARİÇ döner; Öğrenciler sekmesi: role=STUDENT
   const effectiveRole = tab === "students" ? "STUDENT" : (roleFilter === "all" ? undefined : roleFilter);
+  const studentPeriod = tab === "students" ? (periodId || undefined) : undefined;
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
-    queryKey: ["esinif", "users", tab, roleFilter, branchFilter, q],
-    queryFn: ({ pageParam }) => schoolApi.listUsers({ role: effectiveRole, branchId: branchFilter === "all" ? undefined : branchFilter, q: q || undefined, cursor: pageParam, limit: 30 }),
+    queryKey: ["esinif", "users", tab, roleFilter, branchFilter, q, studentPeriod],
+    queryFn: ({ pageParam }) => schoolApi.listUsers({ role: effectiveRole, branchId: branchFilter === "all" ? undefined : branchFilter, q: q || undefined, periodId: studentPeriod, cursor: pageParam, limit: 30 }),
     initialPageParam: null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
@@ -115,6 +118,7 @@ export default function SchoolUsers() {
             </SelectContent>
           </Select>
         )}
+        {tab === "students" && <PeriodSelect value={periodId} onChange={setPeriodId} className="w-44" />}
         {isAdmin && (
           <Select value={branchFilter} onValueChange={setBranchFilter}>
             <SelectTrigger className="w-44" aria-label="Şube filtresi"><SelectValue placeholder="Şube" /></SelectTrigger>

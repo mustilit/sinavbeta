@@ -7,7 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, isManagerForBranch, resolveSchoolScope, scopeIsEmpty, nextSchoolUsername, generateTempPassword, type SchoolRoleStr } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, isManagerForBranch, resolveSchoolScope, scopeIsEmpty, nextSchoolUsername, generateTempPassword, currentPeriodId, resolvePeriodFilter, type SchoolRoleStr } from './schoolHelpers';
 
 const ASSIGNABLE: SchoolRoleStr[] = ['BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER', 'STUDENT'];
 
@@ -129,6 +129,7 @@ export class BulkCreateStudentsUseCase {
       }
     }
 
+    const periodId = await currentPeriodId(ctx.schoolId); // öğrenciyi güncel döneme damgala
     // Şifre üretimi + hash transaction DIŞINDA (CPU yoğun; tx'i kısa tut)
     const withHash = await Promise.all(rows.map(async (r) => {
       const tempPassword = generateTempPassword();
@@ -154,7 +155,7 @@ export class BulkCreateStudentsUseCase {
           },
         });
         await tx.schoolUser.create({
-          data: { userId: user.id, schoolId: ctx.schoolId, schoolRole: 'STUDENT' as any, username, studentNo: p.studentNo, branchId: classroom.branchId, classroomId: classroom.id },
+          data: { userId: user.id, schoolId: ctx.schoolId, schoolRole: 'STUDENT' as any, username, studentNo: p.studentNo, branchId: classroom.branchId, classroomId: classroom.id, periodId },
         });
         out.push({ name: `${p.firstName} ${p.lastName}`.trim(), username, studentNo: p.studentNo, tempPassword: p.tempPassword });
       }
@@ -200,10 +201,13 @@ async function membershipWhere(
 }
 
 export class ListSchoolUsersUseCase {
-  async execute(input: { role?: string; q?: string; branchId?: string; cursor?: string | null; limit?: number }, actorId?: string) {
+  async execute(input: { role?: string; q?: string; branchId?: string; periodId?: string; cursor?: string | null; limit?: number }, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     const take = Math.min(Math.max(input.limit ?? 30, 1), 100);
     const text = (input.q ?? '').trim();
+    // Dönemsel arşiv yalnız ÖĞRENCİ sekmesinde: öğrenci listesi güncel döneme (veya seçilen
+    // eski döneme) süzülür. Öğretmen/yönetici listesi dönemden ETKİLENMEZ.
+    const studentPeriod = input.role === 'STUDENT' ? await resolvePeriodFilter(ctx.schoolId, input.periodId) : null;
 
     // Erişim kapsamı (designation) + şube süzmesini AND koşulları olarak biriktiririz.
     // ÖNEMLİ: bir kullanıcının şubeye aidiyeti SchoolUser.branchId ile SINIRLI DEĞİLDİR —
@@ -241,6 +245,7 @@ export class ListSchoolUsersUseCase {
         ...(input.role && ASSIGNABLE.concat('SCHOOL_ADMIN' as any).includes(input.role as any)
           ? { schoolRole: input.role as any }
           : { schoolRole: { not: 'STUDENT' as any } }),
+        ...(studentPeriod ? { periodId: studentPeriod } : {}),
         ...(text ? { username: { contains: text, mode: 'insensitive' as const } } : {}),
         ...(andClauses.length ? { AND: andClauses } : {}),
       },

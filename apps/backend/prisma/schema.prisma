@@ -1393,6 +1393,7 @@ model LiveSession {
   parentSessionId         String?
   // E-Sınıf — okul canlı sınavı (marketplace'ten ayrı akış; null = marketplace oturumu)
   schoolId                String?
+  schoolPeriodId          String? // okul canlı sınavının dönemi (dönemsel arşiv); marketplace null
   // E-Sınıf hiyerarşik görünürlük — oluşturanın kapsamı (snapshot; null = okul geneli/marketplace)
   schoolBranchId          String?
   schoolLevelId           String?
@@ -1415,6 +1416,7 @@ model LiveSession {
   rounds       LiveSession[]     @relation("LiveSessionRounds")
 
   @@index([schoolId])
+  @@index([schoolId, schoolPeriodId])
   @@index([educatorId])
   @@index([parentSessionId])
   @@map("live_sessions")
@@ -2618,12 +2620,14 @@ model SchoolUser {
   schoolRole   SchoolRole
   username     String      @unique // otomatik üretilen (ANK-T-0042)
   studentNo    String? // öğrenci numarası (Excel içe aktarımında opsiyonel)
+  periodId     String? // ÖĞRENCİ kaydının dönemi (dönemsel arşiv); öğretmen/yönetici null
   isActive     Boolean     @default(true)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
   @@unique([userId, schoolId])
   @@index([schoolId, schoolRole])
+  @@index([schoolId, periodId])
   @@index([classroomId])
   @@index([departmentId])
   @@index([branchId])
@@ -2782,6 +2786,7 @@ enum SchoolSubmissionStatus {
 model SchoolAssignment {
   id               String             @id @default(uuid())
   schoolId         String
+  periodId         String? // ödevin dönemi (dönemsel arşiv); oluşturma anında okulun güncel dönemi
   examId           String
   exam             SchoolExam         @relation(fields: [examId], references: [id], onDelete: Cascade)
   classroomId      String
@@ -2805,6 +2810,7 @@ model SchoolAssignment {
   @@index([classroomId, status])
   @@index([examId])
   @@index([schoolId])
+  @@index([schoolId, periodId])
   @@map("school_assignments")
 }
 

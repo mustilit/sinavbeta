@@ -6,7 +6,7 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, resolveLiveCreatorScope, liveScopeWhere, type SchoolContext } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveLiveCreatorScope, liveScopeWhere, currentPeriodId, resolvePeriodFilter, type SchoolContext } from './schoolHelpers';
 
 // Canlı sınav: tüm okul personeli (yönetici + zümre + öğretmen) görür ve oluşturur.
 const LIVE_STAFF_ROLES = ['SCHOOL_ADMIN', 'BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER'] as const;
@@ -52,9 +52,10 @@ export class CreateSchoolLiveSessionUseCase {
 
     const joinCode = await uniqueJoinCode();
     const scope = await resolveLiveCreatorScope(ctx); // hiyerarşik görünürlük snapshot'ı
+    const schoolPeriodId = await currentPeriodId(ctx.schoolId); // güncel döneme damgala
     const session = await prisma.$transaction(async (tx) => {
       const s = await tx.liveSession.create({
-        data: { educatorId: actorId as string, schoolId: ctx.schoolId, title, joinCode, status: 'DRAFT', paidAt: new Date(), ...scope },
+        data: { educatorId: actorId as string, schoolId: ctx.schoolId, schoolPeriodId, title, joinCode, status: 'DRAFT', paidAt: new Date(), ...scope },
       });
       for (let i = 0; i < qs.length; i++) {
         const q = qs[i];
@@ -69,12 +70,13 @@ export class CreateSchoolLiveSessionUseCase {
 }
 
 export class ListSchoolLiveSessionsUseCase {
-  async execute(actorId?: string) {
+  async execute(actorId?: string, input?: { periodId?: string }) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
     const scope = await liveScopeWhere(ctx); // hiyerarşik görünürlük (admin: tümü)
+    const periodId = await resolvePeriodFilter(ctx.schoolId, input?.periodId); // dönemsel: yoksa güncel
     const rows = await prisma.liveSession.findMany({
-      where: { schoolId: ctx.schoolId, ...(scope ?? {}) },
+      where: { schoolId: ctx.schoolId, ...(periodId ? { schoolPeriodId: periodId } : {}), ...(scope ?? {}) },
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, joinCode: true, status: true, currentQuestionIdx: true, _count: { select: { questions: true, participants: true } }, createdAt: true },
     });

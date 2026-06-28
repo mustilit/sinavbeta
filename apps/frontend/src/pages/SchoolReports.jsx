@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BarChart3, Download, Building2, Layers, GraduationCap, AlertCircle, Trophy, Award, X } from "lucide-react";
 import { toast } from "sonner";
+import { PeriodSelect } from "@/components/school/PeriodSelect";
 
 const fmtPct = (p) => (p == null ? "—" : `%${p}`);
 
@@ -41,6 +42,7 @@ export default function SchoolReports() {
   const [gradeLevel, setGradeLevel] = useState("ALL");
   const [classroomId, setClassroomId] = useState("ALL");
   const [departmentId, setDepartmentId] = useState("ALL");
+  const [periodId, setPeriodId] = useState("");
   const [detailFor, setDetailFor] = useState(null); // classroom row
 
   // Filtre seçenekleri — yönetici tüm okuldan; alt roller kapsam (breakdown) verisinden türetir.
@@ -57,12 +59,13 @@ export default function SchoolReports() {
     gradeLevel: gradeLevel === "ALL" ? undefined : Number(gradeLevel),
     classroomId: classroomId === "ALL" ? undefined : classroomId,
     departmentId: departmentId === "ALL" ? undefined : departmentId,
+    periodId: periodId || undefined,
   };
 
   const { data, isLoading } = useQuery({
     queryKey: ["esinif", "report-breakdown", filters],
     queryFn: () => schoolApi.reports.breakdown(filters),
-    enabled: canView,
+    enabled: canView && !!periodId,
   });
 
   if (!canView) {
@@ -101,7 +104,10 @@ export default function SchoolReports() {
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><BarChart3 className="w-5 h-5 text-indigo-600" /></div>
           <div><h1 className="text-2xl font-bold text-slate-900">Raporlar</h1><p className="text-sm text-slate-500">{user?.school?.schoolName}</p></div>
         </div>
-        <Button variant="outline" onClick={exportExcel} className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
+        <div className="flex items-center gap-2">
+          <PeriodSelect value={periodId} onChange={setPeriodId} />
+          <Button variant="outline" onClick={exportExcel} className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
+        </div>
       </div>
 
       {/* Filtre satırı */}

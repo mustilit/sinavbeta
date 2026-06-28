@@ -86,6 +86,21 @@ export function requireSchoolRole(ctx: SchoolContext, ...roles: SchoolRoleStr[])
   }
 }
 
+/** Okulun GÜNCEL dönemi (School.periodId). Dönemsel kayıtlar bununla damgalanır/süzülür. */
+export async function currentPeriodId(schoolId: string): Promise<string | null> {
+  const s = await prisma.school.findUnique({ where: { id: schoolId }, select: { periodId: true } });
+  return s?.periodId ?? null;
+}
+
+/**
+ * Liste için dönem süzme değeri: input.periodId verilmişse o (eski dönem çağrısı),
+ * yoksa okulun güncel dönemi (yeni döneme sıfır sayfa). null → süzme yok (tüm dönemler).
+ */
+export async function resolvePeriodFilter(schoolId: string, inputPeriodId?: string | null): Promise<string | null> {
+  if (inputPeriodId) return inputPeriodId;
+  return currentPeriodId(schoolId);
+}
+
 /** Okul/şube yöneticisi mi (verilen şube için)? Sınırlı yönetim yetki kontrollerinde temel. */
 export function isManagerForBranch(ctx: SchoolContext, branchId: string | null): boolean {
   if (ctx.schoolRole === 'SCHOOL_ADMIN') return true;

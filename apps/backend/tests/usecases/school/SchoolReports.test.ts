@@ -7,6 +7,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     schoolLevel: { findMany: jest.fn() },
     classroom: { findMany: jest.fn() },
     department: { findMany: jest.fn() },
+    school: { findUnique: jest.fn(async () => ({ periodId: null })) },
   },
 }));
 jest.mock('../../../src/infrastructure/database/dbRouter', () => ({ prismaRead: jest.fn() }));

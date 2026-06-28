@@ -662,6 +662,23 @@ export class ListSchoolTopicsUseCase {
   }
 }
 
+/** Okulun dönem listesi + güncel dönem — dönemsel arşiv filtresi (ödev/rapor/canlı/öğrenci). */
+export class ListSchoolPeriodsUseCase {
+  async execute(actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'SCHOOL_ADMIN', 'BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER');
+    const school = await prisma.school.findUnique({
+      where: { id: ctx.schoolId },
+      select: { periodId: true, periodLinks: { select: { period: { select: { id: true, name: true, startDate: true } } } } },
+    });
+    const periods = (school?.periodLinks ?? [])
+      .map((pl) => pl.period)
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+      .map((p) => ({ id: p.id, name: p.name }));
+    return { currentPeriodId: school?.periodId ?? null, periods };
+  }
+}
+
 export class DeleteSubjectUseCase {
   async execute(id: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);

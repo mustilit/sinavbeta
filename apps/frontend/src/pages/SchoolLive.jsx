@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Radio, Plus, Play, Eye, AlertCircle, ArrowLeft, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { LiveQuestionsEditor, emptyQuestion } from "@/components/live/LiveQuestionsEditor";
+import { PeriodSelect } from "@/components/school/PeriodSelect";
 
 const STATUS = { DRAFT: { l: "Taslak", c: "bg-slate-100 text-slate-600" }, ACTIVE: { l: "Yayında", c: "bg-emerald-100 text-emerald-700" }, ENDED: { l: "Bitti", c: "bg-slate-200 text-slate-500" } };
 
@@ -27,8 +28,9 @@ export default function SchoolLive() {
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState(() => [emptyQuestion()]);
+  const [periodId, setPeriodId] = useState("");
 
-  const { data: sessions = [], isLoading } = useQuery({ queryKey: ["esinif", "live-list"], queryFn: schoolApi.live.list, enabled: !!role });
+  const { data: sessions = [], isLoading } = useQuery({ queryKey: ["esinif", "live-list", periodId], queryFn: () => schoolApi.live.list({ periodId }), enabled: !!role && !!periodId });
 
   const create = useMutation({
     mutationFn: () => {
@@ -100,7 +102,10 @@ export default function SchoolLive() {
           <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center"><Radio className="w-5 h-5 text-amber-600" /></div>
           <div><h1 className="text-2xl font-bold text-slate-900">Canlı Sınav</h1><p className="text-sm text-slate-500">Eş zamanlı, kodla katılımlı sınav</p></div>
         </div>
-        {canCreate && <Button onClick={startCreate} className="bg-amber-500 hover:bg-amber-600 gap-2"><Plus className="w-4 h-4" /> Yeni Oturum</Button>}
+        <div className="flex items-center gap-2">
+          <PeriodSelect value={periodId} onChange={setPeriodId} />
+          {canCreate && <Button onClick={startCreate} className="bg-amber-500 hover:bg-amber-600 gap-2"><Plus className="w-4 h-4" /> Yeni Oturum</Button>}
+        </div>
       </div>
 
       {isLoading ? (

@@ -2227,12 +2227,15 @@ export const school = {
   // Sınav formu referans listeleri
   listLevels: async () => (await api.get('/school/levels')).data,
   listTopics: async () => (await api.get('/school/topics')).data,
+  // Dönem (akademik dönem) — { currentPeriodId, periods: [{id,name}] }
+  periods: async () => (await api.get('/school/periods')).data,
   // Kullanıcılar
-  listUsers: async ({ role, q, branchId, cursor, limit = 30 } = {}) => {
+  listUsers: async ({ role, q, branchId, periodId, cursor, limit = 30 } = {}) => {
     const qs = new URLSearchParams();
     if (role) qs.set('role', role);
     if (q) qs.set('q', q);
     if (branchId) qs.set('branchId', branchId);
+    if (periodId) qs.set('periodId', periodId);
     if (cursor) qs.set('cursor', cursor);
     if (limit) qs.set('limit', String(limit));
     return (await api.get(`/school/users?${qs.toString()}`)).data;
@@ -2267,9 +2270,10 @@ export const school = {
 
   // Ödevler (Sprint 3) — öğretmen/zümre başkanı
   assignments: {
-    list: async ({ classroomId } = {}) => {
+    list: async ({ classroomId, periodId } = {}) => {
       const qs = new URLSearchParams();
       if (classroomId) qs.set('classroomId', classroomId);
+      if (periodId) qs.set('periodId', periodId);
       return (await api.get(`/school/assignments?${qs.toString()}`)).data;
     },
     create: async (body) => (await api.post('/school/assignments', body)).data,
@@ -2289,14 +2293,15 @@ export const school = {
   reports: {
     overview: async () => (await api.get('/school/reports/overview')).data,
     branch: async (branchId) => (await api.get(`/school/reports/branch/${branchId}`)).data,
-    /** Filtreli kırılım: { from, to, gradeLevel, classroomId, departmentId } → şube/seviye/sınıf + highlights */
-    breakdown: async ({ from, to, gradeLevel, classroomId, departmentId } = {}) => {
+    /** Filtreli kırılım: { from, to, gradeLevel, classroomId, departmentId, periodId } → şube/seviye/sınıf + highlights */
+    breakdown: async ({ from, to, gradeLevel, classroomId, departmentId, periodId } = {}) => {
       const qs = new URLSearchParams();
       if (from) qs.set('from', from);
       if (to) qs.set('to', to);
       if (gradeLevel) qs.set('gradeLevel', String(gradeLevel));
       if (classroomId) qs.set('classroomId', classroomId);
       if (departmentId) qs.set('departmentId', departmentId);
+      if (periodId) qs.set('periodId', periodId);
       const s = qs.toString();
       return (await api.get(`/school/reports/breakdown${s ? `?${s}` : ''}`)).data;
     },
@@ -2313,7 +2318,12 @@ export const school = {
 
   // Canlı sınav — öğretmen host (Sprint 4-B)
   live: {
-    list: async () => (await api.get('/school/live')).data,
+    list: async ({ periodId } = {}) => {
+      const qs = new URLSearchParams();
+      if (periodId) qs.set('periodId', periodId);
+      const s = qs.toString();
+      return (await api.get(`/school/live${s ? `?${s}` : ''}`)).data;
+    },
     create: async (body) => (await api.post('/school/live', body)).data,
     host: async (id) => (await api.get(`/school/live/${id}/host`)).data,
     start: async (id) => (await api.post(`/school/live/${id}/start`)).data,

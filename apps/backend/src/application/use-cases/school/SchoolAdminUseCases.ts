@@ -191,9 +191,12 @@ export class AssignSchoolPeriodUseCase {
     const period = await prisma.academicPeriod.findUnique({ where: { id: input.periodId }, select: { id: true } });
     if (!period) throw new AppError('PERIOD_NOT_FOUND', 'Dönem bulunamadı', 404);
     const clash = await prisma.schoolPeriod.findUnique({ where: { schoolId_periodId: { schoolId, periodId: input.periodId } }, select: { id: true } });
-    if (clash) throw new AppError('PERIOD_ALREADY_LINKED', 'Bu dönem okula zaten ekli', 409);
-    await prisma.schoolPeriod.create({ data: { schoolId, periodId: input.periodId } });
-    logger.info('school.period.linked', { schoolId, periodId: input.periodId, actorId });
+    // Dönem ata = o dönemi okulun GÜNCEL (aktif) dönemi yap + yetkilendirme linki.
+    // Böylece dönemsel sayfalar (ödev/rapor/canlı/öğrenci) yeni döneme sıfırlanır;
+    // eski veriler dönem filtresiyle çağrılabilir kalır.
+    if (!clash) await prisma.schoolPeriod.create({ data: { schoolId, periodId: input.periodId } });
+    await prisma.school.update({ where: { id: schoolId }, data: { periodId: input.periodId } });
+    logger.info('school.period.activated', { schoolId, periodId: input.periodId, actorId });
     return { ok: true };
   }
 }
