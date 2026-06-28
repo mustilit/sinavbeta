@@ -4,7 +4,7 @@
  */
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
-    schoolUser: { findFirst: jest.fn(), count: jest.fn(), create: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+    schoolUser: { findFirst: jest.fn(), findUnique: jest.fn(), count: jest.fn(), create: jest.fn(), findMany: jest.fn(), update: jest.fn() },
     school: { findUnique: jest.fn() },
     branch: { findFirst: jest.fn() },
     classroom: { findFirst: jest.fn(), findMany: jest.fn(async () => []) },
@@ -83,6 +83,25 @@ describe('CreateSchoolUserUseCase', () => {
     expect(res.schoolRole).toBe('TEACHER');
     expect(res.tempPassword).toHaveLength(8);
     expect(res.schoolUserId).toBe('su-new');
+  });
+
+  it('geçersiz şube → BRANCH_NOT_FOUND', async () => {
+    asAdmin();
+    p.branch.findFirst.mockResolvedValue(null);
+    await expect(new CreateSchoolUserUseCase().execute({ schoolRole: 'TEACHER', branchId: 'bX' }, 'u1'))
+      .rejects.toMatchObject({ code: 'BRANCH_NOT_FOUND' });
+  });
+  it('geçersiz sınıf → CLASSROOM_NOT_FOUND', async () => {
+    asAdmin();
+    p.classroom.findFirst.mockResolvedValue(null);
+    await expect(new CreateSchoolUserUseCase().execute({ schoolRole: 'TEACHER', classroomId: 'cX' }, 'u1'))
+      .rejects.toMatchObject({ code: 'CLASSROOM_NOT_FOUND' });
+  });
+  it('geçersiz zümre → DEPARTMENT_NOT_FOUND', async () => {
+    asAdmin();
+    p.department.findFirst.mockResolvedValue(null);
+    await expect(new CreateSchoolUserUseCase().execute({ schoolRole: 'DEPT_HEAD', departmentId: 'dX' }, 'u1'))
+      .rejects.toMatchObject({ code: 'DEPARTMENT_NOT_FOUND' });
   });
 });
 
@@ -163,6 +182,36 @@ describe('ListSchoolUsersUseCase', () => {
     expect(p.department.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ OR: [{ branchId: { in: ['b1'] } }, { level: { branchId: { in: ['b1'] } } }] }),
     }));
+  });
+  it('şube yöneticisi: kendi şubesi aidiyetiyle süzülür (kapsam zorunlu)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'su0', schoolId: 'sch1', schoolRole: 'BRANCH_ADMIN', branchId: 'b1', departmentId: null, classroomId: null });
+    p.department.findMany.mockResolvedValue([]);
+    p.classroom.findMany.mockResolvedValue([]);
+    p.schoolUser.findMany.mockResolvedValue([]);
+    await new ListSchoolUsersUseCase().execute({ limit: 30 }, 'u0');
+    const or = p.schoolUser.findMany.mock.calls[0][0].where.AND[0].OR;
+    expect(or).toEqual(expect.arrayContaining([{ branchId: { in: ['b1'] } }]));
+  });
+  it('zümre başkanı: kapsamına giren şube aidiyetiyle süzülür', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'suH', schoolId: 'sch1', schoolRole: 'DEPT_HEAD', branchId: null, departmentId: 'd1', classroomId: null });
+    p.schoolUser.findUnique.mockResolvedValue({ userId: 'uH', departmentId: 'd1' });
+    p.schoolLevel.findMany.mockResolvedValue([]);
+    p.classroom.findMany.mockResolvedValue([]);
+    p.department.findMany.mockResolvedValue([{ id: 'd1', branchId: 'b1', levelId: null, subject: 'Mat' }]);
+    p.schoolUser.findMany.mockResolvedValue([]);
+    await new ListSchoolUsersUseCase().execute({ limit: 30 }, 'uH');
+    const or = p.schoolUser.findMany.mock.calls[0][0].where.AND[0].OR;
+    expect(or).toEqual(expect.arrayContaining([{ branchId: { in: ['b1'] } }]));
+  });
+  it('zümre başkanı okul-geneli zümre: tüm okulu görür (kapsam süzmesi eklenmez)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'suH', schoolId: 'sch1', schoolRole: 'DEPT_HEAD', branchId: null, departmentId: 'd1', classroomId: null });
+    p.schoolUser.findUnique.mockResolvedValue({ userId: 'uH', departmentId: 'd1' });
+    p.schoolLevel.findMany.mockResolvedValue([]);
+    p.classroom.findMany.mockResolvedValue([]);
+    p.department.findMany.mockResolvedValue([{ id: 'd1', branchId: null, levelId: null, subject: 'Rehberlik' }]); // okul-geneli → wholeSchool
+    p.schoolUser.findMany.mockResolvedValue([]);
+    await new ListSchoolUsersUseCase().execute({ limit: 30 }, 'uH');
+    expect(p.schoolUser.findMany.mock.calls[0][0].where.AND).toBeUndefined();
   });
   it('hasMore: nextCursor döner', async () => {
     p.schoolUser.findFirst.mockResolvedValue({ id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null });

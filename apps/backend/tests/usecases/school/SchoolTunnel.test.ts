@@ -88,11 +88,33 @@ describe('SubmitSchoolTunnelAnswerUseCase', () => {
   it('geçersiz şık → INVALID_OPTION', async () => {
     await expect(new SubmitSchoolTunnelAnswerUseCase().execute('ex1', 'zzz', 'su1')).rejects.toMatchObject({ code: 'INVALID_OPTION' });
   });
+
+  it('son soru 3. farklı pozisyonda doğru → ustalaşır, tek katman biter, tünel COMPLETED', async () => {
+    // q1 zaten 2 farklı pozisyonda doğru (mask 0b011); 3. pozisyonda doğru → mastered.
+    p.schoolTunnelAttempt.findUnique.mockResolvedValue({
+      id: 'a1', examId: 'ex1', studentId: 'su1', baseLayer: 1, upperOpen: false, streakCount: 2, status: 'IN_PROGRESS',
+      currentQuestionId: 'q1', currentCorrectPosition: 3, currentOrderJson: JSON.stringify(['o1', 'o2', 'o3', 'o4', 'o5']),
+    });
+    p.schoolTunnelProgress.findMany.mockResolvedValue([{ questionId: 'q1', correctMask: 0b011 }]);
+    const r = await new SubmitSchoolTunnelAnswerUseCase().execute('ex1', 'o1', 'su1');
+    expect(r.correct).toBe(true);
+    expect(r.completed).toBe(true);
+  });
 });
 
 describe('GetSchoolTunnelStateUseCase', () => {
   it('deneme yoksa → ATTEMPT_NOT_FOUND', async () => {
     p.schoolTunnelAttempt.findUnique.mockResolvedValue(null);
     await expect(new GetSchoolTunnelStateUseCase().execute('ex1', 'su1')).rejects.toMatchObject({ code: 'ATTEMPT_NOT_FOUND' });
+  });
+  it('devam eden deneme: aktif soruyu döner (doğru sızmaz)', async () => {
+    p.schoolTunnelAttempt.findUnique.mockResolvedValue({
+      id: 'a1', examId: 'ex1', studentId: 'su1', baseLayer: 1, upperOpen: false, streakCount: 0, status: 'IN_PROGRESS',
+      currentQuestionId: 'q1', currentCorrectPosition: 2, currentOrderJson: JSON.stringify(['o1', 'o2', 'o3', 'o4', 'o5']),
+    });
+    const r = await new GetSchoolTunnelStateUseCase().execute('ex1', 'su1');
+    expect(r.currentQuestion.id).toBe('q1');
+    expect(r.currentQuestion.options).toHaveLength(5);
+    expect(JSON.stringify(r.currentQuestion)).not.toContain('isCorrect');
   });
 });

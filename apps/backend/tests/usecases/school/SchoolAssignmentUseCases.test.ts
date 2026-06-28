@@ -158,6 +158,18 @@ describe('ListAssignmentsUseCase', () => {
     await new ListAssignmentsUseCase().execute({ periodId: 'p-old' }, 'ua');
     expect(p.schoolAssignment.findMany.mock.calls[0][0].where.periodId).toBe('p-old');
   });
+  it('zümre başkanı: branş-kısıtlı kapsam (subjectSpan + exam.departmentId) + kendi attığı', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'DEPT_HEAD', departmentId: 'd1' });
+    p.schoolLevel.findMany.mockResolvedValue([]);
+    p.classroom.findMany.mockResolvedValue([]);
+    // resolveReportScope: headed [] → ctx.departmentId d1; sonra d1 detayı (levelId span)
+    p.department.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: 'd1', levelId: 'lv7', branchId: 'b1' }]);
+    p.schoolAssignment.findMany.mockResolvedValue([]);
+    await new ListAssignmentsUseCase().execute({}, 'uHead');
+    const or = p.schoolAssignment.findMany.mock.calls[0][0].where.AND[0].OR;
+    expect(or).toEqual(expect.arrayContaining([{ createdById: 'uHead' }]));
+    expect(or.some((c: any) => c.AND && JSON.stringify(c.AND).includes('departmentId'))).toBe(true);
+  });
 });
 
 describe('GetAssignOptionsUseCase', () => {
@@ -179,6 +191,27 @@ describe('GetAssignOptionsUseCase', () => {
     expect(r.levels).toEqual([{ gradeLevel: 7 }]);
     expect(r.subjects).toEqual([{ name: 'Matematik' }]);
     expect(p.schoolSubject.findMany).not.toHaveBeenCalled(); // ders havuzuna gitmez (kendi dersi)
+  });
+  it('zümre başkanı: şube-geneli zümre (levelId yok) → şube seviyelerine kapsanır', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'DEPT_HEAD', departmentId: 'd1' });
+    p.schoolLevel.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ gradeLevel: 9 }]);
+    p.classroom.findMany.mockResolvedValue([]);
+    p.department.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ subject: 'Fizik', levelId: null, branchId: 'b1' }]);
+    const r = await new GetAssignOptionsUseCase().execute('ud');
+    expect(r.levels).toEqual([{ gradeLevel: 9 }]);
+    // levelWhere şube üzerinden kurulur
+    const finalLevelWhere = p.schoolLevel.findMany.mock.calls[1][0].where;
+    expect(JSON.stringify(finalLevelWhere)).toContain('branchId');
+  });
+  it('zümre başkanı: okul-geneli zümre (levelId+branchId yok) → tüm seviyeler', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'DEPT_HEAD', departmentId: 'd1' });
+    p.schoolLevel.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ gradeLevel: 5 }, { gradeLevel: 6 }]);
+    p.classroom.findMany.mockResolvedValue([]);
+    p.department.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ subject: 'Rehberlik', levelId: null, branchId: null }]);
+    const r = await new GetAssignOptionsUseCase().execute('ud');
+    expect(r.levels).toEqual([{ gradeLevel: 5 }, { gradeLevel: 6 }]);
+    // okul-geneli → levelWhere { schoolId } (OR yok)
+    expect(p.schoolLevel.findMany.mock.calls[1][0].where).toEqual({ schoolId: 'sch1' });
   });
 });
 

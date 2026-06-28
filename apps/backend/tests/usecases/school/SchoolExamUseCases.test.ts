@@ -193,10 +193,55 @@ describe('SaveSchoolExamQuestionsUseCase', () => {
     ] }, 'u1');
     expect(r).toEqual({ saved: 2, totalPoints: 5 });
   });
+
+  it('boş soru listesi → NO_QUESTIONS', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'ex1', createdById: 'u1', departmentId: 'dept1', examType: 'TEST' });
+    await expect(new SaveSchoolExamQuestionsUseCase().execute('ex1', { questions: [] }, 'u1'))
+      .rejects.toMatchObject({ code: 'NO_QUESTIONS' });
+  });
+
+  it('içerik/görsel yoksa → QUESTION_CONTENT_REQUIRED', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'ex1', createdById: 'u1', departmentId: 'dept1', examType: 'WRITTEN' });
+    await expect(new SaveSchoolExamQuestionsUseCase().execute('ex1', { questions: [{ solutionText: 'Çözüm var ama soru boş' }] }, 'u1'))
+      .rejects.toMatchObject({ code: 'QUESTION_CONTENT_REQUIRED' });
+  });
+
+  it('WRITTEN başarı: şıksız, çözümle kaydedilir', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'ex1', createdById: 'u1', departmentId: 'dept1', examType: 'WRITTEN' });
+    const r = await new SaveSchoolExamQuestionsUseCase().execute('ex1', { questions: [{ content: 'Açık uçlu soru', solutionText: 'Çözüm' }] }, 'u1');
+    expect(r).toEqual({ saved: 1, totalPoints: 1 });
+  });
+
+  it('TUNNEL başarı: layerIndex + şıklarla kaydedilir', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'ex1', createdById: 'u1', departmentId: 'dept1', examType: 'TUNNEL' });
+    const r = await new SaveSchoolExamQuestionsUseCase().execute('ex1', { questions: [
+      { content: 'S', layerIndex: 2, options: [{ content: 'A', isCorrect: true }, { content: 'B' }] },
+    ] }, 'u1');
+    expect(r).toEqual({ saved: 1, totalPoints: 1 });
+  });
 });
 
 describe('ListSchoolExamPoolUseCase (görünürlük)', () => {
   beforeEach(() => { jest.clearAllMocks(); p.schoolExam.findMany.mockResolvedValue([]); });
+
+  const schoolAdmin = { id: 'su0', schoolId: 'sch1', schoolRole: 'SCHOOL_ADMIN', branchId: null, departmentId: null, classroomId: null };
+  it('admin + filtreler where e yansır (examType/gradeLevel/q, includeArchived → isArchived filtresi yok)', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(schoolAdmin);
+    await new ListSchoolExamPoolUseCase().execute({ examType: 'TEST', gradeLevel: 7, q: ' mat ', includeArchived: true }, 'ua');
+    const where = p.schoolExam.findMany.mock.calls[0][0].where;
+    expect(where).toMatchObject({ examType: 'TEST', gradeLevel: 7, title: { contains: 'mat', mode: 'insensitive' } });
+    expect(where).not.toHaveProperty('isArchived');
+    expect(where).not.toHaveProperty('OR'); // admin → kapsam süzmesi yok
+  });
+  it('includeArchived verilmezse isArchived:false uygulanır + satır maplenir', async () => {
+    p.schoolUser.findFirst.mockResolvedValue(schoolAdmin);
+    p.schoolExam.findMany.mockResolvedValue([
+      { id: 'e1', title: 'S', examType: 'TEST', subject: 'Mat', gradeLevel: 5, topic: null, durationMinutes: 30, totalPoints: 10, poolVisibility: 'SCHOOL', isArchived: false, department: { name: 'Mat' }, createdBy: { username: 'hoca' }, _count: { questions: 4 }, createdAt: new Date() },
+    ]);
+    const r = await new ListSchoolExamPoolUseCase().execute({}, 'ua');
+    expect(p.schoolExam.findMany.mock.calls[0][0].where).toMatchObject({ isArchived: false });
+    expect(r[0]).toMatchObject({ id: 'e1', questionCount: 4, departmentName: 'Mat', createdByUsername: 'hoca', canManage: true });
+  });
 
   it('öğretmen (zümre üyesi): yalnız kendi zümresinin sınavları (departmentId)', async () => {
     p.schoolUser.findFirst.mockResolvedValue(teacherCtx); // departmentId: 'dept1'
@@ -240,6 +285,21 @@ describe('UpdateSchoolExamUseCase', () => {
     p.schoolExam.update.mockResolvedValue({ id: 'e1', title: 'Yeni' });
     const r = await new UpdateSchoolExamUseCase().execute('e1', { title: 'Yeni', gradeLevel: 5 }, 'u1');
     expect(r.title).toBe('Yeni');
+  });
+  it('boş başlık → TITLE_REQUIRED', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'e1', createdById: 'u1', departmentId: 'dept1' });
+    await expect(new UpdateSchoolExamUseCase().execute('e1', { title: '   ' }, 'u1')).rejects.toMatchObject({ code: 'TITLE_REQUIRED' });
+  });
+  it('geçersiz sınıf seviyesi → INVALID_GRADE', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'e1', createdById: 'u1', departmentId: 'dept1' });
+    await expect(new UpdateSchoolExamUseCase().execute('e1', { gradeLevel: 99 }, 'u1')).rejects.toMatchObject({ code: 'INVALID_GRADE' });
+  });
+  it('alan dalları: subject/topic/durationMinutes/poolVisibility normalize edilir', async () => {
+    p.schoolExam.findFirst.mockResolvedValue({ id: 'e1', createdById: 'u1', departmentId: 'dept1' });
+    p.schoolExam.update.mockImplementation(async ({ data }: any) => ({ id: 'e1', ...data }));
+    await new UpdateSchoolExamUseCase().execute('e1', { subject: ' Mat ', topic: ' Cebir ', durationMinutes: 40, poolVisibility: 'SCHOOL' }, 'u1');
+    const data = p.schoolExam.update.mock.calls[0][0].data;
+    expect(data).toMatchObject({ subject: 'Mat', topic: 'Cebir', durationMinutes: 40, poolVisibility: 'SCHOOL' });
   });
 });
 
