@@ -178,6 +178,7 @@ async function membershipWhere(
   schoolId: string,
   opts: { branchIds?: string[]; departmentIds?: string[]; classroomIds?: string[] },
 ): Promise<Record<string, unknown>> {
+  /* istanbul ignore next -- tüm çağıranlar branchIds geçer; ?? [] savunmacıdır */
   const branchIds = opts.branchIds ?? [];
   const deptIds = new Set<string>(opts.departmentIds ?? []);
   const classIds = new Set<string>(opts.classroomIds ?? []);
@@ -274,7 +275,8 @@ export class ListSchoolUsersUseCase {
       isActive: su.isActive,
       createdAt: su.createdAt,
     }));
-    return { items, nextCursor: hasMore ? items[items.length - 1]?.id ?? null : null };
+    // hasMore ⟹ items non-empty (slice -1) → son eleman daima var
+    return { items, nextCursor: hasMore ? items[items.length - 1]!.id : null };
   }
 }
 

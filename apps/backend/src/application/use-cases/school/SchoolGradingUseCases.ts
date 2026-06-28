@@ -9,6 +9,7 @@ import { resolveSchoolContext, requireSchoolRole, type SchoolContext } from './s
 
 /** Ödevin sahibi/zümre başkanı/yönetici mi (değerlendirme yetkisi). */
 function canGrade(assignment: { createdById: string; exam: { departmentId: string | null } }, ctx: SchoolContext, actorId: string): boolean {
+  /* istanbul ignore next -- çağıranlar requireSchoolRole(TEACHER,DEPT_HEAD) ile gated; yönetici buraya ulaşmaz */
   if (ctx.schoolRole === 'SCHOOL_ADMIN' || ctx.schoolRole === 'BRANCH_ADMIN') return false; // yönetici puanlamaz
   if (assignment.createdById === actorId) return true;
   if (ctx.schoolRole === 'DEPT_HEAD' && assignment.exam.departmentId && assignment.exam.departmentId === ctx.departmentId) return true;

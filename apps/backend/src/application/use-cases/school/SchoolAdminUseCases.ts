@@ -130,7 +130,8 @@ export class ListSchoolsUseCase {
       // Çoklu dönem yetkilendirmesi (kuruluş dönemi backfill ile dahil)
       periods: s.periodLinks
         .map((pl) => pl.period)
-        .sort((a, b) => (b.startDate?.getTime() ?? 0) - (a.startDate?.getTime() ?? 0))
+        // startDate şemada zorunlu (non-null) → ?./?? gereksiz savunma
+        .sort((a, b) => b.startDate.getTime() - a.startDate.getTime())
         .map((p) => ({ id: p.id, name: p.name })),
       maxUsers: s.maxUsers,
       userCount: s._count.schoolUsers,
