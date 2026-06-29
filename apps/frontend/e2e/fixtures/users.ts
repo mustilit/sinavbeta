@@ -148,6 +148,15 @@ export const WORKER_USERS: E2EUser[] = [
   },
 ];
 
+/**
+ * E-Sınıf (okul) kullanıcıları — seed-e2e.cjs seedSchoolModule() oluşturur.
+ * Giriş USERNAME ile (okul kullanıcısı User.role=CANDIDATE'tir); şifre demo123. Okul kodu E2E.
+ * school-persona.spec.ts bunlara bağlıdır.
+ */
+export const SCHOOL_ADMIN = { username: 'E2E-A-0001', password: E2E_PASSWORD, schoolRole: 'SCHOOL_ADMIN' as const };
+export const SCHOOL_TEACHER = { username: 'E2E-T-0001', password: E2E_PASSWORD, schoolRole: 'TEACHER' as const };
+export const SCHOOL_STUDENT = { username: 'E2E-S-0001', password: E2E_PASSWORD, schoolRole: 'STUDENT' as const };
+
 /** seed-e2e.cjs tarafından upsert edilecek tüm e2e-spesifik kullanıcılar */
 export const ALL_E2E_USERS: E2EUser[] = [
   EDUCATOR_PENDING,

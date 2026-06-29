@@ -213,6 +213,55 @@ async function seedWrittenTestModule() {
   }
 }
 
+/**
+ * E-Sınıf modülü e2e seed — bir okul (kod E2E) + akademik dönem + 3 okul kullanıcısı
+ * (SCHOOL_ADMIN / TEACHER / STUDENT). Okul kullanıcıları User.role=CANDIDATE'tir;
+ * giriş USERNAME ile yapılır (E2E-A-0001 / E2E-T-0001 / E2E-S-0001, şifre demo123).
+ * Idempotent (okul kodu E2E ile aranır). school-persona.spec.ts buna bağlıdır.
+ */
+async function seedSchoolModule() {
+  // 1) Akademik dönem (ada göre idempotent)
+  let period = await prisma.academicPeriod.findFirst({ where: { name: 'E2E Dönem', tenantId: TENANT_ID } });
+  if (!period) {
+    period = await prisma.academicPeriod.create({
+      data: { name: 'E2E Dönem', startDate: new Date('2026-09-01'), endDate: new Date('2027-06-30'), isActive: true, tenantId: TENANT_ID },
+    });
+  }
+  // 2) Okul (kod E2E ile idempotent)
+  let school = await prisma.school.findUnique({ where: { code: 'E2E' } });
+  if (!school) {
+    school = await prisma.school.create({
+      data: { name: 'E2E Test Okulu', code: 'E2E', city: 'Ankara', schoolType: 'MIDDLE', periodId: period.id, maxUsers: 100, tenantId: TENANT_ID },
+    });
+  }
+  // 3) Okul kullanıcıları — User (CANDIDATE, username login) + SchoolUser (gerçek rol)
+  const members = [
+    { username: 'E2E-A-0001', schoolRole: 'SCHOOL_ADMIN', firstName: 'Okul', lastName: 'Yöneticisi' },
+    { username: 'E2E-T-0001', schoolRole: 'TEACHER', firstName: 'Test', lastName: 'Öğretmen' },
+    { username: 'E2E-S-0001', schoolRole: 'STUDENT', firstName: 'Test', lastName: 'Öğrenci' },
+  ];
+  let adminUserId = null;
+  for (const m of members) {
+    const email = `${m.username.toLowerCase()}@esinif.local`;
+    const user = await prisma.user.upsert({
+      where: { email },
+      create: { email, username: m.username, passwordHash: PASSWORD_HASH, role: 'CANDIDATE', status: 'ACTIVE', emailVerified: true, firstName: m.firstName, lastName: m.lastName, tenantId: TENANT_ID, metadata: { schoolUser: true } },
+      update: { passwordHash: PASSWORD_HASH, username: m.username, status: 'ACTIVE', emailVerified: true },
+    });
+    await prisma.schoolUser.upsert({
+      where: { username: m.username },
+      create: { userId: user.id, schoolId: school.id, schoolRole: m.schoolRole, username: m.username, isActive: true },
+      update: { userId: user.id, schoolId: school.id, schoolRole: m.schoolRole, isActive: true },
+    });
+    if (m.schoolRole === 'SCHOOL_ADMIN') adminUserId = user.id;
+  }
+  // 4) Okul yöneticisini School.adminUserId'ye bağla (one-to-one)
+  if (adminUserId && school.adminUserId !== adminUserId) {
+    await prisma.school.update({ where: { id: school.id }, data: { adminUserId } });
+  }
+  console.log(`  ✓ E-Sınıf okulu hazır (${school.id}) + 3 kullanıcı (E2E-A/T/S-0001)`);
+}
+
 (async () => {
   let ok = 0;
   for (const u of USERS) {
@@ -226,6 +275,7 @@ async function seedWrittenTestModule() {
   }
   console.log(`Seed-e2e: ${ok}/${USERS.length} kullanıcı hazır.`);
   try { await seedWrittenTestModule(); } catch (e) { console.error(`  ✗ yazılı seed: ${e.message}`); }
+  try { await seedSchoolModule(); } catch (e) { console.error(`  ✗ e-sınıf seed: ${e.message}`); }
   await prisma.$disconnect();
   if (ok < USERS.length) process.exit(1);
 })().catch(async (e) => {
