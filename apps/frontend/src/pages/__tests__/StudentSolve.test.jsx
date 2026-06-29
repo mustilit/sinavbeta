@@ -104,6 +104,15 @@ describe('StudentSolve — market parite + veri girişi', () => {
     expect(await screen.findByTestId('tunnel-solver')).toBeInTheDocument();
   });
 
+  it('TUNNEL: "Kaydet ve Çık" → listeye döner (ilerleme sunucuda kayıtlı)', async () => {
+    h.api.get.mockResolvedValue({ examType: 'TUNNEL', examId: 'tx1', open: true, submitted: false, title: 'Tünel', questions: [] });
+    render();
+    await screen.findByTestId('tunnel-solver');
+    fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Çık/ }));
+    await waitFor(() => expect(h.nav).toHaveBeenCalledWith(expect.stringContaining('StudentAssignments')));
+    expect(h.api.submit).not.toHaveBeenCalled();
+  });
+
   it('YAZILI: fotoğraf yükleme YOK (yalnız metin + kalem)', async () => {
     h.api.get.mockResolvedValue(WRITTEN);
     render();

@@ -154,9 +154,14 @@ export default function StudentSolve() {
 
   // TUNNEL → market tüneliyle aynı adaptif çözme (katmanlı, ustalık tabanlı).
   if (a.examType === "TUNNEL" && a.examId) {
+    // Tünel ilerlemesi her cevapta sunucuya yazılır; "Kaydet ve Çık" = güvenli, sürdürülebilir çıkış (market tüneli paritesi).
+    const tunnelExit = () => { toast.success("İlerleme kaydedildi — daha sonra devam edebilirsin"); navigate(buildPageUrl(isPractice ? "StudentExplore" : "StudentAssignments")); };
     return (
       <div className="max-w-3xl mx-auto">
-        <button onClick={() => navigate(buildPageUrl(isPractice ? "StudentExplore" : "StudentAssignments"))} className="mb-4 text-sm text-slate-500 hover:text-slate-800">← {isPractice ? "Keşfet" : "Ödevlerim"}</button>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <button onClick={tunnelExit} className="text-sm text-slate-500 hover:text-slate-800">← {isPractice ? "Keşfet" : "Ödevlerim"}</button>
+          <Button variant="outline" size="sm" onClick={tunnelExit} className="gap-2"><Save className="h-4 w-4" /> Kaydet ve Çık</Button>
+        </div>
         <SchoolTunnelSolver examId={a.examId} />
       </div>
     );
