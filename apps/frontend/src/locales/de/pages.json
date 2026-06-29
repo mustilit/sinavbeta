@@ -3,7 +3,14 @@
     "label": "Prüfungssprache",
     "all": "Alle Sprachen",
     "detailLine": "Diese Prüfung ist auf {{lang}}.",
-    "names": { "tr": "Türkisch", "en": "Englisch", "de": "Deutsch", "fr": "Französisch", "es": "Spanisch", "ar": "Arabisch" }
+    "names": {
+      "tr": "Türkisch",
+      "en": "Englisch",
+      "de": "Deutsch",
+      "fr": "Französisch",
+      "es": "Spanisch",
+      "ar": "Arabisch"
+    }
   },
   "card": {
     "free": "Kostenlos",
@@ -1890,7 +1897,8 @@
       "updated": "Notiz aktualisiert",
       "error": "Vorgang fehlgeschlagen",
       "questionLabel": "Frage {{order}}",
-      "addressGeneral": "Allgemein"
+      "addressGeneral": "Allgemein",
+      "exportPdf": "PDF herunterladen"
     }
   },
   "tunnelInfo": {

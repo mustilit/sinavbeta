@@ -3,7 +3,14 @@
     "label": "Sınav Dili",
     "all": "Tüm diller",
     "detailLine": "Bu sınavın dili {{lang}}'dir.",
-    "names": { "tr": "Türkçe", "en": "İngilizce", "de": "Almanca", "fr": "Fransızca", "es": "İspanyolca", "ar": "Arapça" }
+    "names": {
+      "tr": "Türkçe",
+      "en": "İngilizce",
+      "de": "Almanca",
+      "fr": "Fransızca",
+      "es": "İspanyolca",
+      "ar": "Arapça"
+    }
   },
   "card": {
     "free": "Ücretsiz",
@@ -1890,7 +1897,8 @@
       "updated": "Not güncellendi",
       "error": "İşlem başarısız",
       "questionLabel": "Soru {{order}}",
-      "addressGeneral": "Genel"
+      "addressGeneral": "Genel",
+      "exportPdf": "PDF İndir"
     }
   },
   "tunnelInfo": {

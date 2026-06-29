@@ -3,7 +3,14 @@
     "label": "考试语言",
     "all": "所有语言",
     "detailLine": "本考试使用{{lang}}。",
-    "names": { "tr": "土耳其语", "en": "英语", "de": "德语", "fr": "法语", "es": "西班牙语", "ar": "阿拉伯语" }
+    "names": {
+      "tr": "土耳其语",
+      "en": "英语",
+      "de": "德语",
+      "fr": "法语",
+      "es": "西班牙语",
+      "ar": "阿拉伯语"
+    }
   },
   "card": {
     "free": "免费",
@@ -1890,7 +1897,8 @@
       "updated": "笔记已更新",
       "error": "操作失败",
       "questionLabel": "第 {{order}} 题",
-      "addressGeneral": "通用"
+      "addressGeneral": "通用",
+      "exportPdf": "下载 PDF"
     }
   },
   "tunnelInfo": {

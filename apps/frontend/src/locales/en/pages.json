@@ -3,7 +3,14 @@
     "label": "Exam Language",
     "all": "All languages",
     "detailLine": "This exam is in {{lang}}.",
-    "names": { "tr": "Turkish", "en": "English", "de": "German", "fr": "French", "es": "Spanish", "ar": "Arabic" }
+    "names": {
+      "tr": "Turkish",
+      "en": "English",
+      "de": "German",
+      "fr": "French",
+      "es": "Spanish",
+      "ar": "Arabic"
+    }
   },
   "card": {
     "free": "Free",
@@ -1890,7 +1897,8 @@
       "updated": "Note updated",
       "error": "Operation failed",
       "questionLabel": "Question {{order}}",
-      "addressGeneral": "General"
+      "addressGeneral": "General",
+      "exportPdf": "Download PDF"
     }
   },
   "tunnelInfo": {

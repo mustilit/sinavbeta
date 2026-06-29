@@ -10,9 +10,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { StickyNote, Search, ChevronLeft, ChevronRight, Pencil, Trash2, AlertCircle, Check, X } from "lucide-react";
+import { StickyNote, Search, ChevronLeft, ChevronRight, Pencil, Trash2, AlertCircle, Check, X, FileDown, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { exportNotesPdf } from "@/lib/notesPdf";
 
 const PAGE_SIZE = 10;
 const cleanExcerpt = (s) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
@@ -29,6 +30,7 @@ export default function StudentNotes() {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [deleteId, setDeleteId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const params = useMemo(() => ({
     page, pageSize: PAGE_SIZE,
@@ -55,6 +57,19 @@ export default function StudentNotes() {
     onError: () => toast.error("Silinemedi"),
   });
 
+  // PDF: filtreye uyan TÜM notları çek (sayfa değil) → tek dosyada dışa aktar.
+  const exportPdf = async () => {
+    setExporting(true);
+    try {
+      const all = await notesApi.list({ ...params, page: 1, pageSize: 1000 });
+      await exportNotesPdf({ items: all?.items ?? [], title: "Notlarım", subtitle: user?.school?.schoolName || "E-Sınıf" });
+    } catch {
+      toast.error("PDF oluşturulamadı");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (!isStudent) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
 
   const items = data?.items ?? [];
@@ -66,7 +81,10 @@ export default function StudentNotes() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><StickyNote className="w-5 h-5 text-indigo-600" /></div>
-        <div><h1 className="text-2xl font-bold text-slate-900">Notlarım</h1><p className="text-sm text-slate-500">Soru çözerken aldığın tüm notlar{total ? ` · ${total}` : ""}</p></div>
+        <div className="flex-1"><h1 className="text-2xl font-bold text-slate-900">Notlarım</h1><p className="text-sm text-slate-500">Soru çözerken aldığın tüm notlar{total ? ` · ${total}` : ""}</p></div>
+        <Button variant="outline" className="gap-2" disabled={exporting || total === 0} onClick={exportPdf}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} PDF İndir
+        </Button>
       </div>
 
       {/* Filtre satırı — metin + sadece genel */}

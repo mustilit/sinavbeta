@@ -13,7 +13,9 @@ import {
   BookOpen,
   Layers,
   GraduationCap,
+  FileDown,
 } from "lucide-react";
+import { exportNotesPdf } from "@/lib/notesPdf";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +75,7 @@ export default function MyNotes() {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [deleteId, setDeleteId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const { data: facets } = useQuery({
     queryKey: ["noteFacets"],
@@ -131,6 +134,19 @@ export default function MyNotes() {
   const hasAnyFilter =
     topicId !== ALL || testId !== ALL || examTypeId !== ALL || q.trim().length > 0;
 
+  // PDF: filtreye uyan TÜM notları çek (sayfa değil) → tek dosyada dışa aktar.
+  const exportPdf = async () => {
+    setExporting(true);
+    try {
+      const all = await notesApi.list({ ...filters, page: 1, pageSize: 1000 });
+      await exportNotesPdf({ items: all?.items ?? [], title: t("notes.page.title"), subtitle: "Sınav Salonu" });
+    } catch {
+      toast.error(t("notes.page.error"));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const clearFilters = () => {
     setExamTypeId(ALL);
     setTopicId(ALL);
@@ -145,12 +161,17 @@ export default function MyNotes() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
-      <header className="mb-6">
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
-          <StickyNote className="h-6 w-6 text-indigo-600" aria-hidden="true" />
-          {t("notes.page.title")}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">{t("notes.page.subtitle")}</p>
+      <header className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <StickyNote className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+            {t("notes.page.title")}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">{t("notes.page.subtitle")}</p>
+        </div>
+        <Button variant="outline" className="gap-2 shrink-0" disabled={exporting || total === 0} onClick={exportPdf}>
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} {t("notes.page.exportPdf")}
+        </Button>
       </header>
 
       {/* Filtreler */}
