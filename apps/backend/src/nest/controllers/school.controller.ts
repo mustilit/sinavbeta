@@ -1,8 +1,10 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Req } from '@nestjs/common';
-import { Type } from 'class-transformer';
-import { IsString, IsOptional, IsInt, Min, Max, IsIn, IsArray, IsBoolean, MaxLength, ValidateNested, ArrayMaxSize } from 'class-validator';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../swagger/decorators';
+import {
+  CreateBranchDto, AssignAdminDto, CreateLevelDto, CreateClassroomDto, AssignStudentsDto,
+  BulkStudentsDto, CreateDepartmentDto, CreateSubjectDto, AssignMembersDto, CreateSchoolUserDto, SetActiveDto,
+} from './dto/school-org.dto';
 import {
   CreateBranchUseCase,
   ListBranchesUseCase,
@@ -41,46 +43,7 @@ import {
   ResetSchoolUserPasswordUseCase,
 } from '../../application/use-cases/school/SchoolUserUseCases';
 
-class CreateBranchDto { @IsString() @MaxLength(80) name!: string; }
-class AssignAdminDto { @IsString() schoolUserId!: string; }
-class CreateLevelDto {
-  @IsString() branchId!: string;
-  @IsInt() @Min(1) @Max(12) gradeLevel!: number;
-}
-class CreateClassroomDto {
-  @IsString() levelId!: string;
-  @IsString() @MaxLength(40) name!: string;
-}
-class AssignStudentsDto { @IsArray() @IsString({ each: true }) schoolUserIds!: string[]; }
-class BulkStudentRowDto {
-  @IsOptional() @IsString() @MaxLength(60) firstName?: string;
-  @IsOptional() @IsString() @MaxLength(60) lastName?: string;
-  @IsOptional() @IsString() @MaxLength(40) studentNo?: string;
-}
-class BulkStudentsDto {
-  @IsArray() @ArrayMaxSize(300) @ValidateNested({ each: true }) @Type(() => BulkStudentRowDto)
-  students!: BulkStudentRowDto[];
-}
-class CreateDepartmentDto {
-  @IsString() @MaxLength(80) name!: string;
-  @IsString() @MaxLength(60) subject!: string;
-  @IsOptional() @IsString() levelId?: string;   // seviyeye özel zümre
-  @IsOptional() @IsString() branchId?: string;  // şube geneli zümre (levelId yoksa)
-}
-class CreateSubjectDto { @IsString() @MaxLength(60) name!: string; }
-class AssignMembersDto {
-  @IsArray() @IsString({ each: true }) schoolUserIds!: string[];
-  @IsOptional() @IsString() headSchoolUserId?: string;
-}
-class CreateSchoolUserDto {
-  @IsIn(['BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER', 'STUDENT']) schoolRole!: string;
-  @IsOptional() @IsString() @MaxLength(60) firstName?: string;
-  @IsOptional() @IsString() @MaxLength(60) lastName?: string;
-  @IsOptional() @IsString() branchId?: string;
-  @IsOptional() @IsString() classroomId?: string;
-  @IsOptional() @IsString() departmentId?: string;
-}
-class SetActiveDto { @IsBoolean() isActive!: boolean; }
+// DTO'lar ./dto/school-org.dto.ts'e taşındı (marketplace dto/ konvansiyonu).
 
 /** Okul Yöneticisi / Şube Yöneticisi — okul içi organizasyon + kullanıcı yönetimi.
  *  JWT zorunlu (global guard); okul rolü kontrolü use-case katmanında. */
