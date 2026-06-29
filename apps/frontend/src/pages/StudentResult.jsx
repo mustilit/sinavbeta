@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { studentAssignments } from "@/api/dalClient";
+import { studentAssignments, studentPractice } from "@/api/dalClient";
 import { useAppNavigate, buildPageUrl } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,17 +8,21 @@ import { ArrowLeft, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-rea
 
 const REASON = { SUBMIT: "teslimden sonra", DUE_DATE: "son tarihten sonra", TEACHER_RELEASE: "öğretmen yayımlayınca" };
 
-/** E-Sınıf — Öğrenci sonuç ekranı (showResultAfter kuralına göre). */
+/** E-Sınıf — Öğrenci sonuç ekranı. Ödev (?id) veya serbest alıştırma (?practice) modu. */
 export default function StudentResult() {
   const [params] = useSearchParams();
   const navigate = useAppNavigate();
-  const id = params.get("id");
-  const { data: r, isLoading, isError } = useQuery({ queryKey: ["esinif", "student-result", id], queryFn: () => studentAssignments.result(id), enabled: !!id });
+  const practiceId = params.get("practice");
+  const isPractice = !!practiceId;
+  const apiNs = isPractice ? studentPractice : studentAssignments;
+  const id = practiceId || params.get("id");
+  const backPage = isPractice ? "StudentExplore" : "StudentAssignments";
+  const { data: r, isLoading, isError } = useQuery({ queryKey: ["esinif", "student-result", isPractice ? "practice" : "assignment", id], queryFn: () => apiNs.result(id), enabled: !!id });
 
   if (isLoading) return <div className="max-w-2xl mx-auto py-20 text-center text-slate-400">Yükleniyor…</div>;
   if (isError || !r) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Sonuç bulunamadı</h2></div>;
 
-  const back = <Button variant="ghost" size="icon" onClick={() => navigate(buildPageUrl("StudentAssignments"))} aria-label="Geri"><ArrowLeft className="w-5 h-5" /></Button>;
+  const back = <Button variant="ghost" size="icon" onClick={() => navigate(buildPageUrl(backPage))} aria-label="Geri"><ArrowLeft className="w-5 h-5" /></Button>;
 
   if (!r.visible) {
     return (
@@ -43,7 +47,7 @@ export default function StudentResult() {
         </CardContent></Card>
       ) : (
         <Card><CardContent className="p-5">
-          <p className="font-medium text-slate-900">{r.status === "GRADED" ? `Puan: ${r.totalScore ?? "—"}/${r.maxScore}` : "Yazılı cevaplarınız değerlendiriliyor"}</p>
+          <p className="font-medium text-slate-900">{r.status === "GRADED" ? `Puan: ${r.totalScore ?? "—"}/${r.maxScore}` : isPractice ? "Öz-değerlendirme: cevabını aşağıdaki çözümle karşılaştır" : "Yazılı cevaplarınız değerlendiriliyor"}</p>
           {r.feedback && <p className="text-sm text-slate-600 mt-2 italic">"{r.feedback}"</p>}
         </CardContent></Card>
       )}

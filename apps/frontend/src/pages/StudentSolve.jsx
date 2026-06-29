@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { studentAssignments } from "@/api/dalClient";
+import { studentAssignments, studentPractice } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppNavigate, buildPageUrl } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,12 @@ export default function StudentSolve() {
   const [params] = useSearchParams();
   const navigate = useAppNavigate();
   const { user } = useAuth();
-  const id = params.get("id");
+  // Ödev modu (?id=assignmentId) veya serbest alıştırma modu (?practice=examId).
+  const practiceId = params.get("practice");
+  const isPractice = !!practiceId;
+  const apiNs = isPractice ? studentPractice : studentAssignments;
+  const id = practiceId || params.get("id");
+  const resultParam = isPractice ? { practice: id } : { id };
 
   const [answers, setAnswers] = useState({}); // qid -> { selectedOptionId, textAnswer, imageUrls }
   const [drawings, setDrawings] = useState({}); // qid -> çizim url'i (imageUrls içinde de tutulur)
@@ -51,20 +56,20 @@ export default function StudentSolve() {
   const started = useRef(false);
   const canvasRef = useRef(null);
 
-  const { data: a, isLoading, isError } = useQuery({ queryKey: ["esinif", "solve", id], queryFn: () => studentAssignments.get(id), enabled: !!id });
+  const { data: a, isLoading, isError } = useQuery({ queryKey: ["esinif", "solve", isPractice ? "practice" : "assignment", id], queryFn: () => apiNs.get(id), enabled: !!id });
 
-  const start = useMutation({ mutationFn: () => studentAssignments.start(id) });
-  const save = useMutation({ mutationFn: (body) => studentAssignments.saveAnswer(id, body) });
+  const start = useMutation({ mutationFn: () => apiNs.start(id) });
+  const save = useMutation({ mutationFn: (body) => apiNs.saveAnswer(id, body) });
   const submitM = useMutation({
-    mutationFn: () => studentAssignments.submit(id),
-    onSuccess: () => { toast.success("Ödev teslim edildi"); navigate(buildPageUrl("StudentResult", { id }), { replace: true }); },
+    mutationFn: () => apiNs.submit(id),
+    onSuccess: () => { toast.success(isPractice ? "Alıştırma teslim edildi" : "Ödev teslim edildi"); navigate(buildPageUrl("StudentResult", resultParam), { replace: true }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Teslim edilemedi"),
   });
 
   // İlk yükleme: başlat + cevapları doldur + süre başlat
   useEffect(() => {
     if (!a) return;
-    if (a.submitted) { navigate(buildPageUrl("StudentResult", { id }), { replace: true }); return; }
+    if (a.submitted) { navigate(buildPageUrl("StudentResult", resultParam), { replace: true }); return; }
     if (!a.open) return;
     if (!started.current) { started.current = true; start.mutate(); }
     const init = {};
@@ -108,7 +113,7 @@ export default function StudentSolve() {
     if (!file) return;
     const cur = answers[qid]?.imageUrls ?? [];
     if (cur.length >= 5) return toast.error("En fazla 5 görsel");
-    try { const url = await studentAssignments.uploadImage(file); if (url) persist(qid, { imageUrls: [...cur, url] }); }
+    try { const url = await apiNs.uploadImage(file); if (url) persist(qid, { imageUrls: [...cur, url] }); }
     catch { toast.error("Görsel yüklenemedi"); }
   };
   const removeImage = (qid, url) => {
@@ -124,7 +129,7 @@ export default function StudentSolve() {
     if (!dataUrl) return;
     try {
       const file = await dataUrlToFile(dataUrl);
-      const url = await studentAssignments.uploadImage(file);
+      const url = await apiNs.uploadImage(file);
       if (!url) return;
       const old = drawings[qid];
       const imgs = (answers[qid]?.imageUrls ?? []).filter((u) => u !== old).concat(url);
@@ -132,7 +137,7 @@ export default function StudentSolve() {
       persist(qid, { imageUrls: imgs });
       canvasRef.current?.clear?.();
     } catch { toast.error("Çizim kaydedilemedi"); }
-  }, [answers, drawings, persist]);
+  }, [answers, drawings, persist, apiNs]);
 
   if (isLoading) return <div className="max-w-3xl mx-auto py-20 text-center text-slate-400">Yükleniyor…</div>;
   if (isError || !a) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Ödev bulunamadı</h2></div>;
@@ -142,7 +147,7 @@ export default function StudentSolve() {
   if (a.examType === "TUNNEL" && a.examId) {
     return (
       <div className="max-w-3xl mx-auto">
-        <button onClick={() => navigate(buildPageUrl("StudentAssignments"))} className="mb-4 text-sm text-slate-500 hover:text-slate-800">← Ödevlerim</button>
+        <button onClick={() => navigate(buildPageUrl(isPractice ? "StudentExplore" : "StudentAssignments"))} className="mb-4 text-sm text-slate-500 hover:text-slate-800">← {isPractice ? "Keşfet" : "Ödevlerim"}</button>
         <SchoolTunnelSolver examId={a.examId} />
       </div>
     );
@@ -163,7 +168,7 @@ export default function StudentSolve() {
       <div className="max-w-3xl mx-auto px-1 py-4 space-y-4">
         {/* Üst bar — market çözme ekranıyla aynı eylemler */}
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate(buildPageUrl("StudentAssignments"))}><ArrowLeft className="mr-1 h-4 w-4" /> Ödevlerim</Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate(buildPageUrl(isPractice ? "StudentExplore" : "StudentAssignments"))}><ArrowLeft className="mr-1 h-4 w-4" /> {isPractice ? "Keşfet" : "Ödevlerim"}</Button>
           <div className="flex-1 min-w-0">
             <h1 className="font-bold text-slate-900 truncate">{a.title}</h1>
             <p className="text-xs text-slate-500">{answeredCount}/{questions.length} cevaplandı{save.isPending ? " · kaydediliyor…" : ""}</p>

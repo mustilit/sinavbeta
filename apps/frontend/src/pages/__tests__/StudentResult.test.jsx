@@ -4,7 +4,7 @@ import { renderWithProviders } from '@/test/schoolRender';
 import StudentResult from '../StudentResult';
 
 const h = vi.hoisted(() => ({ api: { result: vi.fn() }, nav: vi.fn() }));
-vi.mock('@/api/dalClient', () => ({ studentAssignments: h.api }));
+vi.mock('@/api/dalClient', () => ({ studentAssignments: h.api, studentPractice: { result: vi.fn() } }));
 vi.mock('@/lib/navigation', () => ({ useAppNavigate: () => h.nav, buildPageUrl: (n) => `/${n}` }));
 
 beforeEach(() => vi.clearAllMocks());

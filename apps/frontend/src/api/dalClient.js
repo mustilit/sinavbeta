@@ -2381,5 +2381,24 @@ export const studentAssignments = {
   },
 };
 
+/**
+ * E-Sınıf — Serbest alıştırma (Keşfet). Öğrenci kendi seviyesindeki tüm sınavları
+ * ödevden bağımsız, exam-scoped çözer. TUNNEL çözme schoolTunnel ile yürür.
+ */
+export const studentPractice = {
+  listExams: async () => (await api.get('/student/practice/exams')).data,
+  get: async (examId) => (await api.get(`/student/practice/${examId}`)).data,
+  start: async (examId) => (await api.post(`/student/practice/${examId}/start`)).data,
+  saveAnswer: async (examId, body) => (await api.put(`/student/practice/${examId}/answer`, body)).data,
+  submit: async (examId) => (await api.post(`/student/practice/${examId}/submit`)).data,
+  result: async (examId) => (await api.get(`/student/practice/${examId}/result`)).data,
+  uploadImage: async (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const { data } = await api.post('/upload/image', fd);
+    return data.url || data.fileUrl || data.file_url || '';
+  },
+};
+
 export default api;
 export { api };

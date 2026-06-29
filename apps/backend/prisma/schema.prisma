@@ -2677,6 +2677,7 @@ model SchoolExam {
   questions       SchoolQuestion[]
   assignments     SchoolAssignment[]
   tunnelAttempts  SchoolTunnelAttempt[]
+  practiceSubmissions SchoolSubmission[] @relation("SchoolExamPracticeSubmissions") // serbest alıştırma teslimleri
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -2816,8 +2817,13 @@ model SchoolAssignment {
 
 model SchoolSubmission {
   id           String                   @id @default(uuid())
-  assignmentId String
-  assignment   SchoolAssignment         @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  // ÖDEV teslimi → assignmentId dolu; SERBEST ALIŞTIRMA (Keşfet) → examId dolu, assignmentId null.
+  // kind ile ayrılır. İkisi de aynı tabloda; puanlama/cevap deposu paylaşılır.
+  assignmentId String?
+  assignment   SchoolAssignment?        @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  examId       String? // serbest alıştırma — ödevsiz, exam-scoped (TUNNEL deseni)
+  exam         SchoolExam?              @relation("SchoolExamPracticeSubmissions", fields: [examId], references: [id], onDelete: Cascade)
+  kind         String                   @default("ASSIGNMENT") // ASSIGNMENT | PRACTICE
   studentId    String
   student      User                     @relation("SubmissionStudent", fields: [studentId], references: [id], onDelete: Cascade)
   status       SchoolSubmissionStatus   @default(IN_PROGRESS)
@@ -2831,7 +2837,9 @@ model SchoolSubmission {
   answers      SchoolSubmissionAnswer[]
 
   @@unique([assignmentId, studentId])
+  @@unique([examId, studentId]) // serbest alıştırma tekilliği (aday+sınav başına tek)
   @@index([assignmentId, status])
+  @@index([examId, status])
   @@index([studentId])
   @@map("school_submissions")
 }

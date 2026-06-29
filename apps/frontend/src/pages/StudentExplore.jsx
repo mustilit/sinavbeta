@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { studentAssignments } from "@/api/dalClient";
+import { studentPractice } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppNavigate, buildPageUrl } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Compass, Clock, Play, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
-import { tr } from "date-fns/locale";
+import { Compass, Play, RotateCcw, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle, Trophy } from "lucide-react";
 
 const TABS = [
   { type: "TEST", label: "Test", Icon: ListChecks },
@@ -16,7 +14,10 @@ const TABS = [
   { type: "WRITTEN", label: "Yazılı", Icon: FileText },
 ];
 
-/** E-Sınıf — Öğrenci Keşfet: kendi seviyesindeki sınavlar, türüne göre 3 sekmede. */
+/**
+ * E-Sınıf — Öğrenci Keşfet: kendi seviyesindeki TÜM sınavlar (öğretmen atamasa bile).
+ * Serbest alıştırma — ödevden bağımsız, istediğin kadar çöz. Türüne göre 3 sekmede.
+ */
 export default function StudentExplore() {
   const { user } = useAuth();
   const navigate = useAppNavigate();
@@ -24,22 +25,29 @@ export default function StudentExplore() {
   const [tab, setTab] = useState("TEST");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["esinif", "student-explore"],
-    queryFn: () => studentAssignments.list({ filter: "all" }),
+    queryKey: ["esinif", "practice-exams"],
+    queryFn: () => studentPractice.listExams(),
     enabled: isStudent,
   });
 
   if (!isStudent) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
 
   const all = data?.items ?? [];
+  const gradeLevel = data?.gradeLevel ?? null;
   const counts = Object.fromEntries(TABS.map((t) => [t.type, all.filter((a) => a.examType === t.type).length]));
   const items = all.filter((a) => a.examType === tab);
+
+  const solve = (e) => navigate(buildPageUrl("StudentSolve", { practice: e.id }));
+  const seeResult = (e) => navigate(buildPageUrl("StudentResult", { practice: e.id }));
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><Compass className="w-5 h-5 text-indigo-600" /></div>
-        <div><h1 className="text-2xl font-bold text-slate-900">Keşfet</h1><p className="text-sm text-slate-500">Seviyendeki sınavlar — türüne göre</p></div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Keşfet</h1>
+          <p className="text-sm text-slate-500">{gradeLevel ? `${gradeLevel}. sınıf seviyendeki tüm sınavlar — serbest alıştırma` : "Seviyendeki sınavlar — serbest alıştırma"}</p>
+        </div>
       </div>
 
       <div className="flex gap-1 border-b border-slate-200">
@@ -58,7 +66,9 @@ export default function StudentExplore() {
         <div className="space-y-3">
           {items.map((a) => {
             const m = TABS.find((t) => t.type === a.examType) ?? TABS[0];
-            const overdue = !a.submitted && !a.open;
+            const inProgress = a.status === "IN_PROGRESS";
+            const done = a.status === "SUBMITTED" || a.status === "GRADED" || a.status === "COMPLETED";
+            const isTunnel = a.examType === "TUNNEL";
             return (
               <Card key={a.id}>
                 <CardContent className="p-4 flex items-center gap-4">
@@ -67,20 +77,22 @@ export default function StudentExplore() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-slate-900 truncate">{a.title}</span>
                       <Badge className="bg-slate-100 text-slate-600">{m.label}</Badge>
-                      {a.submitted && a.score != null && <Badge className="bg-emerald-100 text-emerald-700">{a.score}/{a.maxScore}</Badge>}
+                      {a.examType === "TEST" && done && a.score != null && <Badge className="bg-emerald-100 text-emerald-700">{a.score}/{a.maxScore}</Badge>}
+                      {isTunnel && a.status === "COMPLETED" && <Badge className="bg-amber-100 text-amber-700 gap-1"><Trophy className="w-3 h-3" /> Tamamlandı</Badge>}
                     </div>
-                    <p className={`text-xs mt-1 flex items-center gap-1 ${overdue ? "text-rose-600" : "text-slate-500"}`}>
-                      <Clock className="w-3 h-3" /> Son teslim: {format(new Date(a.dueDate), "d MMM yyyy HH:mm", { locale: tr })}
-                      {a.durationMinutes ? ` · ${a.durationMinutes} dk` : ""}{overdue ? " · süresi geçti" : ""}
+                    <p className="text-xs mt-1 text-slate-500">
+                      {a.subject ? `${a.subject} · ` : ""}{a.questionCount} soru{a.durationMinutes ? ` · ${a.durationMinutes} dk` : ""}
                     </p>
                   </div>
-                  {a.submitted ? (
-                    <Button size="sm" variant="outline" className="gap-1" onClick={() => navigate(buildPageUrl("StudentResult", { id: a.id }))}><Eye className="w-4 h-4" /> Sonuç</Button>
-                  ) : a.open ? (
-                    <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 gap-1" onClick={() => navigate(buildPageUrl("StudentSolve", { id: a.id }))}><Play className="w-4 h-4" /> {a.submissionStatus === "IN_PROGRESS" ? "Devam Et" : "Başla"}</Button>
-                  ) : (
-                    <Badge className="bg-slate-200 text-slate-600">Kapalı</Badge>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* TEST/WRITTEN teslim edildiyse sonuç + tekrar; tünelde sadece çöz/devam */}
+                    {!isTunnel && done && (
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => seeResult(a)}><Eye className="w-4 h-4" /> Sonuç</Button>
+                    )}
+                    <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 gap-1" onClick={() => solve(a)}>
+                      {done ? <><RotateCcw className="w-4 h-4" /> Tekrar</> : inProgress ? <><Play className="w-4 h-4" /> Devam Et</> : <><Play className="w-4 h-4" /> Başla</>}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             );

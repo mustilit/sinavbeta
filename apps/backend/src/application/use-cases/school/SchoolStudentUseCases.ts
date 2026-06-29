@@ -287,7 +287,8 @@ export class GetStudentReportUseCase {
     }
 
     const subs = await db.schoolSubmission.findMany({
-      where: { studentId: actorId as string, status: { in: ['SUBMITTED', 'GRADED'] as any }, ...(range ? { submittedAt: range } : {}) },
+      // Raporlarım yalnız öğretmen ödevleri — serbest alıştırma (PRACTICE) dahil edilmez.
+      where: { studentId: actorId as string, kind: 'ASSIGNMENT', status: { in: ['SUBMITTED', 'GRADED'] as any }, ...(range ? { submittedAt: range } : {}) },
       select: {
         totalScore: true,
         maxScore: true,
@@ -306,9 +307,9 @@ export class GetStudentReportUseCase {
       const p = pct(s.totalScore, s.maxScore);
       if (p == null) continue;
       all.push(p);
-      const subj = s.assignment.exam?.department?.name ?? 'Zümresiz';
+      const subj = s.assignment!.exam?.department?.name ?? 'Zümresiz';
       subjectAgg.set(subj, [...(subjectAgg.get(subj) ?? []), p]);
-      const top = (s.assignment.exam?.topic && s.assignment.exam.topic.trim()) || 'Konusuz';
+      const top = (s.assignment!.exam?.topic && s.assignment!.exam.topic.trim()) || 'Konusuz';
       topicAgg.set(top, [...(topicAgg.get(top) ?? []), p]);
       if (s.submittedAt) {
         const day = s.submittedAt.toISOString().slice(0, 10);

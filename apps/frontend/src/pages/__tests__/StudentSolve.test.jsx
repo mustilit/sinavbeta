@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({
   nav: vi.fn(),
 }));
 vi.mock('@/lib/AuthContext', () => ({ useAuth: () => h.user }));
-vi.mock('@/api/dalClient', () => ({ studentAssignments: h.api, schoolTunnel: { start: vi.fn(), answer: vi.fn() } }));
+vi.mock('@/api/dalClient', () => ({ studentAssignments: h.api, studentPractice: h.api, schoolTunnel: { start: vi.fn(), answer: vi.fn() } }));
 vi.mock('@/lib/navigation', () => ({ useAppNavigate: () => h.nav, buildPageUrl: (n, p) => `/${n}?${new URLSearchParams(p)}` }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock('@/components/test/QuestionCanvas', () => ({ default: () => <div data-testid="canvas" /> }));

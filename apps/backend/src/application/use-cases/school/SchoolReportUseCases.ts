@@ -53,9 +53,9 @@ export class GetSchoolReportUseCase {
       const p = pct(s.totalScore, s.maxScore);
       if (p == null) continue;
       overallPcts.push(p);
-      const b = branchOfClassroom.get(s.assignment.classroomId);
+      const b = branchOfClassroom.get(s.assignment!.classroomId);
       if (b) pctByBranch.set(b, [...(pctByBranch.get(b) ?? []), p]);
-      const d = s.assignment.exam.departmentId;
+      const d = s.assignment!.exam.departmentId;
       if (d) pctByDept.set(d, [...(pctByDept.get(d) ?? []), p]);
     }
 
@@ -190,12 +190,12 @@ export class GetFilteredReportUseCase {
     const deptAgg = new Map<string, number[]>();    // konu/zümre başarımı
     const dayAgg = new Map<string, number[]>();     // takvime göre (gün bazlı)
     for (const s of submissions) {
-      const cid = s.assignment.classroomId;
+      const cid = s.assignment!.classroomId;
       subCountByCls.set(cid, (subCountByCls.get(cid) ?? 0) + 1);
       const p = pct(s.totalScore, s.maxScore);
       if (p == null) continue;
       pctByCls.set(cid, [...(pctByCls.get(cid) ?? []), p]);
-      const dname = s.assignment.exam?.department?.name ?? 'Zümresiz';
+      const dname = s.assignment!.exam?.department?.name ?? 'Zümresiz';
       deptAgg.set(dname, [...(deptAgg.get(dname) ?? []), p]);
       if (s.submittedAt) {
         const day = s.submittedAt.toISOString().slice(0, 10);
@@ -317,9 +317,9 @@ export class GetClassroomReportUseCase {
       if (p != null) allPcts.push(p);
       const su = stuMap.get(s.student.id) ?? { name: label(s.student), pcts: [], n: 0 };
       su.n++; if (p != null) su.pcts.push(p); stuMap.set(s.student.id, su);
-      const am = asgMap.get(s.assignment.id) ?? { title: s.assignment.title, dept: s.assignment.exam?.department?.name ?? null, pcts: [], n: 0 };
-      am.n++; if (p != null) am.pcts.push(p); asgMap.set(s.assignment.id, am);
-      const dname = s.assignment.exam?.department?.name ?? 'Zümresiz';
+      const am = asgMap.get(s.assignment!.id) ?? { title: s.assignment!.title, dept: s.assignment!.exam?.department?.name ?? null, pcts: [], n: 0 };
+      am.n++; if (p != null) am.pcts.push(p); asgMap.set(s.assignment!.id, am);
+      const dname = s.assignment!.exam?.department?.name ?? 'Zümresiz';
       const dm = deptMap.get(dname) ?? { name: dname, pcts: [], n: 0 };
       dm.n++; if (p != null) dm.pcts.push(p); deptMap.set(dname, dm);
     }
@@ -358,9 +358,9 @@ export class GetBranchReportUseCase {
     const pctByCls = new Map<string, number[]>();
     let subCountByCls = new Map<string, number>();
     for (const s of submissions) {
-      subCountByCls.set(s.assignment.classroomId, (subCountByCls.get(s.assignment.classroomId) ?? 0) + 1);
+      subCountByCls.set(s.assignment!.classroomId, (subCountByCls.get(s.assignment!.classroomId) ?? 0) + 1);
       const p = pct(s.totalScore, s.maxScore);
-      if (p != null) pctByCls.set(s.assignment.classroomId, [...(pctByCls.get(s.assignment.classroomId) ?? []), p]);
+      if (p != null) pctByCls.set(s.assignment!.classroomId, [...(pctByCls.get(s.assignment!.classroomId) ?? []), p]);
     }
 
     return {

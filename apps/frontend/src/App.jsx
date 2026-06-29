@@ -6,7 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -26,6 +26,17 @@ const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
 const LayoutWrapper = ({ children, currentPageName }) =>
   Layout ? <Layout currentPageName={currentPageName}>{children}</Layout> : <>{children}</>;
+
+// Kök "/" — E-Sınıf kullanıcısının açılış sayfası kendi paneli/ödevleri olmalı.
+// Öğrenci → Ödevlerim, okul yöneticisi/öğretmen → Okul Paneli. Marketplace
+// kullanıcısı (user.school yok) eskisi gibi Ana Sayfa görür (golden rule: değişmez).
+const RootRoute = () => {
+  const { user } = useAuth();
+  const role = user?.school?.schoolRole;
+  if (role === 'STUDENT') return <Navigate to="/StudentAssignments" replace />;
+  if (role) return <Navigate to="/SchoolPanel" replace />;
+  return <LayoutWrapper currentPageName={mainPageKey}><MainPage /></LayoutWrapper>;
+};
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -65,11 +76,7 @@ const AuthenticatedApp = () => {
   return (
     <Suspense fallback={<PageFallback />}>
       <Routes>
-        <Route path="/" element={
-          <LayoutWrapper currentPageName={mainPageKey}>
-            <MainPage />
-          </LayoutWrapper>
-        } />
+        <Route path="/" element={<RootRoute />} />
         {Object.entries(Pages).map(([path, Page]) => {
           // Dinamik parametreli sayfalar
           const paramPaths = {

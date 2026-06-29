@@ -29,7 +29,8 @@ export class GetSubmissionForGradingUseCase {
         assignment: { select: { id: true, schoolId: true, title: true, createdById: true, exam: { select: { examType: true, departmentId: true, questions: { orderBy: { order: 'asc' } } } } } },
       },
     });
-    if (!sub || sub.assignment.schoolId !== ctx.schoolId) throw new AppError('SUBMISSION_NOT_FOUND', 'Teslim bulunamadı', 404);
+    // Serbest alıştırma teslimleri (assignment null) öğretmen değerlendirmesine girmez.
+    if (!sub || !sub.assignment || sub.assignment.schoolId !== ctx.schoolId) throw new AppError('SUBMISSION_NOT_FOUND', 'Teslim bulunamadı', 404);
     if (!canGrade(sub.assignment, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Bu ödevi değerlendiremezsiniz', 403);
     if (sub.assignment.exam.examType !== 'WRITTEN') throw new AppError('NOT_WRITTEN', 'Yalnızca yazılı sınavlar manuel değerlendirilir', 400);
 
@@ -73,7 +74,7 @@ export class GradeSubmissionUseCase {
         assignment: { select: { schoolId: true, createdById: true, exam: { select: { examType: true, departmentId: true, questions: { select: { id: true, points: true } } } } } },
       },
     });
-    if (!sub || sub.assignment.schoolId !== ctx.schoolId) throw new AppError('SUBMISSION_NOT_FOUND', 'Teslim bulunamadı', 404);
+    if (!sub || !sub.assignment || sub.assignment.schoolId !== ctx.schoolId) throw new AppError('SUBMISSION_NOT_FOUND', 'Teslim bulunamadı', 404);
     if (!canGrade(sub.assignment, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Yetkiniz yok', 403);
     if (sub.assignment.exam.examType !== 'WRITTEN') throw new AppError('NOT_WRITTEN', 'Yalnızca yazılı sınavlar puanlanır', 400);
     if (sub.status === 'IN_PROGRESS') throw new AppError('NOT_SUBMITTED', 'Teslim edilmemiş ödev puanlanamaz', 409);

@@ -28,6 +28,7 @@ import { SchoolController } from './controllers/school.controller';
 import { SchoolExamsController } from './controllers/school-exams.controller';
 import { SchoolAssignmentsController } from './controllers/school-assignments.controller';
 import { SchoolStudentController, SchoolStudentReportController } from './controllers/school-student.controller';
+import { SchoolPracticeController } from './controllers/school-practice.controller';
 import { SchoolGradingController } from './controllers/school-grading.controller';
 import { SchoolReportsController } from './controllers/school-reports.controller';
 import { SchoolLiveController } from './controllers/school-live.controller';
@@ -442,6 +443,7 @@ const throttleDisabled = process.env.THROTTLE_DISABLED === '1';
     SchoolAssignmentsController,
     SchoolStudentController,
     SchoolStudentReportController,
+    SchoolPracticeController,
     // E-Sınıf — Sprint 4 yazılı değerlendirme
     SchoolGradingController,
     // E-Sınıf — Sprint 5 raporlama
