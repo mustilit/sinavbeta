@@ -1,0 +1,38 @@
+{
+  "common": {
+    "accessDenied": "Access denied",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} / {{total}}",
+    "result": "Result",
+    "retry": "Retry",
+    "continue": "Continue",
+    "start": "Start",
+    "questionsCount": "{{count}} questions",
+    "durationMin": "{{count}} min",
+    "types": { "TEST": "Test", "TUNNEL": "Tunnel", "WRITTEN": "Written", "all": "All types" }
+  },
+  "assignments": {
+    "title": "My Assignments",
+    "tabs": { "pending": "Pending", "submitted": "Submitted", "all": "All" },
+    "search": "Search assignments…",
+    "searchAria": "Search assignments",
+    "emptyFiltered": "No assignments match the filter.",
+    "empty": "No assignments in this tab.",
+    "dueDate": "Due: {{date}}",
+    "overdue": "overdue",
+    "closed": "Closed"
+  },
+  "explore": {
+    "title": "Explore",
+    "subtitleGrade": "All exams for grade {{grade}} — free practice",
+    "subtitle": "Exams for your grade — free practice",
+    "search": "Search exams…",
+    "searchAria": "Search exams",
+    "allSubjects": "All subjects",
+    "subjectPlaceholder": "Subject",
+    "emptyFiltered": "No exams match the filter.",
+    "empty": "No exams of this type.",
+    "completed": "Completed"
+  }
+}

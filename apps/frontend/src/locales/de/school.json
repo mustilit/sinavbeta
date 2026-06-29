@@ -1,0 +1,38 @@
+{
+  "common": {
+    "accessDenied": "Kein Zugriff",
+    "prev": "Zurück",
+    "next": "Weiter",
+    "page": "Seite {{page}} / {{total}}",
+    "result": "Ergebnis",
+    "retry": "Wiederholen",
+    "continue": "Fortfahren",
+    "start": "Starten",
+    "questionsCount": "{{count}} Fragen",
+    "durationMin": "{{count}} Min.",
+    "types": { "TEST": "Test", "TUNNEL": "Tunnel", "WRITTEN": "Schriftlich", "all": "Alle Typen" }
+  },
+  "assignments": {
+    "title": "Meine Aufgaben",
+    "tabs": { "pending": "Offen", "submitted": "Abgegeben", "all": "Alle" },
+    "search": "Aufgaben suchen…",
+    "searchAria": "Aufgaben suchen",
+    "emptyFiltered": "Keine Aufgaben entsprechen dem Filter.",
+    "empty": "Keine Aufgaben in diesem Tab.",
+    "dueDate": "Fällig: {{date}}",
+    "overdue": "überfällig",
+    "closed": "Geschlossen"
+  },
+  "explore": {
+    "title": "Entdecken",
+    "subtitleGrade": "Alle Prüfungen der {{grade}}. Klasse — freies Üben",
+    "subtitle": "Prüfungen deiner Klassenstufe — freies Üben",
+    "search": "Prüfungen suchen…",
+    "searchAria": "Prüfungen suchen",
+    "allSubjects": "Alle Fächer",
+    "subjectPlaceholder": "Fach",
+    "emptyFiltered": "Keine Prüfungen entsprechen dem Filter.",
+    "empty": "Keine Prüfungen dieses Typs.",
+    "completed": "Abgeschlossen"
+  }
+}

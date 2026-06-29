@@ -25,29 +25,34 @@ import trCommon from '../locales/tr/common.json';
 import trAuth from '../locales/tr/auth.json';
 import trPages from '../locales/tr/pages.json';
 import trOnboarding from '../locales/tr/onboarding.json';
+import trSchool from '../locales/tr/school.json';
 import enCommon from '../locales/en/common.json';
 import enAuth from '../locales/en/auth.json';
 import enPages from '../locales/en/pages.json';
 import enOnboarding from '../locales/en/onboarding.json';
+import enSchool from '../locales/en/school.json';
 import esCommon from '../locales/es/common.json';
 import esAuth from '../locales/es/auth.json';
 import esPages from '../locales/es/pages.json';
 import esOnboarding from '../locales/es/onboarding.json';
+import esSchool from '../locales/es/school.json';
 import zhCommon from '../locales/zh/common.json';
 import zhAuth from '../locales/zh/auth.json';
 import zhPages from '../locales/zh/pages.json';
 import zhOnboarding from '../locales/zh/onboarding.json';
+import zhSchool from '../locales/zh/school.json';
 import deCommon from '../locales/de/common.json';
 import deAuth from '../locales/de/auth.json';
 import dePages from '../locales/de/pages.json';
 import deOnboarding from '../locales/de/onboarding.json';
+import deSchool from '../locales/de/school.json';
 
 const resources = {
-  tr: { common: trCommon, auth: trAuth, pages: trPages, onboarding: trOnboarding },
-  en: { common: enCommon, auth: enAuth, pages: enPages, onboarding: enOnboarding },
-  es: { common: esCommon, auth: esAuth, pages: esPages, onboarding: esOnboarding },
-  zh: { common: zhCommon, auth: zhAuth, pages: zhPages, onboarding: zhOnboarding },
-  de: { common: deCommon, auth: deAuth, pages: dePages, onboarding: deOnboarding },
+  tr: { common: trCommon, auth: trAuth, pages: trPages, onboarding: trOnboarding, school: trSchool },
+  en: { common: enCommon, auth: enAuth, pages: enPages, onboarding: enOnboarding, school: enSchool },
+  es: { common: esCommon, auth: esAuth, pages: esPages, onboarding: esOnboarding, school: esSchool },
+  zh: { common: zhCommon, auth: zhAuth, pages: zhPages, onboarding: zhOnboarding, school: zhSchool },
+  de: { common: deCommon, auth: deAuth, pages: dePages, onboarding: deOnboarding, school: deSchool },
 };
 
 /**
@@ -71,7 +76,7 @@ i18n
     resources,
     fallbackLng: 'tr',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'pages', 'onboarding'],
+    ns: ['common', 'auth', 'pages', 'onboarding', 'school'],
     supportedLngs: SUPPORTED_LANGUAGES.map((l) => l.code),
     // Bölge kodlu diller (örn. navigator 'tr-TR') taban dile ('tr') eşlensin.
     // Olmadan: 'tr-TR' supportedLngs'te tam eşleşmediği için elenir, detection

@@ -1,0 +1,38 @@
+{
+  "common": {
+    "accessDenied": "Erişim yok",
+    "prev": "Önceki",
+    "next": "Sonraki",
+    "page": "Sayfa {{page}} / {{total}}",
+    "result": "Sonuç",
+    "retry": "Tekrar",
+    "continue": "Devam Et",
+    "start": "Başla",
+    "questionsCount": "{{count}} soru",
+    "durationMin": "{{count}} dk",
+    "types": { "TEST": "Test", "TUNNEL": "Tünel", "WRITTEN": "Yazılı", "all": "Tüm türler" }
+  },
+  "assignments": {
+    "title": "Ödevlerim",
+    "tabs": { "pending": "Bekleyen", "submitted": "Teslim Edilen", "all": "Tümü" },
+    "search": "Ödev ara…",
+    "searchAria": "Ödev ara",
+    "emptyFiltered": "Filtreye uygun ödev yok.",
+    "empty": "Bu sekmede ödev yok.",
+    "dueDate": "Son teslim: {{date}}",
+    "overdue": "süresi geçti",
+    "closed": "Kapalı"
+  },
+  "explore": {
+    "title": "Keşfet",
+    "subtitleGrade": "{{grade}}. sınıf seviyendeki tüm sınavlar — serbest alıştırma",
+    "subtitle": "Seviyendeki sınavlar — serbest alıştırma",
+    "search": "Sınav ara…",
+    "searchAria": "Sınav ara",
+    "allSubjects": "Tüm dersler",
+    "subjectPlaceholder": "Ders",
+    "emptyFiltered": "Filtreye uygun sınav yok.",
+    "empty": "Bu türde sınav yok.",
+    "completed": "Tamamlandı"
+  }
+}

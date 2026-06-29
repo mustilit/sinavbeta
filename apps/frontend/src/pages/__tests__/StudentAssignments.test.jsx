@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '@/test/schoolRender';
+import i18n from '@/lib/i18n';
 import StudentAssignments from '../StudentAssignments';
 
 const h = vi.hoisted(() => ({
@@ -17,6 +18,7 @@ const past = new Date(Date.now() - 1e7).toISOString();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  i18n.changeLanguage('tr'); // i18n metinleri Türkçe doğrula
   h.user = { user: { id: 'u1', school: { schoolRole: 'STUDENT', schoolName: 'Okul' } } };
   h.api.list.mockResolvedValue({ items: [
     { id: 'a1', title: 'Açık Test', examType: 'TEST', dueDate: future, durationMinutes: 30, submitted: false, open: true, submissionStatus: null, score: null, maxScore: null },

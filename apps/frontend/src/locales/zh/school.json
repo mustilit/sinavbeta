@@ -1,0 +1,38 @@
+{
+  "common": {
+    "accessDenied": "无访问权限",
+    "prev": "上一页",
+    "next": "下一页",
+    "page": "第 {{page}} / {{total}} 页",
+    "result": "结果",
+    "retry": "重做",
+    "continue": "继续",
+    "start": "开始",
+    "questionsCount": "{{count}} 道题",
+    "durationMin": "{{count}} 分钟",
+    "types": { "TEST": "测验", "TUNNEL": "隧道", "WRITTEN": "笔试", "all": "全部类型" }
+  },
+  "assignments": {
+    "title": "我的作业",
+    "tabs": { "pending": "待完成", "submitted": "已提交", "all": "全部" },
+    "search": "搜索作业…",
+    "searchAria": "搜索作业",
+    "emptyFiltered": "没有符合筛选条件的作业。",
+    "empty": "此标签下暂无作业。",
+    "dueDate": "截止：{{date}}",
+    "overdue": "已逾期",
+    "closed": "已关闭"
+  },
+  "explore": {
+    "title": "发现",
+    "subtitleGrade": "{{grade}} 年级的全部试卷 — 自由练习",
+    "subtitle": "你年级的试卷 — 自由练习",
+    "search": "搜索试卷…",
+    "searchAria": "搜索试卷",
+    "allSubjects": "全部科目",
+    "subjectPlaceholder": "科目",
+    "emptyFiltered": "没有符合筛选条件的试卷。",
+    "empty": "暂无此类型试卷。",
+    "completed": "已完成"
+  }
+}

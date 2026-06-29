@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '@/test/schoolRender';
+import i18n from '@/lib/i18n';
 import StudentExplore from '../StudentExplore';
 
 const h = vi.hoisted(() => ({
@@ -24,6 +25,7 @@ const FACET_COUNTS = { TEST: 2, TUNNEL: 1, WRITTEN: 1 };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  i18n.changeLanguage('tr'); // i18n metinleri Türkçe doğrula
   h.user = { user: { id: 'u1', school: { schoolRole: 'STUDENT' } } };
   // Backend'i taklit et: examType/subject/q'ya göre süz, facet'leri döndür.
   h.api.listExams.mockImplementation(({ examType = 'TEST', subject, q } = {}) => {

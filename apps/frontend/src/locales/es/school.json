@@ -1,0 +1,38 @@
+{
+  "common": {
+    "accessDenied": "Acceso denegado",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {{page}} / {{total}}",
+    "result": "Resultado",
+    "retry": "Reintentar",
+    "continue": "Continuar",
+    "start": "Empezar",
+    "questionsCount": "{{count}} preguntas",
+    "durationMin": "{{count}} min",
+    "types": { "TEST": "Test", "TUNNEL": "Túnel", "WRITTEN": "Escrito", "all": "Todos los tipos" }
+  },
+  "assignments": {
+    "title": "Mis tareas",
+    "tabs": { "pending": "Pendientes", "submitted": "Entregadas", "all": "Todas" },
+    "search": "Buscar tareas…",
+    "searchAria": "Buscar tareas",
+    "emptyFiltered": "Ninguna tarea coincide con el filtro.",
+    "empty": "No hay tareas en esta pestaña.",
+    "dueDate": "Entrega: {{date}}",
+    "overdue": "vencida",
+    "closed": "Cerrada"
+  },
+  "explore": {
+    "title": "Explorar",
+    "subtitleGrade": "Todos los exámenes de {{grade}}.º grado — práctica libre",
+    "subtitle": "Exámenes de tu grado — práctica libre",
+    "search": "Buscar exámenes…",
+    "searchAria": "Buscar exámenes",
+    "allSubjects": "Todas las materias",
+    "subjectPlaceholder": "Materia",
+    "emptyFiltered": "Ningún examen coincide con el filtro.",
+    "empty": "No hay exámenes de este tipo.",
+    "completed": "Completado"
+  }
+}
