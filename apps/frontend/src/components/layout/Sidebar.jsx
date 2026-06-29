@@ -186,6 +186,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     { name: t("sidebar.esinif.myAssignments", { defaultValue: "Ödevlerim" }), page: "StudentAssignments", icon: BookOpen },
     { name: t("sidebar.esinif.explore", { defaultValue: "Keşfet" }), page: "StudentExplore", icon: Compass },
     { name: t("sidebar.esinif.myReports", { defaultValue: "Raporlarım" }), page: "StudentReports", icon: BarChart3 },
+    { name: t("sidebar.esinif.myNotes", { defaultValue: "Notlarım" }), page: "StudentNotes", icon: StickyNote },
     { name: t("sidebar.esinif.joinLive", { defaultValue: "Canlı Sınava Katıl" }), page: "StudentLive", icon: Zap },
   ];
 

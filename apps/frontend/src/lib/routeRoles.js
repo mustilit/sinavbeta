@@ -125,6 +125,7 @@ export const PAGE_ROLES = {
   StudentAssignments: [],
   StudentExplore: [],
   StudentReports: [],
+  StudentNotes: [],
   StudentSolve: [],
   StudentResult: [],
   SchoolGradeSubmission: [],

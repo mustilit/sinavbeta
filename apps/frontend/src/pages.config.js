@@ -167,6 +167,7 @@ const SchoolAssignmentReport = lazy(() => import('./pages/SchoolAssignmentReport
 const StudentAssignments = lazy(() => import('./pages/StudentAssignments'));
 const StudentExplore = lazy(() => import('./pages/StudentExplore'));
 const StudentReports = lazy(() => import('./pages/StudentReports'));
+const StudentNotes = lazy(() => import('./pages/StudentNotes'));
 const StudentSolve = lazy(() => import('./pages/StudentSolve'));
 const StudentResult = lazy(() => import('./pages/StudentResult'));
 const SchoolGradeSubmission = lazy(() => import('./pages/SchoolGradeSubmission'));
@@ -285,6 +286,7 @@ export const PAGES = {
     "StudentAssignments": StudentAssignments,
     "StudentExplore": StudentExplore,
     "StudentReports": StudentReports,
+    "StudentNotes": StudentNotes,
     "StudentSolve": StudentSolve,
     "StudentResult": StudentResult,
     "SchoolGradeSubmission": SchoolGradeSubmission,

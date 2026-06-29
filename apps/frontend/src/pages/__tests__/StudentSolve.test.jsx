@@ -15,6 +15,7 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.f
 vi.mock('@/components/test/QuestionCanvas', () => ({ default: () => <div data-testid="canvas" /> }));
 vi.mock('@/components/test/TestWatermark', () => ({ TestWatermark: () => <div data-testid="watermark" /> }));
 vi.mock('@/components/school/SchoolTunnelSolver', () => ({ SchoolTunnelSolver: () => <div data-testid="tunnel-solver" /> }));
+vi.mock('@/components/notes/NoteWidget', () => ({ NoteWidget: () => null }));
 
 const WRITTEN = {
   examType: 'WRITTEN', title: 'Matematik Yazılı', open: true, submitted: false, durationMinutes: 40,

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { TestWatermark } from "@/components/test/TestWatermark";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
+import { NoteWidget } from "@/components/notes/NoteWidget";
 import { CheckCircle2, XCircle, Loader2, Trophy, AlertCircle, Pencil, Eraser, Sun, Clock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -128,6 +129,9 @@ export function SchoolTunnelSolver({ examId }) {
           {feedback.correct ? "Doğru! 👏" : "Yanlış — doğru şık yeşil. Bu soru tekrar gelecek."}
         </p>
       )}
+
+      {/* Not alma — market tüneliyle aynı */}
+      <NoteWidget source="SCHOOL" contextId={examId} contextQuestionId={q.id} testTitle={state.title} />
     </div>
   );
 }

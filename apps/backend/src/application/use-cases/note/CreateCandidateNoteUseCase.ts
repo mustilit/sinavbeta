@@ -95,6 +95,26 @@ export class CreateCandidateNoteUseCase {
         contextId = wt.id;
         testTitle = `Yazılı: ${wt.title}`;
       }
+    } else if (source === 'SCHOOL') {
+      // E-Sınıf notu — SchoolQuestion / SchoolExam'dan snapshot (FK yok, contextId ile).
+      if (input.contextQuestionId) {
+        const q = await prisma.schoolQuestion.findUnique({
+          where: { id: input.contextQuestionId },
+          select: { id: true, content: true, order: true, examId: true },
+        });
+        if (!q) throw new AppError('NOTE_TARGET_NOT_FOUND', 'Not eklenecek soru bulunamadı', 404);
+        contextQuestionId = q.id;
+        contextId = q.examId;
+        questionExcerpt = (q.content ?? '').slice(0, EXCERPT_LEN);
+        questionOrder = input.questionOrder ?? q.order;
+        const ex = await prisma.schoolExam.findUnique({ where: { id: q.examId }, select: { title: true } });
+        testTitle = `E-Sınıf: ${ex?.title ?? '—'}`;
+      } else if (input.contextId) {
+        const ex = await prisma.schoolExam.findUnique({ where: { id: input.contextId }, select: { id: true, title: true } });
+        if (!ex) throw new AppError('NOTE_TARGET_NOT_FOUND', 'Not eklenecek sınav bulunamadı', 404);
+        contextId = ex.id;
+        testTitle = `E-Sınıf: ${ex.title}`;
+      }
     } else if (input.questionId) {
       const q = await prisma.examQuestion.findUnique({
         where: { id: input.questionId },

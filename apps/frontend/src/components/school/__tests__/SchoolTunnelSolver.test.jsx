@@ -12,6 +12,7 @@ vi.mock('@/api/dalClient', () => ({ schoolTunnel: h.api }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/components/test/QuestionCanvas', () => ({ default: () => <div data-testid="canvas" /> }));
 vi.mock('@/components/test/TestWatermark', () => ({ TestWatermark: () => <div data-testid="watermark" /> }));
+vi.mock('@/components/notes/NoteWidget', () => ({ NoteWidget: () => null }));
 
 const inProgress = {
   status: 'IN_PROGRESS', title: 'Çarpım Tüneli', progressPercent: 20, masteredQuestions: 1, totalQuestions: 5,

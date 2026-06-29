@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { TestWatermark } from "@/components/test/TestWatermark";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
 import { SchoolTunnelSolver } from "@/components/school/SchoolTunnelSolver";
+import { NoteWidget } from "@/components/notes/NoteWidget";
 import {
   ArrowLeft, Clock, Sun, Pencil, Eraser, AlertTriangle, ChevronLeft, ChevronRight,
   ImagePlus, X, CheckCircle2, AlertCircle, LogOut, Loader2,
@@ -263,6 +264,9 @@ export default function StudentSolve() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Not alma — market deseni (soru/genel). E-Sınıf source ile exam-scoped adres. */}
+      <NoteWidget source="SCHOOL" contextId={a.examId} contextQuestionId={q?.id} questionOrder={current + 1} testTitle={a.title} />
     </div>
   );
 }
