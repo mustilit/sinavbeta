@@ -15,7 +15,7 @@ import {
   GraduationCap,
   FileDown,
 } from "lucide-react";
-import { exportNotesPdf } from "@/lib/notesPdf";
+import { exportNotesPdf, collectAllNotes } from "@/lib/notesPdf";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,8 +138,8 @@ export default function MyNotes() {
   const exportPdf = async () => {
     setExporting(true);
     try {
-      const all = await notesApi.list({ ...filters, page: 1, pageSize: 1000 });
-      await exportNotesPdf({ items: all?.items ?? [], title: t("notes.page.title"), subtitle: "Sınav Salonu" });
+      const all = await collectAllNotes(notesApi.list, filters);
+      await exportNotesPdf({ items: all, title: t("notes.page.title"), subtitle: "Sınav Salonu" });
     } catch {
       toast.error(t("notes.page.error"));
     } finally {

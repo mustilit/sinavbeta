@@ -18,9 +18,31 @@ function noteCardHtml(n) {
     .filter(Boolean).join(' <span style="color:#cbd5e1">·</span> ');
   const excerpt = n.questionExcerpt ? `<div style="font-size:11px;color:#94a3b8;font-style:italic;margin:2px 0 4px">“${esc(n.questionExcerpt)}”</div>` : "";
   return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;page-break-inside:avoid">
-    <div style="font-size:11px;margin-bottom:2px">${head}</div>${excerpt}
-    <div style="font-size:13px;white-space:pre-wrap;line-height:1.5">${esc(n.body)}</div>
+    <div style="font-size:11px;margin-bottom:2px;word-break:break-word;overflow-wrap:anywhere">${head}</div>${excerpt}
+    <div style="font-size:13px;white-space:pre-wrap;line-height:1.5;word-break:break-word;overflow-wrap:anywhere">${esc(n.body)}</div>
   </div>`;
+}
+
+/**
+ * Tüm notları sayfa sayfa toplar (liste pageSize üst sınırı 100). Export "tüm notlar"
+ * için kullanılır; verilen filtrelere uyan kayıtları biriktirir.
+ * @param {(params:object)=>Promise<{items:Array,total:number}>} listFn
+ * @param {object} baseParams page/pageSize HARİÇ filtreler
+ */
+export async function collectAllNotes(listFn, baseParams = {}) {
+  const pageSize = 100;
+  let page = 1;
+  let total = Infinity;
+  const out = [];
+  while (out.length < total && page <= 200) {
+    const res = await listFn({ ...baseParams, page, pageSize });
+    const items = res?.items ?? [];
+    out.push(...items);
+    total = typeof res?.total === "number" ? res.total : out.length;
+    if (items.length < pageSize) break;
+    page += 1;
+  }
+  return out;
 }
 
 export async function exportNotesPdf({ items = [], title = "Notlarım", subtitle = "", fileName } = {}) {

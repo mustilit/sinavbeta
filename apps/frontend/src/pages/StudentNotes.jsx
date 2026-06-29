@@ -13,7 +13,7 @@ import {
 import { StickyNote, Search, ChevronLeft, ChevronRight, Pencil, Trash2, AlertCircle, Check, X, FileDown, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { exportNotesPdf } from "@/lib/notesPdf";
+import { exportNotesPdf, collectAllNotes } from "@/lib/notesPdf";
 
 const PAGE_SIZE = 10;
 const cleanExcerpt = (s) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
@@ -61,8 +61,9 @@ export default function StudentNotes() {
   const exportPdf = async () => {
     setExporting(true);
     try {
-      const all = await notesApi.list({ ...params, page: 1, pageSize: 1000 });
-      await exportNotesPdf({ items: all?.items ?? [], title: "Notlarım", subtitle: user?.school?.schoolName || "E-Sınıf" });
+      const base = { ...(q.trim() ? { q: q.trim() } : {}), ...(onlyGeneral ? { scope: "general" } : {}) };
+      const all = await collectAllNotes(notesApi.list, base);
+      await exportNotesPdf({ items: all, title: "Notlarım", subtitle: user?.school?.schoolName || "E-Sınıf" });
     } catch {
       toast.error("PDF oluşturulamadı");
     } finally {
