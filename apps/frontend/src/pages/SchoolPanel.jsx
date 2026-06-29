@@ -5,6 +5,9 @@ import { useAuth } from "@/lib/AuthContext";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Building2, BookOpen, Radio, ChevronRight, GraduationCap, AlertCircle, Library, BarChart3, FileText, Zap, ClipboardList } from "lucide-react";
+import OnboardingTour from "@/components/onboarding/OnboardingTour";
+import { SCHOOL_TEACHER_STEPS, SCHOOL_ADMIN_STEPS } from "@/components/onboarding/tourSteps";
+import { useShouldShowTour, useCompleteTour, TOUR_KEYS } from "@/lib/useOnboarding";
 
 const ADMIN_ROLES = ["SCHOOL_ADMIN", "BRANCH_ADMIN"];
 const TEACHER_ROLES = ["TEACHER", "DEPT_HEAD"];
@@ -22,6 +25,11 @@ export default function SchoolPanel() {
   const { user } = useAuth();
   const ctx = user?.school;
   const isManager = ADMIN_ROLES.includes(ctx?.schoolRole);
+  const isTeacher = TEACHER_ROLES.includes(ctx?.schoolRole);
+  // İlk girişte rol bazlı E-Sınıf bilgilendirme turu (yönetici / öğretmen).
+  const showAdminTour = useShouldShowTour(TOUR_KEYS.SCHOOL_ADMIN) && isManager;
+  const showTeacherTour = useShouldShowTour(TOUR_KEYS.SCHOOL_TEACHER) && isTeacher;
+  const completeTour = useCompleteTour();
 
   const { data: quota } = useQuery({
     queryKey: ["esinif", "quota"],
@@ -44,11 +52,18 @@ export default function SchoolPanel() {
     );
   }
 
-  const isTeacher = TEACHER_ROLES.includes(ctx.schoolRole);
+  const tourEl = showAdminTour ? (
+    <OnboardingTour steps={SCHOOL_ADMIN_STEPS} tourKey={TOUR_KEYS.SCHOOL_ADMIN} persona="school_admin"
+      onComplete={() => completeTour(TOUR_KEYS.SCHOOL_ADMIN)} onSkip={() => completeTour(TOUR_KEYS.SCHOOL_ADMIN)} />
+  ) : showTeacherTour ? (
+    <OnboardingTour steps={SCHOOL_TEACHER_STEPS} tourKey={TOUR_KEYS.SCHOOL_TEACHER} persona="school_teacher"
+      onComplete={() => completeTour(TOUR_KEYS.SCHOOL_TEACHER)} onSkip={() => completeTour(TOUR_KEYS.SCHOOL_TEACHER)} />
+  ) : null;
 
   if (isTeacher) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
+        {tourEl}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-indigo-600" /></div>
           <div><h1 className="text-2xl font-bold text-slate-900">{ctx.schoolName}</h1><p className="text-sm text-slate-500">{ROLE_LABEL[ctx.schoolRole]} paneli</p></div>
@@ -107,6 +122,7 @@ export default function SchoolPanel() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {tourEl}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-indigo-600" /></div>
         <div>

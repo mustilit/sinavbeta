@@ -98,5 +98,65 @@
       "title": "Yayınla!",
       "description": "Tüm hazırlıklar tamam mı? 'Yayınla' toggle'ını açınca paket anında adaylara görünür hale gelir. İstediğin zaman yayından kaldırabilirsin."
     }
+  },
+  "school": {
+    "student": {
+      "s0": {
+        "title": "E-Sınıf’a Hoş Geldin 🎓",
+        "description": "Okulunun dijital sınav sistemindesin. Ödevlerini çöz, eksiklerini gör, kendini geliştir. Kısa bir tur yapalım."
+      },
+      "s1": {
+        "title": "Ödevlerim",
+        "description": "Öğretmenlerinin sana atadığı sınavlar burada. Süresi ve son teslim tarihi olanları kaçırma; başla, devam et veya sonucunu gör."
+      },
+      "s2": {
+        "title": "Keşfet — Serbest Alıştırma",
+        "description": "Seviyendeki tüm sınavlar burada. Öğretmenin atamasa bile istediğin kadar çöz, pratik yap."
+      },
+      "s3": {
+        "title": "Raporlarım",
+        "description": "Çözdüğün soru sayısını ve başarımını ders, konu ve zamana göre takip et. Test ve Yazılı raporların ayrı sekmelerde."
+      },
+      "s4": {
+        "title": "Canlı Sınava Katıl",
+        "description": "Öğretmenin canlı bir sınav başlattığında, sana verdiği kodu girerek anında katılırsın."
+      }
+    },
+    "teacher": {
+      "s0": {
+        "title": "Öğretmen Paneline Hoş Geldin 👋",
+        "description": "Sınav oluştur, sınıflarına ödev ata, sonuçları izle. Hızlı bir tur yapalım."
+      },
+      "s1": {
+        "title": "Sınav Havuzu",
+        "description": "Test, Tünel ve Yazılı sınavlarını burada oluşturup düzenlersin. DOCX/PDF ile soru içe aktarabilirsin."
+      },
+      "s2": {
+        "title": "Ödev Ata",
+        "description": "Havuzdaki bir sınavı seçtiğin sınıflara ödev olarak ver; başlangıç/son teslim tarihini ve sonuç görünürlüğünü belirle."
+      },
+      "s3": {
+        "title": "Değerlendirme & Raporlar",
+        "description": "Yazılı cevapları puanla, sınıf ve öğrenci başarımını raporlarda gör. Dilersen canlı sınav da başlatabilirsin."
+      }
+    },
+    "admin": {
+      "s0": {
+        "title": "Okul Yönetim Paneline Hoş Geldin 🏫",
+        "description": "Okulunun yapısını, kullanıcılarını ve raporlarını buradan yönetirsin."
+      },
+      "s1": {
+        "title": "Yapı: Şubeler, Sınıflar, Zümreler",
+        "description": "Şube ve sınıf hiyerarşisini kur, dersleri ve zümreleri tanımla, yöneticileri ata."
+      },
+      "s2": {
+        "title": "Kullanıcılar",
+        "description": "Öğretmen ve öğrencileri ekle; sisteme kullanıcı adı + geçici şifre üret. Excel ile toplu öğrenci ekleyebilirsin."
+      },
+      "s3": {
+        "title": "Raporlar",
+        "description": "Okul, şube, seviye ve sınıf bazında başarımı; en iyi şube ve sınıfları tek ekranda gör."
+      }
+    }
   }
 }

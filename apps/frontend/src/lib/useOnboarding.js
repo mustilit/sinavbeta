@@ -16,6 +16,10 @@ export const TOUR_KEYS = {
   CANDIDATE_TEST: 'ob_cand_test',
   EDUCATOR_WELCOME: 'ob_edu_welcome',
   EDUCATOR_CREATE: 'ob_edu_create',
+  // E-Sınıf rol bazlı bilgilendirme turları
+  SCHOOL_STUDENT: 'ob_school_student',
+  SCHOOL_TEACHER: 'ob_school_teacher',
+  SCHOOL_ADMIN: 'ob_school_admin',
 };
 
 /** sessionStorage anahtarı — mevcut oturumda tamamlananları tut */

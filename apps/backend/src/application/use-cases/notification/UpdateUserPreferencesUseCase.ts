@@ -57,6 +57,8 @@ const WHITELIST = [
   'iban', 'bankName', 'accountHolder',
   // Onboarding tur tamamlama bayrakları
   'ob_cand_welcome', 'ob_cand_test', 'ob_edu_welcome', 'ob_edu_create',
+  // E-Sınıf rol bazlı bilgilendirme turları
+  'ob_school_student', 'ob_school_teacher', 'ob_school_admin',
 ];
 
 /**

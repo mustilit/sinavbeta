@@ -591,3 +591,75 @@ export const EDUCATOR_CREATE_STEPS = [
   { title: "onboarding:educatorCreate.s2.title", description: "onboarding:educatorCreate.s2.description", illustration: <IllustrationSolutions /> },
   { title: "onboarding:educatorCreate.s3.title", description: "onboarding:educatorCreate.s3.description", illustration: <IllustrationPublish /> },
 ];
+
+/* ═══════════════════════════════════════════════
+   E-SINIF — Rol bazlı bilgilendirme turları
+   Öğrenci (ob_school_student) / Öğretmen (ob_school_teacher) / Yönetici (ob_school_admin)
+═══════════════════════════════════════════════ */
+
+const SchoolHero = ({ emoji, label }) => (
+  <div className="text-center space-y-3">
+    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+      <span className="text-3xl">{emoji}</span>
+    </div>
+    <div className="text-sm font-bold text-slate-800">{label}</div>
+  </div>
+);
+
+const SchoolMenuMock = ({ items }) => (
+  <div className="w-full max-w-xs space-y-1.5">
+    {items.map((it) => (
+      <MockCard key={it.label} className={`flex items-center gap-3 !p-2.5 ${it.active ? "ring-2 ring-indigo-300" : ""}`}>
+        <div className={`w-8 h-8 rounded-lg ${it.color} flex items-center justify-center text-white text-sm`}>{it.icon}</div>
+        <span className="text-[11px] font-semibold text-slate-700 flex-1">{it.label}</span>
+        {it.badge && <MockBadge label={it.badge} color={it.badgeColor || "indigo"} />}
+      </MockCard>
+    ))}
+  </div>
+);
+
+// ÖĞRENCİ
+export const SCHOOL_STUDENT_STEPS = [
+  { title: "onboarding:school.student.s0.title", description: "onboarding:school.student.s0.description", illustration: <SchoolHero emoji="🎓" label="E-Sınıf" /> },
+  { title: "onboarding:school.student.s1.title", description: "onboarding:school.student.s1.description", illustration: <SchoolMenuMock items={[
+    { icon: "📚", label: "Matematik — 1. Ünite", color: "bg-indigo-400", badge: "Bekliyor", badgeColor: "amber", active: true },
+    { icon: "📝", label: "Türkçe Yazılı", color: "bg-emerald-400", badge: "Teslim", badgeColor: "emerald" },
+  ]} /> },
+  { title: "onboarding:school.student.s2.title", description: "onboarding:school.student.s2.description", illustration: <SchoolMenuMock items={[
+    { icon: "🧭", label: "Keşfet — Test", color: "bg-indigo-400", badge: "12", active: true },
+    { icon: "🔻", label: "Keşfet — Tünel", color: "bg-violet-400", badge: "5" },
+    { icon: "✍️", label: "Keşfet — Yazılı", color: "bg-amber-400", badge: "3" },
+  ]} /> },
+  { title: "onboarding:school.student.s3.title", description: "onboarding:school.student.s3.description", illustration: <IllustrationCandidateActivation /> },
+  { title: "onboarding:school.student.s4.title", description: "onboarding:school.student.s4.description", illustration: <SchoolHero emoji="⚡" label="Canlı Sınav — Kodla Katıl" /> },
+];
+
+// ÖĞRETMEN
+export const SCHOOL_TEACHER_STEPS = [
+  { title: "onboarding:school.teacher.s0.title", description: "onboarding:school.teacher.s0.description", illustration: <SchoolHero emoji="👋" label="Öğretmen Paneli" /> },
+  { title: "onboarding:school.teacher.s1.title", description: "onboarding:school.teacher.s1.description", illustration: <SchoolMenuMock items={[
+    { icon: "📋", label: "Test", color: "bg-indigo-400" },
+    { icon: "🔻", label: "Tünel", color: "bg-violet-400" },
+    { icon: "✍️", label: "Yazılı", color: "bg-amber-400" },
+  ]} /> },
+  { title: "onboarding:school.teacher.s2.title", description: "onboarding:school.teacher.s2.description", illustration: <SchoolMenuMock items={[
+    { icon: "🏫", label: "5-A", color: "bg-emerald-400", badge: "Ata", badgeColor: "indigo", active: true },
+    { icon: "🏫", label: "5-B", color: "bg-emerald-400", badge: "Ata", badgeColor: "indigo" },
+  ]} /> },
+  { title: "onboarding:school.teacher.s3.title", description: "onboarding:school.teacher.s3.description", illustration: <IllustrationSalesChart /> },
+];
+
+// YÖNETİCİ
+export const SCHOOL_ADMIN_STEPS = [
+  { title: "onboarding:school.admin.s0.title", description: "onboarding:school.admin.s0.description", illustration: <SchoolHero emoji="🏫" label="Okul Yönetim Paneli" /> },
+  { title: "onboarding:school.admin.s1.title", description: "onboarding:school.admin.s1.description", illustration: <SchoolMenuMock items={[
+    { icon: "🏢", label: "Şubeler & Sınıflar", color: "bg-indigo-400", active: true },
+    { icon: "📕", label: "Zümreler", color: "bg-violet-400" },
+    { icon: "📗", label: "Dersler", color: "bg-emerald-400" },
+  ]} /> },
+  { title: "onboarding:school.admin.s2.title", description: "onboarding:school.admin.s2.description", illustration: <SchoolMenuMock items={[
+    { icon: "👨‍🏫", label: "Öğretmen ekle", color: "bg-indigo-400" },
+    { icon: "🧑‍🎓", label: "Öğrenci ekle (Excel)", color: "bg-emerald-400", badge: "Toplu", badgeColor: "emerald" },
+  ]} /> },
+  { title: "onboarding:school.admin.s3.title", description: "onboarding:school.admin.s3.description", illustration: <IllustrationSalesChart /> },
+];

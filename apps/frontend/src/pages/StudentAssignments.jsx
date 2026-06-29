@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BookOpen, Clock, CheckCircle2, Play, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import OnboardingTour from "@/components/onboarding/OnboardingTour";
+import { SCHOOL_STUDENT_STEPS } from "@/components/onboarding/tourSteps";
+import { useShouldShowTour, useCompleteTour, TOUR_KEYS } from "@/lib/useOnboarding";
 
 const TYPE_META = {
   TEST: { label: "Test", Icon: ListChecks },
@@ -29,6 +32,9 @@ export default function StudentAssignments() {
   const [type, setType] = useState("ALL");
   const [page, setPage] = useState(1);
   const isStudent = user?.school?.schoolRole === "STUDENT";
+  // İlk girişte öğrenciye E-Sınıf bilgilendirme turu (rol bazlı).
+  const showTour = useShouldShowTour(TOUR_KEYS.SCHOOL_STUDENT) && isStudent;
+  const completeTour = useCompleteTour();
 
   const { data, isLoading } = useQuery({
     queryKey: ["esinif", "student-assignments", tab],
@@ -54,6 +60,15 @@ export default function StudentAssignments() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      {showTour && (
+        <OnboardingTour
+          steps={SCHOOL_STUDENT_STEPS}
+          tourKey={TOUR_KEYS.SCHOOL_STUDENT}
+          persona="school_student"
+          onComplete={() => completeTour(TOUR_KEYS.SCHOOL_STUDENT)}
+          onSkip={() => completeTour(TOUR_KEYS.SCHOOL_STUDENT)}
+        />
+      )}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><BookOpen className="w-5 h-5 text-indigo-600" /></div>
         <div><h1 className="text-2xl font-bold text-slate-900">Ödevlerim</h1><p className="text-sm text-slate-500">{user?.school?.schoolName}</p></div>
