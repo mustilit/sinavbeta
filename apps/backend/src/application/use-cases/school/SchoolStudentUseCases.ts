@@ -273,10 +273,12 @@ export class GetStudentResultUseCase {
  * Yalnız teslim/puanlanmış (SUBMITTED/GRADED) ve skoru olan teslimler ortalamaya girer.
  */
 export class GetStudentReportUseCase {
-  async execute(actorId: string | undefined, input: { from?: string; to?: string } = {}) {
+  async execute(actorId: string | undefined, input: { from?: string; to?: string; examType?: string } = {}) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'STUDENT');
     const db = prismaRead();
+    // Rapor sınav türüne göre süzülebilir (Raporlarım'da Test / Yazılı sekmeleri).
+    const examType = input.examType === 'TEST' || input.examType === 'WRITTEN' ? input.examType : undefined;
 
     const g = input.from ? new Date(input.from) : undefined;
     const l = input.to ? new Date(input.to) : undefined;
@@ -293,7 +295,13 @@ export class GetStudentReportUseCase {
 
     const subs = await db.schoolSubmission.findMany({
       // Raporlarım yalnız öğretmen ödevleri — serbest alıştırma (PRACTICE) dahil edilmez.
-      where: { studentId: actorId as string, kind: 'ASSIGNMENT', status: { in: ['SUBMITTED', 'GRADED'] as any }, ...(range ? { submittedAt: range } : {}) },
+      where: {
+        studentId: actorId as string,
+        kind: 'ASSIGNMENT',
+        status: { in: ['SUBMITTED', 'GRADED'] as any },
+        ...(range ? { submittedAt: range } : {}),
+        ...(examType ? { assignment: { exam: { examType: examType as any } } } : {}),
+      },
       select: {
         totalScore: true,
         maxScore: true,

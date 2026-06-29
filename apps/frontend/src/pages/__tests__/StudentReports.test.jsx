@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '@/test/schoolRender';
 import StudentReports from '../StudentReports';
 
@@ -39,15 +39,20 @@ describe('StudentReports', () => {
     expect(screen.getByText('Çözülen soru')).toBeInTheDocument();
     expect(screen.getByText('24')).toBeInTheDocument();
   });
-  it('boş → "çözülmüş sınav yok"', async () => {
-    h.api.get.mockResolvedValue({ level: null, summary: { submissionCount: 0, avgPercent: null }, bySubject: [], byTopic: [], timeseries: [] });
+  it('boş → "çözülmüş test yok"', async () => {
+    h.api.get.mockResolvedValue({ level: null, summary: { submissionCount: 0, avgPercent: null, questionCount: 0 }, bySubject: [], byTopic: [], timeseries: [] });
     renderWithProviders(<StudentReports />);
-    expect(await screen.findByText(/çözülmüş sınav yok/)).toBeInTheDocument();
+    expect(await screen.findByText(/çözülmüş test yok/)).toBeInTheDocument();
   });
-  it('zaman aralığı değişimi sorguyu tetikler', async () => {
+  it('varsayılan Test sekmesiyle sorgu yapılır', async () => {
     renderWithProviders(<StudentReports />);
     await screen.findByTestId('charts');
-    // Radix Select açıp seçmek yerine queryKey'in range ile değiştiğini, ilk çağrının from olmadan yapıldığını doğrula
-    expect(h.api.get).toHaveBeenCalledWith({ from: undefined });
+    expect(h.api.get).toHaveBeenCalledWith({ from: undefined, examType: 'TEST' });
+  });
+  it('Yazılı sekmesine geçince examType=WRITTEN ile sorgu', async () => {
+    renderWithProviders(<StudentReports />);
+    await screen.findByTestId('charts');
+    fireEvent.click(screen.getByRole('button', { name: /Yazılı/ }));
+    await waitFor(() => expect(h.api.get).toHaveBeenCalledWith({ from: undefined, examType: 'WRITTEN' }));
   });
 });

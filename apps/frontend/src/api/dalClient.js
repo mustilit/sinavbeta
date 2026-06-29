@@ -2337,10 +2337,11 @@ export const school = {
 // E-Sınıf öğrenci canlı sınav katılımı (Sprint 4-B)
 // E-Sınıf öğrenci raporu (ders/konu/takvim)
 export const studentReport = {
-  get: async ({ from, to } = {}) => {
+  get: async ({ from, to, examType } = {}) => {
     const qs = new URLSearchParams();
     if (from) qs.set('from', from);
     if (to) qs.set('to', to);
+    if (examType) qs.set('examType', examType);
     const s = qs.toString();
     return (await api.get(`/student/report${s ? `?${s}` : ''}`)).data;
   },

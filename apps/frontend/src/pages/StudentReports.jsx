@@ -4,7 +4,7 @@ import { studentReport } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, AlertCircle } from "lucide-react";
+import { BarChart3, AlertCircle, ListChecks, FileText } from "lucide-react";
 
 const StudentReportCharts = lazy(() => import("@/components/school/StudentReportCharts"));
 
@@ -16,12 +16,15 @@ const RANGES = [
   { value: "180", label: "Son 6 ay", days: 180 },
 ];
 const avgClass = (p) => (p == null ? "text-slate-400" : p >= 70 ? "text-emerald-600" : p >= 50 ? "text-amber-600" : "text-rose-600");
+// Test / Yazılı her sınav türünün raporu ayrı sekmede.
+const TYPE_TABS = [{ k: "TEST", l: "Test", Icon: ListChecks }, { k: "WRITTEN", l: "Yazılı", Icon: FileText }];
 
-/** E-Sınıf — Öğrenci Raporlarım: zamana ve seviyeye bağlı ders + konu başarımı. */
+/** E-Sınıf — Öğrenci Raporlarım: tür (Test/Yazılı) + zaman + seviyeye bağlı çözülen soru / başarım. */
 export default function StudentReports() {
   const { user } = useAuth();
   const isStudent = user?.school?.schoolRole === "STUDENT";
   const [range, setRange] = useState("all");
+  const [examType, setExamType] = useState("TEST");
 
   const from = (() => {
     const r = RANGES.find((x) => x.value === range);
@@ -29,8 +32,8 @@ export default function StudentReports() {
   })();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["esinif", "student-report", range],
-    queryFn: () => studentReport.get({ from }),
+    queryKey: ["esinif", "student-report", range, examType],
+    queryFn: () => studentReport.get({ from, examType }),
     enabled: isStudent,
   });
 
@@ -51,6 +54,15 @@ export default function StudentReports() {
         </Select>
       </div>
 
+      {/* Sınav türü sekmeleri — Test / Yazılı ayrı rapor */}
+      <div className="flex gap-1 border-b border-slate-200">
+        {TYPE_TABS.map((t) => (
+          <button key={t.k} type="button" onClick={() => setExamType(t.k)} className={`px-4 py-2.5 min-h-10 text-sm font-medium border-b-2 -mb-px inline-flex items-center gap-1.5 ${examType === t.k ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900"}`}>
+            <t.Icon className="w-4 h-4" /> {t.l}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { l: "Çözülen soru", v: summary.questionCount ?? 0 },
@@ -63,7 +75,7 @@ export default function StudentReports() {
       {isLoading ? (
         <div className="h-64 bg-slate-100 rounded-xl animate-pulse" />
       ) : summary.submissionCount === 0 ? (
-        <div className="text-center py-16 text-slate-500"><BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>Bu aralıkta çözülmüş sınav yok.</p></div>
+        <div className="text-center py-16 text-slate-500"><BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>Bu aralıkta çözülmüş {examType === "WRITTEN" ? "yazılı" : "test"} yok.</p></div>
       ) : (
         <Suspense fallback={<div className="h-64 bg-slate-100 rounded-xl animate-pulse" />}>
           <StudentReportCharts bySubject={data.bySubject} byTopic={data.byTopic} timeseries={data.timeseries} />
