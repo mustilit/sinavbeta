@@ -104,16 +104,22 @@ describe('StudentSolve — market parite + veri girişi', () => {
     expect(await screen.findByTestId('tunnel-solver')).toBeInTheDocument();
   });
 
-  it('YAZILI: fotoğraf yükle → görsel görünür → sil', async () => {
-    h.api.uploadImage.mockResolvedValue('http://up/p.png');
+  it('YAZILI: fotoğraf yükleme YOK (yalnız metin + kalem)', async () => {
     h.api.get.mockResolvedValue(WRITTEN);
     render();
     await screen.findByText(/6 × 3/);
-    const fileInput = document.querySelector('input[type="file"]');
-    fireEvent.change(fileInput, { target: { files: [new File(['x'], 'p.png', { type: 'image/png' })] } });
-    const img = await screen.findByAltText('cevap');
-    expect(img).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Görseli sil' }));
-    await waitFor(() => expect(screen.queryByAltText('cevap')).toBeNull());
+    // Cevap fotoğrafı yükleme kaldırıldı — dosya girişi/"Fotoğraf" butonu olmamalı
+    expect(document.querySelector('input[type="file"]')).toBeNull();
+    expect(screen.queryByText('Fotoğraf')).toBeNull();
+    expect(screen.getByPlaceholderText(/Cevabınız/)).toBeInTheDocument();
+  });
+
+  it('Kaydet ve Çık → autosave flush + listeye döner (teslim etmez)', async () => {
+    h.api.get.mockResolvedValue(TEST);
+    render();
+    await screen.findByText('Soru 1');
+    fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Çık/ }));
+    await waitFor(() => expect(h.nav).toHaveBeenCalledWith(expect.stringContaining('StudentAssignments')));
+    expect(h.api.submit).not.toHaveBeenCalled();
   });
 });

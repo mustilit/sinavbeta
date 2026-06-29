@@ -122,7 +122,7 @@ export default function StudentAssignments() {
                     {a.submitted ? (
                       <Button size="sm" variant="outline" className="gap-1" onClick={() => navigate(buildPageUrl("StudentResult", { id: a.id }))}><Eye className="w-4 h-4" /> Sonuç</Button>
                     ) : a.open ? (
-                      <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 gap-1" onClick={() => navigate(buildPageUrl("StudentSolve", { id: a.id }))}><Play className="w-4 h-4" /> {a.submissionStatus === "IN_PROGRESS" ? "Devam Et" : "Başla"}</Button>
+                      <Button size="sm" className={`gap-1 ${a.submissionStatus === "IN_PROGRESS" ? "bg-amber-500 hover:bg-amber-600" : "bg-indigo-600 hover:bg-indigo-700"}`} onClick={() => navigate(buildPageUrl("StudentSolve", { id: a.id }))}><Play className="w-4 h-4" /> {a.submissionStatus === "IN_PROGRESS" ? "Devam Et" : "Başla"}</Button>
                     ) : (
                       <Badge className="bg-slate-200 text-slate-600">Kapalı</Badge>
                     )}

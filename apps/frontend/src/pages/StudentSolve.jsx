@@ -13,7 +13,7 @@ import { SchoolTunnelSolver } from "@/components/school/SchoolTunnelSolver";
 import { NoteWidget } from "@/components/notes/NoteWidget";
 import {
   ArrowLeft, Clock, Sun, Pencil, Eraser, AlertTriangle, ChevronLeft, ChevronRight,
-  ImagePlus, X, CheckCircle2, AlertCircle, LogOut, Loader2,
+  X, CheckCircle2, AlertCircle, LogOut, Loader2, Save,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -125,13 +125,6 @@ export default function StudentSolve() {
     return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onHide); };
   }, [save]);
 
-  const uploadFor = async (qid, file) => {
-    if (!file) return;
-    const cur = answers[qid]?.imageUrls ?? [];
-    if (cur.length >= 5) return toast.error("En fazla 5 görsel");
-    try { const url = await apiNs.uploadImage(file); if (url) persist(qid, { imageUrls: [...cur, url] }); }
-    catch { toast.error("Görsel yüklenemedi"); }
-  };
   const removeImage = (qid, url) => {
     setDrawings((d) => { const n = { ...d }; if (n[qid] === url) delete n[qid]; return n; });
     persist(qid, { imageUrls: (answers[qid]?.imageUrls ?? []).filter((u) => u !== url) });
@@ -179,6 +172,17 @@ export default function StudentSolve() {
   const goTo = async (idx) => { if (!isChoice) await captureDrawing(q.id); setCurrent(idx); };
   const doSubmit = async () => { setShowFinishConfirm(false); if (!isChoice) await captureDrawing(q.id); submitM.mutate(); };
 
+  // Kaydet ve Çık: teslim ETMEZ (IN_PROGRESS kalır) — bekleyen autosave'leri gönderip listeye döner.
+  const saveAndExit = async () => {
+    if (!isChoice) await captureDrawing(q.id);
+    Object.values(saveTimers.current).forEach((t) => clearTimeout(t));
+    const pend = pendingRef.current;
+    pendingRef.current = {};
+    try { await Promise.allSettled(Object.values(pend).map((p) => save.mutateAsync(p))); } catch { /* yoksay */ }
+    toast.success("Kaydedildi — daha sonra devam edebilirsin");
+    navigate(buildPageUrl(isPractice ? "StudentExplore" : "StudentAssignments"));
+  };
+
   return (
     <div className="relative min-h-screen" data-exam-theme={examTheme}>
       <div className="max-w-3xl mx-auto px-1 py-4 space-y-4">
@@ -220,21 +224,18 @@ export default function StudentSolve() {
           ) : (
             <div className="mt-4 space-y-2">
               <label className="text-sm font-semibold text-slate-700">Cevabınız</label>
-              <Textarea value={answers[q.id]?.textAnswer ?? ""} onChange={(e) => persist(q.id, { textAnswer: e.target.value })} rows={6} placeholder="Cevabınız… (yazabilir, kalemle çizebilir veya kağıttaki cevabın fotoğrafını yükleyebilirsiniz)" maxLength={8000} />
-              <div className="flex flex-wrap items-center gap-2">
-                {(answers[q.id]?.imageUrls ?? []).map((u) => (
-                  <div key={u} className="relative">
-                    <img src={u} alt="cevap" className="h-20 w-20 object-cover rounded-lg border border-slate-200" />
-                    <button type="button" onClick={() => removeImage(q.id, u)} className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Görseli sil"><X className="w-3 h-3" /></button>
-                  </div>
-                ))}
-                {(answers[q.id]?.imageUrls ?? []).length < 5 && (
-                  <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500">
-                    <ImagePlus className="w-5 h-5" /><span className="text-[10px]">Fotoğraf</span>
-                    <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={(e) => { uploadFor(q.id, e.target.files?.[0]); e.target.value = ""; }} />
-                  </label>
-                )}
-              </div>
+              {/* E-Sınıf: cevap yalnız METİN veya KALEM çizimidir — fotoğraf yükleme yok. */}
+              <Textarea value={answers[q.id]?.textAnswer ?? ""} onChange={(e) => persist(q.id, { textAnswer: e.target.value })} rows={6} placeholder="Cevabınız… (yazabilir veya üstteki kalemle çizebilirsiniz)" maxLength={8000} />
+              {(answers[q.id]?.imageUrls ?? []).length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {(answers[q.id]?.imageUrls ?? []).map((u) => (
+                    <div key={u} className="relative">
+                      <img src={u} alt="çizim" className="h-20 w-20 object-cover rounded-lg border border-slate-200" />
+                      <button type="button" onClick={() => removeImage(q.id, u)} className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Çizimi sil"><X className="w-3 h-3" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -251,12 +252,17 @@ export default function StudentSolve() {
           <Button variant="outline" size="sm" disabled={current === questions.length - 1} onClick={() => goTo(Math.min(questions.length - 1, current + 1))}>Sonraki <ChevronRight className="h-4 w-4" /></Button>
         </div>
 
-        {/* Teslim */}
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
+        {/* Teslim / Kaydet ve Çık */}
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 flex-wrap">
           <span className="text-sm text-slate-600">{answeredCount}/{questions.length} cevaplandı</span>
-          <Button onClick={() => setShowFinishConfirm(true)} disabled={submitM.isPending} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-            {submitM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Teslim Et
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={saveAndExit} disabled={submitM.isPending} className="gap-2">
+              <Save className="h-4 w-4" /> Kaydet ve Çık
+            </Button>
+            <Button onClick={() => setShowFinishConfirm(true)} disabled={submitM.isPending} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+              {submitM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Teslim Et
+            </Button>
+          </div>
         </div>
       </div>
 

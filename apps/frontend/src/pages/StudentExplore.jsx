@@ -137,7 +137,7 @@ export default function StudentExplore() {
                       {!isTunnel && done && (
                         <Button size="sm" variant="outline" className="gap-1" onClick={() => seeResult(a)}><Eye className="w-4 h-4" /> Sonuç</Button>
                       )}
-                      <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 gap-1" onClick={() => solve(a)}>
+                      <Button size="sm" className={`gap-1 ${inProgress ? "bg-amber-500 hover:bg-amber-600" : "bg-indigo-600 hover:bg-indigo-700"}`} onClick={() => solve(a)}>
                         {done ? <><RotateCcw className="w-4 h-4" /> Tekrar</> : inProgress ? <><Play className="w-4 h-4" /> Devam Et</> : <><Play className="w-4 h-4" /> Başla</>}
                       </Button>
                     </div>
