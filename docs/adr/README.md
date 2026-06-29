@@ -24,6 +24,7 @@ Mimari kararlar, neden alındıkları, alternatifleri ve sonuçları ile birlikt
 | [0005](./0005-prisma-as-orm.md) | Prisma ORM + tek `schema.prisma` | Accepted |
 | [0006](./0006-react-vite-frontend.md) | Frontend: React 18 + Vite (Next.js değil) | Accepted |
 | [0007](./0007-uri-versioning.md) | API versiyonlama: URI prefix (`/v1/`) | Accepted |
+| [0008](./0008-esinif-b2b-isolation.md) | E-Sınıf B2B modülü — marketplace'ten izolasyon | Accepted |
 
 ## Yeni ADR yazma
 
