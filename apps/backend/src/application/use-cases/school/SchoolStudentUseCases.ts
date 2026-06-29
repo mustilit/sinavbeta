@@ -298,39 +298,50 @@ export class GetStudentReportUseCase {
         totalScore: true,
         maxScore: true,
         submittedAt: true,
+        _count: { select: { answers: true } }, // çözülen soru sayısı (rapor varsayılan metriği)
         assignment: { select: { exam: { select: { topic: true, department: { select: { name: true } } } } } },
       },
     });
 
     const pct = (s: number | null, m: number | null) => (s == null || !m ? null : Math.round((s / m) * 1000) / 10);
     const avg = (a: number[]) => (a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null);
-    const subjectAgg = new Map<string, number[]>();
-    const topicAgg = new Map<string, number[]>();
-    const dayAgg = new Map<string, number[]>();
-    const all: number[] = [];
+    // Her kova: başarım yüzdeleri (yalnız puanlı) + çözülen soru sayısı (tüm teslimler) + teslim sayısı.
+    type Agg = { pcts: number[]; questions: number; subs: number };
+    const subjectAgg = new Map<string, Agg>();
+    const topicAgg = new Map<string, Agg>();
+    const dayAgg = new Map<string, Agg>();
+    const allPcts: number[] = [];
+    let totalQuestions = 0;
+    const add = (m: Map<string, Agg>, key: string, p: number | null, q: number) => {
+      const a = m.get(key) ?? { pcts: [], questions: 0, subs: 0 };
+      if (p != null) a.pcts.push(p);
+      a.questions += q;
+      a.subs += 1;
+      m.set(key, a);
+    };
     for (const s of subs) {
-      const p = pct(s.totalScore, s.maxScore);
-      if (p == null) continue;
-      all.push(p);
+      const p = pct(s.totalScore, s.maxScore); // puanlanmamışsa null → başarımda yok ama soru sayısında var
+      const q = s._count.answers;
+      if (p != null) allPcts.push(p);
+      totalQuestions += q;
       const subj = s.assignment!.exam?.department?.name ?? 'Zümresiz';
-      subjectAgg.set(subj, [...(subjectAgg.get(subj) ?? []), p]);
+      add(subjectAgg, subj, p, q);
       const top = (s.assignment!.exam?.topic && s.assignment!.exam.topic.trim()) || 'Konusuz';
-      topicAgg.set(top, [...(topicAgg.get(top) ?? []), p]);
-      if (s.submittedAt) {
-        const day = s.submittedAt.toISOString().slice(0, 10);
-        dayAgg.set(day, [...(dayAgg.get(day) ?? []), p]);
-      }
+      add(topicAgg, top, p, q);
+      if (s.submittedAt) add(dayAgg, s.submittedAt.toISOString().slice(0, 10), p, q);
     }
-    const rows = (m: Map<string, number[]>) =>
-      // agg girdileri en az 1 non-null pct içerir → avgPercent non-null, ?? gereksiz
-      [...m.entries()].map(([name, ps]) => ({ name, avgPercent: avg(ps), count: ps.length })).sort((a, b) => (b.avgPercent as number) - (a.avgPercent as number));
+    // Varsayılan sıralama çözülen soru sayısına göre (rapor önce hacmi gösterir).
+    const rows = (m: Map<string, Agg>) =>
+      [...m.entries()]
+        .map(([name, a]) => ({ name, avgPercent: avg(a.pcts), count: a.subs, questionCount: a.questions }))
+        .sort((a, b) => b.questionCount - a.questionCount);
 
     return {
       level: gradeLevel,
-      summary: { submissionCount: subs.length, avgPercent: avg(all) },
+      summary: { submissionCount: subs.length, avgPercent: avg(allPcts), questionCount: totalQuestions },
       bySubject: rows(subjectAgg),
       byTopic: rows(topicAgg),
-      timeseries: [...dayAgg.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, ps]) => ({ date, avgPercent: avg(ps), count: ps.length })),
+      timeseries: [...dayAgg.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, a]) => ({ date, avgPercent: avg(a.pcts), count: a.subs, questionCount: a.questions })),
     };
   }
 }

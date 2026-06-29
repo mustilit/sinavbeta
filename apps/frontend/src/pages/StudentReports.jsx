@@ -36,7 +36,7 @@ export default function StudentReports() {
 
   if (!isStudent) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
 
-  const summary = data?.summary ?? { submissionCount: 0, avgPercent: null };
+  const summary = data?.summary ?? { submissionCount: 0, avgPercent: null, questionCount: 0 };
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
@@ -51,8 +51,9 @@ export default function StudentReports() {
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
+          { l: "Çözülen soru", v: summary.questionCount ?? 0 },
           { l: "Çözülen sınav", v: summary.submissionCount },
           { l: "Genel ortalama", v: fmtPct(summary.avgPercent), cls: avgClass(summary.avgPercent) },
           { l: "Seviye", v: data?.level ? `${data.level}. Sınıf` : "—" },

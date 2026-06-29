@@ -17,10 +17,10 @@ beforeEach(() => {
   h.user = { user: { id: 'u1', school: { schoolRole: 'STUDENT' } } };
   h.api.get.mockResolvedValue({
     level: 5,
-    summary: { submissionCount: 3, avgPercent: 72 },
-    bySubject: [{ name: 'Mat', avgPercent: 72, count: 3 }],
-    byTopic: [{ name: 'Cebir', avgPercent: 72, count: 3 }],
-    timeseries: [{ date: '2026-03-01', avgPercent: 72, count: 3 }],
+    summary: { submissionCount: 3, avgPercent: 72, questionCount: 24 },
+    bySubject: [{ name: 'Mat', avgPercent: 72, count: 3, questionCount: 24 }],
+    byTopic: [{ name: 'Cebir', avgPercent: 72, count: 3, questionCount: 24 }],
+    timeseries: [{ date: '2026-03-01', avgPercent: 72, count: 3, questionCount: 24 }],
   });
 });
 
@@ -35,6 +35,9 @@ describe('StudentReports', () => {
     expect(await screen.findByTestId('charts')).toBeInTheDocument();
     expect(screen.getByText('%72')).toBeInTheDocument();
     expect(screen.getByText('5. Sınıf')).toBeInTheDocument();
+    // Çözülen soru kartı (rapor önce hacmi gösterir)
+    expect(screen.getByText('Çözülen soru')).toBeInTheDocument();
+    expect(screen.getByText('24')).toBeInTheDocument();
   });
   it('boş → "çözülmüş sınav yok"', async () => {
     h.api.get.mockResolvedValue({ level: null, summary: { submissionCount: 0, avgPercent: null }, bySubject: [], byTopic: [], timeseries: [] });
