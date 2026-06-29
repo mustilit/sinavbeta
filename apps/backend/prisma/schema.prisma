@@ -2834,6 +2834,11 @@ model SchoolSubmission {
   feedback     String? // öğretmen genel yorumu (Sprint 4)
   gradedAt     DateTime?
   gradedById   String?
+  // Teslim anındaki soru+seçenek+doğru cevap+çözüm snapshot'ı (JSON).
+  // Eğitici sınavı sonradan güncellese bile bu teslimin sonuç/inceleme ekranı
+  // çözüldüğü versiyonu gösterir; yeni çözmeler güncel sınavı görür. Raporlar
+  // zaten totalScore/maxScore snapshot'ını kullanır → etkilenmez.
+  questionsSnapshot Json?
   answers      SchoolSubmissionAnswer[]
 
   @@unique([assignmentId, studentId])

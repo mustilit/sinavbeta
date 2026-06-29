@@ -6,6 +6,7 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole, type SchoolContext } from './schoolHelpers';
+import { resolveResultQuestions } from './schoolExamSnapshot';
 
 /** Ödevin sahibi/zümre başkanı/yönetici mi (değerlendirme yetkisi). */
 function canGrade(assignment: { createdById: string; exam: { departmentId: string | null } }, ctx: SchoolContext, actorId: string): boolean {
@@ -35,6 +36,8 @@ export class GetSubmissionForGradingUseCase {
     if (sub.assignment.exam.examType !== 'WRITTEN') throw new AppError('NOT_WRITTEN', 'Yalnızca yazılı sınavlar manuel değerlendirilir', 400);
 
     const answerByQ = new Map(sub.answers.map((a) => [a.questionId, a]));
+    // Öğrenci hangi versiyonu çözdüyse onu değerlendir (snapshot varsa); yoksa canlı.
+    const gradeQuestions = resolveResultQuestions(sub.questionsSnapshot, sub.assignment.exam.questions);
     return {
       submissionId: sub.id,
       assignmentTitle: sub.assignment.title,
@@ -43,7 +46,7 @@ export class GetSubmissionForGradingUseCase {
       totalScore: sub.totalScore,
       maxScore: sub.maxScore,
       student: { username: sub.student.username, name: `${sub.student.firstName ?? ''} ${sub.student.lastName ?? ''}`.trim() || null },
-      questions: sub.assignment.exam.questions.map((q) => {
+      questions: gradeQuestions.map((q) => {
         const a = answerByQ.get(q.id);
         return {
           questionId: q.id,
@@ -79,7 +82,9 @@ export class GradeSubmissionUseCase {
     if (sub.assignment.exam.examType !== 'WRITTEN') throw new AppError('NOT_WRITTEN', 'Yalnızca yazılı sınavlar puanlanır', 400);
     if (sub.status === 'IN_PROGRESS') throw new AppError('NOT_SUBMITTED', 'Teslim edilmemiş ödev puanlanamaz', 409);
 
-    const maxByQ = new Map(sub.assignment.exam.questions.map((q) => [q.id, q.points]));
+    // Puan tavanları öğrencinin çözdüğü versiyondan (snapshot) — sınav sonradan güncellense de sabit.
+    const gradeQuestions = resolveResultQuestions(sub.questionsSnapshot, sub.assignment.exam.questions);
+    const maxByQ = new Map(gradeQuestions.map((q) => [q.id, q.points]));
     const gradeByQ = new Map((input.grades ?? []).map((g) => [g.questionId, g.earnedPoints]));
     const answerByQ = new Map(sub.answers.map((a) => [a.questionId, a]));
 

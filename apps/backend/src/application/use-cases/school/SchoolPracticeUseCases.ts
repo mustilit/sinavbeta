@@ -16,6 +16,7 @@ import { prismaRead } from '../../../infrastructure/database/dbRouter';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole } from './schoolHelpers';
+import { buildExamSnapshot, resolveResultQuestions } from './schoolExamSnapshot';
 
 /** Öğrencinin sınıf seviyesi (Classroom.gradeLevel). Sınıfı yoksa null. */
 async function studentGradeLevel(classroomId: string | null): Promise<number | null> {
@@ -162,6 +163,7 @@ export class StartPracticeUseCase {
         // Tekrar çözmek için sıfırla (alıştırma — istediğin kadar dene)
         await prisma.$transaction([
           prisma.schoolSubmissionAnswer.deleteMany({ where: { submissionId: existing.id } }),
+          // questionsSnapshot dokunulmaz — bir sonraki teslim üzerine yazar (sonuç yalnız teslim sonrası görünür).
           prisma.schoolSubmission.update({ where: { id: existing.id }, data: { status: 'IN_PROGRESS', submittedAt: null, totalScore: null, maxScore: null } }),
         ]);
         return { submissionId: existing.id, resumed: false, reset: true };
@@ -236,6 +238,8 @@ export class SubmitPracticeUseCase {
           submittedAt: new Date(),
           totalScore: isChoice ? totalScore : null,
           maxScore,
+          // Çözüldüğü versiyonu dondur (sınav sonradan güncellense de sonuç sabit).
+          questionsSnapshot: buildExamSnapshot(exam.questions) as object,
         },
       });
     });
@@ -259,6 +263,8 @@ export class GetPracticeResultUseCase {
 
     const isChoice = exam.examType === 'TEST';
     const answerByQ = new Map(sub.answers.map((x) => [x.questionId, x]));
+    // Çözüldüğü versiyon: snapshot varsa onu, yoksa canlı sınav (eski teslimler).
+    const resultQuestions = resolveResultQuestions(sub.questionsSnapshot, exam.questions);
     return {
       visible: true,
       status: sub.status,
@@ -267,7 +273,7 @@ export class GetPracticeResultUseCase {
       totalScore: sub.totalScore,
       maxScore: sub.maxScore,
       feedback: null,
-      questions: exam.questions.map((q) => {
+      questions: resultQuestions.map((q) => {
         const ans = answerByQ.get(q.id);
         return {
           id: q.id,

@@ -7,6 +7,7 @@ import { prismaRead } from '../../../infrastructure/database/dbRouter';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole } from './schoolHelpers';
+import { buildExamSnapshot, resolveResultQuestions } from './schoolExamSnapshot';
 
 function isOpen(a: { status: string; availableFrom: Date; dueDate: Date; allowLateSubmit: boolean }): boolean {
   if (a.status === 'CLOSED') return false;
@@ -202,6 +203,8 @@ export class SubmitAssignmentUseCase {
           submittedAt: new Date(),
           totalScore: isChoice ? totalScore : null,
           maxScore,
+          // Çözüldüğü versiyonu dondur — sınav sonradan güncellense de sonuç/inceleme sabit.
+          questionsSnapshot: buildExamSnapshot(a.exam.questions) as object,
         },
       });
     });
@@ -230,6 +233,8 @@ export class GetStudentResultUseCase {
     }
     const isChoice = a.exam.examType === 'TEST' || a.exam.examType === 'TUNNEL';
     const answerByQ = new Map(sub.answers.map((x) => [x.questionId, x]));
+    // Çözüldüğü versiyon: snapshot varsa onu, yoksa canlı sınav (eski teslimler).
+    const resultQuestions = resolveResultQuestions(sub.questionsSnapshot, a.exam.questions);
     return {
       visible: true,
       status: sub.status,
@@ -237,7 +242,7 @@ export class GetStudentResultUseCase {
       totalScore: sub.totalScore,
       maxScore: sub.maxScore,
       feedback: sub.feedback ?? null,
-      questions: a.exam.questions.map((q) => {
+      questions: resultQuestions.map((q) => {
         const ans = answerByQ.get(q.id);
         return {
           id: q.id,

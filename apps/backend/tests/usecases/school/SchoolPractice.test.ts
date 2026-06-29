@@ -29,6 +29,7 @@ import {
   GetPracticeSolveUseCase,
   SubmitPracticeUseCase,
   StartPracticeUseCase,
+  GetPracticeResultUseCase,
 } from '../../../src/application/use-cases/school/SchoolPracticeUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 import { prismaRead } from '../../../src/infrastructure/database/dbRouter';
@@ -100,6 +101,47 @@ describe('SubmitPracticeUseCase — TEST otomatik puanlama', () => {
     p.schoolSubmission.findUnique.mockResolvedValue({ id: 's1', status: 'IN_PROGRESS', answers: [{ id: 'an1', questionId: 'q1', selectedOptionId: 'o1' }] });
     const r = await new SubmitPracticeUseCase().execute('e1', 'su1');
     expect(r).toMatchObject({ status: 'GRADED', totalScore: 2, maxScore: 2 });
+  });
+});
+
+describe('GetPracticeResultUseCase — çözüldüğü versiyon (snapshot)', () => {
+  it('sınav sonradan güncellense de sonuç snapshot versiyonunu gösterir', async () => {
+    // Canlı sınav DEĞİŞTİ: q1 içeriği + şıklar farklı.
+    p.schoolExam.findFirst.mockResolvedValue(examTest({
+      questions: [{ id: 'q1', content: 'GÜNCEL SORU', mediaUrl: null, points: 5, order: 1, solutionText: 'yeni çözüm', options: [{ id: 'oX', content: 'X', isCorrect: true, order: 1 }] }],
+    }));
+    p.schoolSubmission.findUnique.mockResolvedValue({
+      id: 's1', status: 'GRADED', totalScore: 2, maxScore: 2,
+      questionsSnapshot: [{ id: 'q1', content: 'ESKİ SORU', points: 2, order: 1, solutionText: 'eski çözüm', mediaUrl: null, solutionMediaUrl: null, options: [{ id: 'o1', content: 'A', isCorrect: true, order: 1 }, { id: 'o2', content: 'B', isCorrect: false, order: 2 }] }],
+      answers: [{ questionId: 'q1', selectedOptionId: 'o1', isCorrect: true, earnedPoints: 2 }],
+    });
+    const r = await new GetPracticeResultUseCase().execute('e1', 'su1');
+    expect(r.questions[0].content).toBe('ESKİ SORU');
+    expect(r.questions[0].solutionText).toBe('eski çözüm');
+    expect(r.questions[0].options.map((o: any) => o.id)).toEqual(['o1', 'o2']);
+  });
+
+  it('snapshot yoksa canlı sınava düşer (eski teslimler)', async () => {
+    p.schoolExam.findFirst.mockResolvedValue(examTest());
+    p.schoolSubmission.findUnique.mockResolvedValue({
+      id: 's1', status: 'GRADED', totalScore: 2, maxScore: 2, questionsSnapshot: null,
+      answers: [{ questionId: 'q1', selectedOptionId: 'o1', isCorrect: true, earnedPoints: 2 }],
+    });
+    const r = await new GetPracticeResultUseCase().execute('e1', 'su1');
+    expect(r.questions[0].content).toBe('S1');
+  });
+});
+
+describe('SubmitPracticeUseCase — snapshot yazılır', () => {
+  it('teslim sırasında questionsSnapshot kaydedilir', async () => {
+    p.schoolExam.findFirst.mockResolvedValue(examTest());
+    p.schoolSubmission.findUnique.mockResolvedValue({ id: 's1', status: 'IN_PROGRESS', answers: [{ id: 'an1', questionId: 'q1', selectedOptionId: 'o1' }] });
+    const txUpdate = jest.fn();
+    p.$transaction.mockImplementationOnce(async (fn: any) => fn({ schoolSubmissionAnswer: { update: jest.fn(), create: jest.fn() }, schoolSubmission: { update: txUpdate } }));
+    await new SubmitPracticeUseCase().execute('e1', 'su1');
+    const data = txUpdate.mock.calls[0][0].data;
+    expect(Array.isArray(data.questionsSnapshot)).toBe(true);
+    expect(data.questionsSnapshot[0].options[0]).toHaveProperty('isCorrect');
   });
 });
 
