@@ -8,7 +8,7 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { getDefaultTenantId } from '../../../common/tenant';
 import { logger } from '../../../infrastructure/logger/logger';
-import { generateTempPassword } from './schoolHelpers';
+import { generateTempPassword, schoolAudit } from './schoolHelpers';
 
 const CODE_RE = /^[A-Z0-9]{3,5}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -69,6 +69,7 @@ export class CreateSchoolUseCase {
       },
     });
     logger.info('school.created', { id: created.id, code, actorId });
+    schoolAudit(actorId ?? undefined, { action: 'SCHOOL_CREATED', entityType: 'School', entityId: created.id, metadata: { code, name: created.name } });
     return created;
   }
 }

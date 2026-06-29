@@ -6,7 +6,7 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopeIsEmpty, scopedClassroomWhere, isManagerForBranch } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopeIsEmpty, scopedClassroomWhere, isManagerForBranch, schoolAudit } from './schoolHelpers';
 
 // ── Şube ──────────────────────────────────────────────────────────────────
 export class CreateBranchUseCase {
@@ -17,6 +17,7 @@ export class CreateBranchUseCase {
     if (!name) throw new AppError('NAME_REQUIRED', 'Şube adı zorunlu', 400);
     const created = await prisma.branch.create({ data: { schoolId: ctx.schoolId, name } });
     logger.info('school.branch.created', { id: created.id, schoolId: ctx.schoolId, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_ORG_CREATED', entityType: 'Branch', entityId: created.id, metadata: { name: created.name } });
     return created;
   }
 }
@@ -86,6 +87,7 @@ export class CreateLevelUseCase {
 
     const created = await prisma.schoolLevel.create({ data: { schoolId: ctx.schoolId, branchId: input.branchId, gradeLevel: grade } });
     logger.info('school.level.created', { id: created.id, branchId: input.branchId, gradeLevel: grade, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_ORG_CREATED', entityType: 'SchoolLevel', entityId: created.id, metadata: { branchId: input.branchId, gradeLevel: grade } });
     return created;
   }
 }
@@ -117,6 +119,7 @@ export class DeleteLevelUseCase {
     if (level._count.classrooms > 0) throw new AppError('LEVEL_NOT_EMPTY', 'Önce seviyedeki sınıfları silin', 409);
     await prisma.schoolLevel.delete({ where: { id: levelId } });
     logger.info('school.level.deleted', { levelId, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_ORG_DELETED', entityType: 'SchoolLevel', entityId: levelId });
     return { ok: true };
   }
 }
@@ -142,6 +145,7 @@ export class CreateClassroomUseCase {
       data: { schoolId: ctx.schoolId, branchId: level.branchId, levelId: level.id, name, gradeLevel: level.gradeLevel },
     });
     logger.info('school.classroom.created', { id: created.id, levelId: level.id, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_ORG_CREATED', entityType: 'Classroom', entityId: created.id, metadata: { levelId: level.id, name: created.name } });
     return created;
   }
 }
@@ -172,6 +176,7 @@ export class DeleteClassroomUseCase {
     if (classroom._count.students > 0) throw new AppError('CLASSROOM_NOT_EMPTY', 'Önce sınıftaki öğrencileri çıkarın', 409);
     await prisma.classroom.delete({ where: { id: classroomId } });
     logger.info('school.classroom.deleted', { classroomId, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_ORG_DELETED', entityType: 'Classroom', entityId: classroomId });
     return { ok: true };
   }
 }
@@ -403,6 +408,7 @@ export class CreateDepartmentUseCase {
 
     const created = await prisma.department.create({ data: { schoolId: ctx.schoolId, branchId, levelId, name, subject } });
     logger.info('school.department.created', { id: created.id, branchId, levelId, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_ORG_CREATED', entityType: 'Department', entityId: created.id, metadata: { branchId, levelId, name, subject } });
     return created;
   }
 }
@@ -532,6 +538,7 @@ export class DeleteDepartmentUseCase {
     if (dept._count.members > 0) throw new AppError('DEPARTMENT_NOT_EMPTY', 'Önce zümredeki öğretmenleri çıkarın', 409);
     await prisma.department.delete({ where: { id: departmentId } });
     logger.info('school.department.deleted', { departmentId, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_ORG_DELETED', entityType: 'Department', entityId: departmentId });
     return { ok: true };
   }
 }
@@ -631,6 +638,7 @@ export class CreateSubjectUseCase {
     if (clash) throw new AppError('SUBJECT_EXISTS', 'Bu ders zaten ekli', 409);
     const created = await prisma.schoolSubject.create({ data: { schoolId: ctx.schoolId, name } });
     logger.info('school.subject.created', { id: created.id, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_ORG_CREATED', entityType: 'SchoolSubject', entityId: created.id, metadata: { name: created.name } });
     return { id: created.id, name: created.name };
   }
 }

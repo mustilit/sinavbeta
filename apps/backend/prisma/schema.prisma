@@ -156,6 +156,15 @@ enum AuditAction {
   WRITTEN_PUBLISHED
   WRITTEN_UNPUBLISHED
   WRITTEN_UPDATED
+  // ── E-Sınıf (okul) hassas işlemleri ─────────────────────────────────
+  SCHOOL_CREATED
+  SCHOOL_USER_CREATED
+  SCHOOL_USERS_BULK_CREATED
+  SCHOOL_USER_PASSWORD_RESET
+  SCHOOL_USER_ACTIVE_CHANGED
+  SCHOOL_SUBMISSION_GRADED
+  SCHOOL_ORG_CREATED
+  SCHOOL_ORG_DELETED
 }
 
 // ── Email Trafiği Enums ─────────────────────────────────────────────────────

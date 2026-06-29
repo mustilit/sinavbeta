@@ -7,7 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, isManagerForBranch, resolveSchoolScope, scopeIsEmpty, nextSchoolUsername, generateTempPassword, currentPeriodId, resolvePeriodFilter, type SchoolRoleStr } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, isManagerForBranch, resolveSchoolScope, scopeIsEmpty, nextSchoolUsername, generateTempPassword, currentPeriodId, resolvePeriodFilter, schoolAudit, type SchoolRoleStr } from './schoolHelpers';
 
 const ASSIGNABLE: SchoolRoleStr[] = ['BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER', 'STUDENT'];
 
@@ -87,6 +87,7 @@ export class CreateSchoolUserUseCase {
     });
 
     logger.info('school.user.created', { schoolUserId: result.schoolUserId, role, schoolId: ctx.schoolId, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_USER_CREATED', entityType: 'SchoolUser', entityId: result.schoolUserId, metadata: { role, username: result.username } });
     return { schoolUserId: result.schoolUserId, username: result.username, tempPassword, schoolRole: role };
   }
 }
@@ -163,6 +164,7 @@ export class BulkCreateStudentsUseCase {
     }, { timeout: 30000 });
 
     logger.info('school.students.bulk_created', { classroomId, count: created.length, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_USERS_BULK_CREATED', entityType: 'Classroom', entityId: classroomId, metadata: { count: created.length } });
     return { count: created.length, created };
   }
 }
@@ -288,6 +290,7 @@ export class SetSchoolUserActiveUseCase {
     if (!su) throw new AppError('USER_NOT_FOUND', 'Kullanıcı bulunamadı', 404);
     const updated = await prisma.schoolUser.update({ where: { id: schoolUserId }, data: { isActive: !!input.isActive } });
     logger.info('school.user.active_changed', { schoolUserId, isActive: updated.isActive, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_USER_ACTIVE_CHANGED', entityType: 'SchoolUser', entityId: schoolUserId, metadata: { isActive: updated.isActive } });
     return { id: updated.id, isActive: updated.isActive };
   }
 }
@@ -307,6 +310,7 @@ export class ResetSchoolUserPasswordUseCase {
     const passwordHash = await bcrypt.hash(tempPassword, 12);
     await prisma.user.update({ where: { id: su.userId }, data: { passwordHash, activeSessionId: null } });
     logger.info('school.user.password_reset', { schoolUserId, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_USER_PASSWORD_RESET', entityType: 'SchoolUser', entityId: schoolUserId, metadata: { username: su.username } });
     return { username: su.username, tempPassword };
   }
 }

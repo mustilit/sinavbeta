@@ -1,6 +1,11 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import type { Prisma } from '@prisma/client';
+import { AuditAction } from '@prisma/client';
+import { AuditLogger } from '../../../infrastructure/audit/AuditLogger';
+
+// E-Sınıf audit kayıtları için paylaşılan logger (DI'sız; prisma singleton kullanır).
+const _schoolAuditLogger = new AuditLogger();
 
 /** SchoolRole → username harf kısaltması (ANK-T-0042 deseni). */
 const ROLE_PREFIX: Record<string, string> = {
@@ -84,6 +89,31 @@ export function requireSchoolRole(ctx: SchoolContext, ...roles: SchoolRoleStr[])
   if (!roles.includes(ctx.schoolRole)) {
     throw new AppError('FORBIDDEN_SCHOOL_ROLE', 'Bu işlem için yetkiniz yok', 403);
   }
+}
+
+/**
+ * E-Sınıf hassas işlem AUDIT kaydı. Best-effort (akışı bloklamaz; hata yutulmaz,
+ * AuditLogger içinde logger.warn ile görünür). actor: SchoolContext (userId+schoolId+
+ * schoolRole) veya yalnız actorId string'i. schoolId/schoolRole metadata'ya konur.
+ */
+export function schoolAudit(
+  actor: SchoolContext | { userId?: string } | string | undefined,
+  entry: { action: AuditAction | string; entityType: string; entityId: string; before?: unknown; after?: unknown; metadata?: Record<string, unknown> },
+): void {
+  const userId = typeof actor === 'string' ? actor : actor?.userId;
+  const schoolId = typeof actor === 'object' && actor ? (actor as SchoolContext).schoolId : undefined;
+  const schoolRole = typeof actor === 'object' && actor ? (actor as SchoolContext).schoolRole : undefined;
+  _schoolAuditLogger.logAsync(
+    { userId, role: schoolRole },
+    {
+      action: entry.action,
+      entityType: entry.entityType,
+      entityId: entry.entityId,
+      before: entry.before,
+      after: entry.after,
+      metadata: { ...(entry.metadata ?? {}), schoolId, schoolRole, module: 'E-SINIF' },
+    },
+  );
 }
 
 /** Okulun GÜNCEL dönemi (School.periodId). Dönemsel kayıtlar bununla damgalanır/süzülür. */

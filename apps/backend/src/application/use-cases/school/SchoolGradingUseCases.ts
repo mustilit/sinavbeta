@@ -5,7 +5,7 @@
 import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, type SchoolContext } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, schoolAudit, type SchoolContext } from './schoolHelpers';
 import { resolveResultQuestions } from './schoolExamSnapshot';
 
 /** Ödevin sahibi/zümre başkanı/yönetici mi (değerlendirme yetkisi). */
@@ -106,6 +106,7 @@ export class GradeSubmissionUseCase {
     }));
     await prisma.$transaction(ops);
     logger.info('school.submission.graded', { submissionId, totalScore, maxScore, actorId });
+    schoolAudit(ctx, { action: 'SCHOOL_SUBMISSION_GRADED', entityType: 'SchoolSubmission', entityId: submissionId, metadata: { totalScore, maxScore } });
     return { status: 'GRADED', totalScore, maxScore };
   }
 }
