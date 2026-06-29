@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Req } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../swagger/decorators';
 import {
@@ -119,6 +120,9 @@ export class SchoolController {
   assignStudents(@Param('id') id: string, @Body() dto: AssignStudentsDto, @Req() req: any) {
     return this.assignStudentsUC.execute(id, dto, req?.user?.id);
   }
+  // Toplu öğrenci üretimi (her satır geçici parola) — kötüye-kullanım/otomasyon koruması.
+  // 429 → http-exception.filter SUSPICIOUS_RATE_LIMIT audit'i otomatik yazar.
+  @Throttle({ default: { limit: 10, ttl: 300000 } })
   @Post('classrooms/:id/students/bulk') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Excel: toplu öğrenci oluştur; { count, created:[{name,username,tempPassword}] }' }) @ApiErrorResponses()
   bulkStudents(@Param('id') id: string, @Body() dto: BulkStudentsDto, @Req() req: any) {
     return this.bulkStudentsUC.execute(id, dto, req?.user?.id);
@@ -181,12 +185,16 @@ export class SchoolController {
   ) {
     return this.listUsersUC.execute({ role, q, branchId, periodId, cursor: cursor || null, limit: limit ? Number(limit) : undefined }, req?.user?.id);
   }
+  // Geçici parolalı kullanıcı üretimi — credential üretim akışı throttle'lı.
+  @Throttle({ default: { limit: 30, ttl: 300000 } })
   @Post('users') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Kullanıcı ekle; { username, tempPassword } döner' }) @ApiErrorResponses()
   createUser(@Body() dto: CreateSchoolUserDto, @Req() req: any) { return this.createUserUC.execute(dto, req?.user?.id); }
   @Patch('users/:id/active') @ApiBearerAuth('bearer') @ApiErrorResponses()
   setActive(@Param('id') id: string, @Body() dto: SetActiveDto, @Req() req: any) {
     return this.setActiveUC.execute(id, dto, req?.user?.id);
   }
+  // Parola sıfırlama (yeni geçici parola) — brute-force/otomasyon koruması.
+  @Throttle({ default: { limit: 20, ttl: 300000 } })
   @Post('users/:id/reset-password') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Şifre sıfırla; { username, tempPassword } döner' }) @ApiErrorResponses()
   resetPassword(@Param('id') id: string, @Req() req: any) { return this.resetPwUC.execute(id, req?.user?.id); }
 
