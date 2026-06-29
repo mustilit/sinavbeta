@@ -276,17 +276,17 @@ describe('GetStudentReport — tarih/null/Zümresiz/Konusuz/zaman serisi', () =>
   });
   it('sınıflı + tarih aralığı + null skor + Zümresiz/Konusuz + çok gün', async () => {
     const findMany = jest.fn().mockResolvedValue([
-      { totalScore: 8, maxScore: 10, submittedAt: new Date('2026-03-03'), assignment: { exam: { topic: 'Cebir', department: { name: 'Mat' } } } },
-      { totalScore: null, maxScore: 10, submittedAt: new Date('2026-03-01'), assignment: { exam: { topic: 'Cebir', department: { name: 'Mat' } } } }, // null skor → atla
-      { totalScore: 6, maxScore: 10, submittedAt: new Date('2026-03-02'), assignment: { exam: { topic: '  ', department: null } } }, // Zümresiz + Konusuz
-      { totalScore: 4, maxScore: 10, submittedAt: null, assignment: { exam: { topic: 'Geo', department: { name: 'Mat' } } } }, // null gün → dayAgg atla
+      { totalScore: 8, maxScore: 10, _count: { answers: 1 }, submittedAt: new Date('2026-03-03'), assignment: { exam: { topic: 'Cebir', department: { name: 'Mat' } } } },
+      { totalScore: null, maxScore: 10, _count: { answers: 1 }, submittedAt: new Date('2026-03-01'), assignment: { exam: { topic: 'Cebir', department: { name: 'Mat' } } } }, // null skor → atla
+      { totalScore: 6, maxScore: 10, _count: { answers: 1 }, submittedAt: new Date('2026-03-02'), assignment: { exam: { topic: '  ', department: null } } }, // Zümresiz + Konusuz
+      { totalScore: 4, maxScore: 10, _count: { answers: 1 }, submittedAt: null, assignment: { exam: { topic: 'Geo', department: { name: 'Mat' } } } }, // null gün → dayAgg atla
     ]);
     read.mockReturnValue({ schoolSubmission: { findMany }, classroom: { findUnique: jest.fn().mockResolvedValue({ gradeLevel: 5 }) } });
     const r = await new Stu.GetStudentReportUseCase().execute('su1', { from: '2026-01-01', to: '2026-06-01' });
     expect(r.level).toBe(5);
     expect(r.bySubject.map((x: any) => x.name)).toEqual(expect.arrayContaining(['Mat', 'Zümresiz']));
     expect(r.byTopic.map((x: any) => x.name)).toEqual(expect.arrayContaining(['Cebir', 'Konusuz', 'Geo']));
-    expect(r.timeseries.map((t: any) => t.date)).toEqual(['2026-03-02', '2026-03-03']); // 2 gün sıralı (null gün hariç)
+    expect(r.timeseries.map((t: any) => t.date)).toEqual(['2026-03-01', '2026-03-02', '2026-03-03']); // submittedAt olan 3 gün (puansız teslim de hacme sayılır); null gün hariç
     expect(read().schoolSubmission.findMany.mock.calls[0][0].where.submittedAt).toMatchObject({ gte: expect.any(Date), lte: expect.any(Date) });
   });
   it('tarih: yalnız from / yalnız to / geçersiz', async () => {
