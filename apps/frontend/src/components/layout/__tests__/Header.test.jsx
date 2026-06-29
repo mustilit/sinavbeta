@@ -62,21 +62,20 @@ describe('PublicHeader bileşeni', () => {
     expect(homeLink).toHaveAttribute('href', '/Home');
   });
 
-  it('Keşfet nav linki mevcut', () => {
-    // Arrange & Act
-    renderHeader();
+  it('E-Sınıf (okul) giriş butonu mevcut', () => {
+    // Arrange & Act — E-Sınıf refaktörü sonrası public nav: Giriş + E-Sınıf butonları
+    renderHeader(null);
     // Assert
-    const exploreLink = screen.getByRole('link', { name: /keşfet/i });
-    expect(exploreLink).toBeInTheDocument();
-    expect(exploreLink).toHaveAttribute('href', '/Explore');
+    expect(screen.getByRole('button', { name: /e-sınıf/i })).toBeInTheDocument();
   });
 
-  it('Eğiticiler nav linki mevcut', () => {
-    // Arrange & Act
-    renderHeader();
-    // Assert
-    const educatorsLink = screen.getByRole('link', { name: /eğitici/i });
-    expect(educatorsLink).toBeInTheDocument();
+  it('E-Sınıf butonuna tıklanınca okul bağlamıyla giriş ekranına yönlenir', () => {
+    // Arrange
+    renderHeader(null);
+    // Act
+    fireEvent.click(screen.getByRole('button', { name: /e-sınıf/i }));
+    // Assert — Login'e context=school query'siyle navigate
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('context=school'));
   });
 
   it('dil seçici bileşeni render edilir', () => {

@@ -14,6 +14,7 @@ vi.mock('@/lib/navigation', () => ({ useAppNavigate: () => h.nav, buildPageUrl: 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock('@/components/test/QuestionCanvas', () => ({ default: () => <div data-testid="canvas" /> }));
 vi.mock('@/components/test/TestWatermark', () => ({ TestWatermark: () => <div data-testid="watermark" /> }));
+vi.mock('@/components/school/SchoolTunnelSolver', () => ({ SchoolTunnelSolver: () => <div data-testid="tunnel-solver" /> }));
 
 const WRITTEN = {
   examType: 'WRITTEN', title: 'Matematik Yazılı', open: true, submitted: false, durationMinutes: 40,
@@ -94,5 +95,24 @@ describe('StudentSolve — market parite + veri girişi', () => {
     await screen.findByText('Soru 1');
     fireEvent.click(screen.getByRole('button', { name: 'Bej okuma modu' }));
     expect(document.body.classList.contains('exam-sepia')).toBe(true);
+  });
+
+  it('TUNNEL → adaptif çözücü (SchoolTunnelSolver)', async () => {
+    h.api.get.mockResolvedValue({ examType: 'TUNNEL', examId: 'tx1', open: true, submitted: false, title: 'Tünel', questions: [] });
+    render();
+    expect(await screen.findByTestId('tunnel-solver')).toBeInTheDocument();
+  });
+
+  it('YAZILI: fotoğraf yükle → görsel görünür → sil', async () => {
+    h.api.uploadImage.mockResolvedValue('http://up/p.png');
+    h.api.get.mockResolvedValue(WRITTEN);
+    render();
+    await screen.findByText(/6 × 3/);
+    const fileInput = document.querySelector('input[type="file"]');
+    fireEvent.change(fileInput, { target: { files: [new File(['x'], 'p.png', { type: 'image/png' })] } });
+    const img = await screen.findByAltText('cevap');
+    expect(img).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Görseli sil' }));
+    await waitFor(() => expect(screen.queryByAltText('cevap')).toBeNull());
   });
 });
