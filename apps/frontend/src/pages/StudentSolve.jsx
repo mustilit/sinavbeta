@@ -54,6 +54,7 @@ export default function StudentSolve() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const saveTimers = useRef({});
+  const pendingRef = useRef({}); // qid -> bekleyen autosave payload (kapanışta flush)
   const started = useRef(false);
   const canvasRef = useRef(null);
 
@@ -102,12 +103,26 @@ export default function StudentSolve() {
   const persist = useCallback((qid, patch) => {
     setAnswers((prev) => {
       const next = { ...prev, [qid]: { ...prev[qid], ...patch } };
+      const payload = { questionId: qid, selectedOptionId: next[qid].selectedOptionId ?? null, textAnswer: next[qid].textAnswer ?? null, imageUrls: next[qid].imageUrls ?? [] };
+      pendingRef.current[qid] = payload; // beforeunload flush için bekleyen kayıt
       clearTimeout(saveTimers.current[qid]);
-      saveTimers.current[qid] = setTimeout(() => {
-        save.mutate({ questionId: qid, selectedOptionId: next[qid].selectedOptionId ?? null, textAnswer: next[qid].textAnswer ?? null, imageUrls: next[qid].imageUrls ?? [] });
-      }, 600);
+      saveTimers.current[qid] = setTimeout(() => { delete pendingRef.current[qid]; save.mutate(payload); }, 600);
       return next;
     });
+  }, [save]);
+
+  // Veri kaybı önleme: ekran kapanırken/sekme gizlenirken bekleyen autosave'leri hemen gönder.
+  useEffect(() => {
+    const flush = () => {
+      const pend = pendingRef.current;
+      pendingRef.current = {};
+      Object.values(saveTimers.current).forEach((tmr) => clearTimeout(tmr));
+      Object.values(pend).forEach((payload) => { try { save.mutate(payload); } catch { /* yoksay */ } });
+    };
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onHide);
+    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onHide); };
   }, [save]);
 
   const uploadFor = async (qid, file) => {

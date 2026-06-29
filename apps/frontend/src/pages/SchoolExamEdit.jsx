@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useAutoSave } from "@/lib/useAutoSave";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { school as schoolApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -59,13 +60,51 @@ export default function SchoolExamEdit() {
     else setQuestions(toLocalQuestions(exam.questions, exam.examType === "TEST"));
   }, [exam]);
 
+  // ── Veri kaybı önleme: soru/meta taslağı (localStorage + beforeunload/visibility) ──
+  // Kaydedilmemiş sorular yalnız React state'inde; ekran kapanınca/yenilenince kaybolmasın.
+  const draftKey = examId
+    ? `schoolExam_${examId}`
+    : (user?.id ? `schoolExamNew_${user.id}_${type}` : null);
+  const [draftReady, setDraftReady] = useState(false);
+  const restoredRef = useRef(false);
+  const { scheduleSave, loadDraft, clearDraft } = useAutoSave(
+    draftKey ?? "__noop__",
+    () => ({ form, questions }),
+    { enabled: draftReady && !!draftKey, serverKey: null },
+  );
+
+  // Mount'ta taslağı geri yükle (edit modunda önce sunucu verisi yüklensin).
+  useEffect(() => {
+    if (restoredRef.current || !draftKey) return;
+    if (examId && !exam) return; // edit: sunucu sınavı gelene kadar bekle
+    restoredRef.current = true;
+    (async () => {
+      try {
+        const draft = await loadDraft();
+        if (draft && (Array.isArray(draft.questions) && draft.questions.length || draft.form?.title)) {
+          if (draft.form) setForm((f) => ({ ...f, ...draft.form }));
+          if (Array.isArray(draft.questions)) setQuestions(draft.questions);
+          toast.info("Kaydedilmemiş taslağın geri yüklendi.");
+        }
+      } finally {
+        setDraftReady(true);
+      }
+    })();
+  }, [draftKey, examId, exam, loadDraft]);
+
+  // Form/soru değişince taslağı kaydet (yalnız restore tamamlandıktan sonra).
+  useEffect(() => {
+    if (!draftReady || !draftKey) return;
+    scheduleSave();
+  }, [form, questions, draftReady, draftKey, scheduleSave]);
+
   const createMeta = useMutation({
     mutationFn: () => schoolApi.exams.create({
       examType: type, title: form.title, subject: form.subject || undefined,
       gradeLevel: form.gradeLevel ? Number(form.gradeLevel) : undefined, topic: form.topic || undefined,
       durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : undefined, poolVisibility: form.poolVisibility,
     }),
-    onSuccess: (res) => { toast.success("Sınav oluşturuldu — şimdi soru ekleyin"); setExamId(res.id); navigate(buildPageUrl("SchoolExamEdit", { id: res.id }), { replace: true }); qc.invalidateQueries({ queryKey: ["esinif", "exam-pool"] }); },
+    onSuccess: (res) => { toast.success("Sınav oluşturuldu — şimdi soru ekleyin"); clearDraft(); setExamId(res.id); navigate(buildPageUrl("SchoolExamEdit", { id: res.id }), { replace: true }); qc.invalidateQueries({ queryKey: ["esinif", "exam-pool"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Oluşturulamadı"),
   });
   const updateMeta = useMutation({
@@ -74,7 +113,7 @@ export default function SchoolExamEdit() {
       gradeLevel: form.gradeLevel ? Number(form.gradeLevel) : null, topic: form.topic || null,
       durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : null, poolVisibility: form.poolVisibility,
     }),
-    onSuccess: () => { toast.success("Bilgiler kaydedildi"); qc.invalidateQueries({ queryKey: ["esinif", "exam", examId] }); },
+    onSuccess: () => { toast.success("Bilgiler kaydedildi"); clearDraft(); qc.invalidateQueries({ queryKey: ["esinif", "exam", examId] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Kaydedilemedi"),
   });
   const saveQuestions = useMutation({
@@ -82,7 +121,7 @@ export default function SchoolExamEdit() {
       const payload = type === "TUNNEL" ? await uploadPendingTunnelImages(questions) : questions;
       return schoolApi.exams.saveQuestions(examId, payload);
     },
-    onSuccess: (res) => { toast.success(`${res.saved} soru kaydedildi (${res.totalPoints} puan)`); qc.invalidateQueries({ queryKey: ["esinif", "exam", examId] }); qc.invalidateQueries({ queryKey: ["esinif", "exam-pool"] }); },
+    onSuccess: (res) => { toast.success(`${res.saved} soru kaydedildi (${res.totalPoints} puan)`); clearDraft(); qc.invalidateQueries({ queryKey: ["esinif", "exam", examId] }); qc.invalidateQueries({ queryKey: ["esinif", "exam-pool"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Sorular kaydedilemedi"),
   });
 
