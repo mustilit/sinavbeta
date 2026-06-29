@@ -64,7 +64,8 @@ export default function StudentNotes() {
       const base = { ...(q.trim() ? { q: q.trim() } : {}), ...(onlyGeneral ? { scope: "general" } : {}) };
       const all = await collectAllNotes(notesApi.list, base);
       await exportNotesPdf({ items: all, title: "Notlarım", subtitle: user?.school?.schoolName || "E-Sınıf" });
-    } catch {
+    } catch (e) {
+      console.error("Notlar PDF export hatası:", e);
       toast.error("PDF oluşturulamadı");
     } finally {
       setExporting(false);

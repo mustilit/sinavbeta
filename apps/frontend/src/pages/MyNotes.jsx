@@ -140,7 +140,8 @@ export default function MyNotes() {
     try {
       const all = await collectAllNotes(notesApi.list, filters);
       await exportNotesPdf({ items: all, title: t("notes.page.title"), subtitle: "Sınav Salonu" });
-    } catch {
+    } catch (e) {
+      console.error("Notlar PDF export hatası:", e);
       toast.error(t("notes.page.error"));
     } finally {
       setExporting(false);
