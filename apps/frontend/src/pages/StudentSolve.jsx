@@ -75,10 +75,13 @@ export default function StudentSolve() {
     if (!a.open) return;
     if (!started.current) { started.current = true; start.mutate(); }
     const init = {};
+    const initDraw = {};
     for (const q of a.questions) {
-      init[q.id] = { selectedOptionId: q.selectedOptionId ?? null, textAnswer: q.textAnswer ?? "", imageUrls: q.imageUrls ?? [] };
+      const imgs = q.imageUrls ?? [];
+      init[q.id] = { selectedOptionId: q.selectedOptionId ?? null, textAnswer: q.textAnswer ?? "", imageUrls: imgs };
+      if (imgs[0]) initDraw[q.id] = imgs[0]; // tek çizim/soru — canvas'a geri yüklenecek
     }
-    setAnswers(init); setDrawings({});
+    setAnswers(init); setDrawings(initDraw);
     if (a.durationMinutes) setRemaining(a.durationMinutes * 60);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [a]);
@@ -125,28 +128,39 @@ export default function StudentSolve() {
     return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onHide); };
   }, [save]);
 
-  const removeImage = (qid, url) => {
-    setDrawings((d) => { const n = { ...d }; if (n[qid] === url) delete n[qid]; return n; });
-    persist(qid, { imageUrls: (answers[qid]?.imageUrls ?? []).filter((u) => u !== url) });
-  };
+  // Aktif soru için kayıtlı çizim url'i (yazılı/çizimli sınavda). captureDrawing yalnız
+  // soru geçişinde çalıştığı için bu url, geçiş + ilk yükleme + silme dışında değişmez.
+  const restoreUrl =
+    a && a.examType !== "TEST" && a.examType !== "TUNNEL"
+      ? drawings[a.questions?.[current]?.id] ?? null
+      : null;
 
-  // Kalem çizimini yakala → yükle → cevabın imageUrls'ine ekle (eski çizimi değiştirir).
+  // Soru değişince / ilk yüklemede kayıtlı çizimi canvas'a GERİ YÜKLE (market TakeWrittenTest paritesi).
+  // Canvas questionId değişiminde kendi içinde temizlenir → 80ms sonra loadDataUrl ile geri çiziyoruz.
+  useEffect(() => {
+    if (!restoreUrl) return;
+    const tmr = setTimeout(() => canvasRef.current?.loadDataUrl?.(restoreUrl), 80);
+    return () => clearTimeout(tmr);
+  }, [restoreUrl, current]);
+
+  // Kalem çizimini yakala → yükle → cevabın çizimi olarak kaydet (tek çizim/soru, eskisini değiştirir).
+  // NOT: canvas'ı temizleme — çizim ekranda kalsın; soru değişiminde canvas zaten temizlenip geri yüklenir.
   const captureDrawing = useCallback(async (qid) => {
     if (!qid) return;
     let dataUrl = null;
     try { dataUrl = canvasRef.current?.toDataURL?.(); } catch { dataUrl = null; }
-    if (!dataUrl) return;
+    if (!dataUrl) return; // boş çizim — kayıt yok
     try {
       const file = await dataUrlToFile(dataUrl);
       const url = await apiNs.uploadImage(file);
       if (!url) return;
-      const old = drawings[qid];
-      const imgs = (answers[qid]?.imageUrls ?? []).filter((u) => u !== old).concat(url);
       setDrawings((d) => ({ ...d, [qid]: url }));
-      persist(qid, { imageUrls: imgs });
-      canvasRef.current?.clear?.();
-    } catch { toast.error("Çizim kaydedilemedi"); }
-  }, [answers, drawings, persist, apiNs]);
+      persist(qid, { imageUrls: [url] });
+    } catch (e) {
+      console.error("E-Sınıf çizim yükleme hatası:", e);
+      toast.error("Çizim kaydedilemedi");
+    }
+  }, [persist, apiNs]);
 
   if (isLoading) return <div className="max-w-3xl mx-auto py-20 text-center text-slate-400">Yükleniyor…</div>;
   if (isError || !a) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Ödev bulunamadı</h2></div>;
@@ -188,6 +202,14 @@ export default function StudentSolve() {
     navigate(buildPageUrl(isPractice ? "StudentExplore" : "StudentAssignments"));
   };
 
+  // Çizimi sil: canvas'ı temizle + kayıtlı çizimi kaldır (sunucudan da).
+  const clearDrawing = () => {
+    canvasRef.current?.clear?.();
+    if (!q?.id) return;
+    setDrawings((d) => { const n = { ...d }; delete n[q.id]; return n; });
+    persist(q.id, { imageUrls: [] });
+  };
+
   return (
     <div className="relative min-h-screen" data-exam-theme={examTheme}>
       <div className="max-w-3xl mx-auto px-1 py-4 space-y-4">
@@ -201,7 +223,7 @@ export default function StudentSolve() {
           {mmss && <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-semibold ${remaining < 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-700"}`}><Clock className="h-4 w-4" /> {mmss}</span>}
           <Button variant="ghost" size="icon" className={examTheme === "sepia" ? "bg-amber-50 text-amber-600" : "text-slate-400"} onClick={() => setExamTheme(examTheme === "sepia" ? "light" : "sepia")} aria-pressed={examTheme === "sepia"} aria-label="Bej okuma modu"><Sun className="h-4 w-4" /></Button>
           {!isChoice && <Button variant="ghost" size="icon" className={isDrawing ? "bg-indigo-50 text-indigo-600" : "text-slate-400"} onClick={() => setIsDrawing((d) => !d)} aria-pressed={isDrawing} aria-label="Kalem"><Pencil className="h-4 w-4" /></Button>}
-          {!isChoice && isDrawing && <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => canvasRef.current?.clear?.()}><Eraser className="mr-1 h-4 w-4" /> Temizle</Button>}
+          {!isChoice && isDrawing && <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={clearDrawing}><Eraser className="mr-1 h-4 w-4" /> Temizle</Button>}
         </div>
 
         {/* Soru kartı — filigran + (yazılıda) çizim katmanı */}
@@ -231,14 +253,11 @@ export default function StudentSolve() {
               <label className="text-sm font-semibold text-slate-700">Cevabınız</label>
               {/* E-Sınıf: cevap yalnız METİN veya KALEM çizimidir — fotoğraf yükleme yok. */}
               <Textarea value={answers[q.id]?.textAnswer ?? ""} onChange={(e) => persist(q.id, { textAnswer: e.target.value })} rows={6} placeholder="Cevabınız… (yazabilir veya üstteki kalemle çizebilirsiniz)" maxLength={8000} />
-              {(answers[q.id]?.imageUrls ?? []).length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {(answers[q.id]?.imageUrls ?? []).map((u) => (
-                    <div key={u} className="relative">
-                      <img src={u} alt="çizim" className="h-20 w-20 object-cover rounded-lg border border-slate-200" />
-                      <button type="button" onClick={() => removeImage(q.id, u)} className="absolute -top-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Çizimi sil"><X className="w-3 h-3" /></button>
-                    </div>
-                  ))}
+              {/* Çizim canvas katmanında görünür; aşağıda yalnız "kaydedildi" göstergesi + silme. */}
+              {drawings[q.id] && (
+                <div className="flex items-center gap-2 text-xs text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4" /> Çiziminiz kaydedildi
+                  <button type="button" onClick={clearDrawing} className="inline-flex items-center gap-1 text-rose-600 hover:underline" aria-label="Çizimi sil"><X className="w-3 h-3" /> Sil</button>
                 </div>
               )}
             </div>
