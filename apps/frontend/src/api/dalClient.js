@@ -2387,7 +2387,15 @@ export const studentAssignments = {
  * ödevden bağımsız, exam-scoped çözer. TUNNEL çözme schoolTunnel ile yürür.
  */
 export const studentPractice = {
-  listExams: async () => (await api.get('/student/practice/exams')).data,
+  listExams: async ({ q, examType, subject, page, pageSize } = {}) => {
+    const qs = new URLSearchParams();
+    if (q) qs.set('q', q);
+    if (examType) qs.set('examType', examType);
+    if (subject) qs.set('subject', subject);
+    if (page) qs.set('page', String(page));
+    if (pageSize) qs.set('pageSize', String(pageSize));
+    return (await api.get(`/student/practice/exams?${qs.toString()}`)).data;
+  },
   get: async (examId) => (await api.get(`/student/practice/${examId}`)).data,
   start: async (examId) => (await api.post(`/student/practice/${examId}/start`)).data,
   saveAnswer: async (examId, body) => (await api.put(`/student/practice/${examId}/answer`, body)).data,

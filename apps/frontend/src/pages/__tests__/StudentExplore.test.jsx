@@ -13,17 +13,25 @@ vi.mock('@/api/dalClient', () => ({ studentPractice: h.api }));
 vi.mock('@/lib/navigation', () => ({ useAppNavigate: () => h.nav, buildPageUrl: (n, p) => `/${n}?${new URLSearchParams(p)}` }));
 vi.mock('@/components/tunnel/TunnelInfoModal', () => ({ TunnelInfoModal: () => null, useTunnelIntro: () => ({ open: false, setOpen: vi.fn() }) }));
 
+// Server-side liste artık tür/ders/arama + facet (counts/subjects/total) döndürür.
+const ALL_EXAMS = [
+  { id: 't1', title: 'Test A', examType: 'TEST', subject: 'Mat', questionCount: 10, durationMinutes: 20, status: 'IN_PROGRESS', score: null, maxScore: null },
+  { id: 't2', title: 'Test D', examType: 'TEST', subject: 'Mat', questionCount: 8, status: 'GRADED', score: 6, maxScore: 8 },
+  { id: 'w1', title: 'Yazılı B', examType: 'WRITTEN', subject: 'Türkçe', questionCount: 4, status: 'SUBMITTED' },
+  { id: 'u1x', title: 'Tünel C', examType: 'TUNNEL', subject: 'Fen', questionCount: 30, status: 'COMPLETED' },
+];
+const FACET_COUNTS = { TEST: 2, TUNNEL: 1, WRITTEN: 1 };
+
 beforeEach(() => {
   vi.clearAllMocks();
   h.user = { user: { id: 'u1', school: { schoolRole: 'STUDENT' } } };
-  h.api.listExams.mockResolvedValue({
-    gradeLevel: 5,
-    items: [
-      { id: 't1', title: 'Test A', examType: 'TEST', subject: 'Mat', questionCount: 10, durationMinutes: 20, status: 'IN_PROGRESS', score: null, maxScore: null },
-      { id: 't2', title: 'Test D', examType: 'TEST', subject: 'Mat', questionCount: 8, status: 'GRADED', score: 6, maxScore: 8 },
-      { id: 'w1', title: 'Yazılı B', examType: 'WRITTEN', subject: 'Türkçe', questionCount: 4, status: 'SUBMITTED' },
-      { id: 'u1x', title: 'Tünel C', examType: 'TUNNEL', subject: 'Fen', questionCount: 30, status: 'COMPLETED' },
-    ],
+  // Backend'i taklit et: examType/subject/q'ya göre süz, facet'leri döndür.
+  h.api.listExams.mockImplementation(({ examType = 'TEST', subject, q } = {}) => {
+    let items = ALL_EXAMS.filter((e) => e.examType === examType);
+    if (subject) items = items.filter((e) => e.subject === subject);
+    if (q) items = items.filter((e) => e.title.toLocaleLowerCase('tr').includes(q.toLocaleLowerCase('tr')));
+    const subjects = [...new Set(ALL_EXAMS.filter((e) => e.examType === examType).map((e) => e.subject))];
+    return Promise.resolve({ gradeLevel: 5, items, total: items.length, counts: FACET_COUNTS, subjects });
   });
 });
 

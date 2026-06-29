@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Body, Param, Req } from '@nestjs/common';
-import { IsString, IsOptional, MaxLength } from 'class-validator';
+import { Controller, Get, Post, Put, Body, Param, Query, Req } from '@nestjs/common';
+import { IsString, IsOptional, MaxLength, IsInt, Min, Max, IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../swagger/decorators';
 import {
@@ -17,6 +18,15 @@ class SavePracticeAnswerDto {
   @IsOptional() @IsString() @MaxLength(8000) textAnswer?: string | null;
 }
 
+/** Keşfet listesi — tür sekmesi + ders + arama + sayfalama (server-side). */
+class ListPracticeExamsDto {
+  @IsOptional() @IsString() @MaxLength(120) q?: string;
+  @IsOptional() @IsIn(['TEST', 'TUNNEL', 'WRITTEN']) examType?: string;
+  @IsOptional() @IsString() @MaxLength(120) subject?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) pageSize?: number;
+}
+
 /**
  * E-Sınıf — Serbest alıştırma (Keşfet). JWT; STUDENT rolü use-case'te.
  * Ödev akışından bağımsız, exam-scoped. Liste → çöz → başlat → cevap → teslim → sonuç.
@@ -31,8 +41,8 @@ export class SchoolPracticeController {
   private submitUC = new SubmitPracticeUseCase();
   private resultUC = new GetPracticeResultUseCase();
 
-  @Get('exams') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Seviyedeki tüm sınavlar (alıştırma durumu ile)' }) @ApiErrorResponses()
-  listExams(@Req() req: any) { return this.listUC.execute(req?.user?.id); }
+  @Get('exams') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Seviyedeki sınavlar — tür/ders/arama + sayfalama (facet sayıları + toplam ile)' }) @ApiErrorResponses()
+  listExams(@Query() q: ListPracticeExamsDto, @Req() req: any) { return this.listUC.execute(q, req?.user?.id); }
 
   @Get(':examId') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Alıştırma çözme ekranı (doğru cevap sızdırmaz)' }) @ApiErrorResponses()
   get(@Param('examId') examId: string, @Req() req: any) { return this.getUC.execute(examId, req?.user?.id); }

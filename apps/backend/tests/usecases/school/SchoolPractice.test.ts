@@ -51,25 +51,31 @@ beforeEach(() => {
 });
 
 describe('ListStudentLevelExamsUseCase', () => {
-  it('seviyedeki sınavları durumla döner', async () => {
+  it('seviyedeki sınavları durumla + facet (counts/total/subjects) döner', async () => {
     read.mockReturnValue({
-      schoolExam: { findMany: jest.fn().mockResolvedValue([
-        { id: 'e1', title: 'T', examType: 'TEST', subject: 'Mat', topic: null, durationMinutes: 20, gradeLevel: 5, _count: { questions: 3 } },
-        { id: 'u1', title: 'Tün', examType: 'TUNNEL', subject: 'Fen', topic: null, durationMinutes: null, gradeLevel: 5, _count: { questions: 30 } },
-      ]) },
+      schoolExam: {
+        groupBy: jest.fn().mockResolvedValue([{ examType: 'TEST', _count: { _all: 1 } }, { examType: 'TUNNEL', _count: { _all: 1 } }]),
+        count: jest.fn().mockResolvedValue(2),
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'e1', title: 'T', examType: 'TEST', subject: 'Mat', topic: null, durationMinutes: 20, gradeLevel: 5, _count: { questions: 3 } },
+          { id: 'u1', title: 'Tün', examType: 'TUNNEL', subject: 'Fen', topic: null, durationMinutes: null, gradeLevel: 5, _count: { questions: 30 } },
+        ]),
+      },
       schoolSubmission: { findMany: jest.fn().mockResolvedValue([{ examId: 'e1', status: 'GRADED', totalScore: 4, maxScore: 6 }]) },
       schoolTunnelAttempt: { findMany: jest.fn().mockResolvedValue([{ examId: 'u1', status: 'COMPLETED' }]) },
     });
-    const r = await new ListStudentLevelExamsUseCase().execute('su1');
+    const r = await new ListStudentLevelExamsUseCase().execute({ examType: 'TEST', page: 1 }, 'su1');
     expect(r.gradeLevel).toBe(5);
+    expect(r.total).toBe(2);
+    expect(r.counts).toMatchObject({ TEST: 1, TUNNEL: 1 });
     expect(r.items.find((i: any) => i.id === 'e1')).toMatchObject({ status: 'GRADED', score: 4, maxScore: 6 });
     expect(r.items.find((i: any) => i.id === 'u1')).toMatchObject({ status: 'COMPLETED' });
   });
 
-  it('sınıfı yoksa boş liste', async () => {
+  it('sınıfı yoksa boş liste + sıfır facet', async () => {
     p.classroom.findUnique.mockResolvedValue(null);
-    const r = await new ListStudentLevelExamsUseCase().execute('su1');
-    expect(r).toEqual({ items: [], gradeLevel: null });
+    const r = await new ListStudentLevelExamsUseCase().execute({}, 'su1');
+    expect(r).toEqual({ items: [], total: 0, gradeLevel: null, counts: { TEST: 0, TUNNEL: 0, WRITTEN: 0 }, subjects: [] });
   });
 });
 

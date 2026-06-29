@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useDeferredValue } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { studentPractice } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -34,35 +34,36 @@ export default function StudentExplore() {
   const [q, setQ] = useState("");
   const [subject, setSubject] = useState("ALL");
   const [page, setPage] = useState(1);
+  const deferredQ = useDeferredValue(q);
 
+  // Server-side: tür sekmesi + ders + arama + sayfalama backend'de (büyüyebilen liste).
+  // Yanıt facet'leri de döndürür: counts (sekme rozetleri) + subjects (ders seçeneği) + total.
   const { data, isLoading } = useQuery({
-    queryKey: ["esinif", "practice-exams"],
-    queryFn: () => studentPractice.listExams(),
+    queryKey: ["esinif", "practice-exams", tab, subject, deferredQ.trim(), page],
+    queryFn: () => studentPractice.listExams({
+      examType: tab,
+      subject: subject === "ALL" ? undefined : subject,
+      q: deferredQ.trim() || undefined,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
     enabled: isStudent,
   });
 
-  const all = useMemo(() => data?.items ?? [], [data]);
   const gradeLevel = data?.gradeLevel ?? null;
-  const counts = Object.fromEntries(TABS.map((t) => [t.type, all.filter((a) => a.examType === t.type).length]));
-  const byType = useMemo(() => all.filter((a) => a.examType === tab), [all, tab]);
-  // Ders (subject) seçenekleri — aktif sekmedeki sınavlardan türetilir
-  const subjects = useMemo(() => [...new Set(byType.map((a) => a.subject).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr")), [byType]);
-  const filtered = useMemo(() => {
-    const needle = q.trim().toLocaleLowerCase("tr");
-    return byType.filter((a) =>
-      (subject === "ALL" || a.subject === subject) &&
-      (!needle || (a.title ?? "").toLocaleLowerCase("tr").includes(needle)),
-    );
-  }, [byType, subject, q]);
+  const counts = data?.counts ?? { TEST: 0, TUNNEL: 0, WRITTEN: 0 };
+  const subjects = data?.subjects ?? [];
+  const pageItems = data?.items ?? [];
+  const total = data?.total ?? 0;
 
-  // Sekme/filtre değişince sayfayı başa al
-  useEffect(() => { setPage(1); }, [tab, q, subject]);
+  // Sekme değişince ders + sayfayı sıfırla; ders/arama değişince sayfayı başa al.
+  useEffect(() => { setSubject("ALL"); setPage(1); }, [tab]);
+  useEffect(() => { setPage(1); }, [subject, deferredQ]);
 
   if (!isStudent) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
-  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const solve = (e) => navigate(buildPageUrl("StudentSolve", { practice: e.id }));
   const seeResult = (e) => navigate(buildPageUrl("StudentResult", { practice: e.id }));
@@ -108,7 +109,7 @@ export default function StudentExplore() {
 
       {isLoading ? (
         <div className="space-y-2">{[0, 1].map((i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>
-      ) : filtered.length === 0 ? (
+      ) : pageItems.length === 0 ? (
         <div className="text-center py-16 text-slate-500"><Compass className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{q.trim() || subject !== "ALL" ? "Filtreye uygun sınav yok." : "Bu türde sınav yok."}</p></div>
       ) : (
         <>

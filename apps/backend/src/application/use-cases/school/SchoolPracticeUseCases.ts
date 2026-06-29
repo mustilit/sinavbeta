@@ -11,6 +11,7 @@
  * (veya null = "genel"). Son tarih yok; sonuç teslimden hemen sonra görünür (SUBMIT).
  * Ödev akışı (SchoolStudentUseCases) HİÇ değişmez — bu paralel, additive bir katmandır.
  */
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../infrastructure/database/prisma';
 import { prismaRead } from '../../../infrastructure/database/dbRouter';
 import { AppError } from '../../errors/AppError';
@@ -41,26 +42,69 @@ async function loadPracticeExam(examId: string, schoolId: string, grade: number 
 
 /** Keşfet — öğrencinin seviyesindeki tüm (yayına hazır) sınavlar + alıştırma durumu. */
 export class ListStudentLevelExamsUseCase {
-  async execute(actorId?: string) {
+  async execute(
+    input: { q?: string; examType?: string; subject?: string; page?: number; pageSize?: number } = {},
+    actorId?: string,
+  ) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'STUDENT');
     const grade = await studentGradeLevel(ctx.classroomId);
-    if (grade == null) return { items: [], gradeLevel: null };
+    const emptyCounts = { TEST: 0, TUNNEL: 0, WRITTEN: 0 };
+    if (grade == null) return { items: [], total: 0, gradeLevel: null, counts: emptyCounts, subjects: [] };
 
     const db = prismaRead();
-    const exams = await db.schoolExam.findMany({
-      where: {
-        schoolId: ctx.schoolId,
-        isArchived: false,
-        OR: [{ gradeLevel: grade }, { gradeLevel: null }],
-        questions: { some: {} }, // en az 1 soru
-      },
-      orderBy: [{ examType: 'asc' }, { createdAt: 'desc' }],
-      select: {
-        id: true, title: true, examType: true, subject: true, topic: true,
-        durationMinutes: true, gradeLevel: true, _count: { select: { questions: true } },
-      },
+    const page = Math.max(1, Math.floor(input.page ?? 1));
+    const pageSize = Math.min(50, Math.max(1, Math.floor(input.pageSize ?? 8)));
+    const examType = (['TEST', 'TUNNEL', 'WRITTEN'] as const).includes(input.examType as never)
+      ? (input.examType as string)
+      : 'TEST';
+    const subject = (input.subject ?? '').trim();
+    const q = (input.q ?? '').trim();
+
+    // Seviye kapsamlı temel filtre (tür/ders/arama HARİÇ) — facet sayımları bundan türer.
+    const baseWhere: Prisma.SchoolExamWhereInput = {
+      schoolId: ctx.schoolId,
+      isArchived: false,
+      OR: [{ gradeLevel: grade }, { gradeLevel: null }],
+      questions: { some: {} }, // en az 1 soru
+    };
+    const examTypeFilter = examType as Prisma.SchoolExamWhereInput['examType'];
+
+    // Facet: tür sayıları (sekme rozetleri) + aktif türün dersleri (Ders seçeneği)
+    const grouped = await db.schoolExam.groupBy({ by: ['examType'], where: baseWhere, _count: { _all: true } });
+    const counts = { ...emptyCounts };
+    for (const g of grouped) if (g.examType in counts) (counts as Record<string, number>)[g.examType] = g._count._all;
+
+    const subjectRows = await db.schoolExam.findMany({
+      where: { ...baseWhere, examType: examTypeFilter },
+      select: { subject: true },
+      distinct: ['subject'],
     });
+    const subjects = subjectRows
+      .map((r) => r.subject)
+      .filter((s): s is string => !!s)
+      .sort((a, b) => a.localeCompare(b, 'tr'));
+
+    // Sayfa sorgusu (tür + ders + arama + offset)
+    const pageWhere: Prisma.SchoolExamWhereInput = {
+      ...baseWhere,
+      examType: examTypeFilter,
+      ...(subject ? { subject } : {}),
+      ...(q ? { title: { contains: q, mode: 'insensitive' } } : {}),
+    };
+    const [total, exams] = await Promise.all([
+      db.schoolExam.count({ where: pageWhere }),
+      db.schoolExam.findMany({
+        where: pageWhere,
+        orderBy: [{ createdAt: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true, title: true, examType: true, subject: true, topic: true,
+          durationMinutes: true, gradeLevel: true, _count: { select: { questions: true } },
+        },
+      }),
+    ]);
     const examIds = exams.map((e) => e.id);
 
     // TEST/WRITTEN alıştırma teslimleri
@@ -96,7 +140,7 @@ export class ListStudentLevelExamsUseCase {
         maxScore: submitted ? s?.maxScore ?? null : null,
       };
     });
-    return { items, gradeLevel: grade };
+    return { items, total, gradeLevel: grade, counts, subjects };
   }
 }
 
