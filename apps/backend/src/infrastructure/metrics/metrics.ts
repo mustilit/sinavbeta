@@ -45,3 +45,38 @@ export const httpExceptionsTotal = new Counter({
 export const incrementRequestCount = (): void => {
   httpRequestsTotal.inc({ route: 'unknown', method: 'UNKNOWN', status_code: '0' });
 };
+
+// ── E-Sınıf (okul) domain metrikleri ────────────────────────────────────────
+// Okul akışı marketplace HTTP metriklerinden ayrı segment olarak izlenir
+// (teslim hacmi, puanlama, canlı oturum). Grafana: sinavsalonu-overview "E-Sınıf".
+
+export const schoolSubmissionsTotal = new Counter({
+  name: 'dal_school_submissions_total',
+  help: 'E-Sınıf teslim sayısı (exam_type + kind: ASSIGNMENT|PRACTICE)',
+  labelNames: ['exam_type', 'kind'],
+  registers: [metricsRegistry],
+});
+
+export const schoolGradedTotal = new Counter({
+  name: 'dal_school_graded_total',
+  help: 'E-Sınıf yazılı teslim puanlama sayısı',
+  registers: [metricsRegistry],
+});
+
+export const schoolLiveSessionsTotal = new Counter({
+  name: 'dal_school_live_sessions_total',
+  help: 'E-Sınıf canlı oturum olayları (event: started|ended)',
+  labelNames: ['event'],
+  registers: [metricsRegistry],
+});
+
+/** Best-effort metrik kaydı — domain akışını ASLA bozmaz (metrik audit değil). */
+export const recordSchoolSubmission = (examType: string, kind: 'ASSIGNMENT' | 'PRACTICE'): void => {
+  try { schoolSubmissionsTotal.inc({ exam_type: examType || 'UNKNOWN', kind }); } catch { /* metrik akışı bozmaz */ }
+};
+export const recordSchoolGraded = (): void => {
+  try { schoolGradedTotal.inc(); } catch { /* metrik akışı bozmaz */ }
+};
+export const recordSchoolLiveEvent = (event: 'started' | 'ended'): void => {
+  try { schoolLiveSessionsTotal.inc({ event }); } catch { /* metrik akışı bozmaz */ }
+};

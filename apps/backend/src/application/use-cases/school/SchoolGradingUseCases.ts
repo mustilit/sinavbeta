@@ -7,6 +7,7 @@ import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole, schoolAudit, type SchoolContext } from './schoolHelpers';
 import { resolveResultQuestions } from './schoolExamSnapshot';
+import { recordSchoolGraded } from '../../../infrastructure/metrics/metrics';
 
 /** Ödevin sahibi/zümre başkanı/yönetici mi (değerlendirme yetkisi). */
 function canGrade(assignment: { createdById: string; exam: { departmentId: string | null } }, ctx: SchoolContext, actorId: string): boolean {
@@ -107,6 +108,7 @@ export class GradeSubmissionUseCase {
     await prisma.$transaction(ops);
     logger.info('school.submission.graded', { submissionId, totalScore, maxScore, actorId });
     schoolAudit(ctx, { action: 'SCHOOL_SUBMISSION_GRADED', entityType: 'SchoolSubmission', entityId: submissionId, metadata: { totalScore, maxScore } });
+    recordSchoolGraded();
     return { status: 'GRADED', totalScore, maxScore };
   }
 }

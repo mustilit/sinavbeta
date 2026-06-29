@@ -7,6 +7,7 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole, resolveLiveCreatorScope, liveScopeWhere, currentPeriodId, resolvePeriodFilter, type SchoolContext } from './schoolHelpers';
+import { recordSchoolLiveEvent } from '../../../infrastructure/metrics/metrics';
 
 // Canlı sınav: tüm okul personeli (yönetici + zümre + öğretmen) görür ve oluşturur.
 const LIVE_STAFF_ROLES = ['SCHOOL_ADMIN', 'BRANCH_ADMIN', 'DEPT_HEAD', 'TEACHER'] as const;
@@ -140,6 +141,7 @@ export class StartSchoolLiveSessionUseCase {
     requireSchoolRole(ctx, ...LIVE_STAFF_ROLES);
     await scopedSession(sessionId, ctx);
     await prisma.liveSession.update({ where: { id: sessionId }, data: { status: 'ACTIVE', startedAt: new Date(), currentQuestionIdx: 0 } });
+    recordSchoolLiveEvent('started');
     return { ok: true };
   }
 }
@@ -200,6 +202,7 @@ export class EndSchoolLiveSessionUseCase {
       // Kota: tamamlanan oturum +1 (race-safe sınır kontrolü gevşek — admin limiti aşımı engellenmiş zaten)
       prisma.school.update({ where: { id: ctx.schoolId }, data: { usedLiveCount: { increment: 1 } } }),
     ]);
+    recordSchoolLiveEvent('ended');
     logger.info('school.live.ended', { sessionId, schoolId: ctx.schoolId, actorId });
     return { ok: true };
   }

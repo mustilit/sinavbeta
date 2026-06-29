@@ -149,6 +149,28 @@
           }
         }
       }
+    },
+    {
+      "title": "E-Sınıf — Teslim Hızı (teslim/dk)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(dal_school_submissions_total[5m])) by (exam_type, kind)",
+          "legendFormat": "{{exam_type}} / {{kind}}"
+        }
+      ]
+    },
+    {
+      "title": "E-Sınıf — Puanlama + Canlı Oturum (hız)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 6 },
+      "targets": [
+        { "expr": "sum(rate(dal_school_graded_total[5m]))", "legendFormat": "puanlama" },
+        { "expr": "sum(rate(dal_school_live_sessions_total[5m])) by (event)", "legendFormat": "canlı {{event}}" }
+      ]
     }
   ],
   "schemaVersion": 38,

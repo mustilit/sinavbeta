@@ -8,6 +8,7 @@ import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole } from './schoolHelpers';
 import { buildExamSnapshot, resolveResultQuestions } from './schoolExamSnapshot';
+import { recordSchoolSubmission } from '../../../infrastructure/metrics/metrics';
 
 function isOpen(a: { status: string; availableFrom: Date; dueDate: Date; allowLateSubmit: boolean }): boolean {
   if (a.status === 'CLOSED') return false;
@@ -210,6 +211,7 @@ export class SubmitAssignmentUseCase {
     });
 
     logger.info('school.submission.submitted', { assignmentId, actorId, autoGraded: isChoice, totalScore: isChoice ? totalScore : null });
+    recordSchoolSubmission(a.exam.examType, 'ASSIGNMENT');
     return { status: isChoice ? 'GRADED' : 'SUBMITTED', totalScore: isChoice ? totalScore : null, maxScore };
   }
 }

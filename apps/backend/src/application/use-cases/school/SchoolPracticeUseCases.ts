@@ -18,6 +18,7 @@ import { AppError } from '../../errors/AppError';
 import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole } from './schoolHelpers';
 import { buildExamSnapshot, resolveResultQuestions } from './schoolExamSnapshot';
+import { recordSchoolSubmission } from '../../../infrastructure/metrics/metrics';
 
 /** Öğrencinin sınıf seviyesi (Classroom.gradeLevel). Sınıfı yoksa null. */
 async function studentGradeLevel(classroomId: string | null): Promise<number | null> {
@@ -289,6 +290,7 @@ export class SubmitPracticeUseCase {
     });
 
     logger.info('school.practice.submitted', { examId, actorId, autoGraded: isChoice, totalScore: isChoice ? totalScore : null });
+    recordSchoolSubmission(exam.examType, 'PRACTICE');
     return { status: isChoice ? 'GRADED' : 'SUBMITTED', totalScore: isChoice ? totalScore : null, maxScore };
   }
 }
