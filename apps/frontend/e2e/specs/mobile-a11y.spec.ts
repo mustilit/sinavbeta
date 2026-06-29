@@ -21,6 +21,7 @@ import { test, expect } from '../fixtures/axe';
 const PAGES = [
   { name: 'Home', path: '/' },
   { name: 'Login', path: '/Login' },
+  { name: 'E-Sınıf Kapısı', path: '/Login?context=school' },
   { name: 'Register', path: '/Register' },
   { name: 'Explore', path: '/Explore' },
 ];

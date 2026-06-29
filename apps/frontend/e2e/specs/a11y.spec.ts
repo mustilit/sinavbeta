@@ -92,6 +92,15 @@ test.describe('a11y — public sayfalar (WCAG 2.1 AA)', () => {
     reportViolations(results.violations);
     expect(results.violations).toEqual([]);
   });
+
+  test('E-Sınıf Kapısı (context=school) giriş formu', async ({ page, makeAxeBuilder }) => {
+    await page.goto('/Login?context=school');
+    await page.waitForLoadState('networkidle');
+
+    const results = await makeAxeBuilder().analyze();
+    reportViolations(results.violations);
+    expect(results.violations).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------
