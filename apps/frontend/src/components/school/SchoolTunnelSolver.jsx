@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { TestWatermark } from "@/components/test/TestWatermark";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
-import ReportQuestionModal from "@/components/test/ReportQuestionModal";
-import { CheckCircle2, XCircle, Loader2, Trophy, AlertCircle, AlertTriangle, Pencil, Eraser, Sun, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Trophy, AlertCircle, Pencil, Eraser, Sun, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 const LETTER_BG = ["bg-rose-500", "bg-blue-500", "bg-amber-500", "bg-emerald-500", "bg-violet-500"];
@@ -29,7 +28,6 @@ export function SchoolTunnelSolver({ examId }) {
     try { return localStorage.getItem("dal_exam_theme") === "sepia" ? "sepia" : "light"; } catch { return "light"; }
   });
   const [isDrawing, setIsDrawing] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
   const canvasRef = useRef(null);
 
   const { data: started, isLoading, isError } = useQuery({
@@ -81,7 +79,6 @@ export function SchoolTunnelSolver({ examId }) {
         <Button variant="ghost" size="icon" className={examTheme === "sepia" ? "bg-amber-50 text-amber-600" : "text-slate-400"} onClick={() => setExamTheme(examTheme === "sepia" ? "light" : "sepia")} aria-pressed={examTheme === "sepia"} aria-label="Bej okuma modu"><Sun className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" className={isDrawing ? "bg-indigo-50 text-indigo-600" : "text-slate-400"} onClick={() => setIsDrawing((d) => !d)} aria-pressed={isDrawing} aria-label="Kalem"><Pencil className="h-4 w-4" /></Button>
         {isDrawing && <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => canvasRef.current?.clear?.()}><Eraser className="mr-1 h-4 w-4" /> Temizle</Button>}
-        <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => setReportOpen(true)}><AlertTriangle className="mr-1 h-4 w-4" /> Hata Bildir</Button>
       </div>
 
       <div>
@@ -131,9 +128,6 @@ export function SchoolTunnelSolver({ examId }) {
           {feedback.correct ? "Doğru! 👏" : "Yanlış — doğru şık yeşil. Bu soru tekrar gelecek."}
         </p>
       )}
-
-      <ReportQuestionModal open={reportOpen} onClose={() => setReportOpen(false)} questionNumber={state.masteredQuestions + 1}
-        onSubmit={() => { toast.success("Hata bildirimi gönderildi"); setReportOpen(false); }} />
     </div>
   );
 }

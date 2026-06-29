@@ -14,7 +14,6 @@ vi.mock('@/lib/navigation', () => ({ useAppNavigate: () => h.nav, buildPageUrl: 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock('@/components/test/QuestionCanvas', () => ({ default: () => <div data-testid="canvas" /> }));
 vi.mock('@/components/test/TestWatermark', () => ({ TestWatermark: () => <div data-testid="watermark" /> }));
-vi.mock('@/components/test/ReportQuestionModal', () => ({ default: ({ open }) => (open ? <div role="dialog">rapor</div> : null) }));
 
 const WRITTEN = {
   examType: 'WRITTEN', title: 'Matematik Yazılı', open: true, submitted: false, durationMinutes: 40,

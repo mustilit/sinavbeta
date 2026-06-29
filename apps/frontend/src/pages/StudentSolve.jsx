@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TestWatermark } from "@/components/test/TestWatermark";
 import QuestionCanvas from "@/components/test/QuestionCanvas";
-import ReportQuestionModal from "@/components/test/ReportQuestionModal";
 import { SchoolTunnelSolver } from "@/components/school/SchoolTunnelSolver";
 import {
   ArrowLeft, Clock, Sun, Pencil, Eraser, AlertTriangle, ChevronLeft, ChevronRight,
@@ -47,7 +46,6 @@ export default function StudentSolve() {
     try { return localStorage.getItem("dal_exam_theme") === "sepia" ? "sepia" : "light"; } catch { return "light"; }
   });
   const [isDrawing, setIsDrawing] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const saveTimers = useRef({});
   const started = useRef(false);
@@ -174,7 +172,6 @@ export default function StudentSolve() {
           <Button variant="ghost" size="icon" className={examTheme === "sepia" ? "bg-amber-50 text-amber-600" : "text-slate-400"} onClick={() => setExamTheme(examTheme === "sepia" ? "light" : "sepia")} aria-pressed={examTheme === "sepia"} aria-label="Bej okuma modu"><Sun className="h-4 w-4" /></Button>
           {!isChoice && <Button variant="ghost" size="icon" className={isDrawing ? "bg-indigo-50 text-indigo-600" : "text-slate-400"} onClick={() => setIsDrawing((d) => !d)} aria-pressed={isDrawing} aria-label="Kalem"><Pencil className="h-4 w-4" /></Button>}
           {!isChoice && isDrawing && <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => canvasRef.current?.clear?.()}><Eraser className="mr-1 h-4 w-4" /> Temizle</Button>}
-          <Button variant="ghost" size="sm" className="text-rose-500 hover:bg-rose-50" onClick={() => setReportOpen(true)}><AlertTriangle className="mr-1 h-4 w-4" /> Hata Bildir</Button>
         </div>
 
         {/* Soru kartı — filigran + (yazılıda) çizim katmanı */}
@@ -261,9 +258,6 @@ export default function StudentSolve() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <ReportQuestionModal open={reportOpen} onClose={() => setReportOpen(false)} questionNumber={current + 1}
-        onSubmit={() => { toast.success("Hata bildirimi gönderildi"); setReportOpen(false); }} />
     </div>
   );
 }
