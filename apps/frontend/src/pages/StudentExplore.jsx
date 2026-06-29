@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Compass, Play, RotateCcw, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle, Trophy, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Compass, Play, RotateCcw, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle, Trophy, Search, ChevronLeft, ChevronRight, HelpCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { TunnelInfoModal, useTunnelIntro } from "@/components/tunnel/TunnelInfoModal";
 
 const TABS = [
   { type: "TEST", label: "Test", Icon: ListChecks },
@@ -23,9 +25,12 @@ const PAGE_SIZE = 8;
  */
 export default function StudentExplore() {
   const { user } = useAuth();
+  const { t } = useTranslation(["pages"]);
   const navigate = useAppNavigate();
   const isStudent = user?.school?.schoolRole === "STUDENT";
   const [tab, setTab] = useState("TEST");
+  // "Tünel Nedir?" — Tünel sekmesi ilk açıldığında otomatik, butonla tekrar (market deseni).
+  const tunnelIntro = useTunnelIntro(tab === "TUNNEL");
   const [q, setQ] = useState("");
   const [subject, setSubject] = useState("ALL");
   const [page, setPage] = useState(1);
@@ -73,12 +78,18 @@ export default function StudentExplore() {
       </div>
 
       <div className="flex gap-1 border-b border-slate-200">
-        {TABS.map((t) => (
-          <button key={t.type} type="button" onClick={() => setTab(t.type)} className={`px-4 py-2.5 min-h-10 text-sm font-medium border-b-2 -mb-px inline-flex items-center gap-1.5 ${tab === t.type ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900"}`}>
-            <t.Icon className="w-4 h-4" /> {t.label} ({counts[t.type] ?? 0})
+        {TABS.map((tb) => (
+          <button key={tb.type} type="button" onClick={() => setTab(tb.type)} className={`px-4 py-2.5 min-h-10 text-sm font-medium border-b-2 -mb-px inline-flex items-center gap-1.5 ${tab === tb.type ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900"}`}>
+            <tb.Icon className="w-4 h-4" /> {tb.label} ({counts[tb.type] ?? 0})
           </button>
         ))}
+        {tab === "TUNNEL" && (
+          <button type="button" onClick={() => tunnelIntro.setOpen(true)} className="ml-auto inline-flex items-center gap-1 px-2 py-1 min-h-10 text-xs font-medium text-indigo-600 hover:text-indigo-700">
+            <HelpCircle className="h-4 w-4" aria-hidden="true" /> {t("pages:tunnelInfo.trigger")}
+          </button>
+        )}
       </div>
+      <TunnelInfoModal open={tunnelIntro.open} onClose={() => tunnelIntro.setOpen(false)} />
 
       {/* Filtre satırı — metin + ders */}
       <div className="flex flex-col sm:flex-row gap-2">

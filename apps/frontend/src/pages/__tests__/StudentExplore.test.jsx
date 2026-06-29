@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
 vi.mock('@/lib/AuthContext', () => ({ useAuth: () => h.user }));
 vi.mock('@/api/dalClient', () => ({ studentPractice: h.api }));
 vi.mock('@/lib/navigation', () => ({ useAppNavigate: () => h.nav, buildPageUrl: (n, p) => `/${n}?${new URLSearchParams(p)}` }));
+vi.mock('@/components/tunnel/TunnelInfoModal', () => ({ TunnelInfoModal: () => null, useTunnelIntro: () => ({ open: false, setOpen: vi.fn() }) }));
 
 beforeEach(() => {
   vi.clearAllMocks();

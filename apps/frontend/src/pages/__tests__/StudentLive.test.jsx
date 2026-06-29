@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
 vi.mock('@/lib/AuthContext', () => ({ useAuth: () => h.user }));
 vi.mock('@/api/dalClient', () => ({ studentLive: h.api }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/components/live/LiveSessionInfoModal', () => ({ LiveSessionInfoModal: () => null, useLiveSessionIntro: () => ({ open: false, setOpen: vi.fn() }) }));
 
 const Q = { id: 'q1', content: 'Soru?', mediaUrl: null, options: [{ id: 'o1', content: 'A' }, { id: 'o2', content: 'B' }] };
 const active = {

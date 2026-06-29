@@ -9,7 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Zap, Users, Loader2, ZoomIn, X as XIcon, AlertCircle } from "lucide-react";
+import { CheckCircle2, Zap, Users, Loader2, ZoomIn, X as XIcon, AlertCircle, HelpCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { LiveSessionInfoModal, useLiveSessionIntro } from "@/components/live/LiveSessionInfoModal";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
 const OPTION_COLORS = [
@@ -46,11 +48,14 @@ export default function StudentLive() {
   const [searchParams] = useSearchParams();
   const isStudent = user?.school?.schoolRole === "STUDENT";
 
+  const { t } = useTranslation(["pages"]);
   const [codeInput, setCodeInput] = useState((searchParams.get("code") ?? "").replace(/\D/g, "").slice(0, 6));
   const [sessionId, setSessionId] = useState(null);
   const [lastQuestionId, setLastQuestionId] = useState(null);
   const [submittedOptionId, setSubmittedOptionId] = useState(null);
   const [lightboxUrl, setLightboxUrl] = useState(null);
+  // "Canlı Test Nedir?" — kod giriş ekranında ilk seferde otomatik, butonla tekrar (market deseni).
+  const liveIntro = useLiveSessionIntro(!sessionId);
 
   // Oturum durumunu çek (polling)
   const { data: state, isLoading: stateLoading } = useQuery({
@@ -126,6 +131,13 @@ export default function StudentLive() {
             {joinMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Katılınıyor...</> : "Katıl"}
           </Button>
         </div>
+        {/* "Canlı Test Nedir?" — market deseni */}
+        <div className="text-center mt-4">
+          <button type="button" onClick={() => liveIntro.setOpen(true)} className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700">
+            <HelpCircle className="h-4 w-4" aria-hidden="true" /> {t("pages:liveSessionInfo.trigger")}
+          </button>
+        </div>
+        <LiveSessionInfoModal open={liveIntro.open} onClose={() => liveIntro.setOpen(false)} />
       </div>
     );
   }
