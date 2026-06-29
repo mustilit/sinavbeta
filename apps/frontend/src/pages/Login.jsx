@@ -80,7 +80,7 @@ export default function Login() {
           </div>
           <span className="text-2xl font-bold text-slate-900">{t('common:sidebar.brandName')}</span>
         </Link>
-        <h1 className="text-2xl font-bold text-slate-900 mb-6 text-center">{t('auth:login.title')}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-6 text-center">{isSchool ? t('auth:login.schoolTitle', { defaultValue: 'E-Sınıf Kapısı' }) : t('auth:login.title')}</h1>
         {isSchool && (
           <div className="mb-4 px-4 py-3 rounded-lg bg-indigo-50 border border-indigo-200 text-sm text-indigo-900">
             {t('auth:login.schoolHint', { defaultValue: 'Kullanıcı adı ve şifreniz okulunuz/kurumunuz tarafından size verilecektir. Giriş yapamıyor iseniz lütfen yetkili kişiden bilgilerinizi öğreniniz.' })}
@@ -134,9 +134,16 @@ export default function Login() {
             />
           </div>
           <div className="flex justify-end">
-            <Link to={createPageUrl('ForgotPassword')} className="text-sm text-indigo-600 hover:underline">
-              {t('auth:login.forgotPassword')}
-            </Link>
+            {isSchool ? (
+              // E-Sınıf girişinde "Şifremi unuttum" yerine işbirliği/demo talebi.
+              <Link to={createPageUrl('Partnership')} className="text-sm text-indigo-600 hover:underline">
+                {t('auth:login.collabDemo', { defaultValue: 'İşbirliği/Demo için' })}
+              </Link>
+            ) : (
+              <Link to={createPageUrl('ForgotPassword')} className="text-sm text-indigo-600 hover:underline">
+                {t('auth:login.forgotPassword')}
+              </Link>
+            )}
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           {/* Bot doğrulaması — normal kullanıcıya görünmez; şüpheli aktivitede challenge */}
@@ -146,25 +153,30 @@ export default function Login() {
           </Button>
         </form>
 
-        {/* Google ile giriş — VITE_GOOGLE_CLIENT_ID yoksa component otomatik gizlenir */}
-        <div className="mt-6">
-          <div className="relative my-4" aria-hidden="true">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
+        {/* E-Sınıf girişinde Google/kayıt yok — okul kullanıcıları kullanıcı adı + geçici şifreyle girer */}
+        {!isSchool && (
+          <>
+            {/* Google ile giriş — VITE_GOOGLE_CLIENT_ID yoksa component otomatik gizlenir */}
+            <div className="mt-6">
+              <div className="relative my-4" aria-hidden="true">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-slate-50 px-2 text-slate-500">{t('common:common.or')}</span>
+                </div>
+              </div>
+              <GoogleSignInButton text="signin_with" safeFrom={safeFrom} />
             </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-slate-50 px-2 text-slate-500">{t('common:common.or')}</span>
-            </div>
-          </div>
-          <GoogleSignInButton text="signin_with" safeFrom={safeFrom} />
-        </div>
 
-        <p className="mt-4 text-center text-sm text-slate-600">
-          {t('auth:login.noAccount')}{' '}
-          <Link to={createPageUrl('Register')} className="text-indigo-600 underline hover:no-underline">
-            {t('auth:login.createAccount')}
-          </Link>
-        </p>
+            <p className="mt-4 text-center text-sm text-slate-600">
+              {t('auth:login.noAccount')}{' '}
+              <Link to={createPageUrl('Register')} className="text-indigo-600 underline hover:no-underline">
+                {t('auth:login.createAccount')}
+              </Link>
+            </p>
+          </>
+        )}
         <p className="mt-2 text-center">
           <Link to={createPageUrl('Home')} className="text-sm text-slate-500 hover:text-slate-700">
             {t('auth:login.backToHome')}
