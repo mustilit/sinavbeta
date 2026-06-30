@@ -300,8 +300,12 @@ export default function StudentSolve() {
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center"><p className="text-2xl font-bold text-amber-700">{questions.length - answeredCount}</p><p className="text-xs text-amber-700/80">Boş</p></div>
             </div>
             <p>Teslimden sonra cevaplarınızı değiştiremezsiniz.</p>
-            <div className="flex justify-end gap-2 pt-1">
+            <p className="text-slate-600">Cevaplamaya devam etmek istiyorsan <strong>Kaydet ve Çık</strong> demen yeterli. İlerlemen kaydedilir, kaldığın yerden devam edebilirsin.</p>
+            <div className="flex justify-end gap-2 pt-1 flex-wrap">
               <Button variant="outline" onClick={() => setShowFinishConfirm(false)} disabled={submitM.isPending}>Vazgeç</Button>
+              <Button variant="outline" className="text-slate-700 gap-1.5" disabled={submitM.isPending} onClick={() => { setShowFinishConfirm(false); saveAndExit(); }}>
+                <Save className="h-4 w-4" /> Kaydet ve Çık
+              </Button>
               <Button className="bg-rose-600 text-white hover:bg-rose-700" onClick={doSubmit} disabled={submitM.isPending}>
                 {submitM.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <LogOut className="mr-1.5 h-4 w-4" />} Teslim Et
               </Button>
