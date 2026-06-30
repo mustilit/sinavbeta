@@ -131,14 +131,32 @@ export default function SchoolReports() {
     }
   };
 
+  // Excel — yalnız o an GÖRÜNEN listeyi indirir (açık ana/alt sekmeye göre).
   const exportExcel = async () => {
     try {
       const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(branches.map((b) => ({ Şube: b.name, Sınıf: b.classroomCount, Öğrenci: b.studentCount, Zamanında: b.onTimeCount ?? 0, Geç: b.lateCount ?? 0, Yapılmadı: b.notDoneCount ?? 0, Ortalama: b.avgPercent ?? "-" }))), "Şubeler");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(levels.map((l) => ({ Seviye: `${l.gradeLevel}. Seviye`, Sınıf: l.classroomCount, Öğrenci: l.studentCount, Zamanında: l.onTimeCount ?? 0, Geç: l.lateCount ?? 0, Yapılmadı: l.notDoneCount ?? 0, Ortalama: l.avgPercent ?? "-" }))), "Seviyeler");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classrooms.map((c) => ({ Sınıf: c.name, Şube: c.branchName, Seviye: c.gradeLevel, Öğrenci: c.studentCount, Ödev: c.assignmentCount, Zamanında: c.onTimeCount ?? 0, Geç: c.lateCount ?? 0, Yapılmadı: c.notDoneCount ?? 0, Ortalama: c.avgPercent ?? "-" }))), "Sınıflar");
-      XLSX.writeFile(wb, `esinif-rapor-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      const stamp = new Date().toISOString().slice(0, 10);
+      if (mainTab === "students") {
+        const rows = studentRows.map((s) => ({
+          "Öğrenci No": s.studentNo, "Ad Soyad": s.name, Sınıf: s.classroomName,
+          Seviye: s.gradeLevel != null ? `${s.gradeLevel}. Seviye` : "-",
+          Zamanında: s.onTimeCount ?? 0, Geç: s.lateCount ?? 0, Yapılmadı: s.notDoneCount ?? 0,
+        }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Öğrenciler");
+        XLSX.writeFile(wb, `esinif-ogrenciler-${stamp}.xlsx`);
+        return;
+      }
+      if (tab === "levels") {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(levels.map((l) => ({ Seviye: `${l.gradeLevel}. Seviye`, Sınıf: l.classroomCount, Öğrenci: l.studentCount, Zamanında: l.onTimeCount ?? 0, Geç: l.lateCount ?? 0, Yapılmadı: l.notDoneCount ?? 0, Ortalama: l.avgPercent ?? "-" }))), "Seviyeler");
+        XLSX.writeFile(wb, `esinif-seviyeler-${stamp}.xlsx`);
+      } else if (tab === "classrooms") {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classrooms.map((c) => ({ Sınıf: c.name, Şube: c.branchName, Seviye: c.gradeLevel, Öğrenci: c.studentCount, Ödev: c.assignmentCount, Zamanında: c.onTimeCount ?? 0, Geç: c.lateCount ?? 0, Yapılmadı: c.notDoneCount ?? 0, Ortalama: c.avgPercent ?? "-" }))), "Sınıflar");
+        XLSX.writeFile(wb, `esinif-siniflar-${stamp}.xlsx`);
+      } else {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(branches.map((b) => ({ Şube: b.name, Sınıf: b.classroomCount, Öğrenci: b.studentCount, Zamanında: b.onTimeCount ?? 0, Geç: b.lateCount ?? 0, Yapılmadı: b.notDoneCount ?? 0, Ortalama: b.avgPercent ?? "-" }))), "Şubeler");
+        XLSX.writeFile(wb, `esinif-subeler-${stamp}.xlsx`);
+      }
     } catch { toast.error("Excel oluşturulamadı"); }
   };
 
