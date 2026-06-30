@@ -546,6 +546,7 @@ export class AuthController {
       await Promise.allSettled([
         delKey(`login:ip:${ip}`),
         delKey(`login:email:${email.toLowerCase()}`),
+        delKey(`login:school:ip:${ip}`), // E-Sınıf sıkı IP kilidini başarıda sıfırla
       ]);
       return result;
     } catch (err: any) {

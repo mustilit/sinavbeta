@@ -8,6 +8,11 @@ const LOGIN_EMAIL_LIMIT = Number(process.env.LOGIN_EMAIL_LIMIT ?? '10') || 10;
 const LOGIN_EMAIL_TTL_SECONDS = Number(process.env.LOGIN_EMAIL_TTL_SECONDS ?? '60') || 60;
 const LOGIN_CAPTCHA_AFTER_IP = Number(process.env.LOGIN_CAPTCHA_AFTER_IP ?? '10') || 10;
 const LOGIN_CAPTCHA_AFTER_EMAIL = Number(process.env.LOGIN_CAPTCHA_AFTER_EMAIL ?? '5') || 5;
+// E-Sınıf (okul) girişi = kullanıcı adı (identifier'da "@" yok). Öğrenci/öğretmen
+// kullanıcı adları tahmin edilebilir (KOD-S-0001) → marketplace'ten DAHA SIKI limit:
+// aynı IP'den 3 başarısız denemeden sonra 60 sn engel. Marketplace (e-posta) DEĞİŞMEZ.
+const LOGIN_SCHOOL_IP_LIMIT = Number(process.env.LOGIN_SCHOOL_IP_LIMIT ?? '3') || 3;
+const LOGIN_SCHOOL_IP_TTL_SECONDS = Number(process.env.LOGIN_SCHOOL_IP_TTL_SECONDS ?? '60') || 60;
 
 @Injectable()
 export class LoginBruteforceGuard implements CanActivate {
@@ -20,6 +25,23 @@ export class LoginBruteforceGuard implements CanActivate {
 
     const ipKey = `login:ip:${ip}`;
     const emailKey = email ? `login:email:${email}` : null;
+
+    // E-Sınıf sıkı kuralı: kullanıcı adı girişi (identifier'da "@" yok) → aynı IP'den
+    // 3 başarısız deneme sonrası 60 sn engel. Başarıda controller delKey ile sıfırlar.
+    const isSchoolUsername = !!email && !email.includes('@');
+    if (isSchoolUsername) {
+      const schoolIpKey = `login:school:ip:${ip}`;
+      const schoolNow = await getCount(schoolIpKey);
+      if (schoolNow >= LOGIN_SCHOOL_IP_LIMIT) {
+        const res = context.switchToHttp().getResponse<any>();
+        res.setHeader('Retry-After', String(LOGIN_SCHOOL_IP_TTL_SECONDS));
+        throw new HttpException(
+          { error: { code: 'TOO_MANY_REQUESTS', message: 'Çok fazla başarısız giriş denemesi. Lütfen 60 saniye sonra tekrar deneyin.' } },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      await incrWithTtl(schoolIpKey, LOGIN_SCHOOL_IP_TTL_SECONDS);
+    }
 
     // Önce MEVCUT sayaçları oku (artırmadan).
     // Bu sayede limitteki son kullanıcı doğru şifreyle girdiğinde controller çalışabilir
