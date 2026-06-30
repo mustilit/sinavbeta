@@ -97,17 +97,6 @@ export default function StudentAssignments() {
         </Select>
       </div>
 
-      {/* Ödev takvimi (Gantt tarzı) — her ödevin tarih aralığı; üzerine gelince adı */}
-      {filtered.length > 0 && (
-        <div className="space-y-2">
-          <button type="button" onClick={() => setShowTimeline((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 min-h-10">
-            <CalendarRange className="w-4 h-4 text-indigo-600" /> {t("assignments.timelineTitle")}
-            <ChevronDown className={`w-4 h-4 transition-transform ${showTimeline ? "" : "-rotate-90"}`} />
-          </button>
-          {showTimeline && <AssignmentTimeline items={filtered} />}
-        </div>
-      )}
-
       {isLoading ? (
         <div className="space-y-2">{[0, 1].map((i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
@@ -158,6 +147,17 @@ export default function StudentAssignments() {
             </div>
           )}
         </>
+      )}
+
+      {/* Ödev takvimi — sayfanın EN ALTINDA; bugünden 7 gün, oklarla ileri/geri */}
+      {filtered.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <button type="button" onClick={() => setShowTimeline((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 min-h-10">
+            <CalendarRange className="w-4 h-4 text-indigo-600" /> {t("assignments.timelineTitle")}
+            <ChevronDown className={`w-4 h-4 transition-transform ${showTimeline ? "" : "-rotate-90"}`} />
+          </button>
+          {showTimeline && <AssignmentTimeline items={filtered} />}
+        </div>
       )}
     </div>
   );
