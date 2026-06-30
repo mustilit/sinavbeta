@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, AlertCircle, ListChecks, FileText } from "lucide-react";
+import { ComplianceReport } from "@/components/school/ComplianceReport";
 
 const StudentReportCharts = lazy(() => import("@/components/school/StudentReportCharts"));
 
@@ -53,6 +54,9 @@ export default function StudentReports() {
           <SelectContent>{RANGES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
+
+      {/* Ödev uyumu — teslim durumu + süre kontrolü (kendi ödevlerin) */}
+      <ComplianceReport />
 
       {/* Sınav türü sekmeleri — Test / Yazılı ayrı rapor */}
       <div className="flex gap-1 border-b border-slate-200">

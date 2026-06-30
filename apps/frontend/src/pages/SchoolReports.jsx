@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { BarChart3, Download, Building2, Layers, GraduationCap, AlertCircle, Trophy, Award, X } from "lucide-react";
 import { toast } from "sonner";
 import { PeriodSelect } from "@/components/school/PeriodSelect";
+import { ComplianceReport } from "@/components/school/ComplianceReport";
 
 const fmtPct = (p) => (p == null ? "—" : `%${p}`);
 
@@ -131,6 +132,9 @@ export default function SchoolReports() {
           </div>
         )}
       </div>
+
+      {/* Ödev uyumu — teslim durumu + süre kontrolü (yetki alanına göre) */}
+      <ComplianceReport />
 
       {/* Sekmeler */}
       <div className="flex gap-1 border-b border-slate-200">

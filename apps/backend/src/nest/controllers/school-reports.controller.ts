@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsInt, Min, Max, IsISO8601 } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsISO8601, IsIn } from 'class-validator';
 import { ApiTags, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { ApiErrorResponses } from '../swagger/decorators';
 import {
@@ -9,6 +9,12 @@ import {
   GetFilteredReportUseCase,
   GetClassroomReportUseCase,
 } from '../../application/use-cases/school/SchoolReportUseCases';
+import { GetSchoolComplianceUseCase, ListSchoolComplianceUseCase, type ComplianceBucket } from '../../application/use-cases/school/SchoolComplianceUseCases';
+
+const COMPLIANCE_BUCKETS = ['onTime', 'late', 'notSubmitted', 'withinTime', 'overflow'] as const;
+class ComplianceListDto {
+  @IsIn(COMPLIANCE_BUCKETS as unknown as string[]) bucket!: ComplianceBucket;
+}
 
 class ReportFilterDto {
   @IsOptional() @IsISO8601() from?: string;
@@ -33,6 +39,8 @@ export class SchoolReportsController {
   private branchUC = new GetBranchReportUseCase();
   private filteredUC = new GetFilteredReportUseCase();
   private classroomUC = new GetClassroomReportUseCase();
+  private complianceUC = new GetSchoolComplianceUseCase();
+  private complianceListUC = new ListSchoolComplianceUseCase();
 
   @Get('overview') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Okul geneli rapor (şube + zümre)' }) @ApiErrorResponses()
   overview(@Req() req: any) { return this.overviewUC.execute(req?.user?.id); }
@@ -47,4 +55,11 @@ export class SchoolReportsController {
 
   @Get('branch/:id') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Şube raporu (sınıf performansı)' }) @ApiErrorResponses()
   branch(@Param('id') id: string, @Req() req: any) { return this.branchUC.execute(id, req?.user?.id); }
+
+  // Ödev uyumu — rol-bilinçli (öğrenci/sınıf öğretmeni/zümre başkanı/seviye/şube/okul).
+  @Get('compliance') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Teslim durumu + süre kontrolü sayıları (hiyerarşik)' }) @ApiErrorResponses()
+  compliance(@Req() req: any) { return this.complianceUC.execute(req?.user?.id); }
+
+  @Get('compliance/list') @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Bir uyum kategorisi icin drill-down liste' }) @ApiErrorResponses()
+  complianceList(@Query() q: ComplianceListDto, @Req() req: any) { return this.complianceListUC.execute(q.bucket, req?.user?.id); }
 }

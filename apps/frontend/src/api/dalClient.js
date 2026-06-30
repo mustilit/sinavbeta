@@ -2314,6 +2314,10 @@ export const school = {
       const s = qs.toString();
       return (await api.get(`/school/reports/classroom/${classroomId}${s ? `?${s}` : ''}`)).data;
     },
+    /** Ödev uyumu (rol-bilinçli): { scope, status:{onTime,late,notSubmitted}, duration:{withinTime,overflow} } */
+    compliance: async () => (await api.get('/school/reports/compliance')).data,
+    /** Bir uyum kategorisi için drill-down liste: bucket ∈ onTime|late|notSubmitted|withinTime|overflow */
+    complianceList: async (bucket) => (await api.get(`/school/reports/compliance/list?bucket=${encodeURIComponent(bucket)}`)).data,
   },
 
   // Canlı sınav — öğretmen host (Sprint 4-B)
