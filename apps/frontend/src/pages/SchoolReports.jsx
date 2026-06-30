@@ -37,8 +37,9 @@ export default function SchoolReports() {
   const { user } = useAuth();
   const role = user?.school?.schoolRole;
   const isManager = role === "SCHOOL_ADMIN" || role === "BRANCH_ADMIN";
-  // Alt roller (seviye sorumlusu / sınıf öğretmeni / zümre başkanı) kapsamı kadar görür.
-  const canView = !!role && (isManager || user?.school?.canViewStructure);
+  // Raporlar tüm okul personeline açık (öğrenci hariç); içerik backend'de hiyerarşik
+  // kapsam + öğretmenin kendi verdiği ödevlerle dolar.
+  const canView = !!role && role !== "STUDENT";
 
   const [mainTab, setMainTab] = useState("genel"); // genel | students (ana sekme)
   const [tab, setTab] = useState("branches"); // Genel alt sekmesi: branches | levels | classrooms

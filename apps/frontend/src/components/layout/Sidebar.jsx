@@ -178,7 +178,8 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     ] : []),
     { name: t("sidebar.esinif.examPool", { defaultValue: "Sınav Havuzu" }), page: "SchoolExamPool", icon: BookOpen },
     { name: t("sidebar.esinif.assignments", { defaultValue: "Ödevler" }), page: "SchoolAssignments", icon: Layers },
-    ...(schoolCtx?.canViewStructure ? [{ name: t("sidebar.esinif.reports", { defaultValue: "Raporlar" }), page: "SchoolReports", icon: BarChart3 }] : []),
+    // Raporlar her öğretmen/zümre başkanına gelir; içerik backend'de hiyerarşik kapsama göre dolar.
+    { name: t("sidebar.esinif.reports", { defaultValue: "Raporlar" }), page: "SchoolReports", icon: BarChart3 },
     { name: t("sidebar.esinif.live", { defaultValue: "Canlı Sınav" }), page: "SchoolLive", icon: Zap },
   ];
   const isSchoolStudent = schoolCtx?.schoolRole === "STUDENT";
