@@ -72,7 +72,7 @@ export default function StudentReports() {
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><BarChart3 className="w-5 h-5 text-indigo-600" /></div>
           <div><h1 className="text-2xl font-bold text-slate-900">Raporlarım</h1><p className="text-sm text-slate-500">{data?.level ? `${data.level}. Seviye · ` : ""}Ders ve konu başarımın</p></div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap" data-html2canvas-ignore="true">
           <Select value={subject} onValueChange={setSubject}>
             <SelectTrigger className="w-40"><SelectValue placeholder="Ders" /></SelectTrigger>
             <SelectContent>
@@ -84,7 +84,7 @@ export default function StudentReports() {
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>{RANGES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
           </Select>
-          <Button variant="outline" className="gap-2" disabled={exporting} onClick={exportPdf} data-html2canvas-ignore="true">
+          <Button variant="outline" className="gap-2" disabled={exporting} onClick={exportPdf}>
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} PDF
           </Button>
         </div>

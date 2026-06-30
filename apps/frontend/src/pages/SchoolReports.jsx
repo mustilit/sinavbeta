@@ -170,10 +170,10 @@ export default function SchoolReports() {
             <p className="text-sm text-slate-500">{user?.school?.schoolName}{homeroomLabel ? ` · Sınıf Öğretmeni (${homeroomLabel})` : ""}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-html2canvas-ignore="true">
           <PeriodSelect value={periodId} onChange={setPeriodId} />
-          <Button variant="outline" onClick={exportExcel} className="gap-2" data-html2canvas-ignore="true"><Download className="w-4 h-4" /> Excel</Button>
-          <Button variant="outline" onClick={exportPdf} disabled={exporting} className="gap-2" data-html2canvas-ignore="true">{exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} PDF</Button>
+          <Button variant="outline" onClick={exportExcel} className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
+          <Button variant="outline" onClick={exportPdf} disabled={exporting} className="gap-2">{exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} PDF</Button>
         </div>
       </div>
 
@@ -189,8 +189,8 @@ export default function SchoolReports() {
         ))}
       </div>
 
-      {/* Filtre satırı */}
-      <div className="rounded-xl border border-slate-200 bg-white p-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Filtre satırı — PDF çıktısına dahil edilmez */}
+      <div className="rounded-xl border border-slate-200 bg-white p-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-html2canvas-ignore="true">
         <div>
           <label className="text-xs text-slate-500 mb-1 block">Zaman aralığı</label>
           <Select value={range} onValueChange={setRange}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{RANGES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select>
@@ -217,7 +217,7 @@ export default function SchoolReports() {
 
       {mainTab === "students" ? (
         <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2" data-html2canvas-ignore="true">
             <div className="relative flex-1 sm:max-w-xs">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <Input value={studentQ} onChange={(e) => setStudentQ(e.target.value)} placeholder="Öğrenci no veya ad ara…" className="pl-9" aria-label="Öğrenci ara" />
