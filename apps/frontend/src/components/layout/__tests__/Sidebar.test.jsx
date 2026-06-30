@@ -83,7 +83,7 @@ describe('Sidebar bileşeni', () => {
     expect(screen.getByRole('link', { name: /yönetim paneli/i })).toBeInTheDocument();
   });
 
-  it('çıkış yap butonu mevcut ve tıklanınca logout çağrılır', () => {
+  it('çıkış yap butonu mevcut ve tıklanınca logout çağrılır (marketplace → /Login)', () => {
     // Arrange
     renderSidebar({ role: 'CANDIDATE' });
 
@@ -91,8 +91,19 @@ describe('Sidebar bileşeni', () => {
     const logoutBtn = screen.getByRole('button', { name: /çıkış yap/i });
     fireEvent.click(logoutBtn);
 
-    // Assert
-    expect(mockLogout).toHaveBeenCalledWith(true);
+    // Assert — marketplace kullanıcısı /Login'e
+    expect(mockLogout).toHaveBeenCalledWith(true, '/Login');
+  });
+
+  it('E-Sınıf kullanıcısı çıkışta Ana sayfa (/) yönlendirilir', () => {
+    // Arrange — okul bağlamı olan kullanıcı
+    renderSidebar({ role: 'CANDIDATE', school: { schoolRole: 'STUDENT', schoolName: 'ALEF' } });
+
+    // Act
+    fireEvent.click(screen.getByRole('button', { name: /çıkış yap/i }));
+
+    // Assert — E-Sınıf kullanıcısı Ana sayfaya
+    expect(mockLogout).toHaveBeenCalledWith(true, '/');
   });
 
   it('WORKER rolü ile workerPages\'e göre filtreli linkler gösterilir', () => {

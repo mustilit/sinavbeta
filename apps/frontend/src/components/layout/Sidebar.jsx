@@ -241,7 +241,8 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     ? t("roles.educator")
     : t("roles.candidate");
 
-  const handleLogout = () => logout(true);
+  // E-Sınıf kullanıcısı çıkışta Ana sayfa'ya (/), marketplace kullanıcısı /Login'e gider.
+  const handleLogout = () => logout(true, user?.school ? '/' : '/Login');
 
   // Rail-mode yardımcısı: `collapsed` true ise lg+ ekranlarda `lg:hidden`
   // (yani mobilde her zaman görünür). String'i template literal'a koyduğunda

@@ -117,7 +117,7 @@ export const AuthProvider = ({ children }) => {
     checkUserAuth();
   }, [checkUserAuth]);
 
-  const logout = useCallback((shouldRedirect = true) => {
+  const logout = useCallback((shouldRedirect = true, redirectTo = '/Login') => {
     authLog('logout');
     setUser(null);
     setIsAuthenticated(false);
@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }) => {
     queryClientInstance.clear();
     base44.auth.logout();
     if (shouldRedirect) {
-      window.location.replace('/Login');
+      window.location.replace(redirectTo);
     }
   }, []);
 
