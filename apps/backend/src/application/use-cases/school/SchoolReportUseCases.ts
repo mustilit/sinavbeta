@@ -376,7 +376,7 @@ export class GetStudentComplianceListUseCase {
         where: { ...(periodId ? { assignment: { periodId } } : {}), OR: subOr, status: { in: ['SUBMITTED', 'GRADED'] as any }, ...(submittedAt ? { submittedAt } : {}) },
         select: { studentId: true, submittedAt: true, assignment: { select: { id: true, dueDate: true } } },
       }),
-      db.schoolUser.findMany({ where: { schoolId: rs.schoolId, classroomId: { in: unionIds }, schoolRole: 'STUDENT' as any, isActive: true }, select: { userId: true, username: true, classroomId: true, user: { select: { firstName: true, lastName: true } } } }),
+      db.schoolUser.findMany({ where: { schoolId: rs.schoolId, classroomId: { in: unionIds }, schoolRole: 'STUDENT' as any, isActive: true }, select: { userId: true, username: true, studentNo: true, classroomId: true, user: { select: { firstName: true, lastName: true } } } }),
       db.schoolAssignment.findMany({ where: periodId ? { AND: [{ OR: asgOrNoSubj }, { periodId }] } : { OR: asgOrNoSubj }, select: { exam: { select: { subject: true } } } }),
     ]);
     const subjects = [...new Set(subjectAsg.map((a) => a.exam?.subject).filter((s): s is string => !!s && s.trim() !== ''))].sort((a, b) => a.localeCompare(b, 'tr'));
@@ -412,7 +412,8 @@ export class GetStudentComplianceListUseCase {
         for (const aId of pastDue) if (!submittedSet.has(aId)) notDone++;
         return {
           studentUserId: r.userId, // detay pop-up'ı için
-          studentNo: r.username,
+          studentNo: r.studentNo || r.username, // gerçek öğrenci no varsa o, yoksa kullanıcı adı
+          username: r.username,
           name: nameOf({ username: r.username, firstName: r.user?.firstName ?? null, lastName: r.user?.lastName ?? null }),
           classroomName: cls?.name ?? '—',
           branchName: cls?.branch?.name ?? '—',
@@ -455,7 +456,7 @@ export class GetStudentAssignmentDetailUseCase {
 
     const su = await db.schoolUser.findFirst({
       where: { schoolId: rs.schoolId, userId: input.studentId, schoolRole: 'STUDENT' as any },
-      select: { username: true, classroomId: true, user: { select: { firstName: true, lastName: true } }, classroom: { select: { name: true, gradeLevel: true, branch: { select: { name: true } } } } },
+      select: { username: true, studentNo: true, classroomId: true, user: { select: { firstName: true, lastName: true } }, classroom: { select: { name: true, gradeLevel: true, branch: { select: { name: true } } } } },
     });
     if (!su || !su.classroomId || !accessible.has(su.classroomId)) throw new AppError('STUDENT_NOT_FOUND', 'Öğrenci bulunamadı', 404);
 
@@ -519,7 +520,7 @@ export class GetStudentAssignmentDetailUseCase {
 
     return {
       student: {
-        studentNo: su.username,
+        studentNo: su.studentNo || su.username, // gerçek öğrenci no varsa o, yoksa kullanıcı adı
         name: [su.user?.firstName, su.user?.lastName].filter(Boolean).join(' ') || su.username,
         classroomName: su.classroom?.name ?? '—',
         branchName: su.classroom?.branch?.name ?? '—',
