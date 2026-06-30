@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ClipboardList, Plus, BarChart3, Send, Lock, Unlock, AlertCircle } from "lucide-react";
+import { ClipboardList, Plus, BarChart3, Send, Lock, Unlock, AlertCircle, CalendarRange, ChevronDown } from "lucide-react";
+import { AssignmentTimeline } from "@/components/school/AssignmentTimeline";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -43,6 +44,7 @@ export default function SchoolAssignments() {
   const [level, setLevel] = useState("");     // gradeLevel (string)
   const [subject, setSubject] = useState(""); // ders adı
   const [periodId, setPeriodId] = useState("");
+  const [showTimeline, setShowTimeline] = useState(true);
 
   const { data: assignments = [], isLoading } = useQuery({ queryKey: ["esinif", "assignments", periodId], queryFn: () => schoolApi.assignments.list({ periodId }), enabled: !!role && !!periodId });
   const { data: exams = [] } = useQuery({ queryKey: ["esinif", "exam-pool", "for-assign"], queryFn: () => schoolApi.exams.list(), enabled: open });
@@ -116,6 +118,17 @@ export default function SchoolAssignments() {
           {canCreate && <Button onClick={openCreate} className="bg-indigo-600 hover:bg-indigo-700 gap-2"><Plus className="w-4 h-4" /> Yeni Ödev</Button>}
         </div>
       </div>
+
+      {/* Ödev takvimi (Gantt) — sınıf öğretmeni/yetkili kendi kapsamındaki ödevlerin tarih aralıklarını görür */}
+      {assignments.length > 0 && (
+        <div className="space-y-2">
+          <button type="button" onClick={() => setShowTimeline((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 min-h-10">
+            <CalendarRange className="w-4 h-4 text-indigo-600" /> Ödev Takvimi
+            <ChevronDown className={`w-4 h-4 transition-transform ${showTimeline ? "" : "-rotate-90"}`} />
+          </button>
+          {showTimeline && <AssignmentTimeline items={assignments} />}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse" />)}</div>
