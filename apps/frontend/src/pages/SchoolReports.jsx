@@ -72,6 +72,8 @@ export default function SchoolReports() {
     subject: subject === "ALL" ? undefined : subject,
     periodId: periodId || undefined,
   };
+  // Öğrenci sekmesi zümre filtresi kullanmaz — departmentId hariç tutulur.
+  const studentFilters = { ...filters, departmentId: undefined };
 
   const { data, isLoading } = useQuery({
     queryKey: ["esinif", "report-breakdown", filters],
@@ -81,8 +83,8 @@ export default function SchoolReports() {
 
   // Öğrenciler sekmesi — öğrenci bazlı teslim durumu (yalnız sekme açıkken çekilir).
   const { data: studentsData, isLoading: studentsLoading } = useQuery({
-    queryKey: ["esinif", "report-students", filters],
-    queryFn: () => schoolApi.reports.students(filters),
+    queryKey: ["esinif", "report-students", studentFilters],
+    queryFn: () => schoolApi.reports.students(studentFilters),
     enabled: canView && !!periodId && mainTab === "students",
   });
   // Öğrenciler sekmesi satırları + client-side no/ad araması + teslim durumu filtresi (hook'lar erken return'den ÖNCE).
@@ -207,7 +209,7 @@ export default function SchoolReports() {
           <label className="text-xs text-slate-500 mb-1 block">Ders</label>
           <Select value={subject} onValueChange={setSubject}><SelectTrigger><SelectValue placeholder="Ders" /></SelectTrigger><SelectContent><SelectItem value="ALL">Tüm dersler</SelectItem>{subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
         </div>
-        {isManager && (
+        {isManager && mainTab !== "students" && (
           <div>
             <label className="text-xs text-slate-500 mb-1 block">Zümre</label>
             <Select value={departmentId} onValueChange={setDepartmentId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ALL">Tüm zümreler</SelectItem>{departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select>
@@ -383,8 +385,8 @@ export default function SchoolReports() {
 
       {/* Sınıf detay */}
       <ClassroomDetailDialog classroom={detailFor} from={from} departmentId={filters.departmentId} subject={filters.subject} onClose={() => setDetailFor(null)} />
-      {/* Öğrenci detay (ödev-ödev) */}
-      <StudentDetailDialog student={detailStudent} filters={filters} onClose={() => setDetailStudent(null)} />
+      {/* Öğrenci detay (ödev-ödev) — zümre filtresi uygulanmaz */}
+      <StudentDetailDialog student={detailStudent} filters={studentFilters} onClose={() => setDetailStudent(null)} />
     </div>
   );
 }
@@ -511,7 +513,16 @@ function StudentDetailDialog({ student, filters, onClose }) {
         {isLoading ? (
           <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-10 bg-slate-100 rounded animate-pulse" />)}</div>
         ) : data ? (
-          <div ref={detailRef} className="space-y-4 bg-white">
+          <div ref={detailRef} className="space-y-4 bg-white p-1">
+            {/* PDF'e de girsin: öğrenci kimliği (isim · no · sınıf · seviye) */}
+            <div className="border-b border-slate-200 pb-2">
+              <p className="text-base font-semibold text-slate-900">{data.student?.name ?? student?.name}</p>
+              <p className="text-xs text-slate-500">
+                {data.student?.studentNo ?? student?.studentNo}
+                {(data.student?.classroomName ?? student?.classroomName) ? ` · ${data.student?.classroomName ?? student?.classroomName}` : ""}
+                {(data.student?.gradeLevel ?? student?.gradeLevel) != null ? ` · ${data.student?.gradeLevel ?? student?.gradeLevel}. Seviye` : ""}
+              </p>
+            </div>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { l: "Zamanında", v: data.summary.onTime, cls: "text-emerald-600" },
