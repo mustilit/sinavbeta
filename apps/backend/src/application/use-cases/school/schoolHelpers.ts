@@ -250,7 +250,20 @@ export type ReportScope = {
   allSubjectWhere: Array<Record<string, unknown>>;
   subjectSpanWhere: Array<Record<string, unknown>>;
   subjectDeptIds: string[];
+  // Öğretmenin kendi oluşturduğu ödevler için kapsam (designation'dan bağımsız):
+  // sınıf öğretmeni/seviye/zümre başkanı olmasa da kendi verdiği ödevleri raporlarda görür.
+  ownTeacherId: string | null;
 };
+
+/**
+ * Öğretmenin kendi oluşturduğu (createdById) ödevlerin sınıf id'leri — primary prisma'dan.
+ * Rapor use-case'lerinde çağrılır (resolveReportScope'a sorgu eklemeden; başka tüketicileri etkilemez).
+ */
+export async function ownAssignmentClassIds(schoolId: string, teacherId: string | null): Promise<string[]> {
+  if (!teacherId) return [];
+  const rows = await prisma.schoolAssignment.findMany({ where: { schoolId, createdById: teacherId }, select: { classroomId: true }, distinct: ['classroomId'] });
+  return [...new Set(rows.map((r) => r.classroomId))];
+}
 
 /** Canlı sınav oluşturanın kapsam snapshot'ı (en dar designation; üst roller görsün diye parent'lar da set edilir). */
 export async function resolveLiveCreatorScope(ctx: SchoolContext): Promise<{ schoolBranchId: string | null; schoolLevelId: string | null; schoolClassroomId: string | null; schoolDepartmentId: string | null }> {
@@ -288,7 +301,7 @@ export async function resolveReportScope(userId: string | undefined): Promise<Re
   const ctx = await resolveSchoolContext(userId);
   const schoolId = ctx.schoolId;
   if (ctx.schoolRole === 'SCHOOL_ADMIN') {
-    return { schoolId, isSchoolAdmin: true, empty: false, allSubjectWhere: [], subjectSpanWhere: [], subjectDeptIds: [] };
+    return { schoolId, isSchoolAdmin: true, empty: false, allSubjectWhere: [], subjectSpanWhere: [], subjectDeptIds: [], ownTeacherId: null };
   }
 
   const allSubjectWhere: Array<Record<string, unknown>> = [];
@@ -316,6 +329,7 @@ export async function resolveReportScope(userId: string | undefined): Promise<Re
     }
   }
 
+  // Designation tabanlı boşluk; kendi ödevleri (ownTeacherId) rapor use-case'lerinde ayrıca eklenir.
   const empty = allSubjectWhere.length === 0 && subjectSpanWhere.length === 0;
-  return { schoolId, isSchoolAdmin: false, empty, allSubjectWhere, subjectSpanWhere, subjectDeptIds };
+  return { schoolId, isSchoolAdmin: false, empty, allSubjectWhere, subjectSpanWhere, subjectDeptIds, ownTeacherId: ctx.userId ?? null };
 }

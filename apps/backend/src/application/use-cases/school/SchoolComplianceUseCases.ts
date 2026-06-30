@@ -16,7 +16,7 @@
  *  - withinTime: geçen süre <= durationMinutes · overflow: aşım veya OVERDUE (zaman aşımı)
  */
 import { prismaRead } from '../../../infrastructure/database/dbRouter';
-import { resolveSchoolContext, resolveReportScope, resolvePeriodFilter } from './schoolHelpers';
+import { resolveSchoolContext, resolveReportScope, resolvePeriodFilter, ownAssignmentClassIds } from './schoolHelpers';
 
 const GRACE_MIN = 0.5; // ağ/saat kayması toleransı
 
@@ -66,7 +66,9 @@ async function loadScope(actorId?: string): Promise<Scope> {
   // ── Personel ──
   const rs = await resolveReportScope(actorId);
   const empty: Scope = { isStudent: false, now, assignments: [], submissions: [], roster: new Map() };
-  if (rs.empty) return empty;
+  // Öğretmenin kendi verdiği ödevler designation'sız da kapsama girer.
+  const ownClassIds = await ownAssignmentClassIds(rs.schoolId, rs.ownTeacherId);
+  if (rs.empty && ownClassIds.length === 0) return empty;
 
   let allClassIds: string[] = [];
   let subjectClassIds: string[] = [];
@@ -81,6 +83,8 @@ async function loadScope(actorId?: string): Promise<Scope> {
   const asgOr: Array<Record<string, unknown>> = [];
   if (allClassIds.length) asgOr.push({ classroomId: { in: allClassIds } });
   if (subjOnly.length && rs.subjectDeptIds.length) asgOr.push({ classroomId: { in: subjOnly }, exam: { departmentId: { in: rs.subjectDeptIds } } });
+  // Öğretmenin kendi verdiği ödevler (designation yok) — yalnız createdById eşleşenler.
+  if (ownClassIds.length && rs.ownTeacherId) asgOr.push({ classroomId: { in: ownClassIds }, createdById: rs.ownTeacherId });
   if (!asgOr.length) return empty;
 
   const periodId = await resolvePeriodFilter(rs.schoolId, null);

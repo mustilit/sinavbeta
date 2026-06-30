@@ -9,6 +9,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     schoolLevel: { findMany: jest.fn(async () => []) },
     classroom: { findMany: jest.fn(async () => []), findFirst: jest.fn(async () => null) },
     department: { findMany: jest.fn(async () => []), findFirst: jest.fn(async () => null), findUnique: jest.fn(async () => null) },
+    schoolAssignment: { findMany: jest.fn(async () => []) }, // resolveReportScope: kendi ödev sınıfları
   },
 }));
 

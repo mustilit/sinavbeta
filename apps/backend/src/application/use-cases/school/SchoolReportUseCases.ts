@@ -4,7 +4,7 @@
  */
 import { prismaRead } from '../../../infrastructure/database/dbRouter';
 import { AppError } from '../../errors/AppError';
-import { resolveSchoolContext, requireSchoolRole, resolveReportScope, resolvePeriodFilter } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveReportScope, resolvePeriodFilter, ownAssignmentClassIds } from './schoolHelpers';
 
 function pct(score: number | null, max: number | null): number | null {
   if (score == null || !max) return null;
@@ -110,9 +110,10 @@ export class GetFilteredReportUseCase {
   async execute(input: ReportFilters, actorId?: string) {
     // Görüntüleme kapsamı: SCHOOL_ADMIN tüm okul; alt roller yetki alanı kadar.
     const emptyReport = { branches: [], levels: [], classrooms: [], byDepartment: [], timeseries: [], highlights: { bestBranch: null, bestClassByLevel: [] }, subjects: [], homeroomClassrooms: [] };
-    // Designation tabanlı rapor kapsamı (kimse hiyerarşide yukarıyı görmez).
+    // Designation tabanlı rapor kapsamı (kimse hiyerarşide yukarıyı görmez) + kendi verdiği ödevler.
     const rs = await resolveReportScope(actorId);
-    if (rs.empty) return emptyReport;
+    const ownClassIds = await ownAssignmentClassIds(rs.schoolId, rs.ownTeacherId);
+    if (rs.empty && ownClassIds.length === 0) return emptyReport;
     const db = prismaRead();
     const grade = input.gradeLevel != null && !isNaN(Number(input.gradeLevel)) ? Math.floor(Number(input.gradeLevel)) : undefined;
     const submittedAt = dateRange(input.from, input.to);
@@ -136,7 +137,8 @@ export class GetFilteredReportUseCase {
     }
     const allSet = new Set(allClassIds);
     const subjOnly = subjectClassIds.filter((id) => !allSet.has(id)); // yalnız branş erişimli sınıflar
-    const unionIds = [...new Set([...allClassIds, ...subjectClassIds])];
+    // Öğretmenin kendi verdiği ödevlerin sınıfları (yukarıda hesaplandı) — yalnız kendi ödevleri sayılır.
+    const unionIds = [...new Set([...allClassIds, ...subjectClassIds, ...ownClassIds])];
     if (unionIds.length === 0) return emptyReport;
 
     const classrooms = await db.classroom.findMany({
@@ -169,6 +171,12 @@ export class GetFilteredReportUseCase {
         const ex = mergeExam(deptPart)!; // deptPart daima dolu → ex tanımlı
         asg.push({ classroomId: { in: subjOnly }, exam: ex });
         sub.push({ assignment: { classroomId: { in: subjOnly }, exam: ex } });
+      }
+      // Öğretmenin kendi verdiği ödevler — sınıf öğretmeni olmasa da; yalnız createdById eşleşen ödevler.
+      if (ownClassIds.length && rs.ownTeacherId) {
+        const ex = mergeExam(input.departmentId ? { departmentId: input.departmentId } : undefined);
+        asg.push({ classroomId: { in: ownClassIds }, createdById: rs.ownTeacherId, ...(ex ? { exam: ex } : {}) });
+        sub.push({ assignment: { classroomId: { in: ownClassIds }, createdById: rs.ownTeacherId, ...(ex ? { exam: ex } : {}) } });
       }
       return { asg, sub };
     };
@@ -322,7 +330,8 @@ export class GetStudentComplianceListUseCase {
   async execute(input: ReportFilters, actorId?: string) {
     const emptyRes = { students: [] as unknown[], subjects: [] as string[], capped: false };
     const rs = await resolveReportScope(actorId);
-    if (rs.empty) return emptyRes;
+    const ownClassIds = await ownAssignmentClassIds(rs.schoolId, rs.ownTeacherId);
+    if (rs.empty && ownClassIds.length === 0) return emptyRes;
     const db = prismaRead();
     const grade = input.gradeLevel != null && !isNaN(Number(input.gradeLevel)) ? Math.floor(Number(input.gradeLevel)) : undefined;
     const submittedAt = dateRange(input.from, input.to);
@@ -338,7 +347,8 @@ export class GetStudentComplianceListUseCase {
     }
     const allSet = new Set(allClassIds);
     const subjOnly = subjectClassIds.filter((id) => !allSet.has(id));
-    const unionIds = [...new Set([...allClassIds, ...subjectClassIds])];
+    // Öğretmenin kendi verdiği ödevlerin sınıfları (yukarıda hesaplandı) — yalnız kendi ödevleri sayılır.
+    const unionIds = [...new Set([...allClassIds, ...subjectClassIds, ...ownClassIds])];
     if (!unionIds.length) return emptyRes;
 
     const subject = input.subject?.trim() || undefined;
@@ -363,6 +373,13 @@ export class GetStudentComplianceListUseCase {
       asgOr.push({ classroomId: { in: subjOnly }, exam: ex });
       subOr.push({ assignment: { classroomId: { in: subjOnly }, exam: ex } });
       asgOrNoSubj.push({ classroomId: { in: subjOnly }, exam: exNo });
+    }
+    if (ownClassIds.length && rs.ownTeacherId) {
+      const ex = mergeExam(input.departmentId ? { departmentId: input.departmentId } : undefined);
+      const exNo = mergeExam(input.departmentId ? { departmentId: input.departmentId } : undefined, false);
+      asgOr.push({ classroomId: { in: ownClassIds }, createdById: rs.ownTeacherId, ...(ex ? { exam: ex } : {}) });
+      subOr.push({ assignment: { classroomId: { in: ownClassIds }, createdById: rs.ownTeacherId, ...(ex ? { exam: ex } : {}) } });
+      asgOrNoSubj.push({ classroomId: { in: ownClassIds }, createdById: rs.ownTeacherId, ...(exNo ? { exam: exNo } : {}) });
     }
     if (!asgOr.length) return emptyRes;
 
@@ -439,7 +456,8 @@ export class GetStudentAssignmentDetailUseCase {
     actorId?: string,
   ) {
     const rs = await resolveReportScope(actorId);
-    if (rs.empty) throw new AppError('FORBIDDEN', 'Yetki yok', 403);
+    const ownClassIds = await ownAssignmentClassIds(rs.schoolId, rs.ownTeacherId);
+    if (rs.empty && ownClassIds.length === 0) throw new AppError('FORBIDDEN', 'Yetki yok', 403);
     const db = prismaRead();
 
     let allClassIds: string[] = [];
@@ -452,7 +470,8 @@ export class GetStudentAssignmentDetailUseCase {
     }
     const allSet = new Set(allClassIds);
     const subjOnly = new Set(subjectClassIds.filter((id) => !allSet.has(id)));
-    const accessible = new Set([...allClassIds, ...subjectClassIds]);
+    const ownSet = new Set(ownClassIds);
+    const accessible = new Set([...allClassIds, ...subjectClassIds, ...ownClassIds]);
 
     const su = await db.schoolUser.findFirst({
       where: { schoolId: rs.schoolId, userId: input.studentId, schoolRole: 'STUDENT' as any },
@@ -464,8 +483,10 @@ export class GetStudentAssignmentDetailUseCase {
     const subject = input.subject?.trim() || undefined;
     const examWhere: Record<string, unknown> = {};
     if (input.departmentId) examWhere.departmentId = input.departmentId;
-    else if (subjOnly.has(su.classroomId)) examWhere.departmentId = { in: rs.subjectDeptIds };
+    else if (subjOnly.has(su.classroomId) && !allSet.has(su.classroomId)) examWhere.departmentId = { in: rs.subjectDeptIds };
     if (subject) examWhere.subject = subject;
+    // Sınıfa yalnız "kendi verdiği ödev" üzerinden erişiliyorsa (designation yok) → yalnız kendi ödevleri.
+    const ownOnly = ownSet.has(su.classroomId) && !allSet.has(su.classroomId) && !subjOnly.has(su.classroomId);
 
     const periodId = await resolvePeriodFilter(rs.schoolId, input.periodId);
     const now = new Date();
@@ -475,6 +496,7 @@ export class GetStudentAssignmentDetailUseCase {
       where: {
         classroomId: su.classroomId,
         availableFrom: { lte: now },
+        ...(ownOnly && rs.ownTeacherId ? { createdById: rs.ownTeacherId } : {}),
         ...(periodId ? { periodId } : {}),
         ...(Object.keys(examWhere).length ? { exam: examWhere } : {}),
       },
@@ -536,11 +558,13 @@ export class GetStudentAssignmentDetailUseCase {
 export class GetClassroomReportUseCase {
   async execute(classroomId: string, input: { from?: string; to?: string; departmentId?: string; subject?: string }, actorId?: string) {
     const rs = await resolveReportScope(actorId);
-    if (rs.empty) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
+    const ownClassIds = await ownAssignmentClassIds(rs.schoolId, rs.ownTeacherId);
+    if (rs.empty && ownClassIds.length === 0) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
     const db = prismaRead();
     const clsSelect = { id: true, name: true, gradeLevel: true, branch: { select: { name: true } }, _count: { select: { students: true } } };
-    // Erişim: tüm-ders mi (yönetim) yoksa branş-kısıtlı mı (zümre başkanlığı)?
+    // Erişim: tüm-ders mi (yönetim) yoksa branş-kısıtlı mı (zümre başkanlığı) yoksa yalnız kendi ödevi mi?
     let allSubjectAccess = rs.isSchoolAdmin;
+    let ownOnly = false;
     let cls: any = null;
     if (rs.isSchoolAdmin) {
       cls = await db.classroom.findFirst({ where: { id: classroomId, schoolId: rs.schoolId }, select: clsSelect });
@@ -552,19 +576,24 @@ export class GetClassroomReportUseCase {
       if (!cls && rs.subjectSpanWhere.length) {
         cls = await db.classroom.findFirst({ where: { id: classroomId, schoolId: rs.schoolId, OR: rs.subjectSpanWhere }, select: clsSelect });
       }
+      // Designation yok ama bu sınıfa kendi ödevini vermiş → yalnız kendi ödevleri görünür.
+      if (!cls && rs.ownTeacherId && ownClassIds.includes(classroomId)) {
+        cls = await db.classroom.findFirst({ where: { id: classroomId, schoolId: rs.schoolId }, select: clsSelect });
+        if (cls) ownOnly = true;
+      }
     }
     if (!cls) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
     const submittedAt = dateRange(input.from, input.to);
     const subject = input.subject?.trim() || undefined;
     const examWhere = {
-      ...(input.departmentId ? { departmentId: input.departmentId } : (allSubjectAccess ? {} : { departmentId: { in: rs.subjectDeptIds } })),
+      ...(input.departmentId ? { departmentId: input.departmentId } : (allSubjectAccess || ownOnly ? {} : { departmentId: { in: rs.subjectDeptIds } })),
       ...(subject ? { subject } : {}),
     };
     const deptWhere = Object.keys(examWhere).length ? { exam: examWhere } : {};
 
     const subs = await db.schoolSubmission.findMany({
       where: {
-        assignment: { classroomId, ...deptWhere },
+        assignment: { classroomId, ...(ownOnly && rs.ownTeacherId ? { createdById: rs.ownTeacherId } : {}), ...deptWhere },
         status: { in: ['SUBMITTED', 'GRADED'] as any },
         ...(submittedAt ? { submittedAt } : {}),
       },

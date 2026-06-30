@@ -7,6 +7,7 @@ jest.mock('../../../src/infrastructure/database/prisma', () => ({
     schoolLevel: { findMany: jest.fn() },
     classroom: { findMany: jest.fn() },
     department: { findMany: jest.fn() },
+    schoolAssignment: { findMany: jest.fn() }, // resolveReportScope: öğretmenin kendi ödev sınıfları
     school: { findUnique: jest.fn(async () => ({ periodId: null })) },
   },
 }));
@@ -34,6 +35,7 @@ beforeEach(() => {
   p.schoolLevel.findMany.mockResolvedValue([]);
   p.classroom.findMany.mockResolvedValue([]);
   p.department.findMany.mockResolvedValue([]);
+  p.schoolAssignment.findMany.mockResolvedValue([]); // varsayılan: öğretmenin kendi ödevi yok
 });
 
 describe('GetSchoolReportUseCase (overview)', () => {
@@ -268,9 +270,25 @@ describe('GetStudentComplianceListUseCase', () => {
   it('kapsam boşsa boş liste', async () => {
     p.schoolUser.findFirst.mockResolvedValue({ ...admin, schoolRole: 'TEACHER', branchId: null });
     p.schoolUser.findUnique.mockResolvedValue({ userId: 'uX', departmentId: null });
+    p.schoolAssignment.findMany.mockResolvedValue([]); // kendi ödevi de yok
     read.mockReturnValue({});
     const r = await new GetStudentComplianceListUseCase().execute({}, 'uX');
     expect(r.students).toEqual([]);
+  });
+
+  it('designation yok ama kendi ödevini verdiği sınıfın öğrencilerini görür', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ id: 'suT', schoolId: 'sch1', schoolRole: 'TEACHER', branchId: null, departmentId: null, classroomId: null });
+    p.schoolUser.findUnique.mockResolvedValue({ userId: 'uT', departmentId: null });
+    p.schoolAssignment.findMany.mockResolvedValue([{ classroomId: 'c1' }]); // ownAssignmentClassIds (prisma)
+    read.mockReturnValue({
+      classroom: { findMany: jest.fn().mockResolvedValue([{ id: 'c1', name: '5-A', gradeLevel: 5, branch: { name: 'B1' } }]) },
+      schoolAssignment: { findMany: jest.fn().mockResolvedValue([{ id: 'a1', classroomId: 'c1', dueDate: new Date('2020-01-01T00:00:00Z') }]) },
+      schoolSubmission: { findMany: jest.fn().mockResolvedValue([]) },
+      schoolUser: { findMany: jest.fn().mockResolvedValue([{ userId: 'stuT', username: 'ST1', studentNo: null, classroomId: 'c1', user: { firstName: 'Can', lastName: 'Su' } }]) },
+    });
+    const r = await new GetStudentComplianceListUseCase().execute({}, 'uT');
+    expect(r.students).toHaveLength(1);
+    expect(r.students[0]).toMatchObject({ studentNo: 'ST1', name: 'Can Su', classroomName: '5-A', notDoneCount: 1 });
   });
 });
 
