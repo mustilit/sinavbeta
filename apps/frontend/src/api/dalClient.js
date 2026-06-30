@@ -2293,8 +2293,8 @@ export const school = {
   reports: {
     overview: async () => (await api.get('/school/reports/overview')).data,
     branch: async (branchId) => (await api.get(`/school/reports/branch/${branchId}`)).data,
-    /** Filtreli kırılım: { from, to, gradeLevel, classroomId, departmentId, periodId } → şube/seviye/sınıf + highlights */
-    breakdown: async ({ from, to, gradeLevel, classroomId, departmentId, periodId } = {}) => {
+    /** Filtreli kırılım: { from, to, gradeLevel, classroomId, departmentId, periodId, subject } → şube/seviye/sınıf + highlights + subjects + homeroomClassrooms */
+    breakdown: async ({ from, to, gradeLevel, classroomId, departmentId, periodId, subject } = {}) => {
       const qs = new URLSearchParams();
       if (from) qs.set('from', from);
       if (to) qs.set('to', to);
@@ -2302,15 +2302,17 @@ export const school = {
       if (classroomId) qs.set('classroomId', classroomId);
       if (departmentId) qs.set('departmentId', departmentId);
       if (periodId) qs.set('periodId', periodId);
+      if (subject) qs.set('subject', subject);
       const s = qs.toString();
       return (await api.get(`/school/reports/breakdown${s ? `?${s}` : ''}`)).data;
     },
-    /** Tek sınıf detayı: classroomId + { from, to, departmentId } */
-    classroom: async (classroomId, { from, to, departmentId } = {}) => {
+    /** Tek sınıf detayı: classroomId + { from, to, departmentId, subject } */
+    classroom: async (classroomId, { from, to, departmentId, subject } = {}) => {
       const qs = new URLSearchParams();
       if (from) qs.set('from', from);
       if (to) qs.set('to', to);
       if (departmentId) qs.set('departmentId', departmentId);
+      if (subject) qs.set('subject', subject);
       const s = qs.toString();
       return (await api.get(`/school/reports/classroom/${classroomId}${s ? `?${s}` : ''}`)).data;
     },
@@ -2341,11 +2343,12 @@ export const school = {
 // E-Sınıf öğrenci canlı sınav katılımı (Sprint 4-B)
 // E-Sınıf öğrenci raporu (ders/konu/takvim)
 export const studentReport = {
-  get: async ({ from, to, examType } = {}) => {
+  get: async ({ from, to, examType, subject } = {}) => {
     const qs = new URLSearchParams();
     if (from) qs.set('from', from);
     if (to) qs.set('to', to);
     if (examType) qs.set('examType', examType);
+    if (subject) qs.set('subject', subject);
     const s = qs.toString();
     return (await api.get(`/student/report${s ? `?${s}` : ''}`)).data;
   },

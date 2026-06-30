@@ -55,7 +55,7 @@ export class SchoolStudentReportController {
   private reportUC = new GetStudentReportUseCase();
 
   @Get() @ApiBearerAuth('bearer') @ApiOkResponse({ description: 'Öğrencinin ders/konu/takvim raporu' }) @ApiErrorResponses()
-  report(@Query('from') from: string | undefined, @Query('to') to: string | undefined, @Query('examType') examType: string | undefined, @Req() req: any) {
-    return this.reportUC.execute(req?.user?.id, { from, to, examType });
+  report(@Query('from') from: string | undefined, @Query('to') to: string | undefined, @Query('examType') examType: string | undefined, @Query('subject') subject: string | undefined, @Req() req: any) {
+    return this.reportUC.execute(req?.user?.id, { from, to, examType, subject });
   }
 }

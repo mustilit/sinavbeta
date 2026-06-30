@@ -1,11 +1,14 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { studentReport } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, AlertCircle, ListChecks, FileText } from "lucide-react";
+import { BarChart3, AlertCircle, ListChecks, FileText, FileDown, Loader2 } from "lucide-react";
 import { ComplianceReport } from "@/components/school/ComplianceReport";
+import { exportElementToPdf } from "@/lib/reportPdf";
+import { toast } from "sonner";
 
 const StudentReportCharts = lazy(() => import("@/components/school/StudentReportCharts"));
 
@@ -26,6 +29,9 @@ export default function StudentReports() {
   const isStudent = user?.school?.schoolRole === "STUDENT";
   const [range, setRange] = useState("all");
   const [examType, setExamType] = useState("TEST");
+  const [subject, setSubject] = useState("ALL");
+  const [exporting, setExporting] = useState(false);
+  const pageRef = useRef(null);
 
   const from = (() => {
     const r = RANGES.find((x) => x.value === range);
@@ -33,26 +39,55 @@ export default function StudentReports() {
   })();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["esinif", "student-report", range, examType],
-    queryFn: () => studentReport.get({ from, examType }),
+    queryKey: ["esinif", "student-report", range, examType, subject],
+    queryFn: () => studentReport.get({ from, examType, subject: subject === "ALL" ? undefined : subject }),
     enabled: isStudent,
   });
+
+  // Sınav türü değişince ders seçimini sıfırla — yeni türde o ders olmayabilir.
+  useEffect(() => { setSubject("ALL"); }, [examType]);
+
+  const exportPdf = async () => {
+    if (!pageRef.current) return;
+    setExporting(true);
+    try {
+      await exportElementToPdf(pageRef.current, { fileName: `raporlarim-${new Date().toISOString().slice(0, 10)}.pdf` });
+    } catch (e) {
+      console.error("Raporlarım PDF export hatası:", e);
+      toast.error("PDF oluşturulamadı");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (!isStudent) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
 
   const summary = data?.summary ?? { submissionCount: 0, avgPercent: null, questionCount: 0 };
+  const subjects = data?.subjects ?? [];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5">
-      <div className="flex items-center justify-between gap-4">
+    <div ref={pageRef} className="max-w-4xl mx-auto space-y-5">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><BarChart3 className="w-5 h-5 text-indigo-600" /></div>
           <div><h1 className="text-2xl font-bold text-slate-900">Raporlarım</h1><p className="text-sm text-slate-500">{data?.level ? `${data.level}. Seviye · ` : ""}Ders ve konu başarımın</p></div>
         </div>
-        <Select value={range} onValueChange={setRange}>
-          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-          <SelectContent>{RANGES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={subject} onValueChange={setSubject}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="Ders" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tüm dersler</SelectItem>
+              {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={range} onValueChange={setRange}>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>{RANGES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+          </Select>
+          <Button variant="outline" className="gap-2" disabled={exporting} onClick={exportPdf} data-html2canvas-ignore="true">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} PDF
+          </Button>
+        </div>
       </div>
 
       {/* Ödev uyumu — teslim durumu + süre kontrolü (kendi ödevlerin) */}

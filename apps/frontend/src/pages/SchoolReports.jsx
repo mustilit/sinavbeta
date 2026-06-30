@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo, useRef, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { school as schoolApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BarChart3, Download, Building2, Layers, GraduationCap, AlertCircle, Trophy, Award, X } from "lucide-react";
+import { BarChart3, Download, FileDown, Loader2, Building2, Layers, GraduationCap, AlertCircle, Trophy, Award, X } from "lucide-react";
 import { toast } from "sonner";
 import { PeriodSelect } from "@/components/school/PeriodSelect";
 import { ComplianceReport } from "@/components/school/ComplianceReport";
+import { exportElementToPdf } from "@/lib/reportPdf";
 
 const fmtPct = (p) => (p == null ? "—" : `%${p}`);
 
@@ -43,8 +44,11 @@ export default function SchoolReports() {
   const [gradeLevel, setGradeLevel] = useState("ALL");
   const [classroomId, setClassroomId] = useState("ALL");
   const [departmentId, setDepartmentId] = useState("ALL");
+  const [subject, setSubject] = useState("ALL");
   const [periodId, setPeriodId] = useState("");
   const [detailFor, setDetailFor] = useState(null); // classroom row
+  const [exporting, setExporting] = useState(false);
+  const pageRef = useRef(null);
 
   // Filtre seçenekleri — yönetici tüm okuldan; alt roller kapsam (breakdown) verisinden türetir.
   const { data: allClasses = [] } = useQuery({ queryKey: ["esinif", "classrooms", "all"], queryFn: () => schoolApi.listClassrooms(), enabled: isManager });
@@ -60,6 +64,7 @@ export default function SchoolReports() {
     gradeLevel: gradeLevel === "ALL" ? undefined : Number(gradeLevel),
     classroomId: classroomId === "ALL" ? undefined : classroomId,
     departmentId: departmentId === "ALL" ? undefined : departmentId,
+    subject: subject === "ALL" ? undefined : subject,
     periodId: periodId || undefined,
   };
 
@@ -84,30 +89,51 @@ export default function SchoolReports() {
   const byDepartment = data?.byDepartment ?? [];
   const timeseries = data?.timeseries ?? [];
   const highlights = data?.highlights ?? { bestBranch: null, bestClassByLevel: [] };
+  const subjects = data?.subjects ?? [];
+  // Sınıf öğretmeninin sorumlu olduğu sınıf(lar) — başlıkta gösterilir.
+  const homeroomClassrooms = data?.homeroomClassrooms ?? [];
+  const homeroomLabel = homeroomClassrooms.map((c) => c.name).join(", ");
 
   const onLevelChange = (v) => { setGradeLevel(v); setClassroomId("ALL"); };
+
+  const exportPdf = async () => {
+    if (!pageRef.current) return;
+    setExporting(true);
+    try {
+      await exportElementToPdf(pageRef.current, { fileName: `esinif-rapor-${new Date().toISOString().slice(0, 10)}.pdf` });
+    } catch (e) {
+      console.error("Raporlar PDF export hatası:", e);
+      toast.error("PDF oluşturulamadı");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const exportExcel = async () => {
     try {
       const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(branches.map((b) => ({ Şube: b.name, Sınıf: b.classroomCount, Öğrenci: b.studentCount, Teslim: b.submissionCount, Ortalama: b.avgPercent ?? "-" }))), "Şubeler");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(levels.map((l) => ({ Seviye: `${l.gradeLevel}. Seviye`, Sınıf: l.classroomCount, Öğrenci: l.studentCount, Teslim: l.submissionCount, Ortalama: l.avgPercent ?? "-" }))), "Seviyeler");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classrooms.map((c) => ({ Sınıf: c.name, Şube: c.branchName, Seviye: c.gradeLevel, Öğrenci: c.studentCount, Ödev: c.assignmentCount, Teslim: c.submissionCount, Ortalama: c.avgPercent ?? "-" }))), "Sınıflar");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(branches.map((b) => ({ Şube: b.name, Sınıf: b.classroomCount, Öğrenci: b.studentCount, Zamanında: b.onTimeCount ?? 0, Geç: b.lateCount ?? 0, Yapılmadı: b.notDoneCount ?? 0, Ortalama: b.avgPercent ?? "-" }))), "Şubeler");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(levels.map((l) => ({ Seviye: `${l.gradeLevel}. Seviye`, Sınıf: l.classroomCount, Öğrenci: l.studentCount, Zamanında: l.onTimeCount ?? 0, Geç: l.lateCount ?? 0, Yapılmadı: l.notDoneCount ?? 0, Ortalama: l.avgPercent ?? "-" }))), "Seviyeler");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classrooms.map((c) => ({ Sınıf: c.name, Şube: c.branchName, Seviye: c.gradeLevel, Öğrenci: c.studentCount, Ödev: c.assignmentCount, Zamanında: c.onTimeCount ?? 0, Geç: c.lateCount ?? 0, Yapılmadı: c.notDoneCount ?? 0, Ortalama: c.avgPercent ?? "-" }))), "Sınıflar");
       XLSX.writeFile(wb, `esinif-rapor-${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch { toast.error("Excel oluşturulamadı"); }
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
-      <div className="flex items-center justify-between gap-4">
+    <div ref={pageRef} className="max-w-5xl mx-auto space-y-5">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center"><BarChart3 className="w-5 h-5 text-indigo-600" /></div>
-          <div><h1 className="text-2xl font-bold text-slate-900">Raporlar</h1><p className="text-sm text-slate-500">{user?.school?.schoolName}</p></div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Raporlar{homeroomLabel ? ` · ${homeroomLabel}` : ""}</h1>
+            <p className="text-sm text-slate-500">{user?.school?.schoolName}{homeroomLabel ? ` · Sınıf Öğretmeni (${homeroomLabel})` : ""}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <PeriodSelect value={periodId} onChange={setPeriodId} />
-          <Button variant="outline" onClick={exportExcel} className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
+          <Button variant="outline" onClick={exportExcel} className="gap-2" data-html2canvas-ignore="true"><Download className="w-4 h-4" /> Excel</Button>
+          <Button variant="outline" onClick={exportPdf} disabled={exporting} className="gap-2" data-html2canvas-ignore="true">{exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} PDF</Button>
         </div>
       </div>
 
@@ -124,6 +150,10 @@ export default function SchoolReports() {
         <div>
           <label className="text-xs text-slate-500 mb-1 block">Sınıf</label>
           <Select value={classroomId} onValueChange={setClassroomId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ALL">Tüm sınıflar</SelectItem>{classOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
+        </div>
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">Ders</label>
+          <Select value={subject} onValueChange={setSubject}><SelectTrigger><SelectValue placeholder="Ders" /></SelectTrigger><SelectContent><SelectItem value="ALL">Tüm dersler</SelectItem>{subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
         </div>
         {isManager && (
           <div>
@@ -192,10 +222,14 @@ export default function SchoolReports() {
                 </Card>
               </div>
               <ReportTable
-                cols={["Şube", "Sınıf", "Öğrenci", "Teslim", "Ortalama"]}
+                cols={["Şube", "Sınıf", "Öğrenci", "Zamanında", "Geç", "Yapılmadı", "Ortalama"]}
                 rows={branches}
                 empty="Şube verisi yok."
-                render={(b) => [b.name, b.classroomCount, b.studentCount, b.submissionCount, <span className={`font-semibold ${avgClass(b.avgPercent)}`}>{fmtPct(b.avgPercent)}</span>]}
+                render={(b) => [b.name, b.classroomCount, b.studentCount,
+                  <span className="font-medium text-emerald-600">{b.onTimeCount ?? 0}</span>,
+                  <span className="font-medium text-amber-600">{b.lateCount ?? 0}</span>,
+                  <span className="font-medium text-rose-600">{b.notDoneCount ?? 0}</span>,
+                  <span className={`font-semibold ${avgClass(b.avgPercent)}`}>{fmtPct(b.avgPercent)}</span>]}
                 keyOf={(b) => b.id}
               />
             </div>
@@ -204,10 +238,14 @@ export default function SchoolReports() {
           {/* SEVİYELER */}
           {tab === "levels" && (
             <ReportTable
-              cols={["Seviye", "Sınıf", "Öğrenci", "Teslim", "Ortalama"]}
+              cols={["Seviye", "Sınıf", "Öğrenci", "Zamanında", "Geç", "Yapılmadı", "Ortalama"]}
               rows={levels}
               empty="Seviye verisi yok."
-              render={(l) => [`${l.gradeLevel}. Seviye`, l.classroomCount, l.studentCount, l.submissionCount, <span className={`font-semibold ${avgClass(l.avgPercent)}`}>{fmtPct(l.avgPercent)}</span>]}
+              render={(l) => [`${l.gradeLevel}. Seviye`, l.classroomCount, l.studentCount,
+                <span className="font-medium text-emerald-600">{l.onTimeCount ?? 0}</span>,
+                <span className="font-medium text-amber-600">{l.lateCount ?? 0}</span>,
+                <span className="font-medium text-rose-600">{l.notDoneCount ?? 0}</span>,
+                <span className={`font-semibold ${avgClass(l.avgPercent)}`}>{fmtPct(l.avgPercent)}</span>]}
               keyOf={(l) => l.gradeLevel}
             />
           )}
@@ -215,13 +253,16 @@ export default function SchoolReports() {
           {/* SINIFLAR */}
           {tab === "classrooms" && (
             <ReportTable
-              cols={["Sınıf", "Şube", "Seviye", "Öğrenci", "Ödev", "Teslim", "Ortalama"]}
+              cols={["Sınıf", "Şube", "Seviye", "Öğrenci", "Ödev", "Zamanında", "Geç", "Yapılmadı", "Ortalama"]}
               rows={classrooms}
               empty="Sınıf verisi yok."
               onRowClick={(c) => setDetailFor(c)}
               render={(c) => [
                 <span className="font-medium text-indigo-700 hover:underline">{c.name}</span>,
-                c.branchName, `${c.gradeLevel}. Seviye`, c.studentCount, c.assignmentCount, c.submissionCount,
+                c.branchName, `${c.gradeLevel}. Seviye`, c.studentCount, c.assignmentCount,
+                <span className="font-medium text-emerald-600">{c.onTimeCount ?? 0}</span>,
+                <span className="font-medium text-amber-600">{c.lateCount ?? 0}</span>,
+                <span className="font-medium text-rose-600">{c.notDoneCount ?? 0}</span>,
                 <span className={`font-semibold ${avgClass(c.avgPercent)}`}>{fmtPct(c.avgPercent)}</span>,
               ]}
               keyOf={(c) => c.id}
@@ -231,7 +272,7 @@ export default function SchoolReports() {
       )}
 
       {/* Sınıf detay */}
-      <ClassroomDetailDialog classroom={detailFor} from={from} departmentId={filters.departmentId} onClose={() => setDetailFor(null)} />
+      <ClassroomDetailDialog classroom={detailFor} from={from} departmentId={filters.departmentId} subject={filters.subject} onClose={() => setDetailFor(null)} />
     </div>
   );
 }
@@ -261,10 +302,10 @@ function ReportTable({ cols, rows, render, keyOf, empty, onRowClick }) {
 }
 
 // ── Sınıf detay diyaloğu ──────────────────────────────────────────────────────
-function ClassroomDetailDialog({ classroom, from, departmentId, onClose }) {
+function ClassroomDetailDialog({ classroom, from, departmentId, subject, onClose }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["esinif", "report-classroom", classroom?.id, from, departmentId],
-    queryFn: () => schoolApi.reports.classroom(classroom.id, { from, departmentId }),
+    queryKey: ["esinif", "report-classroom", classroom?.id, from, departmentId, subject],
+    queryFn: () => schoolApi.reports.classroom(classroom.id, { from, departmentId, subject }),
     enabled: !!classroom,
   });
   return (

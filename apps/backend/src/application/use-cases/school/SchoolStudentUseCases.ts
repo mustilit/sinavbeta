@@ -277,7 +277,7 @@ export class GetStudentResultUseCase {
  * Yalnız teslim/puanlanmış (SUBMITTED/GRADED) ve skoru olan teslimler ortalamaya girer.
  */
 export class GetStudentReportUseCase {
-  async execute(actorId: string | undefined, input: { from?: string; to?: string; examType?: string } = {}) {
+  async execute(actorId: string | undefined, input: { from?: string; to?: string; examType?: string; subject?: string } = {}) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'STUDENT');
     const db = prismaRead();
@@ -311,9 +311,14 @@ export class GetStudentReportUseCase {
         maxScore: true,
         submittedAt: true,
         _count: { select: { answers: true } }, // çözülen soru sayısı (rapor varsayılan metriği)
-        assignment: { select: { exam: { select: { topic: true, department: { select: { name: true } } } } } },
+        assignment: { select: { exam: { select: { subject: true, topic: true, department: { select: { name: true } } } } } },
       },
     });
+    // Ders dropdown'ı — tüm dersler (seçili ders filtresinden bağımsız stabil liste).
+    const subjects = [...new Set(subs.map((s) => s.assignment?.exam?.subject).filter((x): x is string => !!x && x.trim() !== ''))].sort((a, b) => a.localeCompare(b, 'tr'));
+    // Ders filtresi (exam.subject) — seçiliyse yalnız o dersin teslimleri toplanır.
+    const subjectFilter = input.subject?.trim() || undefined;
+    const rowsForAgg = subjectFilter ? subs.filter((s) => s.assignment?.exam?.subject === subjectFilter) : subs;
 
     const pct = (s: number | null, m: number | null) => (s == null || !m ? null : Math.round((s / m) * 1000) / 10);
     const avg = (a: number[]) => (a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null);
@@ -331,7 +336,7 @@ export class GetStudentReportUseCase {
       a.subs += 1;
       m.set(key, a);
     };
-    for (const s of subs) {
+    for (const s of rowsForAgg) {
       const p = pct(s.totalScore, s.maxScore); // puanlanmamışsa null → başarımda yok ama soru sayısında var
       const q = s._count.answers;
       if (p != null) allPcts.push(p);
@@ -350,7 +355,8 @@ export class GetStudentReportUseCase {
 
     return {
       level: gradeLevel,
-      summary: { submissionCount: subs.length, avgPercent: avg(allPcts), questionCount: totalQuestions },
+      subjects,
+      summary: { submissionCount: rowsForAgg.length, avgPercent: avg(allPcts), questionCount: totalQuestions },
       bySubject: rows(subjectAgg),
       byTopic: rows(topicAgg),
       timeseries: [...dayAgg.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, a]) => ({ date, avgPercent: avg(a.pcts), count: a.subs, questionCount: a.questions })),

@@ -23,12 +23,14 @@ class ReportFilterDto {
   @IsOptional() @IsString() classroomId?: string;
   @IsOptional() @IsString() departmentId?: string;
   @IsOptional() @IsString() periodId?: string;
+  @IsOptional() @IsString() subject?: string; // ders (exam.subject) filtresi
 }
 
 class ClassroomReportFilterDto {
   @IsOptional() @IsISO8601() from?: string;
   @IsOptional() @IsISO8601() to?: string;
   @IsOptional() @IsString() departmentId?: string;
+  @IsOptional() @IsString() subject?: string; // ders (exam.subject) filtresi
 }
 
 /** E-Sınıf — Raporlar (okul/şube yöneticisi). JWT; okul rolü use-case'te. */

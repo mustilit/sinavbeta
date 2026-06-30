@@ -99,6 +99,55 @@ describe('GetFilteredReportUseCase', () => {
     expect(r.highlights.bestBranch).toMatchObject({ id: 'b1' });
     expect(r.highlights.bestClassByLevel[0].classroom).toMatchObject({ id: 'c1' });
   });
+  it('teslim kırılımı: zamanında / geç / yapılmadı (yalnız süresi geçmiş ödevde yapılmadı)', async () => {
+    const due = new Date('2020-02-01T00:00:00Z'); // süresi geçmiş (now > due)
+    read.mockReturnValue({
+      classroom: { findMany: jest.fn().mockResolvedValue([{ id: 'c1', name: '5-A', gradeLevel: 5, branchId: 'b1', _count: { students: 3 } }]) },
+      branch: { findMany: jest.fn().mockResolvedValue([{ id: 'b1', name: 'B1' }]) },
+      // İki süresi geçmiş ödev; her birinde 1 teslim → yapılmadı = (3-1)+(3-1)=4
+      schoolAssignment: { findMany: jest.fn().mockResolvedValue([
+        { id: 'a1', classroomId: 'c1', dueDate: due },
+        { id: 'a2', classroomId: 'c1', dueDate: due },
+      ]) },
+      schoolSubmission: { findMany: jest.fn().mockResolvedValue([
+        { totalScore: 8, maxScore: 10, submittedAt: new Date('2020-01-15T00:00:00Z'), assignment: { id: 'a1', classroomId: 'c1', dueDate: due, exam: { department: { name: 'Mat' } } } }, // zamanında
+        { totalScore: 5, maxScore: 10, submittedAt: new Date('2020-03-01T00:00:00Z'), assignment: { id: 'a2', classroomId: 'c1', dueDate: due, exam: { department: { name: 'Mat' } } } }, // geç
+      ]) },
+    });
+    const r = await new GetFilteredReportUseCase().execute({}, 'u0');
+    expect(r.classrooms[0]).toMatchObject({ onTimeCount: 1, lateCount: 1, notDoneCount: 4, submissionCount: 2 });
+    expect(r.branches[0]).toMatchObject({ onTimeCount: 1, lateCount: 1, notDoneCount: 4 });
+    expect(r.levels[0]).toMatchObject({ onTimeCount: 1, lateCount: 1, notDoneCount: 4 });
+  });
+  it('süresi geçmemiş ödev "yapılmadı" sayılmaz', async () => {
+    const future = new Date(Date.now() + 7 * 86400000); // gelecekte → yapılmadı = 0
+    read.mockReturnValue({
+      classroom: { findMany: jest.fn().mockResolvedValue([{ id: 'c1', name: '5-A', gradeLevel: 5, branchId: 'b1', _count: { students: 3 } }]) },
+      branch: { findMany: jest.fn().mockResolvedValue([{ id: 'b1', name: 'B1' }]) },
+      schoolAssignment: { findMany: jest.fn().mockResolvedValue([{ id: 'a1', classroomId: 'c1', dueDate: future }]) },
+      schoolSubmission: { findMany: jest.fn().mockResolvedValue([]) },
+    });
+    const r = await new GetFilteredReportUseCase().execute({}, 'u0');
+    expect(r.classrooms[0]).toMatchObject({ onTimeCount: 0, lateCount: 0, notDoneCount: 0 });
+  });
+  it('ders filtresi (subject) exam.subject WHERE ekler + subjects listesi döner', async () => {
+    const subAsgFindMany = jest.fn()
+      .mockResolvedValueOnce([{ id: 'a1', classroomId: 'c1', dueDate: null }]) // ana assignments
+      .mockResolvedValueOnce([{ exam: { subject: 'Türkçe' } }, { exam: { subject: 'Matematik' } }]); // ders listesi (asgOrNoSubj)
+    const subFindMany = jest.fn().mockResolvedValue([]);
+    read.mockReturnValue({
+      classroom: { findMany: jest.fn().mockResolvedValue([{ id: 'c1', name: '5-A', gradeLevel: 5, branchId: 'b1', _count: { students: 3 } }]) },
+      branch: { findMany: jest.fn().mockResolvedValue([{ id: 'b1', name: 'B1' }]) },
+      schoolAssignment: { findMany: subAsgFindMany },
+      schoolSubmission: { findMany: subFindMany },
+    });
+    const r = await new GetFilteredReportUseCase().execute({ subject: 'Matematik' }, 'u0');
+    expect(r.subjects).toEqual(['Matematik', 'Türkçe']); // tr sıralı, seçili filtreden bağımsız
+    // teslim sorgusunun OR dalında exam.subject filtresi olmalı
+    const subWhere = subFindMany.mock.calls[0][0].where;
+    const hasSubject = JSON.stringify(subWhere).includes('"subject":"Matematik"');
+    expect(hasSubject).toBe(true);
+  });
   it('şube yöneticisi yalnız kendi şubesi (kapsam OR)', async () => {
     p.schoolUser.findFirst.mockResolvedValue({ ...admin, schoolRole: 'BRANCH_ADMIN', branchId: 'b1' });
     const classroomFindMany = jest.fn().mockResolvedValue([]);

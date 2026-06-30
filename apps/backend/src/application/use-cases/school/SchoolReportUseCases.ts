@@ -90,7 +90,7 @@ export class GetSchoolReportUseCase {
   }
 }
 
-type ReportFilters = { from?: string; to?: string; gradeLevel?: number; classroomId?: string; departmentId?: string; periodId?: string };
+type ReportFilters = { from?: string; to?: string; gradeLevel?: number; classroomId?: string; departmentId?: string; periodId?: string; subject?: string };
 
 function dateRange(from?: string, to?: string): { gte?: Date; lte?: Date } | undefined {
   const g = from ? new Date(from) : undefined;
@@ -109,7 +109,7 @@ function dateRange(from?: string, to?: string): { gte?: Date; lte?: Date } | und
 export class GetFilteredReportUseCase {
   async execute(input: ReportFilters, actorId?: string) {
     // Görüntüleme kapsamı: SCHOOL_ADMIN tüm okul; alt roller yetki alanı kadar.
-    const emptyReport = { branches: [], levels: [], classrooms: [], byDepartment: [], timeseries: [], highlights: { bestBranch: null, bestClassByLevel: [] } };
+    const emptyReport = { branches: [], levels: [], classrooms: [], byDepartment: [], timeseries: [], highlights: { bestBranch: null, bestClassByLevel: [] }, subjects: [], homeroomClassrooms: [] };
     // Designation tabanlı rapor kapsamı (kimse hiyerarşide yukarıyı görmez).
     const rs = await resolveReportScope(actorId);
     if (rs.empty) return emptyReport;
@@ -148,27 +148,40 @@ export class GetFilteredReportUseCase {
     const branchName = new Map(branches.map((b) => [b.id, b.name]));
 
     // Görünürlük: tüm-ders sınıflarında her sınav; branş-kısıtlı sınıflarda yalnız kendi zümre sınavları.
-    // UI zümre filtresi (input.departmentId) ek olarak uygulanır.
-    const examDept = input.departmentId ? { departmentId: input.departmentId } : undefined;
-    const asgOr: Array<Record<string, unknown>> = [];
-    const subOr: Array<Record<string, unknown>> = [];
-    if (allClassIds.length) {
-      asgOr.push({ classroomId: { in: allClassIds }, ...(examDept ? { exam: examDept } : {}) });
-      subOr.push({ assignment: { classroomId: { in: allClassIds }, ...(examDept ? { exam: examDept } : {}) } });
-    }
-    if (subjOnly.length && rs.subjectDeptIds.length) {
-      const deptFilter = examDept ?? { departmentId: { in: rs.subjectDeptIds } };
-      asgOr.push({ classroomId: { in: subjOnly }, exam: deptFilter });
-      subOr.push({ assignment: { classroomId: { in: subjOnly }, exam: deptFilter } });
-    }
+    // UI zümre filtresi (input.departmentId) + ders filtresi (input.subject = exam.subject) ek olarak uygulanır.
+    const subject = input.subject?.trim() || undefined;
+    // exam WHERE = zümre kısmı (+ opsiyonel ders). withSubject=false → ders listesi için (filtre uygulanmadan).
+    const buildOr = (withSubject: boolean) => {
+      const subj = withSubject ? subject : undefined;
+      const mergeExam = (deptPart?: Record<string, unknown>) => {
+        const w = { ...(deptPart ?? {}), ...(subj ? { subject: subj } : {}) };
+        return Object.keys(w).length ? w : undefined;
+      };
+      const asg: Array<Record<string, unknown>> = [];
+      const sub: Array<Record<string, unknown>> = [];
+      if (allClassIds.length) {
+        const ex = mergeExam(input.departmentId ? { departmentId: input.departmentId } : undefined);
+        asg.push({ classroomId: { in: allClassIds }, ...(ex ? { exam: ex } : {}) });
+        sub.push({ assignment: { classroomId: { in: allClassIds }, ...(ex ? { exam: ex } : {}) } });
+      }
+      if (subjOnly.length && rs.subjectDeptIds.length) {
+        const deptPart = input.departmentId ? { departmentId: input.departmentId } : { departmentId: { in: rs.subjectDeptIds } };
+        const ex = mergeExam(deptPart)!; // deptPart daima dolu → ex tanımlı
+        asg.push({ classroomId: { in: subjOnly }, exam: ex });
+        sub.push({ assignment: { classroomId: { in: subjOnly }, exam: ex } });
+      }
+      return { asg, sub };
+    };
+    const { asg: asgOr, sub: subOr } = buildOr(true);
+    const { asg: asgOrNoSubj } = buildOr(false); // ders dropdown seçeneklerinin tam listesi
     /* istanbul ignore next -- unionIds boş değilse asgOr daima ≥1 dal alır; bu erken dönüş savunmacıdır */
     if (asgOr.length === 0) return emptyReport;
 
     // Dönemsel: input.periodId verilmezse güncel dönem → yeni döneme sıfır rapor.
     const periodId = await resolvePeriodFilter(rs.schoolId, input.periodId);
 
-    const [assignments, submissions] = await Promise.all([
-      db.schoolAssignment.findMany({ where: periodId ? { AND: [{ OR: asgOr }, { periodId }] } : { OR: asgOr }, select: { id: true, classroomId: true } }),
+    const [assignments, submissions, subjectAsg, homeroomClassrooms] = await Promise.all([
+      db.schoolAssignment.findMany({ where: periodId ? { AND: [{ OR: asgOr }, { periodId }] } : { OR: asgOr }, select: { id: true, classroomId: true, dueDate: true } }),
       db.schoolSubmission.findMany({
         where: {
           ...(periodId ? { assignment: { periodId } } : {}),
@@ -178,20 +191,39 @@ export class GetFilteredReportUseCase {
         },
         select: {
           totalScore: true, maxScore: true, submittedAt: true,
-          assignment: { select: { classroomId: true, exam: { select: { department: { select: { name: true } } } } } },
+          assignment: { select: { id: true, classroomId: true, dueDate: true, exam: { select: { department: { select: { name: true } } } } } },
         },
       }),
+      // Ders dropdown'ı — kapsam+dönem içindeki tüm dersler (seçili ders filtresinden bağımsız, stabil liste).
+      db.schoolAssignment.findMany({
+        where: periodId ? { AND: [{ OR: asgOrNoSubj }, { periodId }] } : { OR: asgOrNoSubj },
+        select: { exam: { select: { subject: true } } },
+      }),
+      // Sınıf öğretmeni başlığı — actor'ün sınıf öğretmeni (Classroom.adminUserId) olduğu sınıflar.
+      actorId
+        ? db.classroom.findMany({ where: { schoolId: rs.schoolId, adminUserId: actorId }, select: { id: true, name: true, gradeLevel: true }, orderBy: [{ gradeLevel: 'asc' }, { name: 'asc' }] })
+        : Promise.resolve([] as Array<{ id: string; name: string; gradeLevel: number }>),
     ]);
+    const subjects = [...new Set(subjectAsg.map((a) => a.exam?.subject).filter((s): s is string => !!s && s.trim() !== ''))].sort((a, b) => a.localeCompare(b, 'tr'));
 
+    const now = new Date();
     const asgCountByCls = new Map<string, number>();
     assignments.forEach((a) => asgCountByCls.set(a.classroomId, (asgCountByCls.get(a.classroomId) ?? 0) + 1));
     const pctByCls = new Map<string, number[]>();
     const subCountByCls = new Map<string, number>();
+    // Teslim kırılımı: zamanında (submittedAt ≤ dueDate) / geç (> dueDate) / yapılmadı (past-due ödevde teslim yok).
+    const onTimeByCls = new Map<string, number>();
+    const lateByCls = new Map<string, number>();
+    const submittersByAsg = new Map<string, number>(); // notDone hesabı için ödev başına teslim eden sayısı
     const deptAgg = new Map<string, number[]>();    // konu/zümre başarımı
     const dayAgg = new Map<string, number[]>();     // takvime göre (gün bazlı)
     for (const s of submissions) {
       const cid = s.assignment!.classroomId;
       subCountByCls.set(cid, (subCountByCls.get(cid) ?? 0) + 1);
+      submittersByAsg.set(s.assignment!.id, (submittersByAsg.get(s.assignment!.id) ?? 0) + 1);
+      const due = s.assignment!.dueDate;
+      if (s.submittedAt && due && s.submittedAt > due) lateByCls.set(cid, (lateByCls.get(cid) ?? 0) + 1);
+      else onTimeByCls.set(cid, (onTimeByCls.get(cid) ?? 0) + 1);
       const p = pct(s.totalScore, s.maxScore);
       if (p == null) continue;
       pctByCls.set(cid, [...(pctByCls.get(cid) ?? []), p]);
@@ -201,6 +233,16 @@ export class GetFilteredReportUseCase {
         const day = s.submittedAt.toISOString().slice(0, 10);
         dayAgg.set(day, [...(dayAgg.get(day) ?? []), p]);
       }
+    }
+
+    // Yapılmadı: yalnız SÜRESİ GEÇMİŞ ödevlerde, sınıf mevcudu − o ödevi teslim eden sayısı (negatife kırpılır).
+    const studentByCls = new Map(classrooms.map((c) => [c.id, c._count.students]));
+    const notDoneByCls = new Map<string, number>();
+    for (const a of assignments) {
+      if (!a.dueDate || a.dueDate >= now) continue; // süresi geçmeyen "yapılmadı" sayılmaz
+      const roster = studentByCls.get(a.classroomId) ?? 0;
+      const nd = Math.max(0, roster - (submittersByAsg.get(a.id) ?? 0));
+      if (nd) notDoneByCls.set(a.classroomId, (notDoneByCls.get(a.classroomId) ?? 0) + nd);
     }
 
     const clsRows = classrooms
@@ -213,34 +255,39 @@ export class GetFilteredReportUseCase {
         studentCount: c._count.students,
         assignmentCount: asgCountByCls.get(c.id) ?? 0,
         submissionCount: subCountByCls.get(c.id) ?? 0,
+        onTimeCount: onTimeByCls.get(c.id) ?? 0,
+        lateCount: lateByCls.get(c.id) ?? 0,
+        notDoneCount: notDoneByCls.get(c.id) ?? 0,
         avgPercent: avg(pctByCls.get(c.id) ?? []),
       }))
       .sort((a, b) => a.gradeLevel - b.gradeLevel || a.name.localeCompare(b.name, 'tr'));
 
     // Şube kırılımı
-    const branchAgg = new Map<string, { pcts: number[]; sub: number; cls: number; stu: number }>();
+    const branchAgg = new Map<string, { pcts: number[]; sub: number; cls: number; stu: number; ot: number; lt: number; nd: number }>();
     for (const c of clsRows) {
-      const e = branchAgg.get(c.branchId) ?? { pcts: [], sub: 0, cls: 0, stu: 0 };
+      const e = branchAgg.get(c.branchId) ?? { pcts: [], sub: 0, cls: 0, stu: 0, ot: 0, lt: 0, nd: 0 };
       e.sub += c.submissionCount; e.cls += 1; e.stu += c.studentCount;
+      e.ot += c.onTimeCount; e.lt += c.lateCount; e.nd += c.notDoneCount;
       e.pcts.push(...(pctByCls.get(c.id) ?? []));
       branchAgg.set(c.branchId, e);
     }
     const branchRows = branches.map((b) => {
       // branches, clsRows'un branchId'lerinden türetildiği için branchAgg'de daima vardır.
       const e = branchAgg.get(b.id)!;
-      return { id: b.id, name: b.name, classroomCount: e.cls, studentCount: e.stu, submissionCount: e.sub, avgPercent: avg(e.pcts) };
+      return { id: b.id, name: b.name, classroomCount: e.cls, studentCount: e.stu, submissionCount: e.sub, onTimeCount: e.ot, lateCount: e.lt, notDoneCount: e.nd, avgPercent: avg(e.pcts) };
     }).sort((a, b) => (b.avgPercent ?? -1) - (a.avgPercent ?? -1));
 
     // Seviye kırılımı (gradeLevel — okul geneli / branch admin için kendi şubesi)
-    const levelAgg = new Map<number, { pcts: number[]; sub: number; cls: number; stu: number }>();
+    const levelAgg = new Map<number, { pcts: number[]; sub: number; cls: number; stu: number; ot: number; lt: number; nd: number }>();
     for (const c of clsRows) {
-      const e = levelAgg.get(c.gradeLevel) ?? { pcts: [], sub: 0, cls: 0, stu: 0 };
+      const e = levelAgg.get(c.gradeLevel) ?? { pcts: [], sub: 0, cls: 0, stu: 0, ot: 0, lt: 0, nd: 0 };
       e.sub += c.submissionCount; e.cls += 1; e.stu += c.studentCount;
+      e.ot += c.onTimeCount; e.lt += c.lateCount; e.nd += c.notDoneCount;
       e.pcts.push(...(pctByCls.get(c.id) ?? []));
       levelAgg.set(c.gradeLevel, e);
     }
     const levelRows = [...levelAgg.entries()].sort((a, b) => a[0] - b[0]).map(([g, e]) => ({
-      gradeLevel: g, classroomCount: e.cls, studentCount: e.stu, submissionCount: e.sub, avgPercent: avg(e.pcts),
+      gradeLevel: g, classroomCount: e.cls, studentCount: e.stu, submissionCount: e.sub, onTimeCount: e.ot, lateCount: e.lt, notDoneCount: e.nd, avgPercent: avg(e.pcts),
     }));
 
     // Highlights
@@ -262,13 +309,13 @@ export class GetFilteredReportUseCase {
       .sort((a, b) => (a[0] < b[0] ? -1 : 1))
       .map(([date, ps]) => ({ date, avgPercent: avg(ps), submissionCount: ps.length }));
 
-    return { branches: branchRows, levels: levelRows, classrooms: clsRows, byDepartment, timeseries, highlights: { bestBranch, bestClassByLevel } };
+    return { branches: branchRows, levels: levelRows, classrooms: clsRows, byDepartment, timeseries, highlights: { bestBranch, bestClassByLevel }, subjects, homeroomClassrooms };
   }
 }
 
 /** Tek sınıf detay raporu — zaman aralığı + zümre filtresiyle öğrenci/ödev/zümre kırılımı. */
 export class GetClassroomReportUseCase {
-  async execute(classroomId: string, input: { from?: string; to?: string; departmentId?: string }, actorId?: string) {
+  async execute(classroomId: string, input: { from?: string; to?: string; departmentId?: string; subject?: string }, actorId?: string) {
     const rs = await resolveReportScope(actorId);
     if (rs.empty) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
     const db = prismaRead();
@@ -289,9 +336,12 @@ export class GetClassroomReportUseCase {
     }
     if (!cls) throw new AppError('CLASSROOM_NOT_FOUND', 'Sınıf bulunamadı', 404);
     const submittedAt = dateRange(input.from, input.to);
-    const deptWhere = input.departmentId
-      ? { exam: { departmentId: input.departmentId } }
-      : (allSubjectAccess ? {} : { exam: { departmentId: { in: rs.subjectDeptIds } } });
+    const subject = input.subject?.trim() || undefined;
+    const examWhere = {
+      ...(input.departmentId ? { departmentId: input.departmentId } : (allSubjectAccess ? {} : { departmentId: { in: rs.subjectDeptIds } })),
+      ...(subject ? { subject } : {}),
+    };
+    const deptWhere = Object.keys(examWhere).length ? { exam: examWhere } : {};
 
     const subs = await db.schoolSubmission.findMany({
       where: {
