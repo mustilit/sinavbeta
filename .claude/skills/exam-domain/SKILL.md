@@ -270,11 +270,24 @@ E-Sınıf, okulların/kurumların öğrenci-öğretmen-yönetici hiyerarşisiyle
 - `prisma/schema.prisma` — yeni okul modelleri additive; `LiveSession.schoolId String?` **nullable** (marketplace canlı oturumlarda `null`, sorgular etkilenmez). E-Sınıf canlı = ayrı `/school/live` dikeyi, mevcut LiveSession tablolarını yeniden kullanır ama marketplace canlı akışına dokunmaz.
 - `pages.config.js` / `routeRoles.js` PAGE_ROLES / `dalClient.js` namespaces / `locales/*/auth.json` — sadece **ekleme**.
 
+**Yerleşik E-Sınıf desenleri (yeni kod bunları KULLANIR — yeniden icat etme):**
+- **Audit:** Hassas okul işlemi (kullanıcı/parola/puanlama/org create-delete) → `schoolHelpers.schoolAudit(ctx|actorId, { action, entityType, entityId, before?, after?, metadata? })` (best-effort, akışı bloklamaz; `schoolId/schoolRole/module='E-SINIF'` otomatik metadata). Yeni aksiyon gerekirse `AuditAction` enum'una `SCHOOL_*` ekle + migration (`ALTER TYPE ... ADD VALUE IF NOT EXISTS`).
+- **Metrik:** Domain olayları (teslim/puanlama/canlı) → `infrastructure/metrics/metrics.ts` `recordSchoolSubmission(examType,kind)` / `recordSchoolGraded()` / `recordSchoolLiveEvent(event)` (best-effort, `dal_school_*` Counter). Yeni hot-path için aynı dosyaya Counter + Grafana `sinavsalonu-overview.json` paneli ekle.
+- **i18n:** Kullanıcıya görünen metin → `school` namespace (`locales/<lang>/school.json`, 5 dil). Öğrenci sayfaları t()'li (StudentAssignments/StudentExplore deseni); personel sayfaları henüz TR (eklerken aynı namespace'e taşı). Döngü değişkenini `t` adlandırma (i18n `t`'yi gölgeler).
+- **Pagination:** Büyüyebilen liste (seviye/okul kapsamlı) → **server-side** (StudentExplore deseni: use-case `{q,filter,page,pageSize}` → `{items,total,...facet}`; controller `@Query` DTO; dalClient params). Sınıf/dönem-kapsamlı bounded listeler client-side kalabilir. SchoolUsers cursor (`useInfiniteQuery`).
+- **Rate-limit:** Credential/bulk endpoint (parola/kullanıcı/toplu öğrenci) → controller'da `@Throttle({ default: { limit, ttl } })`. 429 → `http-exception.filter` zaten `SUSPICIOUS_RATE_LIMIT` audit'ler (ekstra kod yok).
+- **DTO:** Yeni controller DTO'ları inline değil `nest/controllers/dto/school-*.dto.ts` (marketplace konvansiyonu).
+- **Doküman:** Operasyon/akış değişikliği → `docs/school/README.md`; mimari karar → `docs/adr/0008-esinif-b2b-isolation.md` referansı.
+
 **Checklist (E-Sınıf'a kod eklerken):**
 - [ ] Yeni iş mantığı `school/` use-case'inde mi (marketplace use-case'i düzenlenmedi)?
 - [ ] Paylaşılan bir dosyaya (Login/auth.controller/routeRoles/Sidebar/schema) dokunuldu mu? Dokunulduysa: `user.school` yokken marketplace davranışı **aynı** mı?
 - [ ] Yeni şema alanı nullable + additive mi (NOT NULL backfill marketplace satırlarını bozmaz)?
 - [ ] Yetki hem server-side (`resolveSchoolContext`/`requireSchoolRole`) hem sayfa içi (`ctx.schoolRole`) kontrol ediliyor mu (route guard tek başına yeterli değil)?
+- [ ] Hassas işlem (kullanıcı/parola/puanlama/org) `schoolAudit` ile audit'lendi mi?
+- [ ] Domain olayı (teslim/puanlama/canlı) `recordSchool*` metriğine işlendi mi?
+- [ ] Kullanıcıya görünen metin `school` i18n namespace'inde (5 dil) mi?
+- [ ] Credential/bulk endpoint `@Throttle`'lı mı?
 
 ## İş Kuralları
 
