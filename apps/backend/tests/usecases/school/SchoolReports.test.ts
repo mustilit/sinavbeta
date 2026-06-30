@@ -17,6 +17,7 @@ import {
   GetBranchReportUseCase,
   GetFilteredReportUseCase,
   GetClassroomReportUseCase,
+  GetStudentComplianceListUseCase,
 } from '../../../src/application/use-cases/school/SchoolReportUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 import { prismaRead } from '../../../src/infrastructure/database/dbRouter';
@@ -234,6 +235,42 @@ describe('GetFilteredReportUseCase', () => {
     });
     await new GetFilteredReportUseCase().execute({}, 'uHead');
     expect(classroomFindMany.mock.calls[0][0].where.OR).toEqual([{ schoolId: 'sch1' }]);
+  });
+});
+
+describe('GetStudentComplianceListUseCase', () => {
+  it('öğrenci bazlı zamanında/geç/yapılmadı + no/ad/sınıf/seviye', async () => {
+    const due = new Date('2020-02-01T00:00:00Z');
+    read.mockReturnValue({
+      classroom: { findMany: jest.fn().mockResolvedValue([{ id: 'c1', name: '5-A', gradeLevel: 5, branch: { name: 'B1' } }]) },
+      schoolAssignment: {
+        findMany: jest.fn()
+          .mockResolvedValueOnce([{ id: 'a1', classroomId: 'c1', dueDate: due }, { id: 'a2', classroomId: 'c1', dueDate: due }]) // asgOr
+          .mockResolvedValueOnce([{ exam: { subject: 'Mat' } }]), // subjectAsg (ders listesi)
+      },
+      schoolSubmission: { findMany: jest.fn().mockResolvedValue([
+        { studentId: 'stu1', submittedAt: new Date('2020-01-15T00:00:00Z'), assignment: { id: 'a1', dueDate: due } }, // zamanında
+        { studentId: 'stu1', submittedAt: new Date('2020-03-01T00:00:00Z'), assignment: { id: 'a2', dueDate: due } }, // geç
+        { studentId: 'stu2', submittedAt: new Date('2020-03-01T00:00:00Z'), assignment: { id: 'a1', dueDate: due } }, // geç
+      ]) },
+      schoolUser: { findMany: jest.fn().mockResolvedValue([
+        { userId: 'stu1', username: 'S1', classroomId: 'c1', user: { firstName: 'Ali', lastName: 'Veli' } },
+        { userId: 'stu2', username: 'S2', classroomId: 'c1', user: { firstName: 'Ayşe', lastName: 'Yıldız' } },
+      ]) },
+    });
+    const r = await new GetStudentComplianceListUseCase().execute({}, 'u0');
+    expect(r.subjects).toEqual(['Mat']);
+    expect(r.students).toHaveLength(2);
+    expect(r.students[0]).toMatchObject({ studentNo: 'S1', name: 'Ali Veli', classroomName: '5-A', gradeLevel: 5, onTimeCount: 1, lateCount: 1, notDoneCount: 0 });
+    expect(r.students[1]).toMatchObject({ studentNo: 'S2', name: 'Ayşe Yıldız', onTimeCount: 0, lateCount: 1, notDoneCount: 1 });
+  });
+
+  it('kapsam boşsa boş liste', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...admin, schoolRole: 'TEACHER', branchId: null });
+    p.schoolUser.findUnique.mockResolvedValue({ userId: 'uX', departmentId: null });
+    read.mockReturnValue({});
+    const r = await new GetStudentComplianceListUseCase().execute({}, 'uX');
+    expect(r.students).toEqual([]);
   });
 });
 

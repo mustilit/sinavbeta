@@ -313,6 +313,224 @@ export class GetFilteredReportUseCase {
   }
 }
 
+/**
+ * Öğrenci bazlı teslim durumu listesi (personel — Raporlar "Öğrenciler" sekmesi).
+ * Her satır: öğrenci no (username) + ad soyad + sınıf + seviye + Zamanında/Geç/Yapılmadı.
+ * Kapsam + filtreler GetFilteredReportUseCase ile birebir (hiyerarşiye uygun).
+ */
+export class GetStudentComplianceListUseCase {
+  async execute(input: ReportFilters, actorId?: string) {
+    const emptyRes = { students: [] as unknown[], subjects: [] as string[], capped: false };
+    const rs = await resolveReportScope(actorId);
+    if (rs.empty) return emptyRes;
+    const db = prismaRead();
+    const grade = input.gradeLevel != null && !isNaN(Number(input.gradeLevel)) ? Math.floor(Number(input.gradeLevel)) : undefined;
+    const submittedAt = dateRange(input.from, input.to);
+    const baseClsFilter = { ...(grade ? { gradeLevel: grade } : {}), ...(input.classroomId ? { id: input.classroomId } : {}) };
+
+    let allClassIds: string[] = [];
+    let subjectClassIds: string[] = [];
+    if (rs.isSchoolAdmin) {
+      allClassIds = (await db.classroom.findMany({ where: { schoolId: rs.schoolId, ...baseClsFilter }, select: { id: true } })).map((c) => c.id);
+    } else {
+      if (rs.allSubjectWhere.length) allClassIds = (await db.classroom.findMany({ where: { schoolId: rs.schoolId, OR: rs.allSubjectWhere, ...baseClsFilter }, select: { id: true } })).map((c) => c.id);
+      if (rs.subjectSpanWhere.length) subjectClassIds = (await db.classroom.findMany({ where: { schoolId: rs.schoolId, OR: rs.subjectSpanWhere, ...baseClsFilter }, select: { id: true } })).map((c) => c.id);
+    }
+    const allSet = new Set(allClassIds);
+    const subjOnly = subjectClassIds.filter((id) => !allSet.has(id));
+    const unionIds = [...new Set([...allClassIds, ...subjectClassIds])];
+    if (!unionIds.length) return emptyRes;
+
+    const subject = input.subject?.trim() || undefined;
+    const mergeExam = (deptPart?: Record<string, unknown>, withSubject = true) => {
+      const w = { ...(deptPart ?? {}), ...(withSubject && subject ? { subject } : {}) };
+      return Object.keys(w).length ? w : undefined;
+    };
+    const asgOr: Array<Record<string, unknown>> = [];
+    const subOr: Array<Record<string, unknown>> = [];
+    const asgOrNoSubj: Array<Record<string, unknown>> = [];
+    if (allClassIds.length) {
+      const ex = mergeExam(input.departmentId ? { departmentId: input.departmentId } : undefined);
+      const exNo = mergeExam(input.departmentId ? { departmentId: input.departmentId } : undefined, false);
+      asgOr.push({ classroomId: { in: allClassIds }, ...(ex ? { exam: ex } : {}) });
+      subOr.push({ assignment: { classroomId: { in: allClassIds }, ...(ex ? { exam: ex } : {}) } });
+      asgOrNoSubj.push({ classroomId: { in: allClassIds }, ...(exNo ? { exam: exNo } : {}) });
+    }
+    if (subjOnly.length && rs.subjectDeptIds.length) {
+      const deptPart = input.departmentId ? { departmentId: input.departmentId } : { departmentId: { in: rs.subjectDeptIds } };
+      const ex = mergeExam(deptPart)!;
+      const exNo = mergeExam(deptPart, false)!;
+      asgOr.push({ classroomId: { in: subjOnly }, exam: ex });
+      subOr.push({ assignment: { classroomId: { in: subjOnly }, exam: ex } });
+      asgOrNoSubj.push({ classroomId: { in: subjOnly }, exam: exNo });
+    }
+    if (!asgOr.length) return emptyRes;
+
+    const periodId = await resolvePeriodFilter(rs.schoolId, input.periodId);
+    const now = new Date();
+
+    const [classrooms, assignments, submissions, rosterUsers, subjectAsg] = await Promise.all([
+      db.classroom.findMany({ where: { id: { in: unionIds } }, select: { id: true, name: true, gradeLevel: true, branch: { select: { name: true } } } }),
+      db.schoolAssignment.findMany({ where: periodId ? { AND: [{ OR: asgOr }, { periodId }] } : { OR: asgOr }, select: { id: true, classroomId: true, dueDate: true } }),
+      db.schoolSubmission.findMany({
+        where: { ...(periodId ? { assignment: { periodId } } : {}), OR: subOr, status: { in: ['SUBMITTED', 'GRADED'] as any }, ...(submittedAt ? { submittedAt } : {}) },
+        select: { studentId: true, submittedAt: true, assignment: { select: { id: true, dueDate: true } } },
+      }),
+      db.schoolUser.findMany({ where: { schoolId: rs.schoolId, classroomId: { in: unionIds }, schoolRole: 'STUDENT' as any, isActive: true }, select: { userId: true, username: true, classroomId: true, user: { select: { firstName: true, lastName: true } } } }),
+      db.schoolAssignment.findMany({ where: periodId ? { AND: [{ OR: asgOrNoSubj }, { periodId }] } : { OR: asgOrNoSubj }, select: { exam: { select: { subject: true } } } }),
+    ]);
+    const subjects = [...new Set(subjectAsg.map((a) => a.exam?.subject).filter((s): s is string => !!s && s.trim() !== ''))].sort((a, b) => a.localeCompare(b, 'tr'));
+
+    const clsMap = new Map(classrooms.map((c) => [c.id, c]));
+    const pastDueByCls = new Map<string, Set<string>>();
+    for (const a of assignments) {
+      if (!a.dueDate || a.dueDate >= now) continue;
+      const set = pastDueByCls.get(a.classroomId) ?? new Set<string>();
+      set.add(a.id);
+      pastDueByCls.set(a.classroomId, set);
+    }
+    type Acc = { onTime: number; late: number; submitted: Set<string> };
+    const byStudent = new Map<string, Acc>();
+    for (const s of submissions) {
+      let acc = byStudent.get(s.studentId);
+      if (!acc) { acc = { onTime: 0, late: 0, submitted: new Set<string>() }; byStudent.set(s.studentId, acc); }
+      if (s.assignment?.id) acc.submitted.add(s.assignment.id);
+      const due = s.assignment?.dueDate;
+      if (s.submittedAt && due && s.submittedAt > due) acc.late++;
+      else if (s.submittedAt) acc.onTime++;
+    }
+
+    const nameOf = (u: { username: string; firstName: string | null; lastName: string | null }) => [u.firstName, u.lastName].filter(Boolean).join(' ') || u.username;
+    const CAP = 1000;
+    const rows = rosterUsers
+      .map((r) => {
+        const acc = byStudent.get(r.userId);
+        const cls = r.classroomId ? clsMap.get(r.classroomId) : undefined;
+        const pastDue = (r.classroomId ? pastDueByCls.get(r.classroomId) : undefined) ?? new Set<string>();
+        const submittedSet = acc?.submitted ?? new Set<string>();
+        let notDone = 0;
+        for (const aId of pastDue) if (!submittedSet.has(aId)) notDone++;
+        return {
+          studentUserId: r.userId, // detay pop-up'ı için
+          studentNo: r.username,
+          name: nameOf({ username: r.username, firstName: r.user?.firstName ?? null, lastName: r.user?.lastName ?? null }),
+          classroomName: cls?.name ?? '—',
+          branchName: cls?.branch?.name ?? '—',
+          gradeLevel: cls?.gradeLevel ?? null,
+          onTimeCount: acc?.onTime ?? 0,
+          lateCount: acc?.late ?? 0,
+          notDoneCount: notDone,
+        };
+      })
+      .sort((a, b) => (a.gradeLevel ?? 0) - (b.gradeLevel ?? 0) || a.classroomName.localeCompare(b.classroomName, 'tr') || a.name.localeCompare(b.name, 'tr'));
+
+    return { students: rows.slice(0, CAP), subjects, capped: rows.length > CAP };
+  }
+}
+
+/**
+ * Tek öğrencinin ödev-ödev başarım/teslim detayı (Raporlar "Öğrenciler" sekmesi → detay pop-up).
+ * Personel; öğrenciye erişim hiyerarşik kapsamla doğrulanır (sınıfı kapsamda olmalı).
+ */
+export class GetStudentAssignmentDetailUseCase {
+  async execute(
+    input: { studentId: string; from?: string; to?: string; subject?: string; departmentId?: string; periodId?: string },
+    actorId?: string,
+  ) {
+    const rs = await resolveReportScope(actorId);
+    if (rs.empty) throw new AppError('FORBIDDEN', 'Yetki yok', 403);
+    const db = prismaRead();
+
+    let allClassIds: string[] = [];
+    let subjectClassIds: string[] = [];
+    if (rs.isSchoolAdmin) {
+      allClassIds = (await db.classroom.findMany({ where: { schoolId: rs.schoolId }, select: { id: true } })).map((c) => c.id);
+    } else {
+      if (rs.allSubjectWhere.length) allClassIds = (await db.classroom.findMany({ where: { schoolId: rs.schoolId, OR: rs.allSubjectWhere }, select: { id: true } })).map((c) => c.id);
+      if (rs.subjectSpanWhere.length) subjectClassIds = (await db.classroom.findMany({ where: { schoolId: rs.schoolId, OR: rs.subjectSpanWhere }, select: { id: true } })).map((c) => c.id);
+    }
+    const allSet = new Set(allClassIds);
+    const subjOnly = new Set(subjectClassIds.filter((id) => !allSet.has(id)));
+    const accessible = new Set([...allClassIds, ...subjectClassIds]);
+
+    const su = await db.schoolUser.findFirst({
+      where: { schoolId: rs.schoolId, userId: input.studentId, schoolRole: 'STUDENT' as any },
+      select: { username: true, classroomId: true, user: { select: { firstName: true, lastName: true } }, classroom: { select: { name: true, gradeLevel: true, branch: { select: { name: true } } } } },
+    });
+    if (!su || !su.classroomId || !accessible.has(su.classroomId)) throw new AppError('STUDENT_NOT_FOUND', 'Öğrenci bulunamadı', 404);
+
+    // exam filtresi — branş-kısıtlı sınıfsa kendi zümresi; UI ders/zümre filtresi de uygulanır.
+    const subject = input.subject?.trim() || undefined;
+    const examWhere: Record<string, unknown> = {};
+    if (input.departmentId) examWhere.departmentId = input.departmentId;
+    else if (subjOnly.has(su.classroomId)) examWhere.departmentId = { in: rs.subjectDeptIds };
+    if (subject) examWhere.subject = subject;
+
+    const periodId = await resolvePeriodFilter(rs.schoolId, input.periodId);
+    const now = new Date();
+    const submittedAt = dateRange(input.from, input.to);
+
+    const assignments = await db.schoolAssignment.findMany({
+      where: {
+        classroomId: su.classroomId,
+        availableFrom: { lte: now },
+        ...(periodId ? { periodId } : {}),
+        ...(Object.keys(examWhere).length ? { exam: examWhere } : {}),
+      },
+      orderBy: [{ dueDate: 'asc' }],
+      select: { id: true, title: true, dueDate: true, exam: { select: { title: true, subject: true, durationMinutes: true } } },
+    });
+    const asgIds = assignments.map((a) => a.id);
+    const subs = asgIds.length
+      ? await db.schoolSubmission.findMany({
+          where: { studentId: input.studentId, assignmentId: { in: asgIds }, ...(submittedAt ? { submittedAt } : {}) },
+          select: { assignmentId: true, status: true, startedAt: true, submittedAt: true, totalScore: true, maxScore: true },
+        })
+      : [];
+    const subByAsg = new Map(subs.map((s) => [s.assignmentId, s]));
+
+    let onTime = 0, late = 0, notDone = 0;
+    const rows = assignments.map((a) => {
+      const s = subByAsg.get(a.id);
+      const submitted = !!s && (s.status === 'SUBMITTED' || s.status === 'GRADED') && !!s.submittedAt;
+      let status: 'onTime' | 'late' | 'notDone' | 'pending' | 'inProgress';
+      if (submitted) {
+        if (a.dueDate && s!.submittedAt! > a.dueDate) { status = 'late'; late++; }
+        else { status = 'onTime'; onTime++; }
+      } else if (a.dueDate && a.dueDate < now) {
+        status = 'notDone'; notDone++; // süresi geçmiş, teslim yok (devam ediyor olsa bile)
+      } else if (s && s.status === 'IN_PROGRESS') {
+        status = 'inProgress';
+      } else {
+        status = 'pending'; // süresi geçmemiş, henüz başlanmamış
+      }
+      return {
+        assignmentTitle: a.title,
+        examTitle: a.exam?.title ?? '—',
+        subject: a.exam?.subject ?? null,
+        durationMinutes: a.exam?.durationMinutes ?? null,
+        dueDate: a.dueDate ? a.dueDate.toISOString() : null,
+        submittedAt: submitted ? s!.submittedAt!.toISOString() : null,
+        status,
+        score: submitted ? s!.totalScore ?? null : null,
+        maxScore: submitted ? s!.maxScore ?? null : null,
+      };
+    });
+
+    return {
+      student: {
+        studentNo: su.username,
+        name: [su.user?.firstName, su.user?.lastName].filter(Boolean).join(' ') || su.username,
+        classroomName: su.classroom?.name ?? '—',
+        branchName: su.classroom?.branch?.name ?? '—',
+        gradeLevel: su.classroom?.gradeLevel ?? null,
+      },
+      summary: { onTime, late, notDone, total: assignments.length },
+      assignments: rows,
+    };
+  }
+}
+
 /** Tek sınıf detay raporu — zaman aralığı + zümre filtresiyle öğrenci/ödev/zümre kırılımı. */
 export class GetClassroomReportUseCase {
   async execute(classroomId: string, input: { from?: string; to?: string; departmentId?: string; subject?: string }, actorId?: string) {

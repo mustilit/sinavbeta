@@ -2306,6 +2306,30 @@ export const school = {
       const s = qs.toString();
       return (await api.get(`/school/reports/breakdown${s ? `?${s}` : ''}`)).data;
     },
+    /** Öğrenci bazlı teslim durumu listesi (no/ad/sınıf/seviye + Zamanında/Geç/Yapılmadı), filtreli + hiyerarşik */
+    students: async ({ from, to, gradeLevel, classroomId, departmentId, periodId, subject } = {}) => {
+      const qs = new URLSearchParams();
+      if (from) qs.set('from', from);
+      if (to) qs.set('to', to);
+      if (gradeLevel) qs.set('gradeLevel', String(gradeLevel));
+      if (classroomId) qs.set('classroomId', classroomId);
+      if (departmentId) qs.set('departmentId', departmentId);
+      if (periodId) qs.set('periodId', periodId);
+      if (subject) qs.set('subject', subject);
+      const s = qs.toString();
+      return (await api.get(`/school/reports/students${s ? `?${s}` : ''}`)).data;
+    },
+    /** Tek öğrenci detayı (ödev-ödev başarım/teslim): studentId + { from, to, departmentId, periodId, subject } */
+    studentDetail: async (studentId, { from, to, departmentId, periodId, subject } = {}) => {
+      const qs = new URLSearchParams();
+      if (from) qs.set('from', from);
+      if (to) qs.set('to', to);
+      if (departmentId) qs.set('departmentId', departmentId);
+      if (periodId) qs.set('periodId', periodId);
+      if (subject) qs.set('subject', subject);
+      const s = qs.toString();
+      return (await api.get(`/school/reports/students/${studentId}${s ? `?${s}` : ''}`)).data;
+    },
     /** Tek sınıf detayı: classroomId + { from, to, departmentId, subject } */
     classroom: async (classroomId, { from, to, departmentId, subject } = {}) => {
       const qs = new URLSearchParams();

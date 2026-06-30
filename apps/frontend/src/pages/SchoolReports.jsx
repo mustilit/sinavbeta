@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BarChart3, Download, FileDown, Loader2, Building2, Layers, GraduationCap, AlertCircle, Trophy, Award, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { BarChart3, Download, FileDown, Loader2, Building2, Layers, GraduationCap, Users, Search, Eye, AlertCircle, Trophy, Award, X } from "lucide-react";
 import { toast } from "sonner";
 import { PeriodSelect } from "@/components/school/PeriodSelect";
 import { ComplianceReport } from "@/components/school/ComplianceReport";
@@ -47,6 +48,8 @@ export default function SchoolReports() {
   const [subject, setSubject] = useState("ALL");
   const [periodId, setPeriodId] = useState("");
   const [detailFor, setDetailFor] = useState(null); // classroom row
+  const [detailStudent, setDetailStudent] = useState(null); // Öğrenciler sekmesi detay pop-up
+  const [studentQ, setStudentQ] = useState(""); // Öğrenciler sekmesi metin filtresi (no/ad)
   const [exporting, setExporting] = useState(false);
   const pageRef = useRef(null);
 
@@ -73,6 +76,20 @@ export default function SchoolReports() {
     queryFn: () => schoolApi.reports.breakdown(filters),
     enabled: canView && !!periodId,
   });
+
+  // Öğrenciler sekmesi — öğrenci bazlı teslim durumu (yalnız sekme açıkken çekilir).
+  const { data: studentsData, isLoading: studentsLoading } = useQuery({
+    queryKey: ["esinif", "report-students", filters],
+    queryFn: () => schoolApi.reports.students(filters),
+    enabled: canView && !!periodId && tab === "students",
+  });
+  // Öğrenciler sekmesi satırları + client-side no/ad araması (hook'lar erken return'den ÖNCE).
+  const studentRows = useMemo(() => {
+    const list = studentsData?.students ?? [];
+    const needle = studentQ.trim().toLocaleLowerCase("tr");
+    if (!needle) return list;
+    return list.filter((s) => `${s.studentNo} ${s.name}`.toLocaleLowerCase("tr").includes(needle));
+  }, [studentsData, studentQ]);
 
   if (!canView) {
     return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
@@ -172,6 +189,7 @@ export default function SchoolReports() {
           { id: "branches", label: "Şubeler", icon: Building2 },
           { id: "levels", label: "Seviyeler", icon: Layers },
           { id: "classrooms", label: "Sınıflar", icon: GraduationCap },
+          { id: "students", label: "Öğrenciler", icon: Users },
         ].map((t) => (
           <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`px-4 py-2.5 min-h-10 text-sm font-medium border-b-2 -mb-px inline-flex items-center gap-1.5 ${tab === t.id ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900"}`}>
             <t.icon className="w-4 h-4" /> {t.label}
@@ -179,7 +197,50 @@ export default function SchoolReports() {
         ))}
       </div>
 
-      {isLoading ? (
+      {tab === "students" ? (
+        <div className="space-y-3">
+          <div className="relative max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input value={studentQ} onChange={(e) => setStudentQ(e.target.value)} placeholder="Öğrenci no veya ad ara…" className="pl-9" aria-label="Öğrenci ara" />
+          </div>
+          {studentsLoading ? (
+            <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />)}</div>
+          ) : studentRows.length === 0 ? (
+            <p className="text-sm text-slate-400 py-8 text-center">{studentQ.trim() ? "Aramaya uygun öğrenci yok." : "Bu filtrede öğrenci bulunamadı."}</p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-slate-600 text-xs">
+                  <tr>
+                    {["Öğrenci No", "Ad Soyad", "Sınıf", "Seviye"].map((c) => <th key={c} className="px-3 py-2 text-left">{c}</th>)}
+                    {["Zamanında", "Geç", "Yapılmadı"].map((c) => <th key={c} className="px-3 py-2 text-right">{c}</th>)}
+                    <th className="px-3 py-2 text-right">Detay</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentRows.map((s) => (
+                    <tr key={s.studentNo} className="border-t border-slate-100">
+                      <td className="px-3 py-2 font-mono text-slate-700">{s.studentNo}</td>
+                      <td className="px-3 py-2 text-slate-800">{s.name}</td>
+                      <td className="px-3 py-2 text-slate-600">{s.classroomName}</td>
+                      <td className="px-3 py-2 text-slate-600">{s.gradeLevel != null ? `${s.gradeLevel}. Seviye` : "—"}</td>
+                      <td className="px-3 py-2 text-right font-medium text-emerald-600">{s.onTimeCount}</td>
+                      <td className="px-3 py-2 text-right font-medium text-amber-600">{s.lateCount}</td>
+                      <td className="px-3 py-2 text-right font-medium text-rose-600">{s.notDoneCount}</td>
+                      <td className="px-3 py-2 text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`${s.name} detay`} title="Detaylı inceleme" onClick={() => setDetailStudent(s)}>
+                          <Eye className="w-4 h-4 text-indigo-600" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {studentsData?.capped && <p className="text-xs text-amber-600">İlk 1000 öğrenci gösteriliyor — listeyi daraltmak için filtre kullanın.</p>}
+        </div>
+      ) : isLoading ? (
         <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}</div>
       ) : (
         <>
@@ -273,6 +334,8 @@ export default function SchoolReports() {
 
       {/* Sınıf detay */}
       <ClassroomDetailDialog classroom={detailFor} from={from} departmentId={filters.departmentId} subject={filters.subject} onClose={() => setDetailFor(null)} />
+      {/* Öğrenci detay (ödev-ödev) */}
+      <StudentDetailDialog student={detailStudent} filters={filters} onClose={() => setDetailStudent(null)} />
     </div>
   );
 }
@@ -351,5 +414,100 @@ function DetailTable({ title, cols, rows, render, empty }) {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Öğrenci detay diyaloğu (ödev-ödev başarım/teslim) ─────────────────────────
+const SD_STATUS = {
+  onTime: { label: "Zamanında", cls: "bg-emerald-100 text-emerald-700" },
+  late: { label: "Geç", cls: "bg-amber-100 text-amber-700" },
+  notDone: { label: "Yapılmadı", cls: "bg-rose-100 text-rose-700" },
+  inProgress: { label: "Devam ediyor", cls: "bg-blue-100 text-blue-700" },
+  pending: { label: "Bekliyor", cls: "bg-slate-100 text-slate-600" },
+};
+const fmtDateTime = (iso) => { try { return new Date(iso).toLocaleString("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return "—"; } };
+
+function StudentDetailDialog({ student, filters, onClose }) {
+  const detailRef = useRef(null);
+  const [exporting, setExporting] = useState(false);
+  const sid = student?.studentUserId;
+  const { data, isLoading } = useQuery({
+    queryKey: ["esinif", "report-student-detail", sid, filters],
+    queryFn: () => schoolApi.reports.studentDetail(sid, { from: filters.from, departmentId: filters.departmentId, periodId: filters.periodId, subject: filters.subject }),
+    enabled: !!sid,
+  });
+  const exportPdf = async () => {
+    if (!detailRef.current) return;
+    setExporting(true);
+    try {
+      await exportElementToPdf(detailRef.current, { fileName: `ogrenci-${student?.studentNo || "rapor"}.pdf` });
+    } catch (e) {
+      console.error("Öğrenci detay PDF export hatası:", e);
+      toast.error("PDF oluşturulamadı");
+    } finally {
+      setExporting(false);
+    }
+  };
+  return (
+    <Dialog open={!!student} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+            <span className="flex items-center gap-2"><Users className="w-5 h-5 text-indigo-500" /> {student?.name} <span className="text-sm font-normal text-slate-400">· {student?.studentNo} · {student?.classroomName}</span></span>
+            <Button variant="outline" size="sm" className="gap-1.5" disabled={exporting || isLoading} onClick={exportPdf} data-html2canvas-ignore="true">
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} PDF
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-10 bg-slate-100 rounded animate-pulse" />)}</div>
+        ) : data ? (
+          <div ref={detailRef} className="space-y-4 bg-white">
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { l: "Zamanında", v: data.summary.onTime, cls: "text-emerald-600" },
+                { l: "Geç", v: data.summary.late, cls: "text-amber-600" },
+                { l: "Yapılmadı", v: data.summary.notDone, cls: "text-rose-600" },
+              ].map((s) => <div key={s.l} className="rounded-lg border border-slate-200 p-3 text-center"><p className={`text-xl font-bold ${s.cls}`}>{s.v}</p><p className="text-xs text-slate-500">{s.l}</p></div>)}
+            </div>
+            {data.assignments.length === 0 ? (
+              <p className="text-sm text-slate-400 py-6 text-center">Bu filtrede ödev yok.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 text-slate-600 text-xs">
+                    <tr>
+                      <th className="px-3 py-1.5 text-left">Ödev</th>
+                      <th className="px-3 py-1.5 text-left">Ders</th>
+                      <th className="px-3 py-1.5 text-left">Son Teslim</th>
+                      <th className="px-3 py-1.5 text-left">Teslim</th>
+                      <th className="px-3 py-1.5 text-left">Durum</th>
+                      <th className="px-3 py-1.5 text-right">Puan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.assignments.map((a, i) => {
+                      const st = SD_STATUS[a.status] ?? SD_STATUS.pending;
+                      return (
+                        <tr key={i} className="border-t border-slate-100">
+                          <td className="px-3 py-1.5 text-slate-800">{a.assignmentTitle}</td>
+                          <td className="px-3 py-1.5 text-slate-600">{a.subject ?? "—"}</td>
+                          <td className="px-3 py-1.5 text-slate-600">{a.dueDate ? fmtDateTime(a.dueDate) : "—"}</td>
+                          <td className="px-3 py-1.5 text-slate-600">{a.submittedAt ? fmtDateTime(a.submittedAt) : "—"}</td>
+                          <td className="px-3 py-1.5"><span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span></td>
+                          <td className="px-3 py-1.5 text-right text-slate-700">{a.score != null ? `${a.score}/${a.maxScore ?? "—"}` : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400 py-6 text-center flex items-center justify-center gap-2"><X className="w-4 h-4" /> Detay yüklenemedi.</p>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
