@@ -155,9 +155,9 @@ export default function SchoolAssignments() {
         </div>
       )}
 
-      {/* Ödev takvimi — sayfanın EN ALTINDA; bugünden 7 gün, oklarla ileri/geri */}
+      {/* Ödev takvimi — sayfanın EN ALTINA YAPIŞIK (sticky); açık/kapalı her halde altta kalır */}
       {assignments.length > 0 && (
-        <div className="space-y-2 pt-2">
+        <div className="sticky bottom-0 z-20 -mx-6 lg:-mx-8 px-6 lg:px-8 py-2 space-y-2 border-t border-slate-200 bg-white/95 backdrop-blur">
           <button type="button" onClick={() => setShowTimeline((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 min-h-10">
             <CalendarRange className="w-4 h-4 text-indigo-600" /> Ödev Takvimi
             <ChevronDown className={`w-4 h-4 transition-transform ${showTimeline ? "" : "-rotate-90"}`} />
