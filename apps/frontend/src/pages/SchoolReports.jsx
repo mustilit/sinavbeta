@@ -40,7 +40,8 @@ export default function SchoolReports() {
   // Alt roller (seviye sorumlusu / sınıf öğretmeni / zümre başkanı) kapsamı kadar görür.
   const canView = !!role && (isManager || user?.school?.canViewStructure);
 
-  const [tab, setTab] = useState("branches"); // branches | levels | classrooms
+  const [mainTab, setMainTab] = useState("genel"); // genel | students (ana sekme)
+  const [tab, setTab] = useState("branches"); // Genel alt sekmesi: branches | levels | classrooms
   const [range, setRange] = useState("all");
   const [gradeLevel, setGradeLevel] = useState("ALL");
   const [classroomId, setClassroomId] = useState("ALL");
@@ -50,6 +51,7 @@ export default function SchoolReports() {
   const [detailFor, setDetailFor] = useState(null); // classroom row
   const [detailStudent, setDetailStudent] = useState(null); // Öğrenciler sekmesi detay pop-up
   const [studentQ, setStudentQ] = useState(""); // Öğrenciler sekmesi metin filtresi (no/ad)
+  const [studentStatus, setStudentStatus] = useState("ALL"); // Öğrenci teslim durumu filtresi
   const [exporting, setExporting] = useState(false);
   const pageRef = useRef(null);
 
@@ -81,15 +83,18 @@ export default function SchoolReports() {
   const { data: studentsData, isLoading: studentsLoading } = useQuery({
     queryKey: ["esinif", "report-students", filters],
     queryFn: () => schoolApi.reports.students(filters),
-    enabled: canView && !!periodId && tab === "students",
+    enabled: canView && !!periodId && mainTab === "students",
   });
-  // Öğrenciler sekmesi satırları + client-side no/ad araması (hook'lar erken return'den ÖNCE).
+  // Öğrenciler sekmesi satırları + client-side no/ad araması + teslim durumu filtresi (hook'lar erken return'den ÖNCE).
   const studentRows = useMemo(() => {
-    const list = studentsData?.students ?? [];
+    let list = studentsData?.students ?? [];
     const needle = studentQ.trim().toLocaleLowerCase("tr");
-    if (!needle) return list;
-    return list.filter((s) => `${s.studentNo} ${s.name}`.toLocaleLowerCase("tr").includes(needle));
-  }, [studentsData, studentQ]);
+    if (needle) list = list.filter((s) => `${s.studentNo} ${s.name}`.toLocaleLowerCase("tr").includes(needle));
+    if (studentStatus === "onTime") list = list.filter((s) => (s.onTimeCount ?? 0) > 0);
+    else if (studentStatus === "late") list = list.filter((s) => (s.lateCount ?? 0) > 0);
+    else if (studentStatus === "notDone") list = list.filter((s) => (s.notDoneCount ?? 0) > 0);
+    return list;
+  }, [studentsData, studentQ, studentStatus]);
 
   if (!canView) {
     return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">Erişim yok</h2></div>;
@@ -154,6 +159,18 @@ export default function SchoolReports() {
         </div>
       </div>
 
+      {/* Ana sekmeler — Genel / Öğrenci (filtreler ortak) */}
+      <div className="flex gap-1 border-b border-slate-200">
+        {[
+          { id: "genel", label: "Genel", icon: BarChart3 },
+          { id: "students", label: "Öğrenci", icon: Users },
+        ].map((t) => (
+          <button key={t.id} type="button" onClick={() => setMainTab(t.id)} className={`px-4 py-2.5 min-h-10 text-sm font-semibold border-b-2 -mb-px inline-flex items-center gap-1.5 ${mainTab === t.id ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900"}`}>
+            <t.icon className="w-4 h-4" /> {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* Filtre satırı */}
       <div className="rounded-xl border border-slate-200 bg-white p-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
@@ -180,33 +197,27 @@ export default function SchoolReports() {
         )}
       </div>
 
-      {/* Ödev uyumu — teslim durumu + süre kontrolü (yetki alanına göre) */}
-      <ComplianceReport />
-
-      {/* Sekmeler */}
-      <div className="flex gap-1 border-b border-slate-200">
-        {[
-          { id: "branches", label: "Şubeler", icon: Building2 },
-          { id: "levels", label: "Seviyeler", icon: Layers },
-          { id: "classrooms", label: "Sınıflar", icon: GraduationCap },
-          { id: "students", label: "Öğrenciler", icon: Users },
-        ].map((t) => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`px-4 py-2.5 min-h-10 text-sm font-medium border-b-2 -mb-px inline-flex items-center gap-1.5 ${tab === t.id ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900"}`}>
-            <t.icon className="w-4 h-4" /> {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "students" ? (
+      {mainTab === "students" ? (
         <div className="space-y-3">
-          <div className="relative max-w-xs">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <Input value={studentQ} onChange={(e) => setStudentQ(e.target.value)} placeholder="Öğrenci no veya ad ara…" className="pl-9" aria-label="Öğrenci ara" />
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input value={studentQ} onChange={(e) => setStudentQ(e.target.value)} placeholder="Öğrenci no veya ad ara…" className="pl-9" aria-label="Öğrenci ara" />
+            </div>
+            <Select value={studentStatus} onValueChange={setStudentStatus}>
+              <SelectTrigger className="w-full sm:w-56"><SelectValue placeholder="Teslim durumu" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tüm teslim durumları</SelectItem>
+                <SelectItem value="onTime">Zamanında teslim edenler</SelectItem>
+                <SelectItem value="late">Geç teslim edenler</SelectItem>
+                <SelectItem value="notDone">Yapmayanlar (süresi geçen)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {studentsLoading ? (
             <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />)}</div>
           ) : studentRows.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">{studentQ.trim() ? "Aramaya uygun öğrenci yok." : "Bu filtrede öğrenci bulunamadı."}</p>
+            <p className="text-sm text-slate-400 py-8 text-center">{studentQ.trim() || studentStatus !== "ALL" ? "Aramaya/filtreye uygun öğrenci yok." : "Bu filtrede öğrenci bulunamadı."}</p>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full text-sm">
@@ -240,10 +251,28 @@ export default function SchoolReports() {
           )}
           {studentsData?.capped && <p className="text-xs text-amber-600">İlk 1000 öğrenci gösteriliyor — listeyi daraltmak için filtre kullanın.</p>}
         </div>
-      ) : isLoading ? (
-        <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}</div>
       ) : (
         <>
+          {/* Ödev uyumu — teslim durumu + süre kontrolü (yetki alanına göre) */}
+          <ComplianceReport />
+
+          {/* Genel alt sekmeleri */}
+          <div className="flex gap-1 border-b border-slate-200">
+            {[
+              { id: "branches", label: "Şubeler", icon: Building2 },
+              { id: "levels", label: "Seviyeler", icon: Layers },
+              { id: "classrooms", label: "Sınıflar", icon: GraduationCap },
+            ].map((t) => (
+              <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`px-4 py-2.5 min-h-10 text-sm font-medium border-b-2 -mb-px inline-flex items-center gap-1.5 ${tab === t.id ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-600 hover:text-slate-900"}`}>
+                <t.icon className="w-4 h-4" /> {t.label}
+              </button>
+            ))}
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}</div>
+          ) : (
+            <>
           {/* Görsel dashboard — seçilen sekmeye uygun birim + konu + takvim grafikleri */}
           <Suspense fallback={<div className="h-64 bg-slate-100 rounded-xl animate-pulse" />}>
             <ReportCharts tab={tab} branches={branches} levels={levels} classrooms={classrooms} byDepartment={byDepartment} timeseries={timeseries} />
@@ -328,6 +357,8 @@ export default function SchoolReports() {
               ]}
               keyOf={(c) => c.id}
             />
+          )}
+            </>
           )}
         </>
       )}
