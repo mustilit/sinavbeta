@@ -31,7 +31,8 @@
     "dueDate": "Fällig: {{date}}",
     "overdue": "überfällig",
     "closed": "Geschlossen",
-    "timelineTitle": "Aufgaben-Zeitplan"
+    "timelineTitle": "Aufgaben-Zeitplan",
+    "dueToday": "Heute fällig"
   },
   "explore": {
     "title": "Entdecken",

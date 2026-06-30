@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Clock, CheckCircle2, Play, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle, Search, ChevronLeft, ChevronRight, CalendarRange, ChevronDown } from "lucide-react";
+import { BookOpen, Clock, CheckCircle2, Play, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle, Search, ChevronLeft, ChevronRight, CalendarRange, ChevronDown, AlertTriangle, CalendarClock } from "lucide-react";
 import { AssignmentTimeline } from "@/components/school/AssignmentTimeline";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import { tr } from "date-fns/locale";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import { SCHOOL_STUDENT_STEPS } from "@/components/onboarding/tourSteps";
@@ -44,10 +44,13 @@ export default function StudentAssignments() {
   const items = useMemo(() => data?.items ?? [], [data]);
   const filtered = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase("tr");
-    return items.filter((a) =>
-      (type === "ALL" || a.examType === type) &&
-      (!needle || (a.title ?? "").toLocaleLowerCase("tr").includes(needle)),
-    );
+    return items
+      .filter((a) =>
+        (type === "ALL" || a.examType === type) &&
+        (!needle || (a.title ?? "").toLocaleLowerCase("tr").includes(needle)),
+      )
+      // Son teslim tarihi en yakın olan üstte (acil/süresi geçen önce), en uzak altta.
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [items, type, q]);
 
   useEffect(() => { setPage(1); }, [tab, q, type]);
@@ -115,6 +118,8 @@ export default function StudentAssignments() {
             {pageItems.map((a) => {
               const Icon = TYPE_ICON[a.examType] ?? TYPE_ICON.TEST;
               const overdue = !a.submitted && !a.open;
+              // Bekleyen ödevlerde işaret: süresi geçen (kırmızı) / bugün son gün (amber).
+              const dueToday = !a.submitted && a.open && isToday(new Date(a.dueDate));
               return (
                 <Card key={a.id}>
                   <CardContent className="p-4 flex items-center gap-4">
@@ -123,6 +128,8 @@ export default function StudentAssignments() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-slate-900 truncate">{a.title}</span>
                         <Badge className="bg-slate-100 text-slate-600">{t(`common.types.${a.examType}`)}</Badge>
+                        {overdue && <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" title={t("assignments.overdue")} aria-label={t("assignments.overdue")} />}
+                        {dueToday && <CalendarClock className="w-4 h-4 text-amber-500 shrink-0" title={t("assignments.dueToday")} aria-label={t("assignments.dueToday")} />}
                         {a.submitted && a.score != null && <Badge className="bg-emerald-100 text-emerald-700">{a.score}/{a.maxScore}</Badge>}
                       </div>
                       <p className={`text-xs mt-1 flex items-center gap-1 ${overdue ? "text-rose-600" : "text-slate-500"}`}>

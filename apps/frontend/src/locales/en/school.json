@@ -31,7 +31,8 @@
     "dueDate": "Due: {{date}}",
     "overdue": "overdue",
     "closed": "Closed",
-    "timelineTitle": "Assignment Timeline"
+    "timelineTitle": "Assignment Timeline",
+    "dueToday": "Due today"
   },
   "explore": {
     "title": "Explore",

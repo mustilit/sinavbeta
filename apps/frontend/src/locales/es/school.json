@@ -31,7 +31,8 @@
     "dueDate": "Entrega: {{date}}",
     "overdue": "vencida",
     "closed": "Cerrada",
-    "timelineTitle": "Calendario de tareas"
+    "timelineTitle": "Calendario de tareas",
+    "dueToday": "Vence hoy"
   },
   "explore": {
     "title": "Explorar",

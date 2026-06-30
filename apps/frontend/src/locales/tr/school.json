@@ -31,7 +31,8 @@
     "dueDate": "Son teslim: {{date}}",
     "overdue": "süresi geçti",
     "closed": "Kapalı",
-    "timelineTitle": "Ödev Takvimi"
+    "timelineTitle": "Ödev Takvimi",
+    "dueToday": "Son gün"
   },
   "explore": {
     "title": "Keşfet",
