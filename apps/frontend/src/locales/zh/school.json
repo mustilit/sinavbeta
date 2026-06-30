@@ -10,18 +10,28 @@
     "start": "开始",
     "questionsCount": "{{count}} 道题",
     "durationMin": "{{count}} 分钟",
-    "types": { "TEST": "测验", "TUNNEL": "隧道", "WRITTEN": "笔试", "all": "全部类型" }
+    "types": {
+      "TEST": "测验",
+      "TUNNEL": "隧道",
+      "WRITTEN": "笔试",
+      "all": "全部类型"
+    }
   },
   "assignments": {
     "title": "我的作业",
-    "tabs": { "pending": "待完成", "submitted": "已提交", "all": "全部" },
+    "tabs": {
+      "pending": "待完成",
+      "submitted": "已提交",
+      "all": "全部"
+    },
     "search": "搜索作业…",
     "searchAria": "搜索作业",
     "emptyFiltered": "没有符合筛选条件的作业。",
     "empty": "此标签下暂无作业。",
     "dueDate": "截止：{{date}}",
     "overdue": "已逾期",
-    "closed": "已关闭"
+    "closed": "已关闭",
+    "timelineTitle": "作业时间表"
   },
   "explore": {
     "title": "发现",

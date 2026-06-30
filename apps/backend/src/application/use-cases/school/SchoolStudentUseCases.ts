@@ -49,6 +49,7 @@ export class ListStudentAssignmentsUseCase {
         title: a.title,
         examType: a.exam.examType,
         durationMinutes: a.exam.durationMinutes,
+        availableFrom: a.availableFrom,
         dueDate: a.dueDate,
         allowLateSubmit: a.allowLateSubmit,
         open: isOpen(a),

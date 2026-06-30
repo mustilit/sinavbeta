@@ -10,18 +10,28 @@
     "start": "Empezar",
     "questionsCount": "{{count}} preguntas",
     "durationMin": "{{count}} min",
-    "types": { "TEST": "Test", "TUNNEL": "Túnel", "WRITTEN": "Escrito", "all": "Todos los tipos" }
+    "types": {
+      "TEST": "Test",
+      "TUNNEL": "Túnel",
+      "WRITTEN": "Escrito",
+      "all": "Todos los tipos"
+    }
   },
   "assignments": {
     "title": "Mis tareas",
-    "tabs": { "pending": "Pendientes", "submitted": "Entregadas", "all": "Todas" },
+    "tabs": {
+      "pending": "Pendientes",
+      "submitted": "Entregadas",
+      "all": "Todas"
+    },
     "search": "Buscar tareas…",
     "searchAria": "Buscar tareas",
     "emptyFiltered": "Ninguna tarea coincide con el filtro.",
     "empty": "No hay tareas en esta pestaña.",
     "dueDate": "Entrega: {{date}}",
     "overdue": "vencida",
-    "closed": "Cerrada"
+    "closed": "Cerrada",
+    "timelineTitle": "Calendario de tareas"
   },
   "explore": {
     "title": "Explorar",

@@ -10,18 +10,28 @@
     "start": "Start",
     "questionsCount": "{{count}} questions",
     "durationMin": "{{count}} min",
-    "types": { "TEST": "Test", "TUNNEL": "Tunnel", "WRITTEN": "Written", "all": "All types" }
+    "types": {
+      "TEST": "Test",
+      "TUNNEL": "Tunnel",
+      "WRITTEN": "Written",
+      "all": "All types"
+    }
   },
   "assignments": {
     "title": "My Assignments",
-    "tabs": { "pending": "Pending", "submitted": "Submitted", "all": "All" },
+    "tabs": {
+      "pending": "Pending",
+      "submitted": "Submitted",
+      "all": "All"
+    },
     "search": "Search assignments…",
     "searchAria": "Search assignments",
     "emptyFiltered": "No assignments match the filter.",
     "empty": "No assignments in this tab.",
     "dueDate": "Due: {{date}}",
     "overdue": "overdue",
-    "closed": "Closed"
+    "closed": "Closed",
+    "timelineTitle": "Assignment Timeline"
   },
   "explore": {
     "title": "Explore",

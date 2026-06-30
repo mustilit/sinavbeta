@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Clock, CheckCircle2, Play, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, Clock, CheckCircle2, Play, Eye, ListChecks, ArrowDownUp, FileText, AlertCircle, Search, ChevronLeft, ChevronRight, CalendarRange, ChevronDown } from "lucide-react";
+import { AssignmentTimeline } from "@/components/school/AssignmentTimeline";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
@@ -29,6 +30,7 @@ export default function StudentAssignments() {
   const [q, setQ] = useState("");
   const [type, setType] = useState("ALL");
   const [page, setPage] = useState(1);
+  const [showTimeline, setShowTimeline] = useState(true);
   const isStudent = user?.school?.schoolRole === "STUDENT";
   // İlk girişte öğrenciye E-Sınıf bilgilendirme turu (rol bazlı).
   const showTour = useShouldShowTour(TOUR_KEYS.SCHOOL_STUDENT) && isStudent;
@@ -91,6 +93,17 @@ export default function StudentAssignments() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Ödev takvimi (Gantt tarzı) — her ödevin tarih aralığı; üzerine gelince adı */}
+      {filtered.length > 0 && (
+        <div className="space-y-2">
+          <button type="button" onClick={() => setShowTimeline((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 min-h-10">
+            <CalendarRange className="w-4 h-4 text-indigo-600" /> {t("assignments.timelineTitle")}
+            <ChevronDown className={`w-4 h-4 transition-transform ${showTimeline ? "" : "-rotate-90"}`} />
+          </button>
+          {showTimeline && <AssignmentTimeline items={filtered} />}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-2">{[0, 1].map((i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>

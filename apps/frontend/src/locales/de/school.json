@@ -10,18 +10,28 @@
     "start": "Starten",
     "questionsCount": "{{count}} Fragen",
     "durationMin": "{{count}} Min.",
-    "types": { "TEST": "Test", "TUNNEL": "Tunnel", "WRITTEN": "Schriftlich", "all": "Alle Typen" }
+    "types": {
+      "TEST": "Test",
+      "TUNNEL": "Tunnel",
+      "WRITTEN": "Schriftlich",
+      "all": "Alle Typen"
+    }
   },
   "assignments": {
     "title": "Meine Aufgaben",
-    "tabs": { "pending": "Offen", "submitted": "Abgegeben", "all": "Alle" },
+    "tabs": {
+      "pending": "Offen",
+      "submitted": "Abgegeben",
+      "all": "Alle"
+    },
     "search": "Aufgaben suchen…",
     "searchAria": "Aufgaben suchen",
     "emptyFiltered": "Keine Aufgaben entsprechen dem Filter.",
     "empty": "Keine Aufgaben in diesem Tab.",
     "dueDate": "Fällig: {{date}}",
     "overdue": "überfällig",
-    "closed": "Geschlossen"
+    "closed": "Geschlossen",
+    "timelineTitle": "Aufgaben-Zeitplan"
   },
   "explore": {
     "title": "Entdecken",
