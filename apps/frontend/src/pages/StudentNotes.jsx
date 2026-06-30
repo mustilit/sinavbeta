@@ -106,15 +106,13 @@ export default function StudentNotes() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Notlarda ara…" className="pl-9" aria-label="Notlarda ara" />
         </div>
-        {subjects.length > 0 && (
-          <Select value={subject} onValueChange={setSubject}>
-            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Ders" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Tüm dersler</SelectItem>
-              {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        )}
+        <Select value={subject} onValueChange={setSubject}>
+          <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Ders" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Tüm dersler</SelectItem>
+            {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Button type="button" variant={onlyGeneral ? "default" : "outline"} onClick={() => setOnlyGeneral((v) => !v)} className={onlyGeneral ? "bg-indigo-600 hover:bg-indigo-700" : ""}>
           Sadece genel notlar
         </Button>
