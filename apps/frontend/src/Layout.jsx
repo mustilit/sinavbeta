@@ -159,8 +159,10 @@ export default function Layout({ children, currentPageName }) {
       </div>
       <main className="flex-1 lg:ml-0 min-h-screen flex flex-col" id="main">
         <div className="flex-1 p-6 lg:p-8">{children}</div>
-        {/* Footer login sonrası da içeriğin altında kalır (Sidebar'ın yanında, ana sütunun tam genişliğinde). */}
-        <PublicFooter />
+        {/* Footer login sonrası içeriğin altında kalır. E-Sınıf (okul) kullanıcısında
+            kapalı-devre B2B olduğundan pazarlama footer'ı gizlenir (o alanı sayfa
+            içeriği — ör. ödev takvimi — kullanır). Marketplace kullanıcısında değişmez. */}
+        {!user?.school && <PublicFooter />}
       </main>
     </div>
     <ConsentBanner />
