@@ -4,6 +4,7 @@ import { notes as notesApi } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -25,6 +26,7 @@ export default function StudentNotes() {
   const isStudent = user?.school?.schoolRole === "STUDENT";
 
   const [q, setQ] = useState("");
+  const [subject, setSubject] = useState("ALL");
   const [onlyGeneral, setOnlyGeneral] = useState(false);
   const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState(null);
@@ -35,8 +37,9 @@ export default function StudentNotes() {
   const params = useMemo(() => ({
     page, pageSize: PAGE_SIZE,
     ...(q.trim() ? { q: q.trim() } : {}),
+    ...(subject !== "ALL" ? { subject } : {}),
     ...(onlyGeneral ? { scope: "general" } : {}),
-  }), [page, q, onlyGeneral]);
+  }), [page, q, subject, onlyGeneral]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["esinif", "student-notes", params],
@@ -44,7 +47,15 @@ export default function StudentNotes() {
     enabled: isStudent,
   });
 
-  useEffect(() => { setPage(1); }, [q, onlyGeneral]);
+  // "Ders" filtre seçenekleri — okul notlarında geçen dersler (facet).
+  const { data: facets } = useQuery({
+    queryKey: ["esinif", "note-facets"],
+    queryFn: () => notesApi.facets(),
+    enabled: isStudent,
+  });
+  const subjects = facets?.subjects ?? [];
+
+  useEffect(() => { setPage(1); }, [q, subject, onlyGeneral]);
 
   const update = useMutation({
     mutationFn: ({ id, body }) => notesApi.update(id, body),
@@ -61,7 +72,7 @@ export default function StudentNotes() {
   const exportPdf = async () => {
     setExporting(true);
     try {
-      const base = { ...(q.trim() ? { q: q.trim() } : {}), ...(onlyGeneral ? { scope: "general" } : {}) };
+      const base = { ...(q.trim() ? { q: q.trim() } : {}), ...(subject !== "ALL" ? { subject } : {}), ...(onlyGeneral ? { scope: "general" } : {}) };
       const all = await collectAllNotes(notesApi.list, base);
       await exportNotesPdf({ items: all, title: "Notlarım", subtitle: user?.school?.schoolName || "E-Sınıf" });
     } catch (e) {
@@ -95,6 +106,15 @@ export default function StudentNotes() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Notlarda ara…" className="pl-9" aria-label="Notlarda ara" />
         </div>
+        {subjects.length > 0 && (
+          <Select value={subject} onValueChange={setSubject}>
+            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Ders" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tüm dersler</SelectItem>
+              {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
         <Button type="button" variant={onlyGeneral ? "default" : "outline"} onClick={() => setOnlyGeneral((v) => !v)} className={onlyGeneral ? "bg-indigo-600 hover:bg-indigo-700" : ""}>
           Sadece genel notlar
         </Button>
@@ -103,7 +123,7 @@ export default function StudentNotes() {
       {isLoading ? (
         <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>
       ) : items.length === 0 ? (
-        <div className="text-center py-16 text-slate-500"><StickyNote className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{q.trim() || onlyGeneral ? "Filtreye uygun not yok." : "Henüz not almadın. Soru çözerken “+ Not” ile ekleyebilirsin."}</p></div>
+        <div className="text-center py-16 text-slate-500"><StickyNote className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{q.trim() || onlyGeneral || subject !== "ALL" ? "Filtreye uygun not yok." : "Henüz not almadın. Soru çözerken “+ Not” ile ekleyebilirsin."}</p></div>
       ) : (
         <>
           <ul className="space-y-3">

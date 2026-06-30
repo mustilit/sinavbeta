@@ -39,6 +39,11 @@ export class ListCandidateNotesQueryDto {
   @IsString()
   contextId?: string;
 
+  @ApiPropertyOptional({ description: 'E-Sınıf "Ders" filtresi (okul notu dersi)' })
+  @IsOptional()
+  @IsString()
+  subject?: string;
+
   @ApiPropertyOptional({ description: 'Metin araması (not içeriği)' })
   @IsOptional()
   @IsString()

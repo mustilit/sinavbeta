@@ -221,12 +221,14 @@ describe('GetCandidateNoteFacetsUseCase', () => {
     p.candidateNote.groupBy
       .mockResolvedValueOnce([{ topicId: 'top1', topicName: 'Matematik' }]) // topics
       .mockResolvedValueOnce([{ testId: 'test1', testTitle: 'TYT Deneme' }]) // tests
-      .mockResolvedValueOnce([{ examTypeId: 'et1', examTypeName: 'TYT' }]); // examTypes
+      .mockResolvedValueOnce([{ examTypeId: 'et1', examTypeName: 'TYT' }]) // examTypes
+      .mockResolvedValueOnce([{ topicName: 'Türkçe' }, { topicName: 'Matematik' }]); // subjects (SCHOOL)
     p.candidateNote.count.mockResolvedValue(2);
     const r = await new GetCandidateNoteFacetsUseCase().execute('u1');
     expect(r.topics).toEqual([{ id: 'top1', name: 'Matematik' }]);
     expect(r.tests).toEqual([{ id: 'test1', title: 'TYT Deneme' }]);
     expect(r.examTypes).toEqual([{ id: 'et1', name: 'TYT' }]);
+    expect(r.subjects).toEqual(['Matematik', 'Türkçe']); // tr sıralı
     expect(r.hasGeneral).toBe(true);
   });
 });

@@ -9,6 +9,7 @@ type Params = {
   testId?: string | null;
   examTypeId?: string | null;
   contextId?: string | null; // tünel/yazılı içerik adresi
+  subject?: string | null;   // E-Sınıf "Ders" filtresi (SCHOOL notu topicName snapshot'ı)
   q?: string | null;
   // 'general' → yalnızca serbest (adressiz) notlar
   scope?: 'general' | null;
@@ -22,7 +23,7 @@ type Params = {
 export class ListCandidateNotesUseCase {
   async execute(actorId: string | null | undefined, params: Params) {
     if (!actorId) throw new AppError('UNAUTHORIZED', 'Giriş gerekli', 401);
-    const { topicId, testId, examTypeId, contextId, q, scope } = params;
+    const { topicId, testId, examTypeId, contextId, subject, q, scope } = params;
     const pageSize = Math.min(Math.max(params.pageSize ?? 10, 1), 100);
     const page = Math.max(params.page ?? 1, 1);
     const skip = (page - 1) * pageSize;
@@ -34,6 +35,7 @@ export class ListCandidateNotesUseCase {
       ...(testId ? { testId } : {}),
       ...(examTypeId ? { examTypeId } : {}),
       ...(contextId ? { contextId } : {}),
+      ...(subject ? { source: 'SCHOOL', topicName: subject } : {}),
       ...(scope === 'general' ? { questionId: null, testId: null, contextId: null } : {}),
       ...(text ? { body: { contains: text, mode: 'insensitive' as const } } : {}),
     };

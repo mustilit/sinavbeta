@@ -5,7 +5,7 @@ import StudentNotes from '../StudentNotes';
 
 const h = vi.hoisted(() => ({
   user: { user: { id: 'u1', school: { schoolRole: 'STUDENT' } } },
-  api: { list: vi.fn(), update: vi.fn(), remove: vi.fn() },
+  api: { list: vi.fn(), update: vi.fn(), remove: vi.fn(), facets: vi.fn() },
 }));
 vi.mock('@/lib/AuthContext', () => ({ useAuth: () => h.user }));
 vi.mock('@/api/dalClient', () => ({ notes: h.api }));
@@ -21,6 +21,7 @@ beforeEach(() => {
     ],
     total: 2, page: 1, pageSize: 10,
   });
+  h.api.facets.mockResolvedValue({ subjects: ['Matematik', 'Türkçe'], topics: [], tests: [], examTypes: [], hasGeneral: true });
   h.api.update.mockResolvedValue({ ok: true });
   h.api.remove.mockResolvedValue({ ok: true });
 });

@@ -107,13 +107,15 @@ export class CreateCandidateNoteUseCase {
         contextId = q.examId;
         questionExcerpt = (q.content ?? '').slice(0, EXCERPT_LEN);
         questionOrder = input.questionOrder ?? q.order;
-        const ex = await prisma.schoolExam.findUnique({ where: { id: q.examId }, select: { title: true } });
+        const ex = await prisma.schoolExam.findUnique({ where: { id: q.examId }, select: { title: true, subject: true } });
         testTitle = `E-Sınıf: ${ex?.title ?? '—'}`;
+        topicName = ex?.subject ?? null; // ders (Notlarım "Ders" filtresi snapshot'ı)
       } else if (input.contextId) {
-        const ex = await prisma.schoolExam.findUnique({ where: { id: input.contextId }, select: { id: true, title: true } });
+        const ex = await prisma.schoolExam.findUnique({ where: { id: input.contextId }, select: { id: true, title: true, subject: true } });
         if (!ex) throw new AppError('NOTE_TARGET_NOT_FOUND', 'Not eklenecek sınav bulunamadı', 404);
         contextId = ex.id;
         testTitle = `E-Sınıf: ${ex.title}`;
+        topicName = ex.subject ?? null;
       }
     } else if (input.questionId) {
       const q = await prisma.examQuestion.findUnique({

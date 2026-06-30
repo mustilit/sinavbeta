@@ -69,6 +69,7 @@ export class CandidateNotesController {
       testId: q.testId,
       examTypeId: q.examTypeId,
       contextId: q.contextId,
+      subject: q.subject,
       q: q.q,
       scope: q.scope ?? null,
     });
