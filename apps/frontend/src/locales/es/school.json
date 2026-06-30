@@ -32,7 +32,9 @@
     "overdue": "vencida",
     "closed": "Cerrada",
     "timelineTitle": "Calendario de tareas",
-    "dueToday": "Vence hoy"
+    "dueToday": "Vence hoy",
+    "subjectAll": "Todas las materias",
+    "subjectPlaceholder": "Materia"
   },
   "explore": {
     "title": "Explorar",

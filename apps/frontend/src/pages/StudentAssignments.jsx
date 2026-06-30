@@ -29,6 +29,7 @@ export default function StudentAssignments() {
   const [tab, setTab] = useState("pending");
   const [q, setQ] = useState("");
   const [type, setType] = useState("ALL");
+  const [subject, setSubject] = useState("ALL");
   const [page, setPage] = useState(1);
   const [showTimeline, setShowTimeline] = useState(true);
   const isStudent = user?.school?.schoolRole === "STUDENT";
@@ -42,18 +43,26 @@ export default function StudentAssignments() {
     enabled: isStudent,
   });
   const items = useMemo(() => data?.items ?? [], [data]);
+  // Ders filtre seçenekleri — bu sekmedeki ödevlerde geçen dersler (tr sıralı).
+  const subjects = useMemo(
+    () => [...new Set(items.map((a) => a.subject).filter(Boolean))].sort((x, y) => x.localeCompare(y, "tr")),
+    [items],
+  );
   const filtered = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase("tr");
     return items
       .filter((a) =>
         (type === "ALL" || a.examType === type) &&
+        (subject === "ALL" || a.subject === subject) &&
         (!needle || (a.title ?? "").toLocaleLowerCase("tr").includes(needle)),
       )
       // Son teslim tarihi en yakın olan üstte (acil/süresi geçen önce), en uzak altta.
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-  }, [items, type, q]);
+  }, [items, type, subject, q]);
 
-  useEffect(() => { setPage(1); }, [tab, q, type]);
+  useEffect(() => { setPage(1); }, [tab, q, type, subject]);
+  // Sekme değişince ders seçimini sıfırla — yeni sekmede o ders olmayabilir.
+  useEffect(() => { setSubject("ALL"); }, [tab]);
 
   if (!isStudent) return <div className="max-w-lg mx-auto text-center py-20"><AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" /><h2 className="text-xl font-semibold text-slate-900">{t("common.accessDenied")}</h2></div>;
 
@@ -90,9 +99,16 @@ export default function StudentAssignments() {
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("assignments.search")} className="pl-9" aria-label={t("assignments.searchAria")} />
         </div>
         <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder={t("common.types.all")} /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder={t("common.types.all")} /></SelectTrigger>
           <SelectContent>
             {TYPE_FILTERS.map((k) => <SelectItem key={k} value={k}>{k === "ALL" ? t("common.types.all") : t(`common.types.${k}`)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={subject} onValueChange={setSubject}>
+          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder={t("assignments.subjectPlaceholder")} /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">{t("assignments.subjectAll")}</SelectItem>
+            {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -100,7 +116,7 @@ export default function StudentAssignments() {
       {isLoading ? (
         <div className="space-y-2">{[0, 1].map((i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-slate-500"><CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{q.trim() || type !== "ALL" ? t("assignments.emptyFiltered") : t("assignments.empty")}</p></div>
+        <div className="text-center py-16 text-slate-500"><CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>{q.trim() || type !== "ALL" || subject !== "ALL" ? t("assignments.emptyFiltered") : t("assignments.empty")}</p></div>
       ) : (
         <>
           <div className="space-y-3">

@@ -32,7 +32,9 @@
     "overdue": "已逾期",
     "closed": "已关闭",
     "timelineTitle": "作业时间表",
-    "dueToday": "今天截止"
+    "dueToday": "今天截止",
+    "subjectAll": "所有科目",
+    "subjectPlaceholder": "科目"
   },
   "explore": {
     "title": "发现",

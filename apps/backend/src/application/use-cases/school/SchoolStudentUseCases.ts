@@ -37,7 +37,7 @@ export class ListStudentAssignmentsUseCase {
       where: { classroomId: ctx.classroomId, availableFrom: { lte: new Date() } },
       orderBy: [{ dueDate: 'asc' }],
       include: {
-        exam: { select: { title: true, examType: true, durationMinutes: true } },
+        exam: { select: { title: true, examType: true, durationMinutes: true, subject: true } },
         submissions: { where: { studentId: actorId }, select: { id: true, status: true, totalScore: true, maxScore: true } },
       },
     });
@@ -48,6 +48,7 @@ export class ListStudentAssignmentsUseCase {
         id: a.id,
         title: a.title,
         examType: a.exam.examType,
+        subject: a.exam.subject, // ders — Ödevlerim "Ders" filtresi
         durationMinutes: a.exam.durationMinutes,
         availableFrom: a.availableFrom,
         dueDate: a.dueDate,

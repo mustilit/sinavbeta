@@ -32,7 +32,9 @@
     "overdue": "süresi geçti",
     "closed": "Kapalı",
     "timelineTitle": "Ödev Takvimi",
-    "dueToday": "Son gün"
+    "dueToday": "Son gün",
+    "subjectAll": "Tüm dersler",
+    "subjectPlaceholder": "Ders"
   },
   "explore": {
     "title": "Keşfet",

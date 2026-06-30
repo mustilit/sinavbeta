@@ -32,7 +32,9 @@
     "overdue": "überfällig",
     "closed": "Geschlossen",
     "timelineTitle": "Aufgaben-Zeitplan",
-    "dueToday": "Heute fällig"
+    "dueToday": "Heute fällig",
+    "subjectAll": "Alle Fächer",
+    "subjectPlaceholder": "Fach"
   },
   "explore": {
     "title": "Entdecken",

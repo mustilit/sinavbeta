@@ -32,7 +32,9 @@
     "overdue": "overdue",
     "closed": "Closed",
     "timelineTitle": "Assignment Timeline",
-    "dueToday": "Due today"
+    "dueToday": "Due today",
+    "subjectAll": "All subjects",
+    "subjectPlaceholder": "Subject"
   },
   "explore": {
     "title": "Explore",
