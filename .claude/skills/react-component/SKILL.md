@@ -258,6 +258,58 @@ Detay: `pagination` skill'i.
 
 Mutation sonrası `invalidateQueries({ queryKey: ['tests'] })` prefix invalidate eder.
 
+## TanStack Query v5 — Bilinen Tuzaklar
+
+> Proje `@tanstack/react-query ^5.x` kullanır. v4'ten kopyalanan pattern'ler **sessizce** yanlış davranır — TS hata verse bile çoğu geliştirici JSDoc/checkJs çalıştırmadığı için fark etmez. 2026-07 tarihli bir typecheck temizliğinde (4266 hata → 0) bu dört pattern gerçek prod bug'larına yol açtığı için burada kayıt altına alınıyor.
+
+**1. `useQuery`'de `onSuccess`/`onError` artık ÇAĞRILMAZ.** v4'te vardı, v5'te kaldırıldı — yazarsan sessizce ölü kod olur, hata da vermez (opsiyon objesine ekstra alan olarak geçer).
+
+```jsx
+// YANLIŞ — v5'te hiç tetiklenmez, form state hep boş kalır
+const { data: settings } = useQuery({
+  queryKey: ['backup', 'settings'],
+  queryFn: () => adminBackup.getSettings(),
+  onSuccess: (data) => setFormEnabled(data.backupEnabled), // ÖLÜ KOD
+});
+
+// DOĞRU — türetilmiş değer veya useEffect
+const { data: settings } = useQuery({ queryKey: ['backup', 'settings'], queryFn: () => adminBackup.getSettings() });
+const resolvedEnabled = formTouched ? formEnabled : (settings?.backupEnabled ?? false);
+```
+
+**2. `refetchInterval` fonksiyon formu artık `Query` nesnesi alır, `data` değil.** v4'te `(data) => data?.status === 'ACTIVE' ? 3000 : false` yazılırdı; v5'te ilk parametre `data` DEĞİL, tüm `Query` objesidir — `query.state.data` ile erişilir. Yanlış yazarsan `data` her zaman `undefined` olur, koşul hep `false`'a düşer ve **polling sessizce hiç çalışmaz** (LiveSessionHost'ta canlı oturum ekranı otomatik yenilenmiyordu, bu yüzden bulundu).
+
+```jsx
+// YANLIŞ — v4 imzası, v5'te data her zaman undefined
+refetchInterval: (data) => (data?.status === "ACTIVE" ? 3000 : false),
+
+// DOĞRU
+refetchInterval: (query) => (query.state.data?.status === "ACTIVE" ? 3000 : false),
+```
+
+**3. `keepPreviousData: true` kaldırıldı → `placeholderData: keepPreviousData`.** Fonksiyon olarak import edilip doğrudan geçilir.
+
+```jsx
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+
+// YANLIŞ — v5'te tanınmayan seçenek, sessizce yok sayılır (flicker geri gelir)
+useQuery({ queryKey: [...], queryFn, keepPreviousData: true });
+
+// DOĞRU
+useQuery({ queryKey: [...], queryFn, placeholderData: keepPreviousData });
+```
+
+**4. `mutationFn` parametre tipi checkJs'te `void`'e düşebilir.** `useMutation({ mutationFn: ({ id, body }) => ... })` yazınca TS bazen `TVariables`'ı çıkaramayıp `void` sanır; `mutate({ id, body })` çağrısı ve destructure runtime'da çalışır ama typecheck'te "Property 'id' does not exist on type 'void'" hatası verir. Kalıcı çözüm tip sistemini düzeltmek değil (proje TS'e geçmiyor) — parametreyi JSDoc ile işaretle:
+
+```jsx
+const updateMut = useMutation({
+  mutationFn: (/** @type {any} */ { id, body }) => api.update(id, body),
+  ...
+});
+```
+
+Aynı desen `useState({})` gibi boş obje başlangıçlarında da çıkar — `useState(/** @type {any} */ ({}))`.
+
 ## Form (Mutation)
 
 Form pattern detayları için **`form-mutation`** skill'ine bak. Özet:
@@ -676,6 +728,8 @@ Sentry.captureException(error);
 | Tailwind class çalışmıyor | Dinamik class oluşturmuş, JIT göremiyor |
 | Tema flash (white → dark) | `index.html`'e inline tema script'i eklenmemiş |
 | Click çalışmıyor | onClick yanlış element'te (parent veya wrapper'da) |
+| Polling/canlı ekran hiç yenilenmiyor | `refetchInterval` v4 imzasıyla yazılmış (`(data) => ...`) — v5'te `(query) => query.state.data...` olmalı, bkz. "TanStack Query v5 — Bilinen Tuzaklar" |
+| `onSuccess`/`onError` içindeki kod hiç çalışmıyor | `useQuery`'ye yazılmış — v5'te bu callback'ler yalnız `useMutation`'da var |
 
 ## Checklist (her component için)
 

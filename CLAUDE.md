@@ -345,7 +345,8 @@ Mevcut Sınav modülünün **şıksız** versiyonu. Aday her soruya **metin** ce
 @.claude/skills/error-handling/SKILL.md         <!-- 500 önleme + HttpExceptionFilter + Prisma error mapping + ApiError -->
 @.claude/skills/security-hardening/SKILL.md     <!-- AES-256-GCM secret encryption + audit log + KVKK + secret rotation -->
 @.claude/skills/observability/SKILL.md          <!-- SLO + circuit breaker + graceful shutdown + Prometheus -->
-@.claude/skills/react-component/SKILL.md        <!-- ResponsiveImage + PWA + lazy + dark mode -->
+@.claude/skills/react-component/SKILL.md        <!-- ResponsiveImage + PWA + lazy + dark mode + TanStack Query v5 tuzakları -->
+@.claude/skills/frontend-typecheck/SKILL.md     <!-- checkJs disiplini: ui/*.d.ts üretimi + JSDoc sözleşmesi + pre-commit enforcement -->
 @.claude/skills/prisma-schema/SKILL.md          <!-- model ekleme + composite index + select discipline + seed -->
 @.claude/skills/migration-planner/SKILL.md      <!-- tehlikeli şema değişikliği → aşamalı güvenli migration -->
 @.claude/skills/nestjs-module/SKILL.md          <!-- Controller/Service/DTO/Guard/Interceptor iskeleti -->
