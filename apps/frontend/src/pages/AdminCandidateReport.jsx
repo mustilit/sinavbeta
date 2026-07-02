@@ -57,7 +57,7 @@ export default function AdminCandidateReport() {
     maxCorrectRate: "",
   });
 
-  const [appliedFilters, setAppliedFilters] = useState({});
+  const [appliedFilters, setAppliedFilters] = useState(/** @type {any} */ ({}));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sortBy, setSortBy] = useState("registeredAt");
@@ -82,16 +82,16 @@ export default function AdminCandidateReport() {
     if (f.maxPurchases) params.append("maxPurchases", f.maxPurchases);
     if (f.minSpent) {
       const cents = Math.round(parseFloat(f.minSpent) * 100);
-      params.append("minSpentCents", cents);
+      params.append("minSpentCents", String(cents));
     }
     if (f.maxSpent) {
       const cents = Math.round(parseFloat(f.maxSpent) * 100);
-      params.append("maxSpentCents", cents);
+      params.append("maxSpentCents", String(cents));
     }
     if (f.minCorrectRate) params.append("minCorrectRate", f.minCorrectRate);
     if (f.maxCorrectRate) params.append("maxCorrectRate", f.maxCorrectRate);
-    params.append("page", page);
-    params.append("limit", pageSize);
+    params.append("page", String(page));
+    params.append("limit", String(pageSize));
     params.append("sortBy", sortBy);
     params.append("order", order);
     return params.toString();

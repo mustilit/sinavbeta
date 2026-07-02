@@ -1,0 +1,11 @@
+// AUTO-GENERATED — scripts/generate-ui-dts.mjs (elle düzenleme; yeniden üret)
+export declare const Select: any;
+export declare const SelectContent: any;
+export declare const SelectGroup: any;
+export declare const SelectItem: any;
+export declare const SelectLabel: any;
+export declare const SelectScrollDownButton: any;
+export declare const SelectScrollUpButton: any;
+export declare const SelectSeparator: any;
+export declare const SelectTrigger: any;
+export declare const SelectValue: any;

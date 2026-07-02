@@ -50,7 +50,7 @@ export function SchoolTunnelSolver({ examId }) {
   }, [examTheme]);
 
   const answer = useMutation({
-    mutationFn: (optionId) => schoolTunnel.answer(examId, optionId),
+    mutationFn: (/** @type {any} */ optionId) => schoolTunnel.answer(examId, optionId),
     onSuccess: (res, optionId) => {
       setFeedback({ selectedId: optionId, correctId: res.correctOptionId, correct: res.correct });
       setTimeout(() => { setFeedback(null); canvasRef.current?.clear?.(); setState(res.state); }, 900);

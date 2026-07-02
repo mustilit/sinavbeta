@@ -107,7 +107,7 @@ export default function MyNotes() {
   });
 
   const updateNote = useMutation({
-    mutationFn: ({ id, body }) => notesApi.update(id, body),
+    mutationFn: (/** @type {any} */ { id, body }) => notesApi.update(id, body),
     onSuccess: () => {
       toast.success(t("notes.page.updated"));
       setEditingId(null);
@@ -118,7 +118,7 @@ export default function MyNotes() {
   });
 
   const deleteNote = useMutation({
-    mutationFn: (id) => notesApi.remove(id),
+    mutationFn: (/** @type {any} */ id) => notesApi.remove(id),
     onSuccess: () => {
       toast.success(t("notes.page.deleted"));
       setDeleteId(null);

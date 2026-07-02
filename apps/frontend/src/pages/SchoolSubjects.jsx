@@ -26,12 +26,12 @@ export default function SchoolSubjects() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["esinif", "subjects"] });
 
   const createSubject = useMutation({
-    mutationFn: (n) => schoolApi.createSubject({ name: n }),
+    mutationFn: (/** @type {any} */ n) => schoolApi.createSubject({ name: n }),
     onSuccess: () => { toast.success("Ders eklendi"); invalidate(); setName(""); },
     onError: (e) => toast.error(errMsg(e)),
   });
   const removeSubject = useMutation({
-    mutationFn: (id) => schoolApi.deleteSubject(id),
+    mutationFn: (/** @type {any} */ id) => schoolApi.deleteSubject(id),
     onSuccess: () => { toast.success("Ders silindi"); invalidate(); setDeleteFor(null); },
     onError: (e) => toast.error(errMsg(e)),
   });

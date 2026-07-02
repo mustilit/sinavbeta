@@ -7,7 +7,7 @@ import { toast } from "sonner";
 /**
  * Okul kullanıcısı oluşturma/şifre sıfırlama sonrası üretilen kimlik bilgilerini
  * (kullanıcı adı + geçici şifre) TEK SEFER gösterir. Şifre yalnız bu anda görünür.
- * @param {{ open:boolean, onClose:()=>void, creds:{username:string,tempPassword:string}|null, title?:string }} props
+ * @param {{ open:boolean, onClose:()=>void, creds:{username?:string,tempPassword:string,email?:string}|null, title?:string }} props
  */
 export default function CredentialsDialog({ open, onClose, creds, title = "Kullanıcı Bilgileri" }) {
   const [copied, setCopied] = useState(false);

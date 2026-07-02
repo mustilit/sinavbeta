@@ -65,7 +65,7 @@ export default function Privacy() {
             <h2 className="text-2xl font-bold text-slate-900 mb-4">{t("pages:privacy.s5Title")}</h2>
             <p className="text-slate-600 leading-relaxed">{t("pages:privacy.s5Intro")}</p>
             <ul className="list-disc list-inside space-y-2 text-slate-600 mt-3">
-              {(t("pages:privacy.s5List", { returnObjects: true }) || []).map((item, idx) => (
+              {/** @type {any[]} */ (t("pages:privacy.s5List", { returnObjects: true }) || []).map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
             </ul>

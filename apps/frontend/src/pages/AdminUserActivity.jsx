@@ -192,7 +192,7 @@ export default function AdminUserActivity() {
   const [searchParams] = useSearchParams();
 
   const searchMut = useMutation({
-    mutationFn: async (overrideQ) => {
+    mutationFn: async (/** @type {any} */ overrideQ) => {
       // overrideQ: deep-link (?q=) ile gelen sorgu; yoksa input state'i
       const q = (typeof overrideQ === "string" ? overrideQ : query).trim();
       if (!q) throw new Error("Kullanıcı adı veya email gerekli");

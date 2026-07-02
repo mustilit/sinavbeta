@@ -151,7 +151,7 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
     _solutionImgFile: null, _solutionImgPreview: null,
   }));
   const [submitting, setSubmitting] = useState(false);
-  const [dialogErrors, setDialogErrors] = useState({});
+  const [dialogErrors, setDialogErrors] = useState(/** @type {any} */ ({}));
   const [duplicateLoading, setDuplicateLoading] = useState(false);
 
   const handleContentBlur = async () => {
@@ -673,7 +673,7 @@ function EditWrittenTest() {
 
   // ─── Kaydet mutasyonu ──────────────────────────────────────────────────────
   const saveMutation = useMutation({
-    mutationFn: async ({ publish }) => {
+    mutationFn: async (/** @type {any} */ { publish }) => {
       // Paket meta guncelle
       await writtenTests.updatePackage(packageId, {
         title: pkgData.title.trim(),

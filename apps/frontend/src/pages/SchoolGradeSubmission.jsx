@@ -17,7 +17,7 @@ export default function SchoolGradeSubmission() {
   const [params] = useSearchParams();
   const navigate = useAppNavigate();
   const submissionId = params.get("id");
-  const [grades, setGrades] = useState({}); // questionId -> earnedPoints
+  const [grades, setGrades] = useState(/** @type {any} */ ({})); // questionId -> earnedPoints
   const [feedback, setFeedback] = useState("");
 
   const { data: s, isLoading, isError } = useQuery({ queryKey: ["esinif", "grading", submissionId], queryFn: () => schoolApi.grading.get(submissionId), enabled: !!submissionId });

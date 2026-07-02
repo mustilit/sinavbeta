@@ -4,10 +4,10 @@ import { cn } from '@/lib/utils';
 
 /**
  * İçerik moderasyon durumu badge'i
- * @param {string} status - PENDING_REVIEW | APPROVED | REJECTED | ESCALATED
- * @param {string} [className] - Opsiyonel ek Tailwind class'ları
+ * status: PENDING_REVIEW | APPROVED | REJECTED | ESCALATED
+ * className: opsiyonel ek Tailwind class'ları
  */
-export function ModerationStatusBadge({ status, className }) {
+export function ModerationStatusBadge(/** @type {{ status: string, className?: string }} */ { status, className }) {
   // Status değerine göre renk ve ikon
   const statusConfig = {
     PENDING_REVIEW: {

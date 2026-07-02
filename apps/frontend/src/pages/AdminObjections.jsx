@@ -45,7 +45,7 @@ export default function AdminObjections() {
   const queryClient = useQueryClient();
 
   const adminAnswerMutation = useMutation({
-    mutationFn: ({ id, text, kind }) =>
+    mutationFn: (/** @type {any} */ { id, text, kind }) =>
       kind
         ? api.post(`/admin/objections/content/${kind}/${id}/note`, { adminAnswerText: text })
         : api.post(`/admin/objections/${id}/admin-answer`, { adminAnswerText: text }),

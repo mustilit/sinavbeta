@@ -1,7 +1,7 @@
 /**
  * Dal backend API client - replaces base44 SDK
  * Maps our backend endpoints to the format expected by Sınav Salonu UI
- * Tüm istekler @/lib/api/apiClient üzerinden geçer (tek nokta, 401 yönetimi)
+ * Tüm istekler `src/lib/api/apiClient` üzerinden geçer (tek nokta, 401 yönetimi)
  */
 import api from '@/lib/api/apiClient';
 
@@ -275,14 +275,14 @@ export const entities = {
       const { data } = await api.patch(`/admin/users/${id}`, body);
       return userAdapter(data);
     },
-    filter: async () => {
+    filter: async (_opts = {}) => {
       // Not supported; prefer list
       return [];
     },
   },
 
   EducatorProfile: {
-    filter: async () => {
+    filter: async (_opts = {}) => {
       // Profile is stored on User.metadata in this backend; no separate collection
       return [];
     },
@@ -382,6 +382,11 @@ export const entities = {
   },
 
   Purchase: {
+    /**
+     * Satın alma listesi — eğitici satışları veya adayın kendi alımları.
+     * İki farklı satır şekli döner (satış vs. alım); tüketiciler alanları
+     * opsiyonel okur. @returns {Promise<any[]>}
+     */
     filter: async (opts = {}) => {
       // Educator sales: /educators/me/sales
       if (opts.educator_email) {
@@ -655,6 +660,7 @@ export const entities = {
   // Backend p.attempts[] olarak paketteki tüm test'lerin attempt'larını döner.
   // Aşağıda hem p.attempts dizisini (paket alımı) hem de p.attempt (eski tekil alım) destekliyoruz.
   TestResult: {
+    /** Adayın test sonuçları (purchases'tan türetilir). @returns {Promise<any>} */
     filter: async (opts = {}) => {
       try {
         const res = await api.get('/me/purchases');
@@ -1238,7 +1244,7 @@ export const liveSessionTiers = {
  * Email veya isim üzerinde substring araması. limit default 20.
  */
 export const adminUsers = {
-  search: async ({ q, limit = 20 } = {}) => {
+  search: async ({ q, limit = 20 } = /** @type {any} */ ({})) => {
     const { data } = await api.get('/admin/users', { params: { q, limit } });
     return Array.isArray(data) ? data : (data?.items ?? []);
   },
@@ -1286,7 +1292,7 @@ export const adminEducators = {
  * Backend page/limit'le offset pagination yapar.
  */
 export const adminAudit = {
-  list: async ({ actorId, from, to, action, entityType, entityId, page = 1, limit = 50 } = {}) => {
+  list: async ({ actorId, from, to, action, entityType, entityId, page = 1, limit = 50 } = /** @type {any} */ ({})) => {
     const params = {};
     if (actorId) params.actorId = actorId;
     if (from) params.from = from;
@@ -1307,7 +1313,7 @@ export const adminAudit = {
  * (public endpoint /ad-packages aktif olanları döner).
  */
 export const adminAdPackages = {
-  list: async ({ activeOnly = false } = {}) => {
+  list: async ({ activeOnly = false } = /** @type {any} */ ({})) => {
     const { data } = await api.get('/admin/ad-packages', {
       params: { activeOnly: activeOnly ? 'true' : 'false' },
     });
@@ -1338,7 +1344,7 @@ export const liveSessions = {
     const { data } = await api.post('/live-sessions', body);
     return data;
   },
-  listMy: async ({ cursor, status, limit = 20 } = {}) => {
+  listMy: async ({ cursor, status, limit = 20 } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (cursor?.id) qs.set('cursorId', cursor.id);
     if (cursor?.createdAt) qs.set('cursorCreatedAt', cursor.createdAt);
@@ -1418,7 +1424,7 @@ export const adminEmail = {
     const { data } = await api.get('/admin/email/dashboard');
     return data;
   },
-  listLogs: async ({ cursorId, cursorQueuedAt, limit, queue, status, recipientRole, templateKey, emailSearch, from, to } = {}) => {
+  listLogs: async ({ cursorId, cursorQueuedAt, limit, queue, status, recipientRole, templateKey, emailSearch, from, to } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (cursorId) qs.set('cursorId', cursorId);
     if (cursorQueuedAt) qs.set('cursorQueuedAt', cursorQueuedAt);
@@ -1457,7 +1463,7 @@ export const adminEmail = {
     const { data } = await api.delete(`/admin/email/providers/${id}`);
     return data;
   },
-  testProvider: async (id, { toEmail, subject } = {}) => {
+  testProvider: async (id, { toEmail, subject } = /** @type {any} */ ({})) => {
     const { data } = await api.post(`/admin/email/providers/${id}/test`, { toEmail, subject });
     return data;
   },
@@ -1465,7 +1471,7 @@ export const adminEmail = {
     const { data } = await api.patch('/admin/email/kill-switches', body);
     return data;
   },
-  listSuppressions: async ({ cursor, limit, search } = {}) => {
+  listSuppressions: async ({ cursor, limit, search } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (cursor) qs.set('cursor', cursor);
     if (limit) qs.set('limit', String(limit));
@@ -1555,7 +1561,7 @@ export const adminModeration = {
   /**
    * Moderasyon sonucunu onay (clean)
    */
-  approveResult: async (id, { reviewerNote } = {}) => {
+  approveResult: async (id, { reviewerNote } = /** @type {any} */ ({})) => {
     const { data } = await api.post(`/admin/moderation/results/${id}/approve`, { reviewerNote });
     return data;
   },
@@ -1563,7 +1569,7 @@ export const adminModeration = {
   /**
    * Moderasyon sonucunu reddet (violation confirmed)
    */
-  rejectResult: async (id, { reviewerNote } = {}) => {
+  rejectResult: async (id, { reviewerNote } = /** @type {any} */ ({})) => {
     const { data } = await api.post(`/admin/moderation/results/${id}/reject`, { reviewerNote });
     return data;
   },
@@ -1619,8 +1625,8 @@ export const adminModeration = {
   applyAction: async (educatorId, {
     actionType,  // WARN, ACCOUNT_SUSPENDED, ACCOUNT_BANNED, ESCALATED_TO_ADMIN
     reason,      // min 20 karakter
-    durationDays, // opsiyonel, SUSPEND için gerekli
-    violationId  // opsiyonel
+    durationDays = undefined, // opsiyonel, SUSPEND için gerekli
+    violationId = undefined // opsiyonel
   }) => {
     const { data } = await api.post(`/admin/moderation/educators/${educatorId}/actions`, {
       actionType,
@@ -1715,7 +1721,7 @@ export const adminBackup = {
  */
 export const platformPromoCodes = {
   /** Admin: tüm promo kodlarını listele (cursor pagination + opsiyonel filter) */
-  list: async ({ cursor, limit = 50, scope, onlyActive } = {}) => {
+  list: async ({ cursor, limit = 50, scope, onlyActive } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (cursor) qs.set('cursor', cursor);
     if (limit) qs.set('limit', String(limit));
@@ -1761,7 +1767,7 @@ export const discounts = {
    * @param {string} code - Kullanıcının girdiği kod
    * @param {string} packageId - TestPackage ID
    * @param {number} basePriceCents - Paket baz fiyatı (cents)
-   * @returns { code, percentOff, discountCents, finalAmountCents, description }
+   * @returns {Promise<any>} code, percentOff, discountCents, finalAmountCents, description
    */
   validate: async (code, packageId, basePriceCents) => {
     const { data } = await api.post('/discounts/validate', {
@@ -1835,8 +1841,9 @@ export const contracts = {
 export const notes = {
   /**
    * Not oluştur. questionId → soru-bağlı (adres otomatik); testId → test bağlamı;
-   * ikisi de yoksa serbest ("genel") not.
-   * @param {{ body:string, questionId?:string, testId?:string, attemptId?:string }} input
+   * contextId/source → tünel-okul gibi özel bağlamlar; hiçbiri yoksa serbest ("genel") not.
+   * @param {{ body:string, questionId?:string, testId?:string, attemptId?:string,
+   *           source?:string, contextId?:string, contextQuestionId?:string, questionOrder?:number }} input
    */
   create: async (input) => {
     const { data } = await api.post('/candidate-notes', input);
@@ -1844,7 +1851,8 @@ export const notes = {
   },
   /**
    * Notları listele (numaralı sayfalama + filtreler).
-   * @param {{ page?:number, pageSize?:number, limit?:number, topicId?:string, testId?:string, examTypeId?:string, q?:string, scope?:'general' }} [params]
+   * @param {{ page?:number, pageSize?:number, limit?:number, topicId?:string, testId?:string,
+   *           examTypeId?:string, q?:string, scope?:string, subject?:string, contextId?:string }} [params]
    * @returns {Promise<{ items:Array, total:number, page:number, pageSize:number }>}
    */
   list: async (params = {}) => {
@@ -1959,7 +1967,7 @@ export const candidateTunnels = {
     return data;
   },
   /** Tünel değerlendirmeleri → { avg, count, items } */
-  reviews: async (id, { limit = 5, offset = 0 } = {}) => {
+  reviews: async (id, { limit = 5, offset = 0 } = /** @type {any} */ ({})) => {
     const { data } = await api.get(`/candidate-tunnels/${id}/reviews`, { params: { limit, offset } });
     return data ?? { avg: null, count: 0, items: [] };
   },
@@ -2067,7 +2075,7 @@ export const writtenTests = {
 /** Aday yazılı test akışı (pazar / satın alma / çözme). */
 export const candidateWritten = {
   /** Yayımlanmış yazılı paketler (pazar). featured=true → aktif reklamlar en üste (AD_BOOSTED). */
-  listPackages: async ({ limit = 20, cursor, featured } = {}) => {
+  listPackages: async ({ limit = 20, cursor, featured } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (limit) qs.set('limit', String(limit));
     if (cursor) qs.set('cursor', cursor);
@@ -2139,7 +2147,7 @@ export const candidateWritten = {
     return data;
   },
   /** Paket değerlendirmeleri → { avg, count, items } */
-  reviews: async (id, { limit = 5, offset = 0 } = {}) => {
+  reviews: async (id, { limit = 5, offset = 0 } = /** @type {any} */ ({})) => {
     const { data } = await api.get(`/candidate-written/packages/${id}/reviews`, { params: { limit, offset } });
     return data ?? { avg: null, count: 0, items: [] };
   },
@@ -2164,7 +2172,7 @@ export const adminSchools = {
   listPeriods: async () => (await api.get('/admin/academic-periods')).data,
   createPeriod: async (body) => (await api.post('/admin/academic-periods', body)).data,
   /** { items, total, page, pageSize, totalPages } döner. Filtre: q, schoolType, adminEmail, periodId */
-  list: async ({ q, schoolType, adminEmail, periodId, page, pageSize } = {}) => {
+  list: async ({ q, schoolType, adminEmail, periodId, page, pageSize } = /** @type {any} */ ({})) => {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (schoolType) params.set('schoolType', schoolType);
@@ -2198,7 +2206,7 @@ export const school = {
   assignLevelAdmin: async (id, body) => (await api.post(`/school/levels/${id}/assign-admin`, body)).data,
   deleteLevel: async (id) => (await api.delete(`/school/levels/${id}`)).data,
   // Sınıf
-  listClassrooms: async ({ branchId } = {}) => {
+  listClassrooms: async ({ branchId } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (branchId) qs.set('branchId', branchId);
     return (await api.get(`/school/classrooms?${qs.toString()}`)).data;
@@ -2230,7 +2238,7 @@ export const school = {
   // Dönem (akademik dönem) — { currentPeriodId, periods: [{id,name}] }
   periods: async () => (await api.get('/school/periods')).data,
   // Kullanıcılar
-  listUsers: async ({ role, q, branchId, periodId, cursor, limit = 30 } = {}) => {
+  listUsers: async ({ role, q, branchId, periodId, cursor, limit = 30 } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (role) qs.set('role', role);
     if (q) qs.set('q', q);
@@ -2252,7 +2260,7 @@ export const school = {
 
   // Sınav havuzu (Sprint 2) — öğretmen/zümre başkanı
   exams: {
-    list: async ({ examType, gradeLevel, includeArchived, q } = {}) => {
+    list: async ({ examType, gradeLevel, includeArchived, q } = /** @type {any} */ ({})) => {
       const qs = new URLSearchParams();
       if (examType) qs.set('examType', examType);
       if (gradeLevel != null) qs.set('gradeLevel', String(gradeLevel));
@@ -2271,7 +2279,7 @@ export const school = {
   // Ödevler (Sprint 3) — öğretmen/zümre başkanı
   assignments: {
     /** { items, total, page, pageSize } döner. Filtre: q, status, kind (exam|offline), classroomId, periodId */
-    list: async ({ classroomId, periodId, q, status, kind, page, pageSize } = {}) => {
+    list: async ({ classroomId, periodId, q, status, kind, page, pageSize } = /** @type {any} */ ({})) => {
       const qs = new URLSearchParams();
       if (classroomId) qs.set('classroomId', classroomId);
       if (periodId) qs.set('periodId', periodId);
@@ -2302,7 +2310,7 @@ export const school = {
     overview: async () => (await api.get('/school/reports/overview')).data,
     branch: async (branchId) => (await api.get(`/school/reports/branch/${branchId}`)).data,
     /** Filtreli kırılım: { from, to, gradeLevel, classroomId, departmentId, periodId, subject } → şube/seviye/sınıf + highlights + subjects + homeroomClassrooms */
-    breakdown: async ({ from, to, gradeLevel, classroomId, departmentId, periodId, subject } = {}) => {
+    breakdown: async ({ from, to, gradeLevel, classroomId, departmentId, periodId, subject } = /** @type {any} */ ({})) => {
       const qs = new URLSearchParams();
       if (from) qs.set('from', from);
       if (to) qs.set('to', to);
@@ -2315,7 +2323,7 @@ export const school = {
       return (await api.get(`/school/reports/breakdown${s ? `?${s}` : ''}`)).data;
     },
     /** Öğrenci bazlı teslim durumu listesi (no/ad/sınıf/seviye + Zamanında/Geç/Yapılmadı), filtreli + hiyerarşik */
-    students: async ({ from, to, gradeLevel, classroomId, departmentId, periodId, subject } = {}) => {
+    students: async ({ from, to, gradeLevel, classroomId, departmentId, periodId, subject } = /** @type {any} */ ({})) => {
       const qs = new URLSearchParams();
       if (from) qs.set('from', from);
       if (to) qs.set('to', to);
@@ -2328,7 +2336,7 @@ export const school = {
       return (await api.get(`/school/reports/students${s ? `?${s}` : ''}`)).data;
     },
     /** Tek öğrenci detayı (ödev-ödev başarım/teslim): studentId + { from, to, departmentId, periodId, subject } */
-    studentDetail: async (studentId, { from, to, departmentId, periodId, subject } = {}) => {
+    studentDetail: async (studentId, { from, to, departmentId, periodId, subject } = /** @type {any} */ ({})) => {
       const qs = new URLSearchParams();
       if (from) qs.set('from', from);
       if (to) qs.set('to', to);
@@ -2339,7 +2347,7 @@ export const school = {
       return (await api.get(`/school/reports/students/${studentId}${s ? `?${s}` : ''}`)).data;
     },
     /** Tek sınıf detayı: classroomId + { from, to, departmentId, subject } */
-    classroom: async (classroomId, { from, to, departmentId, subject } = {}) => {
+    classroom: async (classroomId, { from, to, departmentId, subject } = /** @type {any} */ ({})) => {
       const qs = new URLSearchParams();
       if (from) qs.set('from', from);
       if (to) qs.set('to', to);
@@ -2356,7 +2364,7 @@ export const school = {
 
   // Canlı sınav — öğretmen host (Sprint 4-B)
   live: {
-    list: async ({ periodId } = {}) => {
+    list: async ({ periodId } = /** @type {any} */ ({})) => {
       const qs = new URLSearchParams();
       if (periodId) qs.set('periodId', periodId);
       const s = qs.toString();
@@ -2378,7 +2386,7 @@ export const school = {
  */
 export const schoolNotifications = {
   /** { items, nextCursor, unreadCount } — cursor pagination + isRead/type filtresi */
-  list: async ({ cursor, limit, isRead, type } = {}) => {
+  list: async ({ cursor, limit, isRead, type } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (cursor) qs.set('cursor', cursor);
     if (limit) qs.set('limit', String(limit));
@@ -2403,7 +2411,7 @@ export const schoolAppointments = {
   availability: async () => (await api.get('/school/appointments/availability')).data,
   setAvailability: async (slots) => (await api.put('/school/appointments/availability', { slots })).data,
   /** { items, total, page, pageSize } — status/scope filtresi */
-  teacherList: async ({ status, scope, page, pageSize } = {}) => {
+  teacherList: async ({ status, scope, page, pageSize } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (status) qs.set('status', status);
     if (scope) qs.set('scope', scope);
@@ -2414,7 +2422,7 @@ export const schoolAppointments = {
   updateStatus: async (id, body) => (await api.patch(`/school/appointments/${id}/status`, body)).data,
   // Öğrenci
   teachers: async () => (await api.get('/school/appointments/teachers')).data,
-  slots: async (teacherUserId, { days } = {}) => {
+  slots: async (teacherUserId, { days } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (days) qs.set('days', String(days));
     return (await api.get(`/school/appointments/teachers/${teacherUserId}/slots?${qs.toString()}`)).data;
@@ -2427,7 +2435,7 @@ export const schoolAppointments = {
 // E-Sınıf öğrenci canlı sınav katılımı (Sprint 4-B)
 // E-Sınıf öğrenci raporu (ders/konu/takvim)
 export const studentReport = {
-  get: async ({ from, to, examType, subject } = {}) => {
+  get: async ({ from, to, examType, subject } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (from) qs.set('from', from);
     if (to) qs.set('to', to);
@@ -2454,7 +2462,7 @@ export const schoolTunnel = {
 
 // E-Sınıf öğrenci ödev çözme (Sprint 3)
 export const studentAssignments = {
-  list: async ({ filter } = {}) => {
+  list: async ({ filter } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (filter) qs.set('filter', filter);
     return (await api.get(`/student/assignments?${qs.toString()}`)).data;
@@ -2478,7 +2486,7 @@ export const studentAssignments = {
  * ödevden bağımsız, exam-scoped çözer. TUNNEL çözme schoolTunnel ile yürür.
  */
 export const studentPractice = {
-  listExams: async ({ q, examType, subject, page, pageSize } = {}) => {
+  listExams: async ({ q, examType, subject, page, pageSize } = /** @type {any} */ ({})) => {
     const qs = new URLSearchParams();
     if (q) qs.set('q', q);
     if (examType) qs.set('examType', examType);

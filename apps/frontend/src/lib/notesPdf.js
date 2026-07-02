@@ -5,8 +5,8 @@
  * ile görüntüye çevrilir, ardından jsPDF ile çok sayfalı A4 PDF üretilir (jsPDF'in
  * varsayılan fontu ç/ş/ğ/ı/ö/ü'yü bozardı). Her iki kütüphane de lazy import edilir.
  *
- * @param {{ items: Array<{id,body,testTitle?,questionOrder?,questionExcerpt?,createdAt}>,
- *           title?: string, subtitle?: string, fileName?: string }} opts
+ * Girdi: { items: Array<{id,body,testTitle?,questionOrder?,questionExcerpt?,createdAt}>,
+ *          title?: string, subtitle?: string, fileName?: string }
  */
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -45,7 +45,7 @@ export async function collectAllNotes(listFn, baseParams = {}) {
   return out;
 }
 
-export async function exportNotesPdf({ items = [], title = "Notlarım", subtitle = "", fileName } = {}) {
+export async function exportNotesPdf(/** @type {any} */ { items = [], title = "Notlarım", subtitle = "", fileName } = {}) {
   const [{ default: jsPDF }, html2canvasMod] = await Promise.all([import("jspdf"), import("html2canvas")]);
   const html2canvas = html2canvasMod.default;
 

@@ -48,7 +48,7 @@ const PREFERENCE_FIELDS = [
 
 export default function EmailPreferences() {
   const queryClient = useQueryClient();
-  const [preferences, setPreferences] = useState({});
+  const [preferences, setPreferences] = useState(/** @type {any} */ ({}));
   const [hasChanges, setHasChanges] = useState(false);
 
   const { data: currentPreferences, isLoading } = useQuery({
@@ -66,7 +66,7 @@ export default function EmailPreferences() {
   }, [currentPreferences]);
 
   const updateMutation = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (/** @type {any} */ body) => {
       const { data } = await api.patch('/me/email-preferences', body);
       return data;
     },

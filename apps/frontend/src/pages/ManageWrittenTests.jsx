@@ -49,7 +49,7 @@ function ManageWrittenTests() {
   });
 
   const togglePublishMutation = useMutation({
-    mutationFn: ({ id, publish }) =>
+    mutationFn: (/** @type {any} */ { id, publish }) =>
       publish ? writtenTests.publishPackage(id) : writtenTests.unpublishPackage(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["writtenPackagesMine"] });

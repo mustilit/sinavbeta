@@ -49,7 +49,7 @@ function FilterBar({
   testFilter, setTestFilter,
   reporterFilter, setReporterFilter,
   reasonSearch, setReasonSearch,
-  statusFilter, setStatusFilter,
+  statusFilter = "ALL", setStatusFilter = () => {},
   showStatusFilter = false,
   totalFiltered, totalAll,
   onClear,
@@ -148,7 +148,7 @@ function FilterBar({
   );
 }
 
-function applyFilters(list, { testFilter, reporterFilter, reasonSearch, statusFilter }) {
+function applyFilters(list, { testFilter, reporterFilter, reasonSearch, statusFilter = "ALL" }) {
   const q = reasonSearch.trim().toLowerCase();
   return list.filter((o) => {
     if (testFilter !== "ALL" && o.testId !== testFilter) return false;
@@ -194,7 +194,7 @@ export default function QuestionReports() {
   });
 
   const answerMutation = useMutation({
-    mutationFn: ({ id, answerText, kind }) =>
+    mutationFn: (/** @type {any} */ { id, answerText, kind }) =>
       kind
         ? api.post(`/educators/me/objections/content/${kind}/${id}/answer`, { answerText })
         : api.post(`/educators/me/objections/${id}/answer`, { answerText }),

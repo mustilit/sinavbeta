@@ -28,7 +28,7 @@ function AddSuppressionForm({ onSubmit, isPending }) {
     expiresAt: '',
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState(/** @type {any} */ ({}));
 
   const validate = () => {
     const newErrors = {};
@@ -159,7 +159,7 @@ export default function EmailSuppressions() {
   });
 
   const addMutation = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (/** @type {any} */ body) => {
       const { data } = await api.post('/admin/email/suppressions', body);
       return data;
     },
@@ -174,7 +174,7 @@ export default function EmailSuppressions() {
   });
 
   const removeMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (/** @type {any} */ id) => {
       await api.delete(`/admin/email/suppressions/${id}`);
     },
     onSuccess: () => {

@@ -190,17 +190,11 @@ export default function BackupManagement() {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   // ── Settings query ──
+  // NOT: v4'ten kalan onSuccess bloğu kaldırıldı — React Query v5 useQuery'de
+  // onSuccess'i ÇAĞIRMAZ (ölü koddu); form değerleri aşağıda resolved* ile türetiliyor.
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ['backup', 'settings'],
     queryFn: () => adminBackup.getSettings(),
-    onSuccess: (data) => {
-      if (!formTouched) {
-        setFormEnabled(data.backupEnabled ?? false);
-        setFormCron(data.backupCronExpression ?? '');
-        setFormDir(data.backupTargetDir ?? '');
-        setFormRetention(data.backupRetentionDays != null ? String(data.backupRetentionDays) : '2');
-      }
-    },
   });
 
   // settings yüklendikten sonra form değerlerini başlat (onSuccess React Query v5'te kaldırıldı, manuel)
@@ -211,7 +205,7 @@ export default function BackupManagement() {
 
   // ── Save settings mutation ──
   const saveMutation = useMutation({
-    mutationFn: (body) => adminBackup.updateSettings(body),
+    mutationFn: (/** @type {any} */ body) => adminBackup.updateSettings(body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['backup', 'settings'] });
       toast.success(t('backup.settings.saved'));

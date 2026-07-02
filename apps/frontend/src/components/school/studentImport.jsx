@@ -126,7 +126,7 @@ export function StudentImportDialog({ open, onClose, onCreated }) {
     enabled: open,
   });
   const bulk = useMutation({
-    mutationFn: (rows) => schoolApi.bulkCreateStudents(classroomId, rows),
+    mutationFn: (/** @type {any} */ rows) => schoolApi.bulkCreateStudents(classroomId, rows),
     onSuccess: (res) => { toast.success(`${res?.count ?? 0} öğrenci oluşturuldu`); onCreated(res?.created ?? []); setClassroomId(""); onClose(); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Öğrenciler eklenemedi"),
   });

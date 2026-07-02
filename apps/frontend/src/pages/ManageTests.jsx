@@ -52,7 +52,7 @@ export default function ManageTests() {
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, is_active }) => entities.TestPackage.update(id, { is_active }),
+    mutationFn: (/** @type {any} */ { id, is_active }) => entities.TestPackage.update(id, { is_active }),
     onSuccess: () => {
       toast.success("Test durumu güncellendi");
       queryClient.invalidateQueries({ queryKey: ["allTests"] });

@@ -796,7 +796,7 @@ export default function EditTest() {
   }, [initialized, draftKey, loadDraft, pkgDetail]);
 
   const saveMutation = useMutation({
-    mutationFn: async ({ publish }) => {
+    mutationFn: async (/** @type {any} */ { publish }) => {
       await api.patch(`/packages/${packageId}`, {
         title: pkgData.title, description: pkgData.description || null,
         priceCents: Math.round((pkgData.priceCents || 0) * 100), difficulty: pkgData.difficulty,

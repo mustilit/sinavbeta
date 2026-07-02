@@ -113,7 +113,7 @@ export default function LiveSessionCreate() {
     const q = emptyQuestion();
     return [q];
   });
-  const [step1Errors, setStep1Errors]   = useState({});
+  const [step1Errors, setStep1Errors]   = useState(/** @type {any} */ ({}));
   // Ödeme onay modal'ı durumu — Önizleme sonrası, kayıt yapılmadan önce açılır
   const [paymentOpen, setPaymentOpen]   = useState(false);
   const [paymentProvider, setPaymentProvider] = useState("iyzico");

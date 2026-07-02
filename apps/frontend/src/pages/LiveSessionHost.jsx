@@ -153,7 +153,7 @@ export default function LiveSessionHost() {
     queryKey: ["liveState", sessionId],
     queryFn: () => liveApi.getState(sessionId),
     enabled: !!sessionId,
-    refetchInterval: (data) => (data?.status === "ACTIVE" ? 3000 : false),
+    refetchInterval: (q) => (q.state.data?.status === "ACTIVE" ? 3000 : false),
   });
 
   // Oturum durumunu değiştiren mutasyonlar — sadece liveState değil

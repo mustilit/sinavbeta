@@ -248,7 +248,7 @@ export default function EmailLogDetail() {
         <Collapsible title={`Olaylar (${log.events.length})`} defaultOpen={true}>
           <div className="space-y-3">
             {log.events
-              .sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
+              .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
               .map((event, idx) => (
                 <div
                   key={idx}

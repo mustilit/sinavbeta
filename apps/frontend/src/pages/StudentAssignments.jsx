@@ -138,8 +138,8 @@ export default function StudentAssignments() {
                           <Badge className="bg-slate-100 text-slate-600">{t(`common.types.${a.examType}`)}</Badge>
                         )}
                         {a.subject && <Badge className="bg-indigo-50 text-indigo-600">{a.subject}</Badge>}
-                        {overdue && <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" title={t("assignments.overdue")} aria-label={t("assignments.overdue")} />}
-                        {dueToday && <CalendarClock className="w-4 h-4 text-amber-500 shrink-0" title={t("assignments.dueToday")} aria-label={t("assignments.dueToday")} />}
+                        {overdue && <span title={t("assignments.overdue")} className="shrink-0"><AlertTriangle className="w-4 h-4 text-rose-500" aria-label={t("assignments.overdue")} /></span>}
+                        {dueToday && <span title={t("assignments.dueToday")} className="shrink-0"><CalendarClock className="w-4 h-4 text-amber-500" aria-label={t("assignments.dueToday")} /></span>}
                         {a.submitted && a.score != null && <Badge className="bg-emerald-100 text-emerald-700">{a.score}/{a.maxScore}</Badge>}
                       </div>
                       {a.isOffline && a.offlineDescription && (

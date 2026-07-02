@@ -15,7 +15,7 @@ function ChartCard({ title, children, empty }) {
   );
 }
 
-function PctTooltip({ active, payload, label }) {
+function PctTooltip({ active = false, payload = null, label = "" }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (

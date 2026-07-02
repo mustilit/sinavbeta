@@ -61,7 +61,7 @@ function QuestionEditDialog({ question, questionIndex, topicList, showTopic, che
   const [local, setLocal]           = useState(() => makeLocalState(question));
   const [submitting, setSubmitting] = useState(false);
   const [dupLoading, setDupLoading] = useState(false);
-  const [dialogErrors, setDialogErrors] = useState({});
+  const [dialogErrors, setDialogErrors] = useState(/** @type {any} */ ({}));
 
   const handleContentBlur = async () => {
     if (!checkDuplicate) return;
@@ -470,7 +470,7 @@ export function LiveQuestionsEditor({
           const subList = Array.from(qLi.children).find((el) => el.tagName === "OL" || el.tagName === "UL");
           let qText;
           if (subList) {
-            const clone = qLi.cloneNode(true);
+            const clone = /** @type {Element} */ (qLi.cloneNode(true));
             clone.querySelectorAll("ol, ul").forEach((n) => n.remove());
             qText = clone.textContent.trim();
           } else {

@@ -44,7 +44,7 @@ export default function ModerationSettings() {
   const [thresholds, setThresholds] = useState(DEFAULT_THRESHOLDS);
 
   // Original state for reset
-  const [originalValues, setOriginalValues] = useState({});
+  const [originalValues, setOriginalValues] = useState(/** @type {any} */ ({}));
 
   const { data: settings, isLoading, isError } = useQuery({
     queryKey: ['admin', 'settings'],
@@ -78,7 +78,7 @@ export default function ModerationSettings() {
   }, [settings]);
 
   const updateMutation = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (/** @type {any} */ body) => {
       const { data } = await api.patch('/admin/settings', body);
       return data;
     },

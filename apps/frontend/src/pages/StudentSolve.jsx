@@ -44,8 +44,8 @@ export default function StudentSolve() {
   const id = practiceId || params.get("id");
   const resultParam = isPractice ? { practice: id } : { id };
 
-  const [answers, setAnswers] = useState({}); // qid -> { selectedOptionId, textAnswer, imageUrls }
-  const [drawings, setDrawings] = useState({}); // qid -> çizim url'i (imageUrls içinde de tutulur)
+  const [answers, setAnswers] = useState(/** @type {any} */ ({})); // qid -> { selectedOptionId, textAnswer, imageUrls }
+  const [drawings, setDrawings] = useState(/** @type {any} */ ({})); // qid -> çizim url'i (imageUrls içinde de tutulur)
   const [current, setCurrent] = useState(0);
   const [remaining, setRemaining] = useState(null);
   const [examTheme, setExamTheme] = useState(() => {
@@ -61,7 +61,7 @@ export default function StudentSolve() {
   const { data: a, isLoading, isError } = useQuery({ queryKey: ["esinif", "solve", isPractice ? "practice" : "assignment", id], queryFn: () => apiNs.get(id), enabled: !!id });
 
   const start = useMutation({ mutationFn: () => apiNs.start(id) });
-  const save = useMutation({ mutationFn: (body) => apiNs.saveAnswer(id, body) });
+  const save = useMutation({ mutationFn: (/** @type {any} */ body) => apiNs.saveAnswer(id, body) });
   const submitM = useMutation({
     mutationFn: () => apiNs.submit(id),
     onSuccess: () => { toast.success(isPractice ? "Alıştırma teslim edildi" : "Ödev teslim edildi"); navigate(buildPageUrl("StudentResult", resultParam), { replace: true }); },

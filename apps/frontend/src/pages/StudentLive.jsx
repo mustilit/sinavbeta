@@ -91,7 +91,7 @@ export default function StudentLive() {
   });
 
   const answerMutation = useMutation({
-    mutationFn: ({ questionId, optionId }) => studentLive.answer(sessionId, { questionId, optionId }),
+    mutationFn: (/** @type {any} */ { questionId, optionId }) => studentLive.answer(sessionId, { questionId, optionId }),
     onSuccess: (_, vars) => { setSubmittedOptionId(vars.optionId); queryClient.invalidateQueries({ queryKey: ["esinif", "live-state", sessionId] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? e?.message ?? "Cevap gönderilemedi"),
   });

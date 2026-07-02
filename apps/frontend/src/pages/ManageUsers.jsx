@@ -68,7 +68,7 @@ const WORKER_PAGE_TREE = [
 // PageTree bileşeni — checkbox ağacı
 // ---------------------------------------------------------------------------
 function PageTree({ selected, onChange }) {
-  const [collapsed, setCollapsed] = useState({});
+  const [collapsed, setCollapsed] = useState(/** @type {any} */ ({}));
 
   const toggle = (key) => {
     onChange(
@@ -202,7 +202,7 @@ export default function ManageUsers() {
 
   // Kullanıcı güncelle (rol, onay vb.)
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, body }) => api.patch(`/admin/users/${id}`, body),
+    mutationFn: (/** @type {any} */ { id, body }) => api.patch(`/admin/users/${id}`, body),
     onSuccess: () => {
       toast.success("Kullanıcı güncellendi");
       queryClient.invalidateQueries({ queryKey: ["allUsers"] });
@@ -212,7 +212,7 @@ export default function ManageUsers() {
 
   // Pending eğitici başvurusunu onayla — adanmış endpoint /admin/educators/:id/approve
   const approveEducatorMutation = useMutation({
-    mutationFn: (educatorId) => adminEducators.approve(educatorId),
+    mutationFn: (/** @type {any} */ educatorId) => adminEducators.approve(educatorId),
     onSuccess: () => {
       toast.success("Eğitici onaylandı");
       queryClient.invalidateQueries({ queryKey: ["allUsers"] });
@@ -233,7 +233,7 @@ export default function ManageUsers() {
 
   // Pending eğitici başvurusunu reddet — sebep zorunlu (/admin/educators/:id/reject)
   const rejectEducatorMutation = useMutation({
-    mutationFn: ({ id, reason }) => adminEducators.reject(id, reason),
+    mutationFn: (/** @type {any} */ { id, reason }) => adminEducators.reject(id, reason),
     onSuccess: () => {
       toast.success("Eğitici başvurusu reddedildi");
       queryClient.invalidateQueries({ queryKey: ["allUsers"] });
@@ -246,7 +246,7 @@ export default function ManageUsers() {
 
   // Worker oluştur
   const createWorkerMutation = useMutation({
-    mutationFn: (body) => api.post("/admin/workers", body),
+    mutationFn: (/** @type {any} */ body) => api.post("/admin/workers", body),
     onSuccess: () => {
       toast.success("Worker başarıyla oluşturuldu");
       queryClient.invalidateQueries({ queryKey: ["allUsers"] });
@@ -258,7 +258,7 @@ export default function ManageUsers() {
 
   // Worker izinleri güncelle
   const updatePermsMutation = useMutation({
-    mutationFn: ({ id, pages }) => api.put(`/admin/workers/${id}/permissions`, { pages }),
+    mutationFn: (/** @type {any} */ { id, pages }) => api.put(`/admin/workers/${id}/permissions`, { pages }),
     onSuccess: () => {
       toast.success("İzinler güncellendi");
       queryClient.invalidateQueries({ queryKey: ["allUsers"] });

@@ -65,7 +65,7 @@ export default function SchoolNotifications() {
     qc.invalidateQueries({ queryKey: ["school-notifications"] });
   };
   const markRead = useMutation({
-    mutationFn: (id) => schoolNotifications.markRead(id),
+    mutationFn: (/** @type {any} */ id) => schoolNotifications.markRead(id),
     onSuccess: invalidate,
   });
   const markAll = useMutation({
@@ -74,7 +74,7 @@ export default function SchoolNotifications() {
     onError: (e) => toast.error(e?.response?.data?.message ?? t("common.error")),
   });
   const send = useMutation({
-    mutationFn: (body) => schoolNotifications.sendMessage(body),
+    mutationFn: (/** @type {any} */ body) => schoolNotifications.sendMessage(body),
     onSuccess: (res) => {
       toast.success(t("notifications.sentToast", { count: res.sent }));
       setComposeOpen(false);

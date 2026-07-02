@@ -45,7 +45,7 @@ export default function MySales() {
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["mySales", user?.email],
-    queryFn: () => entities.Purchase.filter({ educator_email: user.email }, "-created_date"),
+    queryFn: () => entities.Purchase.filter({ educator_email: user.email }),
     enabled: !!user,
   });
 

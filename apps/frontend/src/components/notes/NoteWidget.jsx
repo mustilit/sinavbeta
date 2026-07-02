@@ -50,7 +50,7 @@ export function NoteWidget({ testId, questionId, attemptId, questionOrder, testT
   });
 
   const createNote = useMutation({
-    mutationFn: (body) =>
+    mutationFn: (/** @type {any} */ body) =>
       notesApi.create(
         scope !== "question"
           ? { body }

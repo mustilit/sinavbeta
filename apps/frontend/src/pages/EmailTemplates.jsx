@@ -25,7 +25,7 @@ function TemplateEditForm({ template, onSubmit, isPending }) {
     isActive: template?.isActive !== false,
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState(/** @type {any} */ ({}));
 
   const validate = () => {
     const newErrors = {};
@@ -192,7 +192,7 @@ export default function EmailTemplates() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (/** @type {any} */ body) => {
       const { data } = await api.patch(`/admin/email/templates/${editingTemplate.id}`, body);
       return data;
     },

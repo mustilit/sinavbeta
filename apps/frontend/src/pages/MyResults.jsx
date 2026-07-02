@@ -454,7 +454,7 @@ export default function MyResults() {
                         return (
                           <div className="bg-white p-3 rounded-lg shadow-lg border border-slate-200">
                             <p className="font-semibold">{payload[0].payload.week}</p>
-                            <p className="text-emerald-600">{t("pages:myResults.tooltip.questionCount", { count: payload[0].value })}</p>
+                            <p className="text-emerald-600">{t("pages:myResults.tooltip.questionCount", { count: Number(payload[0].value) })}</p>
                             <p className="text-slate-500 text-sm">{t("pages:myResults.tooltip.testCount", { count: payload[0].payload.count })}</p>
                           </div>
                         );
@@ -478,8 +478,8 @@ export default function MyResults() {
                   <Tooltip 
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
-                        const hours = Math.floor(payload[0].value / 60);
-                        const minutes = payload[0].value % 60;
+                        const hours = Math.floor(Number(payload[0].value) / 60);
+                        const minutes = Number(payload[0].value) % 60;
                         const timeLabel = `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
                         return (
                           <div className="bg-white p-3 rounded-lg shadow-lg border border-slate-200">

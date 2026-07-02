@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Users, CheckCircle2, X, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function TierForm({ initial, onSave, onCancel, isPending }) {
+function TierForm({ initial = null, onSave, onCancel, isPending }) {
   const [label, setLabel] = useState(initial?.label ?? "");
   const [maxP, setMaxP] = useState(initial?.maxParticipants == null ? "" : String(initial.maxParticipants));
   const [price, setPrice] = useState(initial?.priceCents != null ? String(initial.priceCents / 100) : "0");
@@ -120,19 +120,19 @@ export default function ManageLiveTiers() {
     "İşlem başarısız";
 
   const createMut = useMutation({
-    mutationFn: (body) => tiersApi.create(body),
+    mutationFn: (/** @type {any} */ body) => tiersApi.create(body),
     onSuccess: () => { invalidate(); setShowAdd(false); toast.success("Paket oluşturuldu"); },
     onError: (e) => toast.error(extractMsg(e)),
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, body }) => tiersApi.update(id, body),
+    mutationFn: (/** @type {any} */ { id, body }) => tiersApi.update(id, body),
     onSuccess: () => { invalidate(); setEditingId(null); toast.success("Paket güncellendi"); },
     onError: (e) => toast.error(extractMsg(e)),
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => tiersApi.remove(id),
+    mutationFn: (/** @type {any} */ id) => tiersApi.remove(id),
     onSuccess: () => { invalidate(); toast.success("Paket silindi"); },
     onError: (e) => toast.error(extractMsg(e)),
   });

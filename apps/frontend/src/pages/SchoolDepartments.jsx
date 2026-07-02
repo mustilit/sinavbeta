@@ -46,17 +46,17 @@ export default function SchoolDepartments() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["esinif", "department-tree"] });
 
   const createDept = useMutation({
-    mutationFn: (body) => schoolApi.createDepartment(body),
+    mutationFn: (/** @type {any} */ body) => schoolApi.createDepartment(body),
     onSuccess: () => { toast.success("Zümre oluşturuldu"); invalidate(); setCreateFor(null); },
     onError: (e) => toast.error(errMsg(e)),
   });
   const assignMembers = useMutation({
-    mutationFn: ({ id, body }) => schoolApi.assignMembers(id, body),
+    mutationFn: (/** @type {any} */ { id, body }) => schoolApi.assignMembers(id, body),
     onSuccess: (res) => { toast.success(`${res?.assigned ?? 0} öğretmen · ${res?.removed ?? 0} çıkarıldı`); invalidate(); setMembersFor(null); },
     onError: (e) => toast.error(errMsg(e)),
   });
   const removeDept = useMutation({
-    mutationFn: (id) => schoolApi.deleteDepartment(id),
+    mutationFn: (/** @type {any} */ id) => schoolApi.deleteDepartment(id),
     onSuccess: () => { toast.success("Zümre silindi"); invalidate(); setDeleteFor(null); },
     onError: (e) => toast.error(errMsg(e)),
   });
@@ -200,7 +200,7 @@ function LevelDeptNode({ level, canManage, myId, onAddLevel, onMembers, onDelete
 }
 
 // ── Zümre satırı (yaprak) ─────────────────────────────────────────────────────
-function DeptRow({ dept, canManage, myId, onMembers, onDelete, scopeTag }) {
+function DeptRow({ dept, canManage, myId, onMembers, onDelete, scopeTag = null }) {
   const isHead = !!myId && dept.headUserId === myId; // zümre başkanı
   const memberManage = canManage || isHead;
   const [open, setOpen] = useState(false);

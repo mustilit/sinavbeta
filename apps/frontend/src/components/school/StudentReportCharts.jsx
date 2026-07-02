@@ -7,7 +7,7 @@ const barColor = (v) => (v == null ? "#cbd5e1" : v >= 70 ? "#059669" : v >= 50 ?
 const fmtDay = (d) => { const [, m, day] = String(d).split("-"); return `${day}.${m}`; };
 
 // mode: 'count' (çözülen soru) | 'percent' (başarım %)
-function MetricTooltip({ active, payload, label, mode }) {
+function MetricTooltip({ active = false, payload = null, label = "", mode }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (

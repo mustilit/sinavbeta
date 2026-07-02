@@ -111,7 +111,7 @@ export default function EmailKillSwitches() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (/** @type {any} */ body) => {
       const { data } = await api.patch('/admin/email/kill-switches', body);
       return data;
     },

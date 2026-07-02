@@ -64,7 +64,7 @@ export default function RiskyContent() {
           ))}
         </TabsList>
 
-        {TABS.map(({ value, Component }) => (
+        {TABS.map((/** @type {any} */ { value, Component }) => (
           <TabsContent key={value} value={value} className="mt-4">
             {/* Sekme içeriği yalnızca aktifken mount olur — her sayfa kendi
                 queryClient/useQuery'sini kurar, bu yüzden lazy davranır. */}

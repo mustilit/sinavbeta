@@ -57,7 +57,7 @@ export default function AdminEducatorReport() {
     hasOpenObjections: false,
   });
 
-  const [appliedFilters, setAppliedFilters] = useState({});
+  const [appliedFilters, setAppliedFilters] = useState(/** @type {any} */ ({}));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sortBy, setSortBy] = useState("registeredAt");
@@ -84,8 +84,8 @@ export default function AdminEducatorReport() {
     if (f.minRating) params.append("minRating", f.minRating);
     if (f.maxRating) params.append("maxRating", f.maxRating);
     if (f.hasOpenObjections) params.append("hasOpenObjections", "true");
-    params.append("page", page);
-    params.append("limit", pageSize);
+    params.append("page", String(page));
+    params.append("limit", String(pageSize));
     params.append("sortBy", sortBy);
     params.append("order", order);
     return params.toString();

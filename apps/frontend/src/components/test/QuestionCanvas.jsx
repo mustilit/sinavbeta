@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * ref.clear() → tüm çizgileri siler
  */
 const QuestionCanvas = forwardRef(function QuestionCanvas(
-  { isActive, questionId, onHasDrawings },
+  /** @type {any} */ { isActive, questionId, onHasDrawings },
   ref
 ) {
   const canvasRef = useRef(null);

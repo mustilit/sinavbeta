@@ -31,7 +31,7 @@ function resizeImageToBase64(file, maxPx = 256) {
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         resolve(canvas.toDataURL('image/jpeg', 0.85));
       };
-      img.src = ev.target.result;
+      img.src = String(ev.target.result);
     };
     reader.readAsDataURL(file);
   });

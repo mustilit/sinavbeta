@@ -40,7 +40,7 @@ export default function SchoolExamPool() {
   });
 
   const archive = useMutation({
-    mutationFn: ({ id, isArchived }) => schoolApi.exams.archive(id, isArchived),
+    mutationFn: (/** @type {any} */ { id, isArchived }) => schoolApi.exams.archive(id, isArchived),
     onSuccess: () => { toast.success("Güncellendi"); qc.invalidateQueries({ queryKey: ["esinif", "exam-pool"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Güncellenemedi"),
   });

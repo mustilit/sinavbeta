@@ -50,7 +50,7 @@ const isComplete = (q, choice) => choice
   : !!((q.content?.trim() || q.mediaUrl) && q.solutionText?.trim());
 
 // ─── Görsel seçici (buton + önizleme + temizle) ──────────────────────────────
-function ImagePicker({ url, onPick, onClear, small, label = "Görsel" }) {
+function ImagePicker({ url, onPick, onClear, small = false, label = "Görsel" }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <label className={`cursor-pointer inline-flex items-center gap-1 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-medium ${small ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"}`}>

@@ -393,7 +393,7 @@ export default function SchoolReports() {
 }
 
 // ── Ortak tablo ───────────────────────────────────────────────────────────────
-function ReportTable({ cols, rows, render, keyOf, empty, onRowClick }) {
+function ReportTable({ cols, rows, render, keyOf, empty, onRowClick = null }) {
   if (!rows.length) return <p className="text-sm text-slate-400 py-8 text-center">{empty}</p>;
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200">

@@ -93,7 +93,7 @@ export default function ManageExamTypes() {
   }, [examTypes, searchName, filterStatus, filterDateFrom, filterDateTo]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => api.post("/admin/exam-types", data),
+    mutationFn: (/** @type {any} */ data) => api.post("/admin/exam-types", data),
     onSuccess: () => {
       toast.success("Sınav türü oluşturuldu");
       queryClient.invalidateQueries({ queryKey: ["examTypes"] });
@@ -103,7 +103,7 @@ export default function ManageExamTypes() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => api.patch(`/admin/exam-types/${id}`, data),
+    mutationFn: (/** @type {any} */ { id, data }) => api.patch(`/admin/exam-types/${id}`, data),
     onSuccess: () => {
       toast.success("Sınav türü güncellendi");
       queryClient.invalidateQueries({ queryKey: ["examTypes"] });
@@ -113,7 +113,7 @@ export default function ManageExamTypes() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => api.delete(`/admin/exam-types/${id}`),
+    mutationFn: (/** @type {any} */ id) => api.delete(`/admin/exam-types/${id}`),
     onSuccess: () => {
       toast.success("Sınav türü silindi");
       queryClient.invalidateQueries({ queryKey: ["examTypes"] });

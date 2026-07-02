@@ -23,7 +23,7 @@ const HEARTBEAT_INTERVAL_MS = 30_000;  // 30 saniye
 const HEARTBEAT_FAIL_THRESHOLD = 2;    // Ardışık başarısız sayısı
 const DEFAULT_AUTO_EXIT_SECONDS = 30;
 
-export function useOffline({
+export function useOffline(/** @type {any} */ {
   onAutoExit,
   enabled = true,
   autoExitSeconds = DEFAULT_AUTO_EXIT_SECONDS,

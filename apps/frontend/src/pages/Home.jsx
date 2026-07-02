@@ -130,7 +130,7 @@ function EducatorCard({ educator }) {
 
 // ── section header component ────────────────────────────────────────────────
 
-function SectionHeader({ title, isPersonalized, linkTo, linkLabel }) {
+function SectionHeader({ title, isPersonalized, linkTo, linkLabel = null }) {
   const { t } = useTranslation(["pages"]);
   const resolvedLinkLabel = linkLabel ?? t("pages:card.seeAll");
   return (
@@ -473,7 +473,7 @@ export default function Home() {
       const purchases = await entities.Purchase.filter({});
       const grouped = new Map();
       const fallbackTitle = t("pages:home.fallbackPackageTitle");
-      for (const p of Array.isArray(purchases) ? purchases : []) {
+      for (const p of /** @type {any[]} */ (Array.isArray(purchases) ? purchases : [])) {
         if (p.payment_status && !["PAID", "COMPLETED", "ACTIVE"].includes(String(p.payment_status).toUpperCase())) continue;
         const id = p.package_id ?? p.test_package_id;
         if (!id) continue;
@@ -936,7 +936,6 @@ export default function Home() {
                   key={pkg.id}
                   pkg={pkg}
                   purchased={false}
-                  onBuy={() => navigate(buildPageUrl("WrittenTestDetail", { id: pkg.id }))}
                 />
               ))}
             </div>

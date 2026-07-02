@@ -78,7 +78,7 @@ export async function parseDocxToQuestions(file, makeEmpty) {
       const subList = Array.from(qLi.children).find((el) => el.tagName === "OL" || el.tagName === "UL");
       let qText;
       if (subList) {
-        const clone = qLi.cloneNode(true);
+        const clone = /** @type {Element} */ (qLi.cloneNode(true));
         clone.querySelectorAll("ol, ul").forEach((n) => n.remove());
         qText = clone.textContent.trim();
       } else {
@@ -130,7 +130,7 @@ export async function parsePdfToQuestions(file, makeEmpty) {
         cur = [];
       }
     };
-    for (const item of content.items) {
+    for (const item of /** @type {any[]} */ (content.items)) {
       const y = Array.isArray(item.transform) ? Math.round(item.transform[5]) : null;
       if (curY === null) curY = y;
       else if (y !== null && Math.abs(y - curY) > 3) { flush(); curY = y; }

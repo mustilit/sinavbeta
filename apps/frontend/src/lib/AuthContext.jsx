@@ -44,7 +44,7 @@ function loadStoredAuth() {
   return null;
 }
 
-const AuthContext = createContext();
+const AuthContext = createContext(/** @type {any} */ (undefined));
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

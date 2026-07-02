@@ -306,7 +306,7 @@ export default function MyLiveSessions() {
 
   // Tur 1 başlatma: DRAFT → ACTIVE; sonra host sayfasına git.
   const startRound1Mut = useMutation({
-    mutationFn: (id) => liveApi.start(id),
+    mutationFn: (/** @type {any} */ id) => liveApi.start(id),
     onSuccess: (data, id) => {
       toast.success(t("pages:myLiveSessions.toasts.round1Started"));
       queryClient.invalidateQueries({ queryKey: ["myLiveSessions"] });
@@ -320,7 +320,7 @@ export default function MyLiveSessions() {
 
   // Tur 2 başlatma: round 2 yoksa önce createRound2 + start; varsa DRAFT'ı start.
   const startRound2Mut = useMutation({
-    mutationFn: async ({ parentId, existingRound2 }) => {
+    mutationFn: async (/** @type {any} */ { parentId, existingRound2 }) => {
       let r2 = existingRound2;
       if (!r2) {
         r2 = await liveApi.createRound2(parentId);

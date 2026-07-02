@@ -99,22 +99,22 @@ export default function SchoolAssignments() {
   }, [presetExamId, exams, canCreate]);
 
   const create = useMutation({
-    mutationFn: (body) => schoolApi.assignments.create(body),
+    mutationFn: (/** @type {any} */ body) => schoolApi.assignments.create(body),
     onSuccess: (res) => { toast.success(`${res.created} sınıfa ödev atandı`); qc.invalidateQueries({ queryKey: ["esinif", "assignments"] }); setOpen(false); setExamId(""); setOfflineSubjectId(""); setPicked(new Set()); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Atanamadı"),
   });
   const release = useMutation({
-    mutationFn: (id) => schoolApi.assignments.releaseResults(id),
+    mutationFn: (/** @type {any} */ id) => schoolApi.assignments.releaseResults(id),
     onSuccess: () => { toast.success("Sonuçlar yayımlandı"); qc.invalidateQueries({ queryKey: ["esinif", "assignments"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Yayımlanamadı"),
   });
   const setStatus = useMutation({
-    mutationFn: ({ id, status }) => schoolApi.assignments.setStatus(id, status),
+    mutationFn: (/** @type {any} */ { id, status }) => schoolApi.assignments.setStatus(id, status),
     onSuccess: () => { toast.success("Güncellendi"); qc.invalidateQueries({ queryKey: ["esinif", "assignments"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Güncellenemedi"),
   });
   const offlineDone = useMutation({
-    mutationFn: ({ id, done }) => schoolApi.assignments.markOfflineDone(id, done),
+    mutationFn: (/** @type {any} */ { id, done }) => schoolApi.assignments.markOfflineDone(id, done),
     onSuccess: (_res, vars) => { toast.success(vars.done ? "Yapıldı olarak işaretlendi" : "Geri alındı"); qc.invalidateQueries({ queryKey: ["esinif", "assignments"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "İşaretlenemedi"),
   });
@@ -135,8 +135,8 @@ export default function SchoolAssignments() {
       create.mutate({
         isOffline: true, offlineSubjectId, offlineDescription: description, title,
         classroomIds: [...picked],
-        availableFrom: new Date(f.get("availableFrom")).toISOString(),
-        dueDate: new Date(f.get("dueDate")).toISOString(),
+        availableFrom: new Date(String(f.get("availableFrom"))).toISOString(),
+        dueDate: new Date(String(f.get("dueDate"))).toISOString(),
       });
       return;
     }
@@ -144,8 +144,8 @@ export default function SchoolAssignments() {
     if (picked.size === 0) return toast.error("En az bir sınıf seçin");
     create.mutate({
       examId, classroomIds: [...picked],
-      availableFrom: new Date(f.get("availableFrom")).toISOString(),
-      dueDate: new Date(f.get("dueDate")).toISOString(),
+      availableFrom: new Date(String(f.get("availableFrom"))).toISOString(),
+      dueDate: new Date(String(f.get("dueDate"))).toISOString(),
       showResultAfter: f.get("showResultAfter"),
       allowLateSubmit: f.get("allowLateSubmit") === "on",
     });
@@ -268,7 +268,7 @@ export default function SchoolAssignments() {
           <DialogHeader><DialogTitle>Yeni Ödev Ata</DialogTitle></DialogHeader>
           {/* Tür sekmesi: havuzdan sınav / sistem dışı (ders + serbest metin) */}
           <div className="flex gap-1 rounded-lg bg-slate-100 p-1" role="tablist" aria-label="Ödev türü">
-            {[["exam", "Sınav Ödevi", ClipboardList], ["offline", "Sistem Dışı", BookOpen]].map(([k, label, Icon]) => (
+            {/** @type {[string, string, any][]} */ ([["exam", "Sınav Ödevi", ClipboardList], ["offline", "Sistem Dışı", BookOpen]]).map(([k, label, Icon]) => (
               <button key={k} type="button" role="tab" aria-selected={mode === k} onClick={() => setMode(k)}
                 className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 min-h-10 text-sm font-medium transition-colors ${mode === k ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
                 <Icon className="w-4 h-4" /> {label}

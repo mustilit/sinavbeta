@@ -61,7 +61,7 @@ async function fetchSiteKey() {
   }
 }
 
-export default function TurnstileWidget({ onSuccess, onError, action }) {
+export default function TurnstileWidget({ onSuccess, onError = null, action }) {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
   const [siteKey, setSiteKey] = useState(undefined); // undefined: loading, null: disabled, string: ready

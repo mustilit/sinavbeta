@@ -121,7 +121,7 @@ export default function ModerationQueue() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: ({ resultId, note }) => adminModeration.approveResult(resultId, { reviewerNote: note }),
+    mutationFn: (/** @type {any} */ { resultId, note }) => adminModeration.approveResult(resultId, { reviewerNote: note }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminModeration', 'queue'] });
       toast.success('İçerik temiz işaretlendi');
@@ -133,7 +133,7 @@ export default function ModerationQueue() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: ({ resultId, note }) => adminModeration.rejectResult(resultId, { reviewerNote: note }),
+    mutationFn: (/** @type {any} */ { resultId, note }) => adminModeration.rejectResult(resultId, { reviewerNote: note }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminModeration', 'queue'] });
       toast.success('İhlal onaylandı ve işlem başlatıldı');

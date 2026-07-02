@@ -92,10 +92,10 @@ export function TestPreviewModal({
   title = "",
   isOpen,
   onClose,
-  onConfirm,
+  onConfirm = null,
 }) {
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [selectedAnswers, setSelectedAnswers] = useState(/** @type {any} */ ({}));
   const [showGrid, setShowGrid] = useState(false);
 
   if (!isOpen) return null;

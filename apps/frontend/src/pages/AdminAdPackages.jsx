@@ -138,7 +138,7 @@ export default function AdminAdPackages() {
   });
 
   const createMut = useMutation({
-    mutationFn: (body) => adPkgsApi.create(body),
+    mutationFn: (/** @type {any} */ body) => adPkgsApi.create(body),
     onSuccess: () => {
       toast.success("Paket oluşturuldu");
       setEditing(null);
@@ -149,7 +149,7 @@ export default function AdminAdPackages() {
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, body }) => adPkgsApi.update(id, body),
+    mutationFn: (/** @type {any} */ { id, body }) => adPkgsApi.update(id, body),
     onSuccess: () => {
       toast.success("Paket güncellendi");
       setEditing(null);
@@ -160,7 +160,7 @@ export default function AdminAdPackages() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => adPkgsApi.remove(id),
+    mutationFn: (/** @type {any} */ id) => adPkgsApi.remove(id),
     onSuccess: () => {
       toast.success("Paket silindi");
       qc.invalidateQueries({ queryKey: ["adminAdPackages"] });

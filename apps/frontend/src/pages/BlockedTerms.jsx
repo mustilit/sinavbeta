@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -119,7 +119,7 @@ function CreateTermModal({ isOpen, onClose, onSubmit, isPending }) {
               min="1"
               max="5"
               value={severity}
-              onChange={(e) => setSeverity(e.target.value)}
+              onChange={(e) => setSeverity(Number(e.target.value))}
               className="w-full mt-1.5"
             />
             <div className="flex gap-1 mt-2">
@@ -196,7 +196,7 @@ export default function BlockedTerms() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (payload) => adminModeration.createBlockedTerm(payload),
+    mutationFn: (/** @type {any} */ payload) => adminModeration.createBlockedTerm(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminModeration', 'blockedTerms'] });
       toast.success('Yasak kelime eklendi');
@@ -219,7 +219,7 @@ export default function BlockedTerms() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, partial }) => adminModeration.updateBlockedTerm(id, partial),
+    mutationFn: (/** @type {any} */ { id, partial }) => adminModeration.updateBlockedTerm(id, partial),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminModeration', 'blockedTerms'] });
       toast.success('Güncellendi');
@@ -232,7 +232,7 @@ export default function BlockedTerms() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => adminModeration.deleteBlockedTerm(id),
+    mutationFn: (/** @type {any} */ id) => adminModeration.deleteBlockedTerm(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminModeration', 'blockedTerms'] });
       toast.success('Silindi');

@@ -16,7 +16,7 @@ export function FlagIcon({ code, className = "w-5 h-4 rounded-sm overflow-hidden
     xmlns: "http://www.w3.org/2000/svg",
     className,
     role: "img",
-    "aria-hidden": "true",
+    "aria-hidden": true,
     preserveAspectRatio: "xMidYMid slice",
   };
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Layers, BookOpen, FileText, User, Play, CheckCircle2, ShoppingCart, ArrowLeft, Loader2, Star, MessageSquare, Bell, BellOff, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,7 +51,7 @@ export default function TunnelDetail() {
     queryKey: ["tunnelReviews", id, reviewPage],
     queryFn: () => api.reviews(id, { limit: REVIEWS_PER_PAGE, offset: (reviewPage - 1) * REVIEWS_PER_PAGE }),
     enabled: !!id,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData, // v5: v4 keepPreviousData:true karşılığı
   });
   const { data: myReview } = useQuery({
     queryKey: ["myTunnelReview", id, user?.id],

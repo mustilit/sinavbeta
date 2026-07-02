@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 function ActionModal({ isOpen, onClose, onSubmit, actionType, isPending }) {
   const [reason, setReason] = useState('');
   const [duration, setDuration] = useState('3');
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState(/** @type {any} */ ({}));
 
   const handleSubmit = () => {
     const newErrors = {};
@@ -205,7 +205,7 @@ export default function EducatorViolationDetail() {
   });
 
   const applyActionMutation = useMutation({
-    mutationFn: ({ actionType: type, reason, durationDays }) =>
+    mutationFn: (/** @type {any} */ { actionType: type, reason, durationDays }) =>
       adminModeration.applyAction(id, {
         actionType: type,
         reason,

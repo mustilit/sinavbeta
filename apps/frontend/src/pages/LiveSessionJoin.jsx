@@ -147,7 +147,7 @@ export default function LiveSessionJoin() {
   });
 
   const answerMutation = useMutation({
-    mutationFn: ({ questionId, optionId }) =>
+    mutationFn: (/** @type {any} */ { questionId, optionId }) =>
       liveApi.submitAnswer(sessionId, questionId, optionId, guestToken),
     onSuccess: (_, vars) => {
       setSubmittedOptionId(vars.optionId);

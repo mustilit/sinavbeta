@@ -67,17 +67,17 @@ export default function SchoolBranches() {
     onError: (e) => toast.error(errMsg(e)),
   });
   const createLevel = useMutation({
-    mutationFn: ({ branchId, gradeLevel }) => schoolApi.createLevel({ branchId, gradeLevel }),
+    mutationFn: (/** @type {any} */ { branchId, gradeLevel }) => schoolApi.createLevel({ branchId, gradeLevel }),
     onSuccess: () => { toast.success("Seviye eklendi"); invalidate(); setLevelFor(null); },
     onError: (e) => toast.error(errMsg(e)),
   });
   const createClassroom = useMutation({
-    mutationFn: ({ levelId, name }) => schoolApi.createClassroom({ levelId, name }),
+    mutationFn: (/** @type {any} */ { levelId, name }) => schoolApi.createClassroom({ levelId, name }),
     onSuccess: () => { toast.success("Sınıf oluşturuldu"); invalidate(); setClassFor(null); },
     onError: (e) => toast.error(errMsg(e)),
   });
   const bulkStudents = useMutation({
-    mutationFn: ({ id, students }) => schoolApi.bulkCreateStudents(id, students),
+    mutationFn: (/** @type {any} */ { id, students }) => schoolApi.bulkCreateStudents(id, students),
     onSuccess: (res) => {
       toast.success(`${res?.count ?? 0} öğrenci oluşturuldu`);
       invalidate();
@@ -87,7 +87,7 @@ export default function SchoolBranches() {
     onError: (e) => toast.error(errMsg(e)),
   });
   const assignManager = useMutation({
-    mutationFn: ({ kind, id, schoolUserId }) =>
+    mutationFn: (/** @type {any} */ { kind, id, schoolUserId }) =>
       kind === "branch" ? schoolApi.assignBranchAdmin(id, { schoolUserId })
         : kind === "level" ? schoolApi.assignLevelAdmin(id, { schoolUserId })
           : schoolApi.assignClassroomAdmin(id, { schoolUserId }),
@@ -95,12 +95,12 @@ export default function SchoolBranches() {
     onError: (e) => toast.error(errMsg(e)),
   });
   const removeNode = useMutation({
-    mutationFn: ({ kind, id }) => (kind === "level" ? schoolApi.deleteLevel(id) : schoolApi.deleteClassroom(id)),
+    mutationFn: (/** @type {any} */ { kind, id }) => (kind === "level" ? schoolApi.deleteLevel(id) : schoolApi.deleteClassroom(id)),
     onSuccess: () => { toast.success("Silindi"); invalidate(); setDeleteFor(null); },
     onError: (e) => toast.error(errMsg(e)),
   });
   const setClassActive = useMutation({
-    mutationFn: ({ id, isActive }) => schoolApi.setClassroomActive(id, isActive),
+    mutationFn: (/** @type {any} */ { id, isActive }) => schoolApi.setClassroomActive(id, isActive),
     onSuccess: (res) => { toast.success(res?.isActive ? "Sınıf aktife alındı" : "Sınıf pasife alındı"); invalidate(); },
     onError: (e) => toast.error(errMsg(e)),
   });
@@ -355,12 +355,12 @@ function StudentsDialog({ open, classroom, onClose, onImport, importing }) {
     qc.invalidateQueries({ queryKey: ["esinif", "tree"] });
   };
   const addOne = useMutation({
-    mutationFn: (id) => schoolApi.assignStudents(classroom.id, [id]),
+    mutationFn: (/** @type {any} */ id) => schoolApi.assignStudents(classroom.id, [id]),
     onSuccess: () => { toast.success("Öğrenci eklendi"); refresh(); },
     onError: (e) => toast.error(errMsg(e)),
   });
   const removeOne = useMutation({
-    mutationFn: (id) => schoolApi.removeStudents(classroom.id, [id]),
+    mutationFn: (/** @type {any} */ id) => schoolApi.removeStudents(classroom.id, [id]),
     onSuccess: () => { toast.success("Öğrenci sınıftan çıkarıldı"); refresh(); },
     onError: (e) => toast.error(errMsg(e)),
   });

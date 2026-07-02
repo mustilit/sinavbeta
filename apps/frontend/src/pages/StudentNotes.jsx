@@ -58,12 +58,12 @@ export default function StudentNotes() {
   useEffect(() => { setPage(1); }, [q, subject, onlyGeneral]);
 
   const update = useMutation({
-    mutationFn: ({ id, body }) => notesApi.update(id, body),
+    mutationFn: (/** @type {any} */ { id, body }) => notesApi.update(id, body),
     onSuccess: () => { setEditingId(null); toast.success("Not güncellendi"); qc.invalidateQueries({ queryKey: ["esinif", "student-notes"] }); },
     onError: () => toast.error("Güncellenemedi"),
   });
   const remove = useMutation({
-    mutationFn: (id) => notesApi.remove(id),
+    mutationFn: (/** @type {any} */ id) => notesApi.remove(id),
     onSuccess: () => { setDeleteId(null); toast.success("Not silindi"); qc.invalidateQueries({ queryKey: ["esinif", "student-notes"] }); },
     onError: () => toast.error("Silinemedi"),
   });

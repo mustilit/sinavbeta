@@ -73,7 +73,7 @@ export default function ManageRefunds() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: ({ id, notes }) => entities.RefundRequest.adminApprove(id, notes),
+    mutationFn: (/** @type {any} */ { id, notes }) => entities.RefundRequest.adminApprove(id, notes),
     onSuccess: () => {
       toast.success("İade onaylandı.");
       queryClient.invalidateQueries({ queryKey: ["admin-refunds"] });
@@ -84,7 +84,7 @@ export default function ManageRefunds() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }) => entities.RefundRequest.adminReject(id, reason),
+    mutationFn: (/** @type {any} */ { id, reason }) => entities.RefundRequest.adminReject(id, reason),
     onSuccess: () => {
       toast.success("İade talebi reddedildi.");
       queryClient.invalidateQueries({ queryKey: ["admin-refunds"] });

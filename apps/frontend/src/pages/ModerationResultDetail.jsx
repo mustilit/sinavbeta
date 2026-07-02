@@ -13,13 +13,11 @@ import {
   PROVIDER_LABELS_TR,
   MODERATION_STATUS_COLORS,
   CATEGORY_COLORS,
-  RISK_LEVEL_COLORS,
-  RISK_LEVEL_LABELS_TR,
 } from '@/lib/moderationLabels';
 import { adminModeration } from '@/api/dalClient';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { AlertTriangle, CheckCircle, XCircle, ArrowLeft, Copy } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 function DecideModal({ isOpen, onClose, onSubmit, status, isPending }) {
@@ -98,7 +96,7 @@ export default function ModerationResultDetail() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (reviewerNote) => adminModeration.approveResult(id, { reviewerNote }),
+    mutationFn: (/** @type {any} */ reviewerNote) => adminModeration.approveResult(id, { reviewerNote }),
     onSuccess: () => {
       toast.success('İçerik onaylandı');
       queryClient.invalidateQueries({ queryKey: ['adminModeration', 'queue'] });
@@ -111,7 +109,7 @@ export default function ModerationResultDetail() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (reviewerNote) => adminModeration.rejectResult(id, { reviewerNote }),
+    mutationFn: (/** @type {any} */ reviewerNote) => adminModeration.rejectResult(id, { reviewerNote }),
     onSuccess: () => {
       toast.success('İhlal onaylandı');
       queryClient.invalidateQueries({ queryKey: ['adminModeration', 'queue'] });

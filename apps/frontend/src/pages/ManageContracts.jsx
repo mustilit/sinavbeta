@@ -63,7 +63,7 @@ export default function ManageContracts() {
         : "Sözleşmeler yüklenemedi (sunucuya ulaşılamadı veya hata). Tekrar deneyin.";
 
   const setActiveMutation = useMutation({
-    mutationFn: (id) => contractsApi.adminSetActive(id),
+    mutationFn: (/** @type {any} */ id) => contractsApi.adminSetActive(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
       toast.success("Aktif versiyon güncellendi");

@@ -65,7 +65,7 @@ export function PromoCodesPanel() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => platformPromoCodes.delete(id),
+    mutationFn: (/** @type {any} */ id) => platformPromoCodes.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform-promo-codes"] });
       toast.success("Promo kodu silindi");
@@ -74,7 +74,7 @@ export function PromoCodesPanel() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, isActive }) => platformPromoCodes.toggle(id, isActive),
+    mutationFn: (/** @type {any} */ { id, isActive }) => platformPromoCodes.toggle(id, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform-promo-codes"] });
     },

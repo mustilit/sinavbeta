@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 
-function MetricCard({ icon: Icon, label, value, unit, color = 'indigo' }) {
+function MetricCard({ icon: Icon, label, value, unit = null, color = 'indigo' }) {
   const colorMap = {
     indigo: 'bg-indigo-50 text-indigo-600',
     emerald: 'bg-emerald-50 text-emerald-600',
@@ -82,7 +82,7 @@ export default function EmailDashboard() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (/** @type {any} */ body) => {
       const { data } = await api.patch('/admin/email/kill-switches', body);
       return data;
     },

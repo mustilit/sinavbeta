@@ -1,11 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import api from '@/lib/api/apiClient';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,9 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   RISK_LEVEL_LABELS_TR,
   CATEGORY_LABELS_TR,
-  ACTION_TYPE_LABELS_TR,
   RISK_LEVEL_COLORS,
-  CATEGORY_COLORS,
 } from '@/lib/moderationLabels';
 import { adminModeration } from '@/api/dalClient';
 import { formatDistanceToNow } from 'date-fns';
@@ -34,7 +30,6 @@ import {
   AlertCircle,
   Clock,
   Ban,
-  Zap,
 } from 'lucide-react';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { toast } from 'sonner';
@@ -195,7 +190,7 @@ export default function RiskyEducators() {
 
   // Action mutation
   const actionMutation = useMutation({
-    mutationFn: ({ educatorId, actionType, durationDays, reason }) =>
+    mutationFn: (/** @type {any} */ { educatorId, actionType, durationDays, reason }) =>
       adminModeration.applyAction(educatorId, { actionType, durationDays, reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminModeration', 'riskyEducators'] });
@@ -235,7 +230,7 @@ export default function RiskyEducators() {
     } else if (sortBy === 'violation') {
       copy.sort((a, b) => (b.violationCount ?? 0) - (a.violationCount ?? 0));
     } else if (sortBy === 'date') {
-      copy.sort((a, b) => new Date(b.lastViolationAt || 0) - new Date(a.lastViolationAt || 0));
+      copy.sort((a, b) => new Date(b.lastViolationAt || 0).getTime() - new Date(a.lastViolationAt || 0).getTime());
     }
     return copy;
   }, [items, sortBy]);

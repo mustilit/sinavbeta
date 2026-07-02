@@ -21,7 +21,7 @@ const PROVIDER_KINDS = {
   CONSOLE: 'Console',
 };
 
-function ProviderForm({ provider, onSubmit, isPending }) {
+function ProviderForm({ provider = null, onSubmit, isPending }) {
   const [form, setForm] = useState(
     provider || {
       name: '',
@@ -47,7 +47,7 @@ function ProviderForm({ provider, onSubmit, isPending }) {
     smtpPass: false,
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState(/** @type {any} */ ({}));
 
   const validate = () => {
     const newErrors = {};
@@ -441,7 +441,7 @@ export default function EmailProviders() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (/** @type {any} */ body) => {
       const { data } = await api.post('/admin/email/providers', body);
       return data;
     },
@@ -456,7 +456,7 @@ export default function EmailProviders() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (body) => {
+    mutationFn: async (/** @type {any} */ body) => {
       const { data } = await api.patch(`/admin/email/providers/${editingId}`, body);
       return data;
     },
@@ -471,7 +471,7 @@ export default function EmailProviders() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (/** @type {any} */ id) => {
       await api.delete(`/admin/email/providers/${id}`);
     },
     onSuccess: () => {

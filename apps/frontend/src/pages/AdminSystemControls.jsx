@@ -211,7 +211,7 @@ function formatDate(iso) {
  * Tekrar eden "mevcut değer + input + kaydet" satırı.
  * isSecret=true ise şifre inputu + göster/gizle butonu.
  */
-function PaymentField({
+function PaymentField(/** @type {any} */ {
   label,
   value,
   inputValue,
@@ -309,7 +309,7 @@ export default function AdminSystemControls() {
   const [savingTc, setSavingTc] = useState(null);
 
   // Ödeme ayarları state'leri
-  const [paymentInputs, setPaymentInputs] = useState({});
+  const [paymentInputs, setPaymentInputs] = useState(/** @type {any} */ ({}));
   const [savingPayment, setSavingPayment] = useState(null);
   const [showSecrets, setShowSecrets] = useState({
     iyzicoApiKey: false,
@@ -325,12 +325,12 @@ export default function AdminSystemControls() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (patch) => {
+    mutationFn: async (/** @type {any} */ patch) => {
       const { data } = await api.patch("/admin/settings", patch);
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.setQueryData(["admin-settings"], (old) => ({ ...old, ...data }));
+      queryClient.setQueryData(["admin-settings"], (/** @type {any} */ old) => ({ ...old, ...data }));
       // Also invalidate the public service-status cache
       queryClient.invalidateQueries({ queryKey: ["service-status"] });
       const key = Object.keys(variables)[0];
@@ -464,7 +464,7 @@ export default function AdminSystemControls() {
   });
 
   const addRateMutation = useMutation({
-    mutationFn: async (payload) => {
+    mutationFn: async (/** @type {any} */ payload) => {
       const { data } = await api.post("/admin/commission/rates", payload);
       return data;
     },

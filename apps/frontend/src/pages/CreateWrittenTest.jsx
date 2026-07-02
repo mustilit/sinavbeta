@@ -157,7 +157,7 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
     _solutionImgPreview: null,
   }));
   const [submitting, setSubmitting] = useState(false);
-  const [dialogErrors, setDialogErrors] = useState({});
+  const [dialogErrors, setDialogErrors] = useState(/** @type {any} */ ({}));
   const [duplicateLoading, setDuplicateLoading] = useState(false);
 
   // Kopya soru kontrolü — yalnız yazılı soru havuzu içinde.
@@ -718,7 +718,7 @@ function CreateWrittenTest() {
 
   // ─── Yayinla mutasyonu ─────────────────────────────────────────────────────
   const publishMutation = useMutation({
-    mutationFn: async ({ asDraft }) => {
+    mutationFn: async (/** @type {any} */ { asDraft }) => {
       // 1) Paket olustur
       const priceVal = parseFloat(pkgData.priceCents) || 0;
       const pkg = await writtenTests.createPackage({

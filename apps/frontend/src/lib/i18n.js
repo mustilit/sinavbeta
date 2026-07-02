@@ -151,7 +151,7 @@ export function formatRelativeTime(date, locale = 'tr-TR') {
   ];
   for (const { unit, sec } of ranges) {
     if (Math.abs(seconds) >= sec) {
-      return rtf.format(-Math.round(seconds / sec), unit);
+      return rtf.format(-Math.round(seconds / sec), /** @type {Intl.RelativeTimeFormatUnit} */ (unit));
     }
   }
   return rtf.format(0, 'second');

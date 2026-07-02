@@ -74,7 +74,7 @@ export default function MyTestPackages() {
   }, [viewStats]);
 
   const togglePublishMutation = useMutation({
-    mutationFn: ({ id, is_published }) =>
+    mutationFn: (/** @type {any} */ { id, is_published }) =>
       is_published
         ? api.put(`/packages/${id}/publish`)
         : api.put(`/packages/${id}/unpublish`),
@@ -124,7 +124,7 @@ export default function MyTestPackages() {
   const exportToExcel = async () => {
     // Sprint 12 #1: xlsx (~429 KB) yalnızca burada gerek; sayfa açılışında değil
     const XLSX = await import("xlsx");
-    const h = t("pages:myTestPackages.excel.headers", { returnObjects: true });
+    const h = /** @type {any} */ (t("pages:myTestPackages.excel.headers", { returnObjects: true }));
     const publishedLabel = t("pages:myTestPackages.excel.published");
     const draftLabel = t("pages:myTestPackages.excel.draft");
     const rows = [

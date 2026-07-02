@@ -132,7 +132,7 @@ export default function EducatorProfile() {
   };
 
   const rateMutation = useMutation({
-    mutationFn: ({ rating, comment }) => api.post(`/educators/${educatorId}/rate`, { rating, comment }),
+    mutationFn: (/** @type {any} */ { rating, comment }) => api.post(`/educators/${educatorId}/rate`, { rating, comment }),
     onSuccess: () => {
       toast.success('Değerlendirmeniz kaydedildi');
       queryClient.invalidateQueries({ queryKey: ['educatorPage', idOrEmail] });

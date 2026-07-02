@@ -106,7 +106,7 @@ export default function EmailLogs() {
   });
 
   const retryMutation = useMutation({
-    mutationFn: async (logId) => {
+    mutationFn: async (/** @type {any} */ logId) => {
       const { data } = await api.post(`/admin/email/logs/${logId}/retry`);
       return data;
     },

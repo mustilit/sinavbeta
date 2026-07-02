@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { GoogleOAuthProvider, GoogleLogin as GoogleLoginBase } from "@react-oauth/google";
+const GoogleLogin = /** @type {any} */ (GoogleLoginBase); // locale/width prop tipleri paket sürümüyle uyumsuz — runtime destekli
 import { useAuth } from "@/lib/AuthContext";
 import { useAppNavigate } from "@/lib/navigation";
 import { createPageUrl } from "@/utils";
@@ -16,7 +17,7 @@ import { toast } from "sonner";
  *
  * Hiçbiri yoksa buton gizlenir (dev'de küçük bir bilgi notu görünür).
  */
-export default function GoogleSignInButton({ role, text = "signin_with", safeFrom = null }) {
+export default function GoogleSignInButton({ role = null, text = "signin_with", safeFrom = null }) {
   const { data: ss } = useQuery({
     queryKey: ["serviceStatus"],
     queryFn: async () => {
@@ -87,7 +88,7 @@ export default function GoogleSignInButton({ role, text = "signin_with", safeFro
         <GoogleLogin
           onSuccess={onSuccess}
           onError={onError}
-          text={text}
+          text={/** @type {any} */ (text)}
           shape="rectangular"
           size="large"
           locale="tr_TR"

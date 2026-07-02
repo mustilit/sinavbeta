@@ -145,7 +145,7 @@ function QuestionEditDialog({ question, questionIndex, topicList, onSave, onSave
   const [displayIndex] = useState(questionIndex);
   const [submitting, setSubmitting] = useState(false);
   const [duplicateLoading, setDuplicateLoading] = useState(false);
-  const [dialogErrors, setDialogErrors] = useState({});
+  const [dialogErrors, setDialogErrors] = useState(/** @type {any} */ ({}));
 
   const handleContentBlur = async () => {
     const text = local.content.trim();
@@ -878,7 +878,6 @@ function TestCard({ test, testIndex, examTypes, topicList, onTestUpdate, onTestD
             {test.questions.map((q, qIdx) => (
               <QuestionItem
                 key={q._k}
-                test={test}
                 questionIndex={qIdx}
                 question={q}
                 topicList={topicList}
@@ -995,8 +994,8 @@ export default function CreateTest() {
   // ─── Sihirbaz durumu ────────────────────────────────────────────────
   const [step, setStep] = useState(1);
   const [previewTestIndex, setPreviewTestIndex] = useState(null);
-  const [pkgErrors, setPkgErrors] = useState({});
-  const [testErrors, setTestErrors] = useState({});
+  const [pkgErrors, setPkgErrors] = useState(/** @type {any} */ ({}));
+  const [testErrors, setTestErrors] = useState(/** @type {any} */ ({}));
   // Önizleme denenince true olur — eksik sorular kırmızı çerçeveyle vurgulanır.
   const [validationAttempted, setValidationAttempted] = useState(false);
 
@@ -1093,7 +1092,7 @@ export default function CreateTest() {
   // ─── Mutasyonlar ────────────────────────────────────────────────
   // publish=true → yayınla, publish=false → taslak kaydet
   const publishMutation = useMutation({
-    mutationFn: async (publish = true) => {
+    mutationFn: async (/** @type {any} */ publish = true) => {
       // 1. Her test için ExamTest oluştur
       const createdTestIds = [];
       for (const testData of tests) {

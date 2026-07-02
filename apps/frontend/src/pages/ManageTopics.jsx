@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { topics as topicsApi } from "@/api/dalClient";
 import { entities } from "@/api/dalClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
-import { Plus, Edit2, Trash2, ChevronRight, ChevronDown, BookOpen, Search, X, CheckSquare, Square, Filter, Check } from "lucide-react";
+import { Plus, Edit2, Trash2, ChevronRight, ChevronDown, BookOpen, Search, X, Filter, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -294,7 +294,7 @@ export default function ManageTopics() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => topicsApi.create(data),
+    mutationFn: (/** @type {any} */ data) => topicsApi.create(data),
     onSuccess: () => {
       toast.success("Konu oluşturuldu");
       queryClient.invalidateQueries({ queryKey: ["topicsTree"] });
@@ -304,7 +304,7 @@ export default function ManageTopics() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => topicsApi.update(id, data),
+    mutationFn: (/** @type {any} */ { id, data }) => topicsApi.update(id, data),
     onSuccess: () => {
       toast.success("Konu güncellendi");
       queryClient.invalidateQueries({ queryKey: ["topicsTree"] });
@@ -314,7 +314,7 @@ export default function ManageTopics() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => topicsApi.remove(id),
+    mutationFn: (/** @type {any} */ id) => topicsApi.remove(id),
     onSuccess: () => {
       toast.success("Konu silindi");
       queryClient.invalidateQueries({ queryKey: ["topicsTree"] });
@@ -324,7 +324,7 @@ export default function ManageTopics() {
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, active }) => topicsApi.update(id, { active }),
+    mutationFn: (/** @type {any} */ { id, active }) => topicsApi.update(id, { active }),
     onSuccess: (_, { active }) => {
       toast.success(active ? "Konu aktife alındı" : "Konu pasife çekildi");
       queryClient.invalidateQueries({ queryKey: ["topicsTree"] });
@@ -372,11 +372,9 @@ export default function ManageTopics() {
     if (node.children?.some((c) => filterNode(c))) return true;
     return false;
   };
-  const filteredTree = useMemo(
-    () => tree.filter(filterNode),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tree, selectedExamTypeIds, debouncedSearch],
-  );
+  // useMemo YOK: bu satır erken return'lerin altında kaldığı için hook kuralını
+  // bozuyordu; konu ağacı küçük olduğundan her render'da filtrelemek yeterli.
+  const filteredTree = tree.filter(filterNode);
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 

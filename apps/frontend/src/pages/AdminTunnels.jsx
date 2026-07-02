@@ -47,7 +47,7 @@ export default function AdminTunnels() {
   useEffect(() => { setQIndex(0); }, [reviewId]);
 
   const approveMut = useMutation({
-    mutationFn: (id) => tunnelApi.adminApprove(id),
+    mutationFn: (/** @type {any} */ id) => tunnelApi.adminApprove(id),
     onSuccess: () => {
       toast.success("Tünel onaylandı ve yayınlandı");
       queryClient.invalidateQueries({ queryKey: ["pendingTunnels"] });
@@ -56,7 +56,7 @@ export default function AdminTunnels() {
     onError: (e) => toast.error(e?.message || "Onaylanamadı"),
   });
   const rejectMut = useMutation({
-    mutationFn: ({ id, reason }) => tunnelApi.adminReject(id, reason),
+    mutationFn: (/** @type {any} */ { id, reason }) => tunnelApi.adminReject(id, reason),
     onSuccess: () => {
       toast.success("Tünel reddedildi");
       queryClient.invalidateQueries({ queryKey: ["pendingTunnels"] });

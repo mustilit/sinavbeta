@@ -219,7 +219,7 @@ const ACTIVE_EDUCATOR_STATUSES = new Set(['ACTIVE', 'APPROVED']);
 /**
  * Kullanıcı bu sayfaya erişebilir mi?
  * @param {string} pageName - Sayfa anahtarı (örn. 'MyResults')
- * @param {{ role?: string, status?: string } | null} user - Giriş yapmış kullanıcı veya null
+ * @param {{ role?: string, status?: string, workerPages?: string[] } | null} user - Giriş yapmış kullanıcı veya null
  */
 export function canAccessPage(pageName, user) {
   const roles = PAGE_ROLES[pageName];

@@ -119,7 +119,7 @@ export default function MyDiscountCodes() {
 
   // Kodu backend'e kaydeder; rol bazlı endpoint seçilir
   const createMutation = useMutation({
-    mutationFn: (data) =>
+    mutationFn: (/** @type {any} */ data) =>
       isAdmin
         ? entities.DiscountCode.adminCreate(data)
         : entities.DiscountCode.create({
@@ -141,7 +141,7 @@ export default function MyDiscountCodes() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: (id) => isAdmin ? entities.DiscountCode.adminToggle(id) : entities.DiscountCode.toggle(id),
+    mutationFn: (/** @type {any} */ id) => isAdmin ? entities.DiscountCode.adminToggle(id) : entities.DiscountCode.toggle(id),
     onSuccess: (data) => {
       const msg = data?.isActive ? t("pages:myDiscountCodes.toasts.activated") : t("pages:myDiscountCodes.toasts.deactivated");
       toast.success(msg);

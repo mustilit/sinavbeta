@@ -83,22 +83,22 @@ export default function AdminSchools() {
     onError: (e) => toast.error(e?.response?.data?.message ?? "Dönem oluşturulamadı"),
   });
   const assignAdmin = useMutation({
-    mutationFn: ({ id, body }) => adminSchools.assignAdmin(id, body),
+    mutationFn: (/** @type {any} */ { id, body }) => adminSchools.assignAdmin(id, body),
     onSuccess: (res) => { setCreds(res); setAssignFor(null); qc.invalidateQueries({ queryKey: ["esinif", "schools"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Yönetici atanamadı"),
   });
   const toggleActive = useMutation({
-    mutationFn: (s) => (s.isActive ? adminSchools.deactivate(s.id) : adminSchools.update(s.id, { isActive: true })),
+    mutationFn: (/** @type {any} */ s) => (s.isActive ? adminSchools.deactivate(s.id) : adminSchools.update(s.id, { isActive: true })),
     onSuccess: () => { toast.success("Güncellendi"); qc.invalidateQueries({ queryKey: ["esinif", "schools"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? "Güncellenemedi"),
   });
   const addPeriod = useMutation({
-    mutationFn: ({ id, periodId }) => adminSchools.addPeriod(id, periodId),
+    mutationFn: (/** @type {any} */ { id, periodId }) => adminSchools.addPeriod(id, periodId),
     onSuccess: () => { toast.success("Dönem eklendi"); qc.invalidateQueries({ queryKey: ["esinif", "schools"] }); setPeriodAddFor(null); },
     onError: (e) => toast.error(e?.response?.data?.error?.message ?? e?.response?.data?.message ?? "Dönem eklenemedi"),
   });
   const removePeriod = useMutation({
-    mutationFn: ({ id, periodId }) => adminSchools.removePeriod(id, periodId),
+    mutationFn: (/** @type {any} */ { id, periodId }) => adminSchools.removePeriod(id, periodId),
     onSuccess: () => { toast.success("Dönem kaldırıldı"); qc.invalidateQueries({ queryKey: ["esinif", "schools"] }); },
     onError: (e) => toast.error(e?.response?.data?.error?.message ?? e?.response?.data?.message ?? "Kaldırılamadı"),
   });
@@ -319,7 +319,7 @@ export default function AdminSchools() {
       <Dialog open={!!assignFor} onOpenChange={(o) => !o && setAssignFor(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Okul Yöneticisi Ata — {assignFor?.name}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.currentTarget); assignAdmin.mutate({ id: assignFor.id, body: { email: (f.get("email") || "").trim(), firstName: f.get("firstName") || undefined, lastName: f.get("lastName") || undefined } }); }} className="space-y-3">
+          <form onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.currentTarget); assignAdmin.mutate({ id: assignFor.id, body: { email: String(f.get("email") || "").trim(), firstName: f.get("firstName") || undefined, lastName: f.get("lastName") || undefined } }); }} className="space-y-3">
             <p className="text-sm text-slate-500">Yöneticinin e-posta adresiyle bir hesap oluşturulur; yönetici e-postasıyla giriş yapar. Yalnızca geçici şifre üretilir.</p>
             <div><Label htmlFor="a-email">E-posta</Label><Input id="a-email" name="email" type="email" required maxLength={160} placeholder="yonetici@okul.com" autoCapitalize="none" autoCorrect="off" spellCheck={false} /></div>
             <div className="grid grid-cols-2 gap-3">

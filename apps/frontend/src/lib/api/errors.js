@@ -12,9 +12,14 @@ import i18n from '@/lib/i18n';
 /** @typedef {{ code?: string; message?: string | string[]; details?: unknown }} ErrorBody */
 /** @typedef {{ error?: ErrorBody; path?: string; timestamp?: string }} BackendErrorResponse */
 
-/** UI için güvenli mesaj çözer — t() ile çevrilmiş string döner. */
+/**
+ * UI için güvenli mesaj çözer — t() ile çevrilmiş string döner.
+ * @param {string} code
+ * @param {Record<string, unknown>} [opts]
+ * @returns {string}
+ */
 function safeMessage(code, opts) {
-  return i18n.t(`common:apiErrors.${code}`, opts);
+  return String(i18n.t(`common:apiErrors.${code}`, opts));
 }
 
 /**
@@ -38,8 +43,8 @@ export function parseBackendError(data) {
 /**
  * Axios/fetch hata nesnesinden güvenli UI mesajı üretir.
  * Prod'da stack trace veya hassas detay gösterilmez.
- * @param {unknown} err - Hata nesnesi
- * @param {{ isProd?: boolean }} opts
+ * @param {any} err - Hata nesnesi (axios error / Error / bilinmeyen)
+ * @param {{ isProd?: boolean }} [opts]
  * @returns {string}
  */
 export function toSafeMessage(err, opts = {}) {

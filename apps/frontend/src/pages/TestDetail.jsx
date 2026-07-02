@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { entities } from "@/api/dalClient";
 import api from "@/lib/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { PaymentModal } from "@/components/ui/PaymentModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -197,7 +197,7 @@ export default function TestDetail() {
         offset: (reviewPage - 1) * REVIEWS_PER_PAGE,
       }),
     enabled: !!testId,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData, // v5: v4 keepPreviousData:true karşılığı
   });
   const reviews = packageReviewData.items.map((r) => ({
     id: r.candidateId,
@@ -389,7 +389,7 @@ export default function TestDetail() {
                     ))}
                   </div>
                   <span className="text-2xl font-bold text-slate-900">
-                    {avgRating > 0 ? avgRating : "—"}
+                    {Number(avgRating) > 0 ? avgRating : "—"}
                   </span>
                   <span className="text-sm text-slate-500">
                     {t("pages:testDetail.packageRating.outOf")}

@@ -218,7 +218,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   const workerPages = Array.isArray(user?.workerPages) ? user.workerPages : [];
   const workerLinks = adminLinks.filter(link => link.page && workerPages.includes(link.page));
 
-  let links = candidateLinks;
+  let links = /** @type {any[]} */ (candidateLinks);
   if (isAdmin) {
     links = [...adminLinks, { divider: true }, ...candidateLinks];
   } else if (isSchoolManager) {

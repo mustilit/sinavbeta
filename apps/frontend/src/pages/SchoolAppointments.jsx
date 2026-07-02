@@ -68,7 +68,7 @@ export default function SchoolAppointments() {
   }, [availData, dirty]);
 
   const saveAvailability = useMutation({
-    mutationFn: (nextSlots) => schoolAppointments.setAvailability(nextSlots),
+    mutationFn: (/** @type {any} */ nextSlots) => schoolAppointments.setAvailability(nextSlots),
     onSuccess: () => {
       toast.success(t("appointments.availabilitySaved"));
       setDirty(false);
@@ -77,7 +77,7 @@ export default function SchoolAppointments() {
     onError: (e) => toast.error(e?.response?.data?.message ?? t("appointments.availabilitySaveFailed")),
   });
   const updateStatus = useMutation({
-    mutationFn: ({ id, status }) => schoolAppointments.updateStatus(id, { status }),
+    mutationFn: (/** @type {any} */ { id, status }) => schoolAppointments.updateStatus(id, { status }),
     onSuccess: () => { toast.success(t("common.updated")); qc.invalidateQueries({ queryKey: ["school-appointments"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? t("common.error")),
   });

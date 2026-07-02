@@ -56,7 +56,7 @@ export default function StudentAppointments() {
   const myAppointments = mineData?.items ?? [];
 
   const book = useMutation({
-    mutationFn: (body) => schoolAppointments.book(body),
+    mutationFn: (/** @type {any} */ body) => schoolAppointments.book(body),
     onSuccess: () => {
       toast.success(t("appointments.booked"));
       setPickedSlot(null);
@@ -69,7 +69,7 @@ export default function StudentAppointments() {
     },
   });
   const cancel = useMutation({
-    mutationFn: (id) => schoolAppointments.cancel(id),
+    mutationFn: (/** @type {any} */ id) => schoolAppointments.cancel(id),
     onSuccess: () => { toast.success(t("appointments.cancelled")); qc.invalidateQueries({ queryKey: ["school-appointments"] }); },
     onError: (e) => toast.error(e?.response?.data?.message ?? t("common.error")),
   });

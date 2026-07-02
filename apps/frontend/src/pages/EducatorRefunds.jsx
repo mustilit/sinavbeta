@@ -68,7 +68,7 @@ function EducatorRefunds() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id) => entities.RefundRequest.educatorApprove(id),
+    mutationFn: (/** @type {any} */ id) => entities.RefundRequest.educatorApprove(id),
     onSuccess: () => {
       toast.success(t("pages:educatorRefunds.toasts.approved"));
       queryClient.invalidateQueries({ queryKey: ["educator-refunds"] });
@@ -78,7 +78,7 @@ function EducatorRefunds() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }) => entities.RefundRequest.educatorReject(id, reason),
+    mutationFn: (/** @type {any} */ { id, reason }) => entities.RefundRequest.educatorReject(id, reason),
     onSuccess: () => {
       toast.success(t("pages:educatorRefunds.toasts.rejected"));
       queryClient.invalidateQueries({ queryKey: ["educator-refunds"] });

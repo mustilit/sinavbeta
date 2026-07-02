@@ -36,8 +36,8 @@ function TakeWrittenTest() {
   const [state, setState] = useState(null);
   const [attemptId, setAttemptId] = useState(null);
   const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState({}); // questionId -> text (local mirror)
-  const [solutions, setSolutions] = useState({}); // questionId -> {solutionText, solutionMediaUrl}
+  const [answers, setAnswers] = useState(/** @type {any} */ ({})); // questionId -> text (local mirror)
+  const [solutions, setSolutions] = useState(/** @type {any} */ ({})); // questionId -> {solutionText, solutionMediaUrl}
   const [showSolution, setShowSolution] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -48,7 +48,7 @@ function TakeWrittenTest() {
   });
   const [isDrawing, setIsDrawing] = useState(false);
   const [, setHasDrawings] = useState(false);
-  const [drawings, setDrawings] = useState({}); // questionId -> drawingUrl
+  const [drawings, setDrawings] = useState(/** @type {any} */ ({})); // questionId -> drawingUrl
   const canvasRef = useRef(null);
   const saveTimers = useRef({});
   const drawingDirty = useRef(false);

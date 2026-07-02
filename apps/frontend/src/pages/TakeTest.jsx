@@ -127,7 +127,7 @@ export default function TakeTest() {
     else document.body.classList.remove("exam-sepia");
     return () => document.body.classList.remove("exam-sepia");
   }, [examTheme]);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState(/** @type {any} */ ({}));
   const [flagged, setFlagged] = useState(new Set());
   const [timeLeft, setTimeLeft] = useState(null);
   const [testStarted, setTestStarted] = useState(false);
@@ -383,7 +383,7 @@ export default function TakeTest() {
   }, [currentIndex]);
 
   const reportQuestionMutation = useMutation({
-    mutationFn: (data) =>
+    mutationFn: (/** @type {any} */ data) =>
       entities.Objection.create({
         attempt_id: resolvedAttemptId,
         question_id: questions[currentIndex]?.id,

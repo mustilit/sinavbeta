@@ -91,7 +91,7 @@ export default function ManageGradeLevels() {
   }, [gradeLevels, searchName, filterStatus, filterDateFrom, filterDateTo]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => api.post("/admin/grade-levels", data),
+    mutationFn: (/** @type {any} */ data) => api.post("/admin/grade-levels", data),
     onSuccess: () => {
       toast.success("Sınıf oluşturuldu");
       queryClient.invalidateQueries({ queryKey: ["gradeLevels"] });
@@ -101,7 +101,7 @@ export default function ManageGradeLevels() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => api.patch(`/admin/grade-levels/${id}`, data),
+    mutationFn: (/** @type {any} */ { id, data }) => api.patch(`/admin/grade-levels/${id}`, data),
     onSuccess: () => {
       toast.success("Sınıf güncellendi");
       queryClient.invalidateQueries({ queryKey: ["gradeLevels"] });
@@ -111,7 +111,7 @@ export default function ManageGradeLevels() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => api.delete(`/admin/grade-levels/${id}`),
+    mutationFn: (/** @type {any} */ id) => api.delete(`/admin/grade-levels/${id}`),
     onSuccess: () => {
       toast.success("Sınıf silindi");
       queryClient.invalidateQueries({ queryKey: ["gradeLevels"] });

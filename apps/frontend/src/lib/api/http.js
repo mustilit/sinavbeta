@@ -113,6 +113,7 @@ export async function apiRequest(path, opts = {}) {
   // geçse bile bunu TEMİZLE — aksi halde browser boundary eklemez, sunucu (multer)
   // body'yi parse edemez ve dosya kaybolur ("Görsel yüklenemedi" hatası).
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+  /** @type {Record<string, string>} */
   let headers;
   if (isFormData) {
     headers = { ...customHeaders };
@@ -165,6 +166,7 @@ export async function apiRequest(path, opts = {}) {
 
   const text = await res.text();
   if (!res.ok) {
+    /** @type {any} */
     let parsed;
     try {
       parsed = text ? safeJsonParse(text) : null;
@@ -193,7 +195,7 @@ export async function apiRequest(path, opts = {}) {
 /**
  * GET isteği - idempotent olduğu için retry destekler
  * @param {string} path
- * @param {{ retry?: number; timeout?: number; signal?: AbortSignal }} [opts]
+ * @param {{ retry?: number; timeout?: number; signal?: AbortSignal; headers?: Record<string, string> }} [opts]
  */
 export async function apiGet(path, opts = {}) {
   const { retry = RETRY_GET_MAX, timeout, signal, headers } = opts;

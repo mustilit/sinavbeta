@@ -66,7 +66,7 @@ function resizeImageToBase64(file, maxPx = 256) {
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         resolve(canvas.toDataURL('image/jpeg', 0.85));
       };
-      img.src = ev.target.result;
+      img.src = String(ev.target.result);
     };
     reader.readAsDataURL(file);
   });
@@ -76,7 +76,7 @@ export default function ProfileSettings() {
   const { t } = useTranslation(["pages"]);
   const { user: authUser } = useAuth();
   const [initialFormData, setInitialFormData] = useState(null);
-  const [formData, setFormData] = useState({ ...defaultFormData });
+  const [formData, setFormData] = useState(/** @type {any} */ ({ ...defaultFormData }));
   const [uploadingImage, setUploadingImage] = useState(false);
   const [urlErrors, setUrlErrors] = useState({ website: false, linkedin: false });
   const [refundModalOpen, setRefundModalOpen] = useState(false);
@@ -94,7 +94,7 @@ export default function ProfileSettings() {
 
   const { data: purchases = [] } = useQuery({
     queryKey: ["userPurchases", user?.email],
-    queryFn: () => user ? entities.Purchase.filter({ user_email: user.email }, "-created_date") : [],
+    queryFn: () => user ? entities.Purchase.filter({ user_email: user.email }) : [],
     enabled: !!user,
   });
 
@@ -120,7 +120,7 @@ export default function ProfileSettings() {
 
   const { data: refundRequests = [] } = useQuery({
     queryKey: ["refundRequests", user?.email],
-    queryFn: () => user ? entities.RefundRequest.filter({ user_email: user.email }, "-created_date") : [],
+    queryFn: () => user ? entities.RefundRequest.filter({ user_email: user.email }) : [],
     enabled: !!user,
   });
 
@@ -279,7 +279,7 @@ export default function ProfileSettings() {
     queryFn: () => auth.listDevices(),
   });
   const revokeDeviceMutation = useMutation({
-    mutationFn: (deviceId) => auth.revokeDevice(deviceId),
+    mutationFn: (/** @type {any} */ deviceId) => auth.revokeDevice(deviceId),
     onSuccess: () => {
       toast.success(t("pages:profileSettings.security.devices.revoked"));
       queryClient.invalidateQueries({ queryKey: ["myDevices"] });
@@ -341,7 +341,7 @@ export default function ProfileSettings() {
   }, [purchases, tunnelPurchaseItems, writtenPurchaseItems]);
 
   const refundMutation = useMutation({
-    mutationFn: (data) => entities.RefundRequest.create({
+    mutationFn: (/** @type {any} */ data) => entities.RefundRequest.create({
       purchase_id: selectedPurchase.id,
       source: selectedPurchase.source ?? "TEST",
       reason: data.reason,
