@@ -41,23 +41,35 @@ export class ListStudentAssignmentsUseCase {
         submissions: { where: { studentId: actorId }, select: { id: true, status: true, totalScore: true, maxScore: true } },
       },
     });
+    // Sistem dışı ödevlerin ders adları (offlineSubjectId scalar → toplu çözümleme)
+    const subjectIds = [...new Set(rows.map((a) => a.offlineSubjectId).filter(Boolean))] as string[];
+    const subjects = subjectIds.length
+      ? await prisma.schoolSubject.findMany({ where: { id: { in: subjectIds } }, select: { id: true, name: true } })
+      : [];
+    const subjectName = new Map(subjects.map((s) => [s.id, s.name]));
     let items = rows.map((a) => {
       const sub = a.submissions[0] ?? null;
-      const submitted = sub?.status === 'SUBMITTED' || sub?.status === 'GRADED';
+      // Sistem dışı ödevde "yapıldı" işaretini öğretmen koyar; öğrenci teslim etmez.
+      const submitted = a.isOffline ? !!a.offlineDoneAt : sub?.status === 'SUBMITTED' || sub?.status === 'GRADED';
       return {
         id: a.id,
         title: a.title,
-        examType: a.exam.examType,
-        subject: a.exam.subject, // ders — Ödevlerim "Ders" filtresi
-        durationMinutes: a.exam.durationMinutes,
+        isOffline: a.isOffline,
+        offlineDescription: a.isOffline ? a.offlineDescription : null,
+        offlineDone: a.isOffline ? !!a.offlineDoneAt : null,
+        examType: a.exam?.examType ?? null,
+        subject: a.isOffline
+          ? (a.offlineSubjectId ? subjectName.get(a.offlineSubjectId) ?? null : null)
+          : a.exam?.subject ?? null, // ders — Ödevlerim "Ders" filtresi
+        durationMinutes: a.exam?.durationMinutes ?? null,
         availableFrom: a.availableFrom,
         dueDate: a.dueDate,
         allowLateSubmit: a.allowLateSubmit,
-        open: isOpen(a),
+        open: !a.isOffline && isOpen(a),
         submissionStatus: sub?.status ?? null,
         submitted,
-        score: resultVisible(a, !!submitted) ? sub?.totalScore ?? null : null,
-        maxScore: resultVisible(a, !!submitted) ? sub?.maxScore ?? null : null,
+        score: !a.isOffline && resultVisible(a, !!submitted) ? sub?.totalScore ?? null : null,
+        maxScore: !a.isOffline && resultVisible(a, !!submitted) ? sub?.maxScore ?? null : null,
       };
     });
     if (input.filter === 'pending') items = items.filter((i) => !i.submitted);
@@ -76,6 +88,7 @@ export class GetStudentAssignmentUseCase {
       include: { exam: { include: { questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } } } } },
     });
     if (!a) throw new AppError('ASSIGNMENT_NOT_FOUND', 'Ödev bulunamadı', 404);
+    if (a.isOffline || !a.exam) throw new AppError('OFFLINE_ASSIGNMENT', 'Sistem dışı ödev uygulama içinde çözülmez', 400);
 
     const sub = await prisma.schoolSubmission.findUnique({
       where: { assignmentId_studentId: { assignmentId, studentId: actorId as string } },
@@ -115,9 +128,10 @@ export class GetStudentAssignmentUseCase {
 async function getOpenSubmission(assignmentId: string, actorId: string, classroomId: string | null) {
   const a = await prisma.schoolAssignment.findFirst({
     where: { id: assignmentId, classroomId: classroomId ?? '__none__' },
-    select: { id: true, status: true, availableFrom: true, dueDate: true, allowLateSubmit: true },
+    select: { id: true, status: true, availableFrom: true, dueDate: true, allowLateSubmit: true, isOffline: true },
   });
   if (!a) throw new AppError('ASSIGNMENT_NOT_FOUND', 'Ödev bulunamadı', 404);
+  if (a.isOffline) throw new AppError('OFFLINE_ASSIGNMENT', 'Sistem dışı ödev uygulama içinde çözülmez', 400);
   if (!isOpen(a)) throw new AppError('ASSIGNMENT_CLOSED', 'Ödev şu an çözüme kapalı', 409);
   return a;
 }
@@ -168,20 +182,22 @@ export class SubmitAssignmentUseCase {
       include: { exam: { include: { questions: { include: { options: true } } } } },
     });
     if (!a) throw new AppError('ASSIGNMENT_NOT_FOUND', 'Ödev bulunamadı', 404);
+    if (a.isOffline || !a.exam) throw new AppError('OFFLINE_ASSIGNMENT', 'Sistem dışı ödev uygulama içinde çözülmez', 400);
     if (!isOpen(a)) throw new AppError('ASSIGNMENT_CLOSED', 'Ödev çözüme kapalı', 409);
 
     const sub = await prisma.schoolSubmission.findUnique({ where: { assignmentId_studentId: { assignmentId, studentId: actorId as string } }, include: { answers: true } });
     if (!sub) throw new AppError('NOT_STARTED', 'Önce ödevi başlatın', 409);
     if (sub.status !== 'IN_PROGRESS') throw new AppError('ALREADY_SUBMITTED', 'Zaten teslim edildi', 409);
 
-    const isChoice = a.exam.examType === 'TEST' || a.exam.examType === 'TUNNEL';
+    const exam = a.exam; // closure içinde TS daraltması korunur
+    const isChoice = exam.examType === 'TEST' || exam.examType === 'TUNNEL';
     const answerByQ = new Map(sub.answers.map((x) => [x.questionId, x]));
     let totalScore = 0;
     let maxScore = 0;
 
     await prisma.$transaction(async (tx) => {
       if (isChoice) {
-        for (const q of a.exam.questions) {
+        for (const q of exam.questions) {
           maxScore += q.points;
           const ans = answerByQ.get(q.id);
           const correctOpt = q.options.find((o) => o.isCorrect);
@@ -197,7 +213,7 @@ export class SubmitAssignmentUseCase {
         }
       } else {
         // WRITTEN: maxScore puan toplamı; puanlama öğretmende
-        for (const q of a.exam.questions) maxScore += q.points;
+        for (const q of exam.questions) maxScore += q.points;
       }
       await tx.schoolSubmission.update({
         where: { id: sub.id },
@@ -207,13 +223,13 @@ export class SubmitAssignmentUseCase {
           totalScore: isChoice ? totalScore : null,
           maxScore,
           // Çözüldüğü versiyonu dondur — sınav sonradan güncellense de sonuç/inceleme sabit.
-          questionsSnapshot: buildExamSnapshot(a.exam.questions) as object,
+          questionsSnapshot: buildExamSnapshot(exam.questions) as object,
         },
       });
     });
 
     logger.info('school.submission.submitted', { assignmentId, actorId, autoGraded: isChoice, totalScore: isChoice ? totalScore : null });
-    recordSchoolSubmission(a.exam.examType, 'ASSIGNMENT');
+    recordSchoolSubmission(exam.examType, 'ASSIGNMENT');
     return { status: isChoice ? 'GRADED' : 'SUBMITTED', totalScore: isChoice ? totalScore : null, maxScore };
   }
 }
@@ -228,6 +244,7 @@ export class GetStudentResultUseCase {
       include: { exam: { include: { questions: { orderBy: { order: 'asc' }, include: { options: { orderBy: { order: 'asc' } } } } } } },
     });
     if (!a) throw new AppError('ASSIGNMENT_NOT_FOUND', 'Ödev bulunamadı', 404);
+    if (a.isOffline || !a.exam) throw new AppError('OFFLINE_ASSIGNMENT', 'Sistem dışı ödevin uygulama içi sonucu yok', 400);
     const sub = await prisma.schoolSubmission.findUnique({ where: { assignmentId_studentId: { assignmentId, studentId: actorId as string } }, include: { answers: true } });
     const submitted = sub?.status === 'SUBMITTED' || sub?.status === 'GRADED';
     if (!sub || !submitted) throw new AppError('NOT_SUBMITTED', 'Henüz teslim edilmedi', 409);

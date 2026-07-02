@@ -175,6 +175,9 @@ const SchoolReports = lazy(() => import('./pages/SchoolReports'));
 const SchoolLive = lazy(() => import('./pages/SchoolLive'));
 const SchoolLiveHost = lazy(() => import('./pages/SchoolLiveHost'));
 const StudentLive = lazy(() => import('./pages/StudentLive'));
+const SchoolNotifications = lazy(() => import('./pages/SchoolNotifications'));
+const SchoolAppointments = lazy(() => import('./pages/SchoolAppointments'));
+const StudentAppointments = lazy(() => import('./pages/StudentAppointments'));
 
 
 export const PAGES = {
@@ -294,6 +297,9 @@ export const PAGES = {
     "SchoolLive": SchoolLive,
     "SchoolLiveHost": SchoolLiveHost,
     "StudentLive": StudentLive,
+    "SchoolNotifications": SchoolNotifications,
+    "SchoolAppointments": SchoolAppointments,
+    "StudentAppointments": StudentAppointments,
 }
 
 export const pagesConfig = {

@@ -3,14 +3,16 @@
  */
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
-    schoolUser: { findFirst: jest.fn(), findUnique: jest.fn(async () => ({ userId: 'u1', departmentId: null })), count: jest.fn() },
+    schoolUser: { findFirst: jest.fn(), findUnique: jest.fn(async () => ({ userId: 'u1', departmentId: null })), count: jest.fn(), findMany: jest.fn(async () => []) },
     schoolExam: { findFirst: jest.fn() },
     schoolLevel: { findMany: jest.fn(async () => []) },
-    schoolSubject: { findMany: jest.fn(async () => []) },
+    schoolSubject: { findMany: jest.fn(async () => []), findFirst: jest.fn() },
     department: { findMany: jest.fn(async () => []) },
     classroom: { findMany: jest.fn(async () => []) },
     school: { findUnique: jest.fn(async () => ({ periodId: null })) },
-    schoolAssignment: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    schoolAssignment: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn(), count: jest.fn(async () => 1) },
+    schoolSubmission: { findMany: jest.fn(async () => []) },
+    schoolNotification: { create: jest.fn(), createMany: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
@@ -117,7 +119,7 @@ describe('ListAssignmentsUseCase', () => {
       { id: 'a1', title: 'Ödev', availableFrom: new Date(Date.now() - 1e6), dueDate: new Date(Date.now() + 1e6), status: 'SCHEDULED', showResultAfter: 'SUBMIT', resultsReleased: false, createdAt: new Date(), exam: { title: 'S', examType: 'TEST' }, classroom: { name: '5-A' }, _count: { submissions: 3 } },
     ]);
     const r = await new ListAssignmentsUseCase().execute({}, 'u1');
-    expect(r[0]).toMatchObject({ id: 'a1', examType: 'TEST', classroomName: '5-A', submissionCount: 3, status: 'ACTIVE' });
+    expect(r.items[0]).toMatchObject({ id: 'a1', examType: 'TEST', classroomName: '5-A', submissionCount: 3, status: 'ACTIVE' });
     // Designation yok → yalnız kendi attığı (OR sadece createdById)
     expect(p.schoolAssignment.findMany.mock.calls[0][0].where.AND[0].OR).toEqual([{ createdById: 'u1' }]);
   });
@@ -187,10 +189,13 @@ describe('GetAssignOptionsUseCase', () => {
     p.schoolLevel.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ gradeLevel: 7 }]);
     p.classroom.findMany.mockResolvedValue([]);
     p.department.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ subject: 'Matematik', levelId: 'lv7', branchId: 'b1' }]);
+    // Ders id çözümlemesi (sistem dışı ödev formu) — havuzda kayıt varsa id ile döner
+    p.schoolSubject.findMany.mockResolvedValue([{ id: 'sub-mat', name: 'Matematik' }]);
     const r = await new GetAssignOptionsUseCase().execute('ud');
     expect(r.levels).toEqual([{ gradeLevel: 7 }]);
-    expect(r.subjects).toEqual([{ name: 'Matematik' }]);
-    expect(p.schoolSubject.findMany).not.toHaveBeenCalled(); // ders havuzuna gitmez (kendi dersi)
+    expect(r.subjects).toEqual([{ id: 'sub-mat', name: 'Matematik' }]);
+    // Yalnız kendi branşı sorgulanır (tüm havuz değil)
+    expect(p.schoolSubject.findMany.mock.calls[0][0].where.name).toEqual({ in: ['Matematik'] });
   });
   it('zümre başkanı: şube-geneli zümre (levelId yok) → şube seviyelerine kapsanır', async () => {
     p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'DEPT_HEAD', departmentId: 'd1' });

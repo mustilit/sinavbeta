@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { createPageUrl } from "@/utils";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
+import { schoolNotifications } from "@/api/dalClient";
 import { LanguageSwitcherCompact } from "@/components/layout/LanguageSwitcherCompact";
 import {
   Tooltip,
@@ -41,6 +43,8 @@ import {
   BookMarked,
   Compass,
   ShieldCheck,
+  Bell,
+  CalendarClock,
 } from "lucide-react";
 
 /**
@@ -158,8 +162,24 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   const schoolCtx = user?.school;
   const isSchoolManager = ["SCHOOL_ADMIN", "BRANCH_ADMIN"].includes(schoolCtx?.schoolRole);
   const isSchoolTeacher = ["TEACHER", "DEPT_HEAD"].includes(schoolCtx?.schoolRole);
+  // Okunmamış bildirim rozeti — okul kullanıcısında 30 sn'de bir yenilenir.
+  const { data: unreadData } = useQuery({
+    queryKey: ["school-notifications", "unread-count"],
+    queryFn: () => schoolNotifications.unreadCount(),
+    enabled: !!schoolCtx?.schoolRole,
+    refetchInterval: 30000,
+    staleTime: 25000,
+  });
+  const unreadCount = unreadData?.unreadCount ?? 0;
+  const notificationsLink = {
+    name: t("sidebar.esinif.notifications", { defaultValue: "Bildirimler" }),
+    page: "SchoolNotifications",
+    icon: Bell,
+    badge: unreadCount,
+  };
   const schoolLinks = [
     { name: t("sidebar.esinif.panel", { defaultValue: "Okul Paneli" }), page: "SchoolPanel", icon: Home },
+    notificationsLink,
     { name: t("sidebar.esinif.users", { defaultValue: "Kullanıcılar" }), page: "SchoolUsers", icon: Users },
     { name: t("sidebar.esinif.branches", { defaultValue: "Şubeler & Sınıflar" }), page: "SchoolBranches", icon: BookOpen },
     { name: t("sidebar.esinif.departments", { defaultValue: "Zümreler" }), page: "SchoolDepartments", icon: Layers },
@@ -171,6 +191,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   ];
   const teacherLinks = [
     { name: t("sidebar.esinif.panel", { defaultValue: "Okul Paneli" }), page: "SchoolPanel", icon: Home },
+    notificationsLink,
     // Seviye sorumlusu / sınıf öğretmeni / zümre başkanı yetki alanı kadar yapıyı görür
     ...(schoolCtx?.canViewStructure ? [
       { name: t("sidebar.esinif.branches", { defaultValue: "Şubeler & Sınıflar" }), page: "SchoolBranches", icon: BookMarked },
@@ -178,6 +199,7 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     ] : []),
     { name: t("sidebar.esinif.examPool", { defaultValue: "Sınav Havuzu" }), page: "SchoolExamPool", icon: BookOpen },
     { name: t("sidebar.esinif.assignments", { defaultValue: "Ödevler" }), page: "SchoolAssignments", icon: Layers },
+    { name: t("sidebar.esinif.appointments", { defaultValue: "Randevular" }), page: "SchoolAppointments", icon: CalendarClock },
     // Raporlar her öğretmen/zümre başkanına gelir; içerik backend'de hiyerarşik kapsama göre dolar.
     { name: t("sidebar.esinif.reports", { defaultValue: "Raporlar" }), page: "SchoolReports", icon: BarChart3 },
     { name: t("sidebar.esinif.live", { defaultValue: "Canlı Sınav" }), page: "SchoolLive", icon: Zap },
@@ -185,7 +207,9 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
   const isSchoolStudent = schoolCtx?.schoolRole === "STUDENT";
   const studentLinks = [
     { name: t("sidebar.esinif.myAssignments", { defaultValue: "Ödevlerim" }), page: "StudentAssignments", icon: BookOpen },
+    notificationsLink,
     { name: t("sidebar.esinif.explore", { defaultValue: "Keşfet" }), page: "StudentExplore", icon: Compass },
+    { name: t("sidebar.esinif.myAppointments", { defaultValue: "Randevu" }), page: "StudentAppointments", icon: CalendarClock },
     { name: t("sidebar.esinif.myReports", { defaultValue: "Raporlarım" }), page: "StudentReports", icon: BarChart3 },
     { name: t("sidebar.esinif.myNotes", { defaultValue: "Notlarım" }), page: "StudentNotes", icon: StickyNote },
     { name: t("sidebar.esinif.joinLive", { defaultValue: "Canlı Sınava Katıl" }), page: "StudentLive", icon: Zap },
@@ -309,8 +333,24 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
                     )}
                   >
-                    <link.icon className="w-5 h-5 shrink-0" aria-hidden="true" />
-                    <span className={labelHidden}>{link.name}</span>
+                    <span className="relative shrink-0">
+                      <link.icon className="w-5 h-5" aria-hidden="true" />
+                      {/* Rail mode'da rozet ikonun üstünde nokta olarak görünür */}
+                      {link.badge > 0 && collapsed && (
+                        <span className="absolute -top-1 -right-1 hidden lg:block w-2.5 h-2.5 rounded-full bg-rose-500" aria-hidden="true" />
+                      )}
+                    </span>
+                    <span className={cn("flex-1 flex items-center justify-between gap-2 min-w-0", labelHidden)}>
+                      <span className="truncate">{link.name}</span>
+                      {link.badge > 0 && (
+                        <span
+                          className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-white text-xs font-semibold"
+                          aria-label={t("sidebar.esinif.unreadCount", { defaultValue: "{{count}} okunmamış bildirim", count: link.badge })}
+                        >
+                          {link.badge > 99 ? "99+" : link.badge}
+                        </span>
+                      )}
+                    </span>
                   </Link>
                 </RailLabel>
               </li>

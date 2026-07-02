@@ -6,14 +6,16 @@
  */
 jest.mock('../../../src/infrastructure/database/prisma', () => ({
   prisma: {
-    schoolUser: { findFirst: jest.fn(), findUnique: jest.fn(async () => ({ userId: 'u1', departmentId: null })), count: jest.fn(async () => 0) },
+    schoolUser: { findFirst: jest.fn(), findUnique: jest.fn(async () => ({ userId: 'u1', departmentId: null })), count: jest.fn(async () => 0), findMany: jest.fn(async () => []) },
     schoolExam: { findFirst: jest.fn() },
     schoolLevel: { findMany: jest.fn(async () => []) },
     schoolSubject: { findMany: jest.fn(async () => []) },
     department: { findMany: jest.fn(async () => []) },
     classroom: { findMany: jest.fn(async () => []) },
     school: { findUnique: jest.fn(async () => ({ periodId: null })) },
-    schoolAssignment: { create: jest.fn(), findMany: jest.fn(async () => []), findFirst: jest.fn(), update: jest.fn(async () => ({})) },
+    schoolAssignment: { create: jest.fn(), findMany: jest.fn(async () => []), findFirst: jest.fn(), update: jest.fn(async () => ({})), count: jest.fn(async () => 0) },
+    schoolSubmission: { findMany: jest.fn(async () => []) },
+    schoolNotification: { create: jest.fn(), createMany: jest.fn() },
     $transaction: jest.fn(async (ops: any) => Promise.all(ops)),
   },
 }));

@@ -213,7 +213,7 @@ describe('SchoolStudentController', () => {
 
 describe('SchoolStudentReportController', () => {
   runCases(() => new SchoolStudentReportController(), [
-    { name: 'report', field: 'reportUC', call: (c) => c.report('2026-01-01', '2026-06-01', REQ), args: ['actor-1', { from: '2026-01-01', to: '2026-06-01' }] },
+    { name: 'report', field: 'reportUC', call: (c) => c.report('2026-01-01', '2026-06-01', undefined, undefined, REQ), args: ['actor-1', { from: '2026-01-01', to: '2026-06-01', examType: undefined, subject: undefined }] },
   ]);
 });
 
@@ -229,11 +229,12 @@ describe('SchoolTunnelController', () => {
 // ───────────────────────── SchoolAssignmentsController ──────────────────────────────────────
 describe('SchoolAssignmentsController', () => {
   runCases(() => new SchoolAssignmentsController(), [
-    { name: 'list', field: 'listUC', call: (c) => c.list('c1', 'p1', REQ), args: [{ classroomId: 'c1', periodId: 'p1' }, 'actor-1'] },
+    { name: 'list', field: 'listUC', call: (c) => c.list({ classroomId: 'c1', periodId: 'p1' }, REQ), args: [{ classroomId: 'c1', periodId: 'p1' }, 'actor-1'] },
     { name: 'options', field: 'optionsUC', call: (c) => c.options(REQ), args: ['actor-1'] },
     { name: 'create', field: 'createUC', call: (c) => c.create({ examId: 'ex1', classroomIds: ['c1'] }, REQ), args: [{ examId: 'ex1', classroomIds: ['c1'] }, 'actor-1'] },
     { name: 'report', field: 'reportUC', call: (c) => c.report('a1', REQ), args: ['a1', 'actor-1'] },
     { name: 'release', field: 'releaseUC', call: (c) => c.release('a1', REQ), args: ['a1', 'actor-1'] },
     { name: 'close', field: 'closeUC', call: (c) => c.close('a1', { status: 'CLOSED' }, REQ), args: ['a1', { status: 'CLOSED' }, 'actor-1'] },
+    { name: 'offlineDone', field: 'offlineDoneUC', call: (c) => c.offlineDone('a1', { done: true }, REQ), args: ['a1', { done: true }, 'actor-1'] },
   ]);
 });

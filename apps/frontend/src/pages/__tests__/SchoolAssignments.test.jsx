@@ -32,7 +32,7 @@ const ROWS = [
 beforeEach(() => {
   vi.clearAllMocks();
   h.user = { user: { id: 'u1', school: { schoolRole: 'TEACHER' } } };
-  h.api.assignments.list.mockResolvedValue(ROWS);
+  h.api.assignments.list.mockResolvedValue({ items: ROWS, total: ROWS.length, page: 1, pageSize: 20 });
   h.api.assignments.create.mockResolvedValue({ created: 1 });
   h.api.assignments.releaseResults.mockResolvedValue({ ok: true });
   h.api.assignments.setStatus.mockResolvedValue({ ok: true });
@@ -75,7 +75,7 @@ describe('SchoolAssignments', () => {
   });
 
   it('boş liste → "Henüz ödev yok"', async () => {
-    h.api.assignments.list.mockResolvedValue([]);
+    h.api.assignments.list.mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20 });
     renderWithProviders(<SchoolAssignments />, { route: '/SchoolAssignments' });
     fireEvent.click(screen.getByText(/dönem:/));
     expect(await screen.findByText(/Henüz ödev yok/)).toBeInTheDocument();

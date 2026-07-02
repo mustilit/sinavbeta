@@ -70,6 +70,20 @@ export const schoolLiveSessionsTotal = new Counter({
   registers: [metricsRegistry],
 });
 
+export const schoolNotificationsTotal = new Counter({
+  name: 'dal_school_notifications_total',
+  help: 'E-Sınıf bildirim sayısı (type: NEW_ASSIGNMENT|ASSIGNMENT_GRADED|MESSAGE|OFFLINE_DONE|APPOINTMENT)',
+  labelNames: ['type'],
+  registers: [metricsRegistry],
+});
+
+export const schoolAppointmentsTotal = new Counter({
+  name: 'dal_school_appointments_total',
+  help: 'E-Sınıf randevu olayları (event: booked|confirmed|cancelled|completed)',
+  labelNames: ['event'],
+  registers: [metricsRegistry],
+});
+
 /** Best-effort metrik kaydı — domain akışını ASLA bozmaz (metrik audit değil). */
 export const recordSchoolSubmission = (examType: string, kind: 'ASSIGNMENT' | 'PRACTICE'): void => {
   try { schoolSubmissionsTotal.inc({ exam_type: examType || 'UNKNOWN', kind }); } catch { /* metrik akışı bozmaz */ }
@@ -79,4 +93,10 @@ export const recordSchoolGraded = (): void => {
 };
 export const recordSchoolLiveEvent = (event: 'started' | 'ended'): void => {
   try { schoolLiveSessionsTotal.inc({ event }); } catch { /* metrik akışı bozmaz */ }
+};
+export const recordSchoolNotification = (type: string, count = 1): void => {
+  try { schoolNotificationsTotal.inc({ type: type || 'UNKNOWN' }, count); } catch { /* metrik akışı bozmaz */ }
+};
+export const recordSchoolAppointmentEvent = (event: 'booked' | 'confirmed' | 'cancelled' | 'completed'): void => {
+  try { schoolAppointmentsTotal.inc({ event }); } catch { /* metrik akışı bozmaz */ }
 };

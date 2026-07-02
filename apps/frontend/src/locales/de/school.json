@@ -15,7 +15,10 @@
       "TUNNEL": "Tunnel",
       "WRITTEN": "Schriftlich",
       "all": "Alle Typen"
-    }
+    },
+    "cancel": "Abbrechen",
+    "error": "Ein Fehler ist aufgetreten",
+    "updated": "Aktualisiert"
   },
   "assignments": {
     "title": "Meine Aufgaben",
@@ -34,7 +37,10 @@
     "timelineTitle": "Aufgaben-Zeitplan",
     "dueToday": "Heute fällig",
     "subjectAll": "Alle Fächer",
-    "subjectPlaceholder": "Fach"
+    "subjectPlaceholder": "Fach",
+    "offline": "Außerhalb des Systems",
+    "offlineDone": "Erledigt",
+    "offlinePending": "Ausstehend"
   },
   "explore": {
     "title": "Entdecken",
@@ -47,5 +53,116 @@
     "emptyFiltered": "Keine Prüfungen entsprechen dem Filter.",
     "empty": "Keine Prüfungen dieses Typs.",
     "completed": "Abgeschlossen"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "unreadSummary": "{{count}} ungelesene Benachrichtigungen",
+    "allRead": "Alle Benachrichtigungen gelesen",
+    "markAllRead": "Alle als gelesen markieren",
+    "allMarkedRead": "Alle Benachrichtigungen als gelesen markiert",
+    "markReadAria": "Als gelesen markieren: {{title}}",
+    "compose": "Nachricht senden",
+    "composeTitle": "Nachricht an Schüler senden",
+    "messageTitle": "Titel",
+    "messageTitlePlaceholder": "Z. B.: Zur morgigen Stunde",
+    "messageBody": "Nachricht",
+    "messageBodyPlaceholder": "Nachricht schreiben…",
+    "targets": "Zielklassen",
+    "targetsAll": "Leer lassen = alle Klassen in deinem Bereich",
+    "targetsSelected": "{{count}} Klassen ausgewählt",
+    "noClassrooms": "Keine Klassen in deinem Bereich.",
+    "send": "Senden",
+    "sentToast": "An {{count}} Schüler gesendet",
+    "sendFailed": "Senden fehlgeschlagen",
+    "titleRequired": "Titel ist erforderlich",
+    "typeFilter": "Typfilter",
+    "tabs": {
+      "all": "Alle",
+      "unread": "Ungelesen"
+    },
+    "types": {
+      "all": "Alle Typen",
+      "NEW_ASSIGNMENT": "Neue Aufgabe",
+      "ASSIGNMENT_GRADED": "Ergebnis",
+      "MESSAGE": "Nachricht",
+      "OFFLINE_DONE": "Aufgabe erledigt",
+      "APPOINTMENT": "Termin"
+    },
+    "empty": "Keine Benachrichtigungen.",
+    "loadMore": "Mehr anzeigen",
+    "from": "Von: {{name}}"
+  },
+  "appointments": {
+    "title": "Termine",
+    "teacherSubtitle": "Wöchentliche Verfügbarkeit festlegen und Buchungen verwalten",
+    "studentSubtitle": "Buche einen Termin bei deiner Lehrkraft",
+    "tabs": {
+      "appointments": "Termine",
+      "availability": "Verfügbarkeit",
+      "book": "Buchen",
+      "mine": "Meine Termine"
+    },
+    "scopeFilter": "Bereichsfilter",
+    "scopeUpcoming": "Anstehend",
+    "scopeAll": "Alle",
+    "statusFilter": "Statusfilter",
+    "statusAll": "Alle Status",
+    "status": {
+      "PENDING": "Wartet auf Bestätigung",
+      "CONFIRMED": "Bestätigt",
+      "CANCELLED": "Storniert",
+      "COMPLETED": "Abgeschlossen"
+    },
+    "types": {
+      "ACADEMIC": "Fachliche Unterstützung",
+      "COUNSELING": "Beratung",
+      "PARENT": "Elterngespräch",
+      "OTHER": "Sonstiges"
+    },
+    "emptyTeacher": "Noch keine Termine gebucht.",
+    "emptyMine": "Du hast noch keine Termine.",
+    "studentNote": "Notiz des Schülers: {{note}}",
+    "teacherNote": "Notiz der Lehrkraft: {{note}}",
+    "confirm": "Bestätigen",
+    "reject": "Ablehnen",
+    "cancel": "Stornieren",
+    "complete": "Abgeschlossen",
+    "cancelled": "Termin storniert",
+    "availabilityHint": "Wöchentlich wiederkehrende Zeitfenster eintragen — Schüler buchen daraus.",
+    "day": "Tag",
+    "startTime": "Beginn",
+    "endTime": "Ende",
+    "addSlot": "Hinzufügen",
+    "days": {
+      "0": "Sonntag",
+      "1": "Montag",
+      "2": "Dienstag",
+      "3": "Mittwoch",
+      "4": "Donnerstag",
+      "5": "Freitag",
+      "6": "Samstag"
+    },
+    "noSlots": "Keine Zeitfenster",
+    "removeSlot": "Zeitfenster entfernen: {{day}} {{time}}",
+    "saveAvailability": "Speichern",
+    "availabilitySaved": "Verfügbarkeit gespeichert",
+    "availabilitySaveFailed": "Speichern fehlgeschlagen",
+    "invalidTime": "Ungültiges Zeitformat",
+    "invalidRange": "Ende muss nach dem Beginn liegen",
+    "overlap": "Dieser Bereich überschneidet sich mit einem vorhandenen Zeitfenster",
+    "pickTeacher": "Lehrkraft wählen",
+    "teacherPlaceholder": "Lehrkraft auswählen…",
+    "noTeachers": "Derzeit bietet keine Lehrkraft Termine an.",
+    "noSlotsAvailable": "In den nächsten Tagen keine freien Zeitfenster.",
+    "yours": "Deiner",
+    "slotBookedAria": "{{time}} ist belegt",
+    "slotPickAria": "Zeitfenster {{time}} wählen",
+    "bookTitle": "Termin buchen",
+    "type": "Terminart",
+    "note": "Notiz (optional)",
+    "notePlaceholder": "Thema des Gesprächs…",
+    "book": "Buchen",
+    "booked": "Deine Terminanfrage wurde erstellt",
+    "slotTaken": "Dieses Zeitfenster wurde gerade belegt, bitte ein anderes wählen"
   }
 }

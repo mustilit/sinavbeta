@@ -15,7 +15,10 @@
       "TUNNEL": "Tunnel",
       "WRITTEN": "Written",
       "all": "All types"
-    }
+    },
+    "cancel": "Cancel",
+    "error": "Something went wrong",
+    "updated": "Updated"
   },
   "assignments": {
     "title": "My Assignments",
@@ -34,7 +37,10 @@
     "timelineTitle": "Assignment Timeline",
     "dueToday": "Due today",
     "subjectAll": "All subjects",
-    "subjectPlaceholder": "Subject"
+    "subjectPlaceholder": "Subject",
+    "offline": "Off-System",
+    "offlineDone": "Done",
+    "offlinePending": "Pending"
   },
   "explore": {
     "title": "Explore",
@@ -47,5 +53,116 @@
     "emptyFiltered": "No exams match the filter.",
     "empty": "No exams of this type.",
     "completed": "Completed"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadSummary": "{{count}} unread notifications",
+    "allRead": "All notifications read",
+    "markAllRead": "Mark all as read",
+    "allMarkedRead": "All notifications marked as read",
+    "markReadAria": "Mark as read: {{title}}",
+    "compose": "Send Message",
+    "composeTitle": "Send Message to Students",
+    "messageTitle": "Title",
+    "messageTitlePlaceholder": "E.g. About tomorrow’s lesson",
+    "messageBody": "Message",
+    "messageBodyPlaceholder": "Write your message…",
+    "targets": "Target classrooms",
+    "targetsAll": "If left empty, all classrooms in your scope",
+    "targetsSelected": "{{count}} classrooms selected",
+    "noClassrooms": "No classrooms in your scope.",
+    "send": "Send",
+    "sentToast": "Sent to {{count}} students",
+    "sendFailed": "Could not send",
+    "titleRequired": "Title is required",
+    "typeFilter": "Type filter",
+    "tabs": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "types": {
+      "all": "All types",
+      "NEW_ASSIGNMENT": "New assignment",
+      "ASSIGNMENT_GRADED": "Result",
+      "MESSAGE": "Message",
+      "OFFLINE_DONE": "Assignment done",
+      "APPOINTMENT": "Appointment"
+    },
+    "empty": "No notifications.",
+    "loadMore": "Show more",
+    "from": "From: {{name}}"
+  },
+  "appointments": {
+    "title": "Appointments",
+    "teacherSubtitle": "Set your weekly availability and manage bookings",
+    "studentSubtitle": "Book a time slot with your teacher",
+    "tabs": {
+      "appointments": "Appointments",
+      "availability": "Availability",
+      "book": "Book",
+      "mine": "My Appointments"
+    },
+    "scopeFilter": "Scope filter",
+    "scopeUpcoming": "Upcoming",
+    "scopeAll": "All",
+    "statusFilter": "Status filter",
+    "statusAll": "All statuses",
+    "status": {
+      "PENDING": "Pending approval",
+      "CONFIRMED": "Confirmed",
+      "CANCELLED": "Cancelled",
+      "COMPLETED": "Completed"
+    },
+    "types": {
+      "ACADEMIC": "Academic support",
+      "COUNSELING": "Counseling",
+      "PARENT": "Parent meeting",
+      "OTHER": "Other"
+    },
+    "emptyTeacher": "No appointments booked yet.",
+    "emptyMine": "You have no appointments yet.",
+    "studentNote": "Student note: {{note}}",
+    "teacherNote": "Teacher note: {{note}}",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "cancel": "Cancel",
+    "complete": "Completed",
+    "cancelled": "Appointment cancelled",
+    "availabilityHint": "Enter your weekly recurring time slots — students book from these.",
+    "day": "Day",
+    "startTime": "Start",
+    "endTime": "End",
+    "addSlot": "Add",
+    "days": {
+      "0": "Sunday",
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday"
+    },
+    "noSlots": "No slots",
+    "removeSlot": "Remove slot: {{day}} {{time}}",
+    "saveAvailability": "Save",
+    "availabilitySaved": "Availability saved",
+    "availabilitySaveFailed": "Could not save",
+    "invalidTime": "Invalid time format",
+    "invalidRange": "End must be after start",
+    "overlap": "This range overlaps an existing slot",
+    "pickTeacher": "Pick a teacher",
+    "teacherPlaceholder": "Select a teacher…",
+    "noTeachers": "No teachers offer appointments right now.",
+    "noSlotsAvailable": "No available slots in the coming days.",
+    "yours": "Yours",
+    "slotBookedAria": "{{time}} is taken",
+    "slotPickAria": "Pick the {{time}} slot",
+    "bookTitle": "Book Appointment",
+    "type": "Appointment type",
+    "note": "Note (optional)",
+    "notePlaceholder": "Topic of the meeting…",
+    "book": "Book",
+    "booked": "Your appointment request was created",
+    "slotTaken": "This slot was just taken, pick another one"
   }
 }

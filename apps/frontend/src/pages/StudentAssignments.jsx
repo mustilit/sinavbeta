@@ -18,7 +18,7 @@ import { useShouldShowTour, useCompleteTour, TOUR_KEYS } from "@/lib/useOnboardi
 import { useTranslation } from "react-i18next";
 
 const TYPE_ICON = { TEST: ListChecks, TUNNEL: ArrowDownUp, WRITTEN: FileText };
-const TYPE_FILTERS = ["ALL", "TEST", "TUNNEL", "WRITTEN"];
+const TYPE_FILTERS = ["ALL", "TEST", "TUNNEL", "WRITTEN", "OFFLINE"];
 const PAGE_SIZE = 8;
 
 /** E-Sınıf — Öğrenci ödev listesi. Durum sekmesi + metin/tür filtresi + sayfalama. */
@@ -52,7 +52,7 @@ export default function StudentAssignments() {
     const needle = q.trim().toLocaleLowerCase("tr");
     return items
       .filter((a) =>
-        (type === "ALL" || a.examType === type) &&
+        (type === "ALL" || (type === "OFFLINE" ? a.isOffline : a.examType === type)) &&
         (subject === "ALL" || a.subject === subject) &&
         (!needle || (a.title ?? "").toLocaleLowerCase("tr").includes(needle)),
       )
@@ -101,7 +101,7 @@ export default function StudentAssignments() {
         <Select value={type} onValueChange={setType}>
           <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder={t("common.types.all")} /></SelectTrigger>
           <SelectContent>
-            {TYPE_FILTERS.map((k) => <SelectItem key={k} value={k}>{k === "ALL" ? t("common.types.all") : t(`common.types.${k}`)}</SelectItem>)}
+            {TYPE_FILTERS.map((k) => <SelectItem key={k} value={k}>{k === "ALL" ? t("common.types.all") : k === "OFFLINE" ? t("assignments.offline") : t(`common.types.${k}`)}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={subject} onValueChange={setSubject}>
@@ -121,10 +121,10 @@ export default function StudentAssignments() {
         <>
           <div className="space-y-3">
             {pageItems.map((a) => {
-              const Icon = TYPE_ICON[a.examType] ?? TYPE_ICON.TEST;
-              const overdue = !a.submitted && !a.open;
+              const Icon = a.isOffline ? BookOpen : TYPE_ICON[a.examType] ?? TYPE_ICON.TEST;
+              const overdue = !a.isOffline && !a.submitted && !a.open;
               // Bekleyen ödevlerde işaret: süresi geçen (kırmızı) / bugün son gün (amber).
-              const dueToday = !a.submitted && a.open && isToday(new Date(a.dueDate));
+              const dueToday = !a.submitted && (a.isOffline || a.open) && isToday(new Date(a.dueDate));
               return (
                 <Card key={a.id}>
                   <CardContent className="p-4 flex items-center gap-4">
@@ -132,17 +132,31 @@ export default function StudentAssignments() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-slate-900 truncate">{a.title}</span>
-                        <Badge className="bg-slate-100 text-slate-600">{t(`common.types.${a.examType}`)}</Badge>
+                        {a.isOffline ? (
+                          <Badge className="bg-amber-100 text-amber-700">{t("assignments.offline")}</Badge>
+                        ) : (
+                          <Badge className="bg-slate-100 text-slate-600">{t(`common.types.${a.examType}`)}</Badge>
+                        )}
+                        {a.subject && <Badge className="bg-indigo-50 text-indigo-600">{a.subject}</Badge>}
                         {overdue && <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" title={t("assignments.overdue")} aria-label={t("assignments.overdue")} />}
                         {dueToday && <CalendarClock className="w-4 h-4 text-amber-500 shrink-0" title={t("assignments.dueToday")} aria-label={t("assignments.dueToday")} />}
                         {a.submitted && a.score != null && <Badge className="bg-emerald-100 text-emerald-700">{a.score}/{a.maxScore}</Badge>}
                       </div>
+                      {a.isOffline && a.offlineDescription && (
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-2 whitespace-pre-line">{a.offlineDescription}</p>
+                      )}
                       <p className={`text-xs mt-1 flex items-center gap-1 ${overdue ? "text-rose-600" : "text-slate-500"}`}>
                         <Clock className="w-3 h-3" /> {t("assignments.dueDate", { date: format(new Date(a.dueDate), "d MMM yyyy HH:mm", { locale: tr }) })}
                         {a.durationMinutes ? ` · ${t("common.durationMin", { count: a.durationMinutes })}` : ""}{overdue ? ` · ${t("assignments.overdue")}` : ""}
                       </p>
                     </div>
-                    {a.submitted ? (
+                    {a.isOffline ? (
+                      a.offlineDone ? (
+                        <Badge className="bg-emerald-100 text-emerald-700 gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {t("assignments.offlineDone")}</Badge>
+                      ) : (
+                        <Badge className="bg-slate-100 text-slate-600">{t("assignments.offlinePending")}</Badge>
+                      )
+                    ) : a.submitted ? (
                       <Button size="sm" variant="outline" className="gap-1" onClick={() => navigate(buildPageUrl("StudentResult", { id: a.id }))}><Eye className="w-4 h-4" /> {t("common.result")}</Button>
                     ) : a.open ? (
                       <Button size="sm" className={`gap-1 ${a.submissionStatus === "IN_PROGRESS" ? "bg-amber-500 hover:bg-amber-600" : "bg-indigo-600 hover:bg-indigo-700"}`} onClick={() => navigate(buildPageUrl("StudentSolve", { id: a.id }))}><Play className="w-4 h-4" /> {a.submissionStatus === "IN_PROGRESS" ? t("common.continue") : t("common.start")}</Button>

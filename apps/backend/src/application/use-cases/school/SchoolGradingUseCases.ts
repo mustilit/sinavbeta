@@ -8,13 +8,14 @@ import { logger } from '../../../infrastructure/logger/logger';
 import { resolveSchoolContext, requireSchoolRole, schoolAudit, type SchoolContext } from './schoolHelpers';
 import { resolveResultQuestions } from './schoolExamSnapshot';
 import { recordSchoolGraded } from '../../../infrastructure/metrics/metrics';
+import { notifyAssignmentGraded } from './SchoolNotificationUseCases';
 
 /** Ödevin sahibi/zümre başkanı/yönetici mi (değerlendirme yetkisi). */
-function canGrade(assignment: { createdById: string; exam: { departmentId: string | null } }, ctx: SchoolContext, actorId: string): boolean {
+function canGrade(assignment: { createdById: string; exam: { departmentId: string | null } | null }, ctx: SchoolContext, actorId: string): boolean {
   /* istanbul ignore next -- çağıranlar requireSchoolRole(TEACHER,DEPT_HEAD) ile gated; yönetici buraya ulaşmaz */
   if (ctx.schoolRole === 'SCHOOL_ADMIN' || ctx.schoolRole === 'BRANCH_ADMIN') return false; // yönetici puanlamaz
   if (assignment.createdById === actorId) return true;
-  if (ctx.schoolRole === 'DEPT_HEAD' && assignment.exam.departmentId && assignment.exam.departmentId === ctx.departmentId) return true;
+  if (ctx.schoolRole === 'DEPT_HEAD' && assignment.exam?.departmentId && assignment.exam.departmentId === ctx.departmentId) return true;
   return false;
 }
 
@@ -34,11 +35,11 @@ export class GetSubmissionForGradingUseCase {
     // Serbest alıştırma teslimleri (assignment null) öğretmen değerlendirmesine girmez.
     if (!sub || !sub.assignment || sub.assignment.schoolId !== ctx.schoolId) throw new AppError('SUBMISSION_NOT_FOUND', 'Teslim bulunamadı', 404);
     if (!canGrade(sub.assignment, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Bu ödevi değerlendiremezsiniz', 403);
-    if (sub.assignment.exam.examType !== 'WRITTEN') throw new AppError('NOT_WRITTEN', 'Yalnızca yazılı sınavlar manuel değerlendirilir', 400);
+    if (sub.assignment.exam?.examType !== 'WRITTEN') throw new AppError('NOT_WRITTEN', 'Yalnızca yazılı sınavlar manuel değerlendirilir', 400);
 
     const answerByQ = new Map(sub.answers.map((a) => [a.questionId, a]));
     // Öğrenci hangi versiyonu çözdüyse onu değerlendir (snapshot varsa); yoksa canlı.
-    const gradeQuestions = resolveResultQuestions(sub.questionsSnapshot, sub.assignment.exam.questions);
+    const gradeQuestions = resolveResultQuestions(sub.questionsSnapshot, sub.assignment.exam!.questions);
     return {
       submissionId: sub.id,
       assignmentTitle: sub.assignment.title,
@@ -75,16 +76,16 @@ export class GradeSubmissionUseCase {
       where: { id: submissionId },
       include: {
         answers: true,
-        assignment: { select: { schoolId: true, createdById: true, exam: { select: { examType: true, departmentId: true, questions: { select: { id: true, points: true } } } } } },
+        assignment: { select: { id: true, title: true, schoolId: true, createdById: true, exam: { select: { examType: true, departmentId: true, questions: { select: { id: true, points: true } } } } } },
       },
     });
     if (!sub || !sub.assignment || sub.assignment.schoolId !== ctx.schoolId) throw new AppError('SUBMISSION_NOT_FOUND', 'Teslim bulunamadı', 404);
     if (!canGrade(sub.assignment, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Yetkiniz yok', 403);
-    if (sub.assignment.exam.examType !== 'WRITTEN') throw new AppError('NOT_WRITTEN', 'Yalnızca yazılı sınavlar puanlanır', 400);
+    if (sub.assignment.exam?.examType !== 'WRITTEN') throw new AppError('NOT_WRITTEN', 'Yalnızca yazılı sınavlar puanlanır', 400);
     if (sub.status === 'IN_PROGRESS') throw new AppError('NOT_SUBMITTED', 'Teslim edilmemiş ödev puanlanamaz', 409);
 
     // Puan tavanları öğrencinin çözdüğü versiyondan (snapshot) — sınav sonradan güncellense de sabit.
-    const gradeQuestions = resolveResultQuestions(sub.questionsSnapshot, sub.assignment.exam.questions);
+    const gradeQuestions = resolveResultQuestions(sub.questionsSnapshot, sub.assignment.exam!.questions);
     const maxByQ = new Map(gradeQuestions.map((q) => [q.id, q.points]));
     const gradeByQ = new Map((input.grades ?? []).map((g) => [g.questionId, g.earnedPoints]));
     const answerByQ = new Map(sub.answers.map((a) => [a.questionId, a]));
@@ -109,6 +110,8 @@ export class GradeSubmissionUseCase {
     logger.info('school.submission.graded', { submissionId, totalScore, maxScore, actorId });
     schoolAudit(ctx, { action: 'SCHOOL_SUBMISSION_GRADED', entityType: 'SchoolSubmission', entityId: submissionId, metadata: { totalScore, maxScore } });
     recordSchoolGraded();
+    // Öğrenciye "ödevin puanlandı" bildirimi (best-effort; akışı bloklamaz).
+    void notifyAssignmentGraded(ctx.schoolId, sub.assignment.id, sub.assignment.title, sub.studentId, actorId as string);
     return { status: 'GRADED', totalScore, maxScore };
   }
 }

@@ -165,6 +165,13 @@ enum AuditAction {
   SCHOOL_SUBMISSION_GRADED
   SCHOOL_ORG_CREATED
   SCHOOL_ORG_DELETED
+  SCHOOL_NOTIFICATION_SENT
+  SCHOOL_ASSIGNMENT_CREATED
+  SCHOOL_ASSIGNMENT_OFFLINE_DONE
+  SCHOOL_AVAILABILITY_CHANGED
+  SCHOOL_APPOINTMENT_BOOKED
+  SCHOOL_APPOINTMENT_CONFIRMED
+  SCHOOL_APPOINTMENT_CANCELLED
 }
 
 // ── Email Trafiği Enums ─────────────────────────────────────────────────────
@@ -414,9 +421,14 @@ model User {
   levelsResponsible  SchoolLevel[]      @relation("SchoolLevelAdmin")
   classroomsAdminOf  Classroom[]        @relation("ClassroomAdmin")
   schoolMemberships  SchoolUser[]
-  createdSchoolExams SchoolExam[]       @relation("SchoolExamCreatedBy")
-  createdAssignments SchoolAssignment[] @relation("AssignmentCreatedBy")
-  schoolSubmissions  SchoolSubmission[] @relation("SubmissionStudent")
+  createdSchoolExams      SchoolExam[]                @relation("SchoolExamCreatedBy")
+  createdAssignments      SchoolAssignment[]          @relation("AssignmentCreatedBy")
+  schoolSubmissions       SchoolSubmission[]          @relation("SubmissionStudent")
+  receivedNotifications   SchoolNotification[]        @relation("SchoolNotifRecipient")
+  sentNotifications       SchoolNotification[]        @relation("SchoolNotifSender")
+  teacherAvailabilities   SchoolTeacherAvailability[] @relation("TeacherAvailability")
+  teacherAppointments     SchoolAppointment[]         @relation("TeacherAppointments")
+  studentAppointments     SchoolAppointment[]         @relation("StudentAppointments")
 
   @@index([tenantId])
   @@index([twoFactorEnabled])
@@ -2793,35 +2805,134 @@ enum SchoolSubmissionStatus {
   OVERDUE
 }
 
+enum SchoolNotificationType {
+  NEW_ASSIGNMENT     // yeni ödev atandı
+  ASSIGNMENT_GRADED  // ödev puanlandı / sonuçlar açıklandı
+  MESSAGE            // öğretmen/yönetici mesajı
+  OFFLINE_DONE       // sistem dışı ödev tamamlandı
+  APPOINTMENT        // randevu olayı (talep/onay/iptal)
+}
+
+enum SchoolAppointmentType {
+  ACADEMIC    // ders/akademik destek
+  COUNSELING  // rehberlik
+  PARENT      // veli görüşmesi
+  OTHER       // diğer
+}
+
+enum SchoolAppointmentStatus {
+  PENDING    // onay bekliyor
+  CONFIRMED  // öğretmen onayladı
+  CANCELLED  // iptal
+  COMPLETED  // tamamlandı
+}
+
 model SchoolAssignment {
-  id               String             @id @default(uuid())
-  schoolId         String
-  periodId         String? // ödevin dönemi (dönemsel arşiv); oluşturma anında okulun güncel dönemi
-  examId           String
-  exam             SchoolExam         @relation(fields: [examId], references: [id], onDelete: Cascade)
-  classroomId      String
-  classroom        Classroom          @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  createdById      String
-  createdBy        User               @relation("AssignmentCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  title            String
-  availableFrom    DateTime
-  dueDate          DateTime
-  allowLateSubmit  Boolean            @default(false)
-  showResultAfter  ResultVisibility   @default(SUBMIT)
-  shuffleQuestions Boolean            @default(false)
-  shuffleOptions   Boolean            @default(false)
-  status           AssignmentStatus   @default(SCHEDULED)
-  resultsReleased  Boolean            @default(false) // TEACHER_RELEASE için
-  tenantId         String
-  submissions      SchoolSubmission[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  id                  String             @id @default(uuid())
+  schoolId            String
+  periodId            String? // ödevin dönemi (dönemsel arşiv); oluşturma anında okulun güncel dönemi
+  examId              String? // sistem dışı ödevde null
+  exam                SchoolExam?        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  classroomId         String
+  classroom           Classroom          @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  createdById         String
+  createdBy           User               @relation("AssignmentCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  title               String
+  availableFrom       DateTime
+  dueDate             DateTime
+  allowLateSubmit     Boolean            @default(false)
+  showResultAfter     ResultVisibility   @default(SUBMIT)
+  shuffleQuestions    Boolean            @default(false)
+  shuffleOptions      Boolean            @default(false)
+  status              AssignmentStatus   @default(SCHEDULED)
+  resultsReleased     Boolean            @default(false) // TEACHER_RELEASE için
+  // Sistem dışı ödev alanları
+  isOffline           Boolean            @default(false)
+  offlineSubjectId    String? // SchoolSubject.id (scalar — relation yok)
+  offlineDescription  String? // ödev açıklaması / yönergesi
+  offlineDoneAt       DateTime? // öğretmen "tamamlandı" işaretlediğinde
+  tenantId            String
+  submissions         SchoolSubmission[]
+  notifications       SchoolNotification[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   @@index([classroomId, status])
   @@index([examId])
   @@index([schoolId])
   @@index([schoolId, periodId])
+  @@index([schoolId, isOffline, createdAt(sort: Desc)])
   @@map("school_assignments")
+}
+
+// ─── Bildirimler ────────────────────────────────────────────────────────────
+
+model SchoolNotification {
+  id           String                  @id @default(uuid())
+  schoolId     String
+  recipientId  String  // User.id — alıcı
+  recipient    User    @relation("SchoolNotifRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  senderId     String? // User.id — gönderen (sistem olaylarında null)
+  sender       User?   @relation("SchoolNotifSender", fields: [senderId], references: [id], onDelete: SetNull)
+  type         SchoolNotificationType
+  title        String
+  body         String? // mesaj gövdesi veya ek açıklama
+  entityType   String? // ilgili varlık tipi (SchoolAssignment, SchoolSubmission vs.)
+  entityId     String? // ilgili varlık id
+  assignmentId String? // kısayol: ödev bildirimleri için
+  assignment   SchoolAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  isRead       Boolean  @default(false)
+  readAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([schoolId, recipientId, isRead, createdAt(sort: Desc)])
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@map("school_notifications")
+}
+
+// ─── Randevu ────────────────────────────────────────────────────────────────
+
+model SchoolTeacherAvailability {
+  id          String   @id @default(uuid())
+  schoolId    String
+  teacherUserId String // User.id
+  teacher     User     @relation("TeacherAvailability", fields: [teacherUserId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int      // 0=Pazar … 6=Cumartesi
+  startTime   String   // "HH:mm" format
+  endTime     String   // "HH:mm" format
+  isActive    Boolean  @default(true)
+  appointments SchoolAppointment[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId, teacherUserId, isActive])
+  @@index([schoolId, dayOfWeek])
+  @@map("school_teacher_availabilities")
+}
+
+model SchoolAppointment {
+  id             String                   @id @default(uuid())
+  schoolId       String
+  availabilityId String
+  availability   SchoolTeacherAvailability @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
+  teacherUserId  String // User.id
+  teacher        User   @relation("TeacherAppointments", fields: [teacherUserId], references: [id], onDelete: Cascade)
+  studentUserId  String // User.id
+  student        User   @relation("StudentAppointments", fields: [studentUserId], references: [id], onDelete: Cascade)
+  appointmentType SchoolAppointmentType  @default(ACADEMIC)
+  date           DateTime // randevu tarihi (gün; saat availability'den + startTime)
+  startTime      String   // "HH:mm"
+  endTime        String   // "HH:mm"
+  status         SchoolAppointmentStatus @default(PENDING)
+  notes          String? // öğrenci notu
+  teacherNotes   String? // öğretmen notu
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([schoolId, teacherUserId, date])
+  @@index([schoolId, studentUserId, date])
+  @@index([availabilityId, date])
+  @@map("school_appointments")
 }
 
 model SchoolSubmission {

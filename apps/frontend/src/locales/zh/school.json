@@ -15,7 +15,10 @@
       "TUNNEL": "隧道",
       "WRITTEN": "笔试",
       "all": "全部类型"
-    }
+    },
+    "cancel": "取消",
+    "error": "发生错误",
+    "updated": "已更新"
   },
   "assignments": {
     "title": "我的作业",
@@ -34,7 +37,10 @@
     "timelineTitle": "作业时间表",
     "dueToday": "今天截止",
     "subjectAll": "所有科目",
-    "subjectPlaceholder": "科目"
+    "subjectPlaceholder": "科目",
+    "offline": "系统外",
+    "offlineDone": "已完成",
+    "offlinePending": "待完成"
   },
   "explore": {
     "title": "发现",
@@ -47,5 +53,116 @@
     "emptyFiltered": "没有符合筛选条件的试卷。",
     "empty": "暂无此类型试卷。",
     "completed": "已完成"
+  },
+  "notifications": {
+    "title": "通知",
+    "unreadSummary": "{{count}} 条未读通知",
+    "allRead": "所有通知已读",
+    "markAllRead": "全部标为已读",
+    "allMarkedRead": "所有通知已标为已读",
+    "markReadAria": "标为已读：{{title}}",
+    "compose": "发送消息",
+    "composeTitle": "向学生发送消息",
+    "messageTitle": "标题",
+    "messageTitlePlaceholder": "例如：关于明天的课程",
+    "messageBody": "消息",
+    "messageBodyPlaceholder": "输入消息内容…",
+    "targets": "目标班级",
+    "targetsAll": "留空则发送给权限范围内的所有班级",
+    "targetsSelected": "已选 {{count}} 个班级",
+    "noClassrooms": "你的权限范围内没有班级。",
+    "send": "发送",
+    "sentToast": "已发送给 {{count}} 名学生",
+    "sendFailed": "发送失败",
+    "titleRequired": "标题为必填项",
+    "typeFilter": "类型筛选",
+    "tabs": {
+      "all": "全部",
+      "unread": "未读"
+    },
+    "types": {
+      "all": "全部类型",
+      "NEW_ASSIGNMENT": "新作业",
+      "ASSIGNMENT_GRADED": "成绩",
+      "MESSAGE": "消息",
+      "OFFLINE_DONE": "作业完成",
+      "APPOINTMENT": "预约"
+    },
+    "empty": "暂无通知。",
+    "loadMore": "加载更多",
+    "from": "发送者：{{name}}"
+  },
+  "appointments": {
+    "title": "预约",
+    "teacherSubtitle": "设置每周可预约时间，管理已收到的预约",
+    "studentSubtitle": "向老师预约合适的时间",
+    "tabs": {
+      "appointments": "预约列表",
+      "availability": "可约时间",
+      "book": "预约",
+      "mine": "我的预约"
+    },
+    "scopeFilter": "范围筛选",
+    "scopeUpcoming": "即将到来",
+    "scopeAll": "全部",
+    "statusFilter": "状态筛选",
+    "statusAll": "全部状态",
+    "status": {
+      "PENDING": "待确认",
+      "CONFIRMED": "已确认",
+      "CANCELLED": "已取消",
+      "COMPLETED": "已完成"
+    },
+    "types": {
+      "ACADEMIC": "学业辅导",
+      "COUNSELING": "心理咨询",
+      "PARENT": "家长会谈",
+      "OTHER": "其他"
+    },
+    "emptyTeacher": "暂无预约。",
+    "emptyMine": "你还没有预约。",
+    "studentNote": "学生备注：{{note}}",
+    "teacherNote": "老师备注：{{note}}",
+    "confirm": "确认",
+    "reject": "拒绝",
+    "cancel": "取消",
+    "complete": "完成",
+    "cancelled": "预约已取消",
+    "availabilityHint": "输入每周重复的可约时间段 — 学生将从这些时段中预约。",
+    "day": "星期",
+    "startTime": "开始",
+    "endTime": "结束",
+    "addSlot": "添加",
+    "days": {
+      "0": "周日",
+      "1": "周一",
+      "2": "周二",
+      "3": "周三",
+      "4": "周四",
+      "5": "周五",
+      "6": "周六"
+    },
+    "noSlots": "无时段",
+    "removeSlot": "移除时段：{{day}} {{time}}",
+    "saveAvailability": "保存",
+    "availabilitySaved": "可约时间已保存",
+    "availabilitySaveFailed": "保存失败",
+    "invalidTime": "时间格式无效",
+    "invalidRange": "结束时间必须晚于开始时间",
+    "overlap": "该时间段与已有时段重叠",
+    "pickTeacher": "选择老师",
+    "teacherPlaceholder": "请选择老师…",
+    "noTeachers": "目前没有老师开放预约。",
+    "noSlotsAvailable": "近期没有可约时段。",
+    "yours": "你的",
+    "slotBookedAria": "{{time}} 已被预约",
+    "slotPickAria": "选择 {{time}} 时段",
+    "bookTitle": "预约",
+    "type": "预约类型",
+    "note": "备注（可选）",
+    "notePlaceholder": "会谈主题…",
+    "book": "预约",
+    "booked": "预约请求已创建",
+    "slotTaken": "该时段刚被预约，请选择其他时段"
   }
 }

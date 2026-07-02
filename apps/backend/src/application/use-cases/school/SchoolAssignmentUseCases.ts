@@ -6,7 +6,8 @@ import { prisma } from '../../../infrastructure/database/prisma';
 import { AppError } from '../../errors/AppError';
 import { getDefaultTenantId } from '../../../common/tenant';
 import { logger } from '../../../infrastructure/logger/logger';
-import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopedClassroomWhere, resolveReportScope, currentPeriodId, resolvePeriodFilter, type SchoolContext } from './schoolHelpers';
+import { resolveSchoolContext, requireSchoolRole, resolveSchoolScope, scopedClassroomWhere, resolveReportScope, currentPeriodId, resolvePeriodFilter, schoolAudit, type SchoolContext } from './schoolHelpers';
+import { notifyNewAssignment, notifyOfflineDone, notifyResultsReleased } from './SchoolNotificationUseCases';
 
 const RESULT_VIS = ['SUBMIT', 'DUE_DATE', 'TEACHER_RELEASE'];
 
@@ -30,21 +31,42 @@ function canManageExam(exam: { createdById: string; departmentId: string | null;
 export class CreateAssignmentUseCase {
   async execute(
     input: {
-      examId: string; classroomIds: string[]; title?: string; availableFrom: string; dueDate: string;
+      examId?: string; classroomIds: string[]; title?: string; availableFrom: string; dueDate: string;
       allowLateSubmit?: boolean; showResultAfter?: string; shuffleQuestions?: boolean; shuffleOptions?: boolean;
+      // Sistem dışı ödev: sınav yerine ders + serbest metin
+      isOffline?: boolean; offlineSubjectId?: string; offlineDescription?: string;
     },
     actorId?: string,
   ) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD', 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
 
-    const exam = await prisma.schoolExam.findFirst({
-      where: { id: input.examId, schoolId: ctx.schoolId, isArchived: false },
-      select: { id: true, title: true, createdById: true, departmentId: true, poolVisibility: true, questions: { select: { id: true } } },
-    });
-    if (!exam) throw new AppError('EXAM_NOT_FOUND', 'Sınav bulunamadı veya arşivli', 404);
-    if (!canManageExam(exam, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Bu sınavı atayamazsınız', 403);
-    if (exam.questions.length === 0) throw new AppError('EXAM_EMPTY', 'Sınavda soru yok', 400);
+    const isOffline = !!input.isOffline;
+    let exam: { id: string; title: string } | null = null;
+    let offlineSubject: { id: string; name: string } | null = null;
+
+    if (isOffline) {
+      // Sistem dışı: ders zorunlu + açıklama zorunlu; sınav yok.
+      if (!input.offlineSubjectId) throw new AppError('SUBJECT_REQUIRED', 'Ders seçin', 400);
+      const description = (input.offlineDescription ?? '').trim();
+      if (!description) throw new AppError('DESCRIPTION_REQUIRED', 'Ödev açıklaması yazın', 400);
+      offlineSubject = await prisma.schoolSubject.findFirst({
+        where: { id: input.offlineSubjectId, schoolId: ctx.schoolId },
+        select: { id: true, name: true },
+      });
+      if (!offlineSubject) throw new AppError('SUBJECT_NOT_FOUND', 'Ders bulunamadı', 404);
+      if (!(input.title ?? '').trim()) throw new AppError('TITLE_REQUIRED', 'Ödev başlığı yazın', 400);
+    } else {
+      if (!input.examId) throw new AppError('EXAM_REQUIRED', 'Sınav seçin', 400);
+      const found = await prisma.schoolExam.findFirst({
+        where: { id: input.examId, schoolId: ctx.schoolId, isArchived: false },
+        select: { id: true, title: true, createdById: true, departmentId: true, poolVisibility: true, questions: { select: { id: true } } },
+      });
+      if (!found) throw new AppError('EXAM_NOT_FOUND', 'Sınav bulunamadı veya arşivli', 404);
+      if (!canManageExam(found, ctx, actorId as string)) throw new AppError('FORBIDDEN', 'Bu sınavı atayamazsınız', 403);
+      if (found.questions.length === 0) throw new AppError('EXAM_EMPTY', 'Sınavda soru yok', 400);
+      exam = { id: found.id, title: found.title };
+    }
 
     const from = new Date(input.availableFrom);
     const due = new Date(input.dueDate);
@@ -63,7 +85,7 @@ export class CreateAssignmentUseCase {
     if (validClassrooms.length === 0) throw new AppError('CLASSROOM_NOT_FOUND', 'Yetki alanınızda geçerli sınıf yok', 404);
 
     const showResultAfter = RESULT_VIS.includes(input.showResultAfter ?? '') ? input.showResultAfter! : 'SUBMIT';
-    const title = (input.title ?? '').trim() || exam.title;
+    const title = (input.title ?? '').trim() || exam?.title || 'Ödev';
     const status = from.getTime() <= Date.now() ? 'ACTIVE' : 'SCHEDULED';
     const periodId = await currentPeriodId(ctx.schoolId); // güncel döneme damgala
 
@@ -71,17 +93,63 @@ export class CreateAssignmentUseCase {
       validClassrooms.map((c) =>
         prisma.schoolAssignment.create({
           data: {
-            schoolId: ctx.schoolId, periodId, examId: exam.id, classroomId: c.id, createdById: actorId as string,
+            schoolId: ctx.schoolId, periodId, examId: exam?.id ?? null, classroomId: c.id, createdById: actorId as string,
             title, availableFrom: from, dueDate: due,
             allowLateSubmit: !!input.allowLateSubmit, showResultAfter: showResultAfter as any,
             shuffleQuestions: !!input.shuffleQuestions, shuffleOptions: !!input.shuffleOptions,
             status: status as any, tenantId: getDefaultTenantId(),
+            isOffline, offlineSubjectId: offlineSubject?.id ?? null,
+            offlineDescription: isOffline ? (input.offlineDescription ?? '').trim() : null,
           },
         }),
       ),
     );
-    logger.info('school.assignment.created', { examId: exam.id, classrooms: created.length, actorId });
+    logger.info('school.assignment.created', { examId: exam?.id ?? null, isOffline, classrooms: created.length, actorId });
+    schoolAudit(ctx, {
+      action: 'SCHOOL_ASSIGNMENT_CREATED',
+      entityType: 'SchoolAssignment',
+      entityId: created[0]?.id ?? 'unknown',
+      metadata: { examId: exam?.id ?? null, isOffline, classroomCount: created.length, title },
+    });
+    // Sınıf öğrencilerine "yeni ödev" bildirimi (best-effort; akışı bloklamaz).
+    for (const a of created) {
+      void notifyNewAssignment(ctx.schoolId, a.id, title, a.classroomId, actorId as string);
+    }
     return { created: created.length, assignmentIds: created.map((a) => a.id) };
+  }
+}
+
+/** Sistem dışı ödevi yapıldı / geri al olarak işaretle (yalnız sahibi veya zümre başkanı). */
+export class MarkOfflineDoneUseCase {
+  async execute(assignmentId: string, input: { done: boolean }, actorId?: string) {
+    const ctx = await resolveSchoolContext(actorId);
+    requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD', 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const a = await prisma.schoolAssignment.findFirst({
+      where: { id: assignmentId, schoolId: ctx.schoolId },
+      select: { id: true, title: true, classroomId: true, createdById: true, isOffline: true, offlineDoneAt: true },
+    });
+    if (!a) throw new AppError('ASSIGNMENT_NOT_FOUND', 'Ödev bulunamadı', 404);
+    if (!a.isOffline) throw new AppError('NOT_OFFLINE', 'Bu ödev sistem dışı değil', 400);
+    if (a.createdById !== actorId && ctx.schoolRole !== 'DEPT_HEAD' && ctx.schoolRole !== 'SCHOOL_ADMIN' && ctx.schoolRole !== 'BRANCH_ADMIN') {
+      throw new AppError('FORBIDDEN', 'Yetkiniz yok', 403);
+    }
+    const done = !!input.done;
+    const offlineDoneAt = done ? new Date() : null;
+    await prisma.schoolAssignment.update({ where: { id: a.id }, data: { offlineDoneAt } });
+    logger.info('school.assignment.offline_done', { assignmentId, done, actorId });
+    schoolAudit(ctx, {
+      action: 'SCHOOL_ASSIGNMENT_OFFLINE_DONE',
+      entityType: 'SchoolAssignment',
+      entityId: a.id,
+      before: { offlineDoneAt: a.offlineDoneAt },
+      after: { offlineDoneAt },
+      metadata: { done },
+    });
+    // Yalnız "yapıldı"ya geçişte öğrencilere bildirim (geri almada gürültü üretme).
+    if (done && !a.offlineDoneAt) {
+      void notifyOfflineDone(ctx.schoolId, a.id, a.title, a.classroomId, actorId as string);
+    }
+    return { id: a.id, offlineDoneAt };
   }
 }
 
@@ -141,22 +209,37 @@ export class GetAssignOptionsUseCase {
     const lvls = await prisma.schoolLevel.findMany({ where: levelWhere, select: { gradeLevel: true } });
     const gradeLevels = [...new Set(lvls.map((l) => l.gradeLevel))].sort((a, b) => a - b);
 
-    let subjects: string[];
+    // id + name birlikte döner: sistem dışı ödev formu SchoolSubject.id ister.
+    let subjects: Array<{ id: string | null; name: string }>;
     if (allSubjects || deptSubjects.size === 0) {
-      const subs = await prisma.schoolSubject.findMany({ where: { schoolId }, select: { name: true }, orderBy: { name: 'asc' } });
-      subjects = subs.map((s) => s.name);
+      const subs = await prisma.schoolSubject.findMany({ where: { schoolId }, select: { id: true, name: true }, orderBy: { name: 'asc' } });
+      subjects = subs;
     } else {
-      subjects = [...deptSubjects].sort();
+      const subs = await prisma.schoolSubject.findMany({ where: { schoolId, name: { in: [...deptSubjects] } }, select: { id: true, name: true }, orderBy: { name: 'asc' } });
+      const foundNames = new Set(subs.map((s) => s.name));
+      // Zümre branşı SchoolSubject tablosunda yoksa isim yine listelenir (id'siz — sınav filtresi için).
+      subjects = [...subs, ...[...deptSubjects].filter((n) => !foundNames.has(n)).map((name) => ({ id: null, name }))];
+      subjects.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
     }
 
-    return { levels: gradeLevels.map((gradeLevel) => ({ gradeLevel })), subjects: subjects.map((name) => ({ name })) };
+    return { levels: gradeLevels.map((gradeLevel) => ({ gradeLevel })), subjects };
   }
 }
 
 export class ListAssignmentsUseCase {
-  async execute(input: { classroomId?: string; periodId?: string }, actorId?: string) {
+  async execute(
+    input: {
+      classroomId?: string; periodId?: string;
+      // Server-side sayfalama + filtreleme (StudentExplore offset+facet deseni)
+      q?: string; status?: 'SCHEDULED' | 'ACTIVE' | 'CLOSED'; kind?: 'exam' | 'offline';
+      page?: number; pageSize?: number;
+    },
+    actorId?: string,
+  ) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD', 'SCHOOL_ADMIN', 'BRANCH_ADMIN');
+    const page = Math.max(1, Math.floor(input.page ?? 1));
+    const pageSize = Math.min(100, Math.max(1, Math.floor(input.pageSize ?? 20)));
     // Dönemsel: input.periodId verilmezse güncel dönem (yeni döneme sıfır sayfa).
     const periodId = await resolvePeriodFilter(ctx.schoolId, input.periodId);
     // Hiyerarşik görünürlük (designation tabanlı, kimse yukarıyı görmez):
@@ -174,34 +257,66 @@ export class ListAssignmentsUseCase {
       }
       scopeWhere.AND = [{ OR: or }];
     }
-    const rows = await prisma.schoolAssignment.findMany({
-      where: {
-        schoolId: ctx.schoolId,
-        ...(periodId ? { periodId } : {}),
-        ...(input.classroomId ? { classroomId: input.classroomId } : {}),
-        ...scopeWhere,
-      },
-      orderBy: [{ createdAt: 'desc' }],
-      include: {
-        exam: { select: { title: true, examType: true } },
-        classroom: { select: { name: true } },
-        _count: { select: { submissions: true } },
-      },
-    });
-    return rows.map((a) => ({
-      id: a.id,
-      title: a.title,
-      examType: a.exam.examType,
-      examTitle: a.exam.title,
-      classroomName: a.classroom.name,
-      availableFrom: a.availableFrom,
-      dueDate: a.dueDate,
-      status: effectiveStatus(a),
-      showResultAfter: a.showResultAfter,
-      resultsReleased: a.resultsReleased,
-      submissionCount: a._count.submissions,
-      createdAt: a.createdAt,
-    }));
+    // Efektif durum filtresi (effectiveStatus ile aynı mantık, WHERE'e çevrilmiş):
+    const now = new Date();
+    const statusWhere: Record<string, unknown> =
+      input.status === 'CLOSED' ? { status: 'CLOSED' }
+      : input.status === 'SCHEDULED' ? { status: { not: 'CLOSED' }, availableFrom: { gt: now } }
+      : input.status === 'ACTIVE' ? { status: { not: 'CLOSED' }, availableFrom: { lte: now } }
+      : {};
+    const where = {
+      schoolId: ctx.schoolId,
+      ...(periodId ? { periodId } : {}),
+      ...(input.classroomId ? { classroomId: input.classroomId } : {}),
+      ...(input.kind === 'offline' ? { isOffline: true } : input.kind === 'exam' ? { isOffline: false } : {}),
+      ...(input.q?.trim() ? { title: { contains: input.q.trim(), mode: 'insensitive' as const } } : {}),
+      ...statusWhere,
+      ...scopeWhere,
+    };
+    const [total, rows] = await Promise.all([
+      prisma.schoolAssignment.count({ where: where as any }),
+      prisma.schoolAssignment.findMany({
+        where: where as any,
+        orderBy: [{ createdAt: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          exam: { select: { title: true, examType: true } },
+          classroom: { select: { name: true } },
+          _count: { select: { submissions: true } },
+        },
+      }),
+    ]);
+    // Sistem dışı ödevlerin ders adları (offlineSubjectId scalar → toplu çözümleme)
+    const subjectIds = [...new Set(rows.map((a) => a.offlineSubjectId).filter(Boolean))] as string[];
+    const subjects = subjectIds.length
+      ? await prisma.schoolSubject.findMany({ where: { id: { in: subjectIds } }, select: { id: true, name: true } })
+      : [];
+    const subjectName = new Map(subjects.map((s) => [s.id, s.name]));
+    return {
+      items: rows.map((a) => ({
+        id: a.id,
+        title: a.title,
+        isOffline: a.isOffline,
+        examType: a.exam?.examType ?? null,
+        examTitle: a.exam?.title ?? null,
+        offlineSubjectName: a.offlineSubjectId ? subjectName.get(a.offlineSubjectId) ?? null : null,
+        offlineDescription: a.offlineDescription,
+        offlineDoneAt: a.offlineDoneAt,
+        classroomName: a.classroom.name,
+        availableFrom: a.availableFrom,
+        dueDate: a.dueDate,
+        status: effectiveStatus(a),
+        showResultAfter: a.showResultAfter,
+        resultsReleased: a.resultsReleased,
+        submissionCount: a._count.submissions,
+        createdById: a.createdById,
+        createdAt: a.createdAt,
+      })),
+      total,
+      page,
+      pageSize,
+    };
   }
 }
 
@@ -218,6 +333,7 @@ export class GetAssignmentReportUseCase {
       },
     });
     if (!a) throw new AppError('ASSIGNMENT_NOT_FOUND', 'Ödev bulunamadı', 404);
+    if (a.isOffline || !a.exam) throw new AppError('OFFLINE_ASSIGNMENT', 'Sistem dışı ödevin teslim raporu yok', 400);
 
     const totalStudents = await prisma.schoolUser.count({ where: { classroomId: a.classroom.id, schoolRole: 'STUDENT' as any, isActive: true } });
     const submitted = a.submissions.filter((s) => s.status === 'SUBMITTED' || s.status === 'GRADED');
@@ -259,11 +375,22 @@ export class ReleaseAssignmentResultsUseCase {
   async execute(assignmentId: string, actorId?: string) {
     const ctx = await resolveSchoolContext(actorId);
     requireSchoolRole(ctx, 'TEACHER', 'DEPT_HEAD');
-    const a = await prisma.schoolAssignment.findFirst({ where: { id: assignmentId, schoolId: ctx.schoolId }, select: { id: true, createdById: true } });
+    const a = await prisma.schoolAssignment.findFirst({
+      where: { id: assignmentId, schoolId: ctx.schoolId },
+      select: { id: true, title: true, createdById: true, resultsReleased: true },
+    });
     if (!a) throw new AppError('ASSIGNMENT_NOT_FOUND', 'Ödev bulunamadı', 404);
     if (a.createdById !== actorId && ctx.schoolRole !== 'DEPT_HEAD') throw new AppError('FORBIDDEN', 'Yetkiniz yok', 403);
     await prisma.schoolAssignment.update({ where: { id: assignmentId }, data: { resultsReleased: true } });
     logger.info('school.assignment.results_released', { assignmentId, actorId });
+    // Teslim eden öğrencilere "sonuçlar açıklandı" bildirimi (ilk yayımlamada; best-effort).
+    if (!a.resultsReleased) {
+      const subs = await prisma.schoolSubmission.findMany({
+        where: { assignmentId, status: { in: ['SUBMITTED', 'GRADED'] as any } },
+        select: { studentId: true },
+      });
+      void notifyResultsReleased(ctx.schoolId, assignmentId, a.title, subs.map((s) => s.studentId), actorId as string);
+    }
     return { ok: true };
   }
 }

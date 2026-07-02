@@ -55,12 +55,12 @@ export class GetSchoolReportUseCase {
       overallPcts.push(p);
       const b = branchOfClassroom.get(s.assignment!.classroomId);
       if (b) pctByBranch.set(b, [...(pctByBranch.get(b) ?? []), p]);
-      const d = s.assignment!.exam.departmentId;
+      const d = s.assignment!.exam?.departmentId;
       if (d) pctByDept.set(d, [...(pctByDept.get(d) ?? []), p]);
     }
 
     const assignmentCountByDept = new Map<string, number>();
-    assignments.forEach((a) => { const d = a.exam.departmentId; if (d) assignmentCountByDept.set(d, (assignmentCountByDept.get(d) ?? 0) + 1); });
+    assignments.forEach((a) => { const d = a.exam?.departmentId; if (d) assignmentCountByDept.set(d, (assignmentCountByDept.get(d) ?? 0) + 1); });
 
     return {
       overall: {

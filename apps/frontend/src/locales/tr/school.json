@@ -15,7 +15,10 @@
       "TUNNEL": "Tünel",
       "WRITTEN": "Yazılı",
       "all": "Tüm türler"
-    }
+    },
+    "cancel": "İptal",
+    "error": "Bir hata oluştu",
+    "updated": "Güncellendi"
   },
   "assignments": {
     "title": "Ödevlerim",
@@ -34,7 +37,10 @@
     "timelineTitle": "Ödev Takvimi",
     "dueToday": "Son gün",
     "subjectAll": "Tüm dersler",
-    "subjectPlaceholder": "Ders"
+    "subjectPlaceholder": "Ders",
+    "offline": "Sistem Dışı",
+    "offlineDone": "Yapıldı",
+    "offlinePending": "Bekliyor"
   },
   "explore": {
     "title": "Keşfet",
@@ -47,5 +53,116 @@
     "emptyFiltered": "Filtreye uygun sınav yok.",
     "empty": "Bu türde sınav yok.",
     "completed": "Tamamlandı"
+  },
+  "notifications": {
+    "title": "Bildirimler",
+    "unreadSummary": "{{count}} okunmamış bildirim",
+    "allRead": "Tüm bildirimler okundu",
+    "markAllRead": "Tümünü okundu işaretle",
+    "allMarkedRead": "Tüm bildirimler okundu işaretlendi",
+    "markReadAria": "Okundu işaretle: {{title}}",
+    "compose": "Mesaj Gönder",
+    "composeTitle": "Öğrencilere Mesaj Gönder",
+    "messageTitle": "Başlık",
+    "messageTitlePlaceholder": "Örn: Yarınki ders hakkında",
+    "messageBody": "Mesaj",
+    "messageBodyPlaceholder": "Mesajınızı yazın…",
+    "targets": "Hedef sınıflar",
+    "targetsAll": "Boş bırakılırsa kapsamınızdaki tüm sınıflar",
+    "targetsSelected": "{{count}} sınıf seçili",
+    "noClassrooms": "Kapsamınızda sınıf yok.",
+    "send": "Gönder",
+    "sentToast": "{{count}} öğrenciye gönderildi",
+    "sendFailed": "Gönderilemedi",
+    "titleRequired": "Başlık zorunlu",
+    "typeFilter": "Tür filtresi",
+    "tabs": {
+      "all": "Tümü",
+      "unread": "Okunmamış"
+    },
+    "types": {
+      "all": "Tüm türler",
+      "NEW_ASSIGNMENT": "Yeni ödev",
+      "ASSIGNMENT_GRADED": "Sonuç",
+      "MESSAGE": "Mesaj",
+      "OFFLINE_DONE": "Ödev tamamlandı",
+      "APPOINTMENT": "Randevu"
+    },
+    "empty": "Bildirim yok.",
+    "loadMore": "Daha fazla göster",
+    "from": "Gönderen: {{name}}"
+  },
+  "appointments": {
+    "title": "Randevular",
+    "teacherSubtitle": "Haftalık uygunluk girin, alınan randevuları yönetin",
+    "studentSubtitle": "Öğretmeninden uygun saate randevu al",
+    "tabs": {
+      "appointments": "Randevular",
+      "availability": "Uygunluk Takvimi",
+      "book": "Randevu Al",
+      "mine": "Randevularım"
+    },
+    "scopeFilter": "Kapsam filtresi",
+    "scopeUpcoming": "Yaklaşan",
+    "scopeAll": "Tümü",
+    "statusFilter": "Durum filtresi",
+    "statusAll": "Tüm durumlar",
+    "status": {
+      "PENDING": "Onay bekliyor",
+      "CONFIRMED": "Onaylandı",
+      "CANCELLED": "İptal",
+      "COMPLETED": "Tamamlandı"
+    },
+    "types": {
+      "ACADEMIC": "Akademik destek",
+      "COUNSELING": "Rehberlik",
+      "PARENT": "Veli görüşmesi",
+      "OTHER": "Diğer"
+    },
+    "emptyTeacher": "Henüz randevu alınmamış.",
+    "emptyMine": "Henüz randevun yok.",
+    "studentNote": "Öğrenci notu: {{note}}",
+    "teacherNote": "Öğretmen notu: {{note}}",
+    "confirm": "Onayla",
+    "reject": "Reddet",
+    "cancel": "İptal Et",
+    "complete": "Tamamlandı",
+    "cancelled": "Randevu iptal edildi",
+    "availabilityHint": "Haftalık tekrar eden uygun saat aralıklarınızı girin — öğrenciler bu slotlardan randevu alır.",
+    "day": "Gün",
+    "startTime": "Başlangıç",
+    "endTime": "Bitiş",
+    "addSlot": "Ekle",
+    "days": {
+      "0": "Pazar",
+      "1": "Pazartesi",
+      "2": "Salı",
+      "3": "Çarşamba",
+      "4": "Perşembe",
+      "5": "Cuma",
+      "6": "Cumartesi"
+    },
+    "noSlots": "Slot yok",
+    "removeSlot": "Slotu kaldır: {{day}} {{time}}",
+    "saveAvailability": "Kaydet",
+    "availabilitySaved": "Uygunluk kaydedildi",
+    "availabilitySaveFailed": "Kaydedilemedi",
+    "invalidTime": "Saat biçimi geçersiz",
+    "invalidRange": "Bitiş, başlangıçtan sonra olmalı",
+    "overlap": "Bu aralık mevcut bir slotla çakışıyor",
+    "pickTeacher": "Öğretmen seç",
+    "teacherPlaceholder": "Öğretmen seçin…",
+    "noTeachers": "Şu anda randevu veren öğretmen yok.",
+    "noSlotsAvailable": "Önümüzdeki günlerde uygun slot yok.",
+    "yours": "Sizin",
+    "slotBookedAria": "{{time}} dolu",
+    "slotPickAria": "{{time}} slotunu seç",
+    "bookTitle": "Randevu Al",
+    "type": "Randevu türü",
+    "note": "Not (isteğe bağlı)",
+    "notePlaceholder": "Görüşme konusu…",
+    "book": "Randevu Al",
+    "booked": "Randevu talebiniz oluşturuldu",
+    "slotTaken": "Bu saat az önce dolduruldu, başka slot seçin"
   }
 }

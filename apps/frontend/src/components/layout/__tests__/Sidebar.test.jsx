@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { MemoryRouter } from 'react-router-dom';
 import Sidebar from '../../layout/Sidebar';
@@ -20,13 +21,21 @@ vi.mock('@/lib/utils', () => ({
   cn: (...args) => args.filter(Boolean).join(' '),
 }));
 
+// Okunmamış bildirim rozeti sorgusu — testte ağa çıkmasın
+vi.mock('@/api/dalClient', () => ({
+  schoolNotifications: { unreadCount: vi.fn(async () => ({ unreadCount: 0 })) },
+}));
+
 const mockLogout = vi.fn();
 
 function renderSidebar(user = null, collapsed = false) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter>
-      <Sidebar user={user} currentPage="Home" collapsed={collapsed} />
-    </MemoryRouter>
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <Sidebar user={user} currentPage="Home" collapsed={collapsed} />
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 

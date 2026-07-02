@@ -15,7 +15,10 @@
       "TUNNEL": "Túnel",
       "WRITTEN": "Escrito",
       "all": "Todos los tipos"
-    }
+    },
+    "cancel": "Cancelar",
+    "error": "Ocurrió un error",
+    "updated": "Actualizado"
   },
   "assignments": {
     "title": "Mis tareas",
@@ -34,7 +37,10 @@
     "timelineTitle": "Calendario de tareas",
     "dueToday": "Vence hoy",
     "subjectAll": "Todas las materias",
-    "subjectPlaceholder": "Materia"
+    "subjectPlaceholder": "Materia",
+    "offline": "Fuera del sistema",
+    "offlineDone": "Hecha",
+    "offlinePending": "Pendiente"
   },
   "explore": {
     "title": "Explorar",
@@ -47,5 +53,116 @@
     "emptyFiltered": "Ningún examen coincide con el filtro.",
     "empty": "No hay exámenes de este tipo.",
     "completed": "Completado"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "unreadSummary": "{{count}} notificaciones sin leer",
+    "allRead": "Todas las notificaciones leídas",
+    "markAllRead": "Marcar todas como leídas",
+    "allMarkedRead": "Todas las notificaciones marcadas como leídas",
+    "markReadAria": "Marcar como leída: {{title}}",
+    "compose": "Enviar mensaje",
+    "composeTitle": "Enviar mensaje a los estudiantes",
+    "messageTitle": "Título",
+    "messageTitlePlaceholder": "Ej.: Sobre la clase de mañana",
+    "messageBody": "Mensaje",
+    "messageBodyPlaceholder": "Escribe tu mensaje…",
+    "targets": "Clases destino",
+    "targetsAll": "Si se deja vacío, todas las clases de tu ámbito",
+    "targetsSelected": "{{count}} clases seleccionadas",
+    "noClassrooms": "No hay clases en tu ámbito.",
+    "send": "Enviar",
+    "sentToast": "Enviado a {{count}} estudiantes",
+    "sendFailed": "No se pudo enviar",
+    "titleRequired": "El título es obligatorio",
+    "typeFilter": "Filtro de tipo",
+    "tabs": {
+      "all": "Todas",
+      "unread": "Sin leer"
+    },
+    "types": {
+      "all": "Todos los tipos",
+      "NEW_ASSIGNMENT": "Nueva tarea",
+      "ASSIGNMENT_GRADED": "Resultado",
+      "MESSAGE": "Mensaje",
+      "OFFLINE_DONE": "Tarea completada",
+      "APPOINTMENT": "Cita"
+    },
+    "empty": "No hay notificaciones.",
+    "loadMore": "Mostrar más",
+    "from": "De: {{name}}"
+  },
+  "appointments": {
+    "title": "Citas",
+    "teacherSubtitle": "Define tu disponibilidad semanal y gestiona las reservas",
+    "studentSubtitle": "Reserva una cita con tu profesor",
+    "tabs": {
+      "appointments": "Citas",
+      "availability": "Disponibilidad",
+      "book": "Reservar",
+      "mine": "Mis citas"
+    },
+    "scopeFilter": "Filtro de alcance",
+    "scopeUpcoming": "Próximas",
+    "scopeAll": "Todas",
+    "statusFilter": "Filtro de estado",
+    "statusAll": "Todos los estados",
+    "status": {
+      "PENDING": "Pendiente de aprobación",
+      "CONFIRMED": "Confirmada",
+      "CANCELLED": "Cancelada",
+      "COMPLETED": "Completada"
+    },
+    "types": {
+      "ACADEMIC": "Apoyo académico",
+      "COUNSELING": "Orientación",
+      "PARENT": "Reunión con padres",
+      "OTHER": "Otro"
+    },
+    "emptyTeacher": "Aún no hay citas reservadas.",
+    "emptyMine": "Aún no tienes citas.",
+    "studentNote": "Nota del estudiante: {{note}}",
+    "teacherNote": "Nota del profesor: {{note}}",
+    "confirm": "Confirmar",
+    "reject": "Rechazar",
+    "cancel": "Cancelar",
+    "complete": "Completada",
+    "cancelled": "Cita cancelada",
+    "availabilityHint": "Introduce tus franjas horarias semanales recurrentes — los estudiantes reservan en ellas.",
+    "day": "Día",
+    "startTime": "Inicio",
+    "endTime": "Fin",
+    "addSlot": "Añadir",
+    "days": {
+      "0": "Domingo",
+      "1": "Lunes",
+      "2": "Martes",
+      "3": "Miércoles",
+      "4": "Jueves",
+      "5": "Viernes",
+      "6": "Sábado"
+    },
+    "noSlots": "Sin franjas",
+    "removeSlot": "Quitar franja: {{day}} {{time}}",
+    "saveAvailability": "Guardar",
+    "availabilitySaved": "Disponibilidad guardada",
+    "availabilitySaveFailed": "No se pudo guardar",
+    "invalidTime": "Formato de hora no válido",
+    "invalidRange": "El fin debe ser posterior al inicio",
+    "overlap": "Este rango se superpone con una franja existente",
+    "pickTeacher": "Elige un profesor",
+    "teacherPlaceholder": "Selecciona un profesor…",
+    "noTeachers": "Ningún profesor ofrece citas ahora mismo.",
+    "noSlotsAvailable": "No hay franjas disponibles en los próximos días.",
+    "yours": "Tuya",
+    "slotBookedAria": "{{time}} está ocupada",
+    "slotPickAria": "Elegir la franja de las {{time}}",
+    "bookTitle": "Reservar cita",
+    "type": "Tipo de cita",
+    "note": "Nota (opcional)",
+    "notePlaceholder": "Tema de la reunión…",
+    "book": "Reservar",
+    "booked": "Tu solicitud de cita se ha creado",
+    "slotTaken": "Esta franja se acaba de ocupar, elige otra"
   }
 }

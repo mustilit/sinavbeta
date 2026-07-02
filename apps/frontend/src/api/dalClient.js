@@ -2270,10 +2270,16 @@ export const school = {
 
   // Ödevler (Sprint 3) — öğretmen/zümre başkanı
   assignments: {
-    list: async ({ classroomId, periodId } = {}) => {
+    /** { items, total, page, pageSize } döner. Filtre: q, status, kind (exam|offline), classroomId, periodId */
+    list: async ({ classroomId, periodId, q, status, kind, page, pageSize } = {}) => {
       const qs = new URLSearchParams();
       if (classroomId) qs.set('classroomId', classroomId);
       if (periodId) qs.set('periodId', periodId);
+      if (q) qs.set('q', q);
+      if (status) qs.set('status', status);
+      if (kind) qs.set('kind', kind);
+      if (page) qs.set('page', String(page));
+      if (pageSize) qs.set('pageSize', String(pageSize));
       return (await api.get(`/school/assignments?${qs.toString()}`)).data;
     },
     create: async (body) => (await api.post('/school/assignments', body)).data,
@@ -2281,6 +2287,8 @@ export const school = {
     report: async (id) => (await api.get(`/school/assignments/${id}/report`)).data,
     releaseResults: async (id) => (await api.post(`/school/assignments/${id}/release-results`)).data,
     setStatus: async (id, status) => (await api.patch(`/school/assignments/${id}/status`, { status })).data,
+    /** Sistem dışı ödevi yapıldı / geri al işaretle */
+    markOfflineDone: async (id, done) => (await api.patch(`/school/assignments/${id}/offline-done`, { done })).data,
   },
 
   // Yazılı değerlendirme (Sprint 4)
@@ -2362,6 +2370,58 @@ export const school = {
     toggleStats: async (id) => (await api.post(`/school/live/${id}/toggle-stats`)).data,
     end: async (id) => (await api.post(`/school/live/${id}/end`)).data,
   },
+};
+
+/**
+ * E-Sınıf — Bildirimler. Tüm okul rolleri kendi bildirimlerini görür;
+ * öğretmen/yönetici kapsamındaki sınıf öğrencilerine mesaj gönderir.
+ */
+export const schoolNotifications = {
+  /** { items, nextCursor, unreadCount } — cursor pagination + isRead/type filtresi */
+  list: async ({ cursor, limit, isRead, type } = {}) => {
+    const qs = new URLSearchParams();
+    if (cursor) qs.set('cursor', cursor);
+    if (limit) qs.set('limit', String(limit));
+    if (isRead !== undefined) qs.set('isRead', String(isRead));
+    if (type) qs.set('type', type);
+    return (await api.get(`/school/notifications?${qs.toString()}`)).data;
+  },
+  unreadCount: async () => (await api.get('/school/notifications/unread-count')).data,
+  markRead: async (id) => (await api.patch(`/school/notifications/${id}/read`)).data,
+  markAllRead: async () => (await api.patch('/school/notifications/read-all')).data,
+  /** Kapsam içindeki sınıflar (mesaj compose formu) */
+  messageTargets: async () => (await api.get('/school/notifications/message-targets')).data,
+  /** { title, body?, classroomIds? } — classroomIds boşsa tüm kapsam */
+  sendMessage: async (body) => (await api.post('/school/notifications/message', body)).data,
+};
+
+/**
+ * E-Sınıf — Randevu. Öğretmen haftalık uygunluk girer; öğrenci slot seçip randevu alır.
+ */
+export const schoolAppointments = {
+  // Öğretmen
+  availability: async () => (await api.get('/school/appointments/availability')).data,
+  setAvailability: async (slots) => (await api.put('/school/appointments/availability', { slots })).data,
+  /** { items, total, page, pageSize } — status/scope filtresi */
+  teacherList: async ({ status, scope, page, pageSize } = {}) => {
+    const qs = new URLSearchParams();
+    if (status) qs.set('status', status);
+    if (scope) qs.set('scope', scope);
+    if (page) qs.set('page', String(page));
+    if (pageSize) qs.set('pageSize', String(pageSize));
+    return (await api.get(`/school/appointments/teacher?${qs.toString()}`)).data;
+  },
+  updateStatus: async (id, body) => (await api.patch(`/school/appointments/${id}/status`, body)).data,
+  // Öğrenci
+  teachers: async () => (await api.get('/school/appointments/teachers')).data,
+  slots: async (teacherUserId, { days } = {}) => {
+    const qs = new URLSearchParams();
+    if (days) qs.set('days', String(days));
+    return (await api.get(`/school/appointments/teachers/${teacherUserId}/slots?${qs.toString()}`)).data;
+  },
+  book: async (body) => (await api.post('/school/appointments', body)).data,
+  mine: async () => (await api.get('/school/appointments/mine')).data,
+  cancel: async (id) => (await api.patch(`/school/appointments/${id}/cancel`)).data,
 };
 
 // E-Sınıf öğrenci canlı sınav katılımı (Sprint 4-B)
