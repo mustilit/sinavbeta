@@ -256,15 +256,37 @@ export default function Sidebar({ user, currentPage, collapsed = false }) {
     TEACHER: t("sidebar.esinif.roleTeacher", { defaultValue: "Öğretmen" }),
     STUDENT: t("sidebar.esinif.roleStudent", { defaultValue: "Öğrenci" }),
   };
-  const roleLabel = schoolCtx?.schoolRole
-    ? SCHOOL_ROLE_LABEL[schoolCtx.schoolRole]
-    : isAdmin
-    ? t("roles.admin")
-    : isWorker
-    ? t("roles.worker")
-    : isEducator
-    ? t("roles.educator")
-    : t("roles.candidate");
+  // Öğrenci → sınıfı, öğretmen/zümre başkanı → branşı rol etiketinin önüne eklenir
+  // ("9-A · Öğrenci", "Matematik Öğretmeni"). Bilgi yoksa (henüz atanmamışsa) düz etiket kalır.
+  const schoolRoleLabel = (() => {
+    if (!schoolCtx?.schoolRole) return null;
+    if (schoolCtx.schoolRole === "STUDENT" && schoolCtx.classroomName) {
+      return t("sidebar.esinif.roleStudentWithClass", {
+        defaultValue: "{{classroom}} · Öğrenci",
+        classroom: schoolCtx.classroomName,
+      });
+    }
+    if ((schoolCtx.schoolRole === "TEACHER" || schoolCtx.schoolRole === "DEPT_HEAD") && schoolCtx.subject) {
+      return schoolCtx.schoolRole === "DEPT_HEAD"
+        ? t("sidebar.esinif.roleDeptHeadWithSubject", {
+            defaultValue: "{{subject}} Zümre Başkanı",
+            subject: schoolCtx.subject,
+          })
+        : t("sidebar.esinif.roleTeacherWithSubject", {
+            defaultValue: "{{subject}} Öğretmeni",
+            subject: schoolCtx.subject,
+          });
+    }
+    return SCHOOL_ROLE_LABEL[schoolCtx.schoolRole];
+  })();
+  const roleLabel = schoolRoleLabel
+    ?? (isAdmin
+      ? t("roles.admin")
+      : isWorker
+      ? t("roles.worker")
+      : isEducator
+      ? t("roles.educator")
+      : t("roles.candidate"));
 
   // E-Sınıf kullanıcısı çıkışta Ana sayfa'ya (/), marketplace kullanıcısı /Login'e gider.
   const handleLogout = () => logout(true, user?.school ? '/' : '/Login');

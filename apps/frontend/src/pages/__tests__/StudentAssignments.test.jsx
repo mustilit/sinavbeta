@@ -59,4 +59,24 @@ describe('StudentAssignments', () => {
     fireEvent.click(screen.getByRole('button', { name: /Sonuç/ }));
     expect(h.nav).toHaveBeenCalledWith(expect.stringContaining('StudentResult'));
   });
+
+  it('sistem dışı ödev: rozet + açıklama görünür, Başla/Sonuç butonu YOK', async () => {
+    h.api.list.mockResolvedValue({ items: [
+      { id: 'off1', title: 'Kitap özeti', isOffline: true, offlineDescription: '3. bölümü oku', offlineDone: false, examType: null, subject: 'Matematik', dueDate: future, submitted: false, open: false, score: null },
+    ] });
+    renderWithProviders(<StudentAssignments />);
+    expect(await screen.findByText('Kitap özeti')).toBeInTheDocument();
+    expect(screen.getByText('3. bölümü oku')).toBeInTheDocument();
+    // Sistem dışı ödev uygulama içinde çözülmez → Başla butonu olmamalı
+    expect(screen.queryByRole('button', { name: /Başla/ })).toBeNull();
+  });
+
+  it('sistem dışı ödev yapıldı → "Yapıldı" durum rozeti', async () => {
+    h.api.list.mockResolvedValue({ items: [
+      { id: 'off1', title: 'Kitap özeti', isOffline: true, offlineDescription: 'oku', offlineDone: true, examType: null, subject: 'Matematik', dueDate: future, submitted: true, open: false, score: null },
+    ] });
+    renderWithProviders(<StudentAssignments />);
+    await screen.findByText('Kitap özeti');
+    expect(screen.getByText(i18n.t('school:assignments.offlineDone'))).toBeInTheDocument();
+  });
 });

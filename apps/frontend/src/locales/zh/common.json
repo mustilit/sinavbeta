@@ -129,7 +129,12 @@
       "gradeLevels": "年级"
     },
     "collapseAria": "收起侧边栏",
-    "expandAria": "展开侧边栏"
+    "expandAria": "展开侧边栏",
+    "esinif": {
+      "roleStudentWithClass": "{{classroom}} · 学生",
+      "roleTeacherWithSubject": "{{subject}}老师",
+      "roleDeptHeadWithSubject": "{{subject}}教研组长"
+    }
   },
   "pagination": {
     "previous": "上一页",

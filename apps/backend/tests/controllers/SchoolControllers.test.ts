@@ -24,6 +24,8 @@ import { SchoolReportsController } from '../../src/nest/controllers/school-repor
 import { SchoolStudentController, SchoolStudentReportController } from '../../src/nest/controllers/school-student.controller';
 import { SchoolTunnelController } from '../../src/nest/controllers/school-tunnel.controller';
 import { SchoolAssignmentsController } from '../../src/nest/controllers/school-assignments.controller';
+import { SchoolNotificationsController } from '../../src/nest/controllers/school-notifications.controller';
+import { SchoolAppointmentsController } from '../../src/nest/controllers/school-appointments.controller';
 
 const REQ = { user: { id: 'actor-1' } };
 
@@ -236,5 +238,32 @@ describe('SchoolAssignmentsController', () => {
     { name: 'release', field: 'releaseUC', call: (c) => c.release('a1', REQ), args: ['a1', 'actor-1'] },
     { name: 'close', field: 'closeUC', call: (c) => c.close('a1', { status: 'CLOSED' }, REQ), args: ['a1', { status: 'CLOSED' }, 'actor-1'] },
     { name: 'offlineDone', field: 'offlineDoneUC', call: (c) => c.offlineDone('a1', { done: true }, REQ), args: ['a1', { done: true }, 'actor-1'] },
+  ]);
+});
+
+// ───────────────────────── SchoolNotificationsController ────────────────────────────────────
+describe('SchoolNotificationsController', () => {
+  runCases(() => new SchoolNotificationsController(), [
+    { name: 'list', field: 'listUC', call: (c) => c.list({ isRead: false }, REQ), args: [{ isRead: false }, 'actor-1'] },
+    { name: 'unread', field: 'unreadUC', call: (c) => c.unread(REQ), args: ['actor-1'] },
+    { name: 'targets', field: 'targetsUC', call: (c) => c.targets(REQ), args: ['actor-1'] },
+    { name: 'send', field: 'sendUC', call: (c) => c.send({ title: 'x', classroomIds: ['c1'] }, REQ), args: [{ title: 'x', classroomIds: ['c1'] }, 'actor-1'] },
+    { name: 'readAll', field: 'markAllUC', call: (c) => c.readAll(REQ), args: ['actor-1'] },
+    { name: 'read', field: 'markReadUC', call: (c) => c.read('n1', REQ), args: ['n1', 'actor-1'] },
+  ]);
+});
+
+// ───────────────────────── SchoolAppointmentsController ─────────────────────────────────────
+describe('SchoolAppointmentsController', () => {
+  runCases(() => new SchoolAppointmentsController(), [
+    { name: 'availability', field: 'listAvailUC', call: (c) => c.availability(REQ), args: ['actor-1'] },
+    { name: 'setAvailability', field: 'setAvailUC', call: (c) => c.setAvailability({ slots: [] }, REQ), args: [{ slots: [] }, 'actor-1'] },
+    { name: 'teacherList', field: 'teacherListUC', call: (c) => c.teacherList({ scope: 'all' }, REQ), args: [{ scope: 'all' }, 'actor-1'] },
+    { name: 'teachers', field: 'teachersUC', call: (c) => c.teachers(REQ), args: ['actor-1'] },
+    { name: 'slots', field: 'slotsUC', call: (c) => c.slots('t1', { days: 14 }, REQ), args: [{ teacherUserId: 't1', days: 14 }, 'actor-1'] },
+    { name: 'mine', field: 'mineUC', call: (c) => c.mine(REQ), args: ['actor-1'] },
+    { name: 'book', field: 'bookUC', call: (c) => c.book({ availabilityId: 'a1', date: '2026-07-09' }, REQ), args: [{ availabilityId: 'a1', date: '2026-07-09' }, 'actor-1'] },
+    { name: 'cancel', field: 'cancelUC', call: (c) => c.cancel('ap1', REQ), args: ['ap1', 'actor-1'] },
+    { name: 'updateStatus', field: 'statusUC', call: (c) => c.updateStatus('ap1', { status: 'CONFIRMED' }, REQ), args: ['ap1', { status: 'CONFIRMED' }, 'actor-1'] },
   ]);
 });

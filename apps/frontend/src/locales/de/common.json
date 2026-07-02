@@ -129,7 +129,12 @@
       "gradeLevels": "Klassenstufen"
     },
     "collapseAria": "Seitenleiste einklappen",
-    "expandAria": "Seitenleiste ausklappen"
+    "expandAria": "Seitenleiste ausklappen",
+    "esinif": {
+      "roleStudentWithClass": "{{classroom}} · Schüler",
+      "roleTeacherWithSubject": "{{subject}}lehrer",
+      "roleDeptHeadWithSubject": "Fachbereichsleiter {{subject}}"
+    }
   },
   "pagination": {
     "previous": "Zurück",

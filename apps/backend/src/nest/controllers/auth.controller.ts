@@ -164,7 +164,14 @@ export class AuthController {
     try {
       const su = await prisma.schoolUser.findFirst({
         where: { userId: user.id, isActive: true },
-        select: { id: true, schoolRole: true, schoolId: true, branchId: true, school: { select: { name: true, code: true } } },
+        select: {
+          id: true, schoolRole: true, schoolId: true, branchId: true,
+          school: { select: { name: true, code: true } },
+          // Öğrenci → sınıf adı; öğretmen/zümre başkanı → branş. Sidebar'da
+          // rol etiketinin yanında gösterilir ("9-A · Öğrenci", "Matematik Öğretmeni").
+          classroom: { select: { name: true } },
+          department: { select: { subject: true } },
+        },
       });
       if (su) {
         userResponse.school = {
@@ -174,6 +181,8 @@ export class AuthController {
           branchId: su.branchId,
           schoolName: su.school?.name ?? null,
           schoolCode: su.school?.code ?? null,
+          classroomName: su.classroom?.name ?? null,
+          subject: su.department?.subject ?? null,
           // Alt roller (seviye sorumlusu / sınıf öğretmeni / zümre başkanı) yönetim
           // yapısını yetki alanı kadar görebilir — sidebar bu bayrakla menüyü açar.
           canViewStructure: false,

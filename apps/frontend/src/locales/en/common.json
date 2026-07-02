@@ -129,7 +129,12 @@
       "gradeLevels": "Grades"
     },
     "collapseAria": "Collapse sidebar",
-    "expandAria": "Expand sidebar"
+    "expandAria": "Expand sidebar",
+    "esinif": {
+      "roleStudentWithClass": "{{classroom}} · Student",
+      "roleTeacherWithSubject": "{{subject}} Teacher",
+      "roleDeptHeadWithSubject": "{{subject}} Department Head"
+    }
   },
   "pagination": {
     "previous": "Previous",

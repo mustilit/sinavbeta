@@ -241,6 +241,7 @@ async function seedSchoolModule() {
     { username: 'E2E-S-0001', schoolRole: 'STUDENT', firstName: 'Test', lastName: 'Öğrenci' },
   ];
   let adminUserId = null;
+  const userIdByRole = {};
   for (const m of members) {
     const email = `${m.username.toLowerCase()}@esinif.local`;
     const user = await prisma.user.upsert({
@@ -253,13 +254,46 @@ async function seedSchoolModule() {
       create: { userId: user.id, schoolId: school.id, schoolRole: m.schoolRole, username: m.username, isActive: true },
       update: { userId: user.id, schoolId: school.id, schoolRole: m.schoolRole, isActive: true },
     });
+    userIdByRole[m.schoolRole] = user.id;
     if (m.schoolRole === 'SCHOOL_ADMIN') adminUserId = user.id;
   }
   // 4) Okul yöneticisini School.adminUserId'ye bağla (one-to-one)
   if (adminUserId && school.adminUserId !== adminUserId) {
     await prisma.school.update({ where: { id: school.id }, data: { adminUserId } });
   }
-  console.log(`  ✓ E-Sınıf okulu hazır (${school.id}) + 3 kullanıcı (E2E-A/T/S-0001)`);
+
+  // 5) Şube + sınıf + ders — randevu / sistem dışı ödev / mesaj e2e'leri için.
+  //    Öğretmen (E2E-T-0001) sınıf öğretmeni (Classroom.adminUserId) → kapsamında
+  //    sınıf görür; öğrenci (E2E-S-0001) o sınıfa bağlanır. Idempotent (findFirst).
+  let branch = await prisma.branch.findFirst({ where: { schoolId: school.id, name: 'E2E Şube' } });
+  if (!branch) {
+    branch = await prisma.branch.create({ data: { schoolId: school.id, name: 'E2E Şube' } });
+  }
+  let classroom = await prisma.classroom.findFirst({ where: { schoolId: school.id, name: '5-A' } });
+  if (!classroom) {
+    classroom = await prisma.classroom.create({
+      data: { schoolId: school.id, branchId: branch.id, name: '5-A', gradeLevel: 5, adminUserId: userIdByRole.TEACHER ?? null },
+    });
+  } else if (classroom.adminUserId !== (userIdByRole.TEACHER ?? null)) {
+    classroom = await prisma.classroom.update({ where: { id: classroom.id }, data: { adminUserId: userIdByRole.TEACHER ?? null } });
+  }
+  // Öğrenciyi sınıfa + şubeye bağla
+  await prisma.schoolUser.updateMany({
+    where: { username: 'E2E-S-0001' },
+    data: { classroomId: classroom.id, branchId: branch.id },
+  });
+  // Öğretmeni de şubeye bağla (kapsam çözümü için)
+  await prisma.schoolUser.updateMany({
+    where: { username: 'E2E-T-0001' },
+    data: { branchId: branch.id },
+  });
+  // Ders (sistem dışı ödev formu SchoolSubject.id ister)
+  const subject = await prisma.schoolSubject.findFirst({ where: { schoolId: school.id, name: 'Matematik' } });
+  if (!subject) {
+    await prisma.schoolSubject.create({ data: { schoolId: school.id, name: 'Matematik' } });
+  }
+
+  console.log(`  ✓ E-Sınıf okulu hazır (${school.id}) + 3 kullanıcı + şube/sınıf 5-A + Matematik dersi`);
 }
 
 (async () => {

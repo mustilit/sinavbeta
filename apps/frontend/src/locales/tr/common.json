@@ -129,7 +129,12 @@
       "gradeLevels": "Sınıflar"
     },
     "collapseAria": "Yan menüyü kapat",
-    "expandAria": "Yan menüyü genişlet"
+    "expandAria": "Yan menüyü genişlet",
+    "esinif": {
+      "roleStudentWithClass": "{{classroom}} · Öğrenci",
+      "roleTeacherWithSubject": "{{subject}} Öğretmeni",
+      "roleDeptHeadWithSubject": "{{subject}} Zümre Başkanı"
+    }
   },
   "pagination": {
     "previous": "Önceki",

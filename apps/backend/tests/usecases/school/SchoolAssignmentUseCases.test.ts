@@ -21,6 +21,7 @@ jest.mock('../../../src/common/tenant', () => ({ getDefaultTenantId: () => 'ten1
 import {
   CreateAssignmentUseCase, effectiveStatus,
   ListAssignmentsUseCase, GetAssignOptionsUseCase, GetAssignmentReportUseCase, ReleaseAssignmentResultsUseCase, CloseAssignmentUseCase,
+  MarkOfflineDoneUseCase,
 } from '../../../src/application/use-cases/school/SchoolAssignmentUseCases';
 import { prisma } from '../../../src/infrastructure/database/prisma';
 
@@ -89,6 +90,83 @@ describe('CreateAssignmentUseCase', () => {
     p.schoolAssignment.create.mockImplementation(async ({ data }) => { createdData = data; return { id: 'a1' }; });
     await new CreateAssignmentUseCase().execute({ examId: 'ex1', classroomIds: ['c1'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1');
     expect(createdData.periodId).toBe('p-2026');
+  });
+
+  // ── Sistem dışı (offline) ödev dalı ──────────────────────────────────────────
+  it('offline: ders seçilmezse → SUBJECT_REQUIRED', async () => {
+    await expect(new CreateAssignmentUseCase().execute({ isOffline: true, title: 'T', offlineDescription: 'D', classroomIds: ['c1'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1')).rejects.toMatchObject({ code: 'SUBJECT_REQUIRED' });
+  });
+  it('offline: açıklama boşsa → DESCRIPTION_REQUIRED', async () => {
+    await expect(new CreateAssignmentUseCase().execute({ isOffline: true, title: 'T', offlineSubjectId: 's1', offlineDescription: '  ', classroomIds: ['c1'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1')).rejects.toMatchObject({ code: 'DESCRIPTION_REQUIRED' });
+  });
+  it('offline: başlık boşsa → TITLE_REQUIRED', async () => {
+    p.schoolSubject.findFirst.mockResolvedValue({ id: 's1', name: 'Matematik' });
+    await expect(new CreateAssignmentUseCase().execute({ isOffline: true, offlineSubjectId: 's1', offlineDescription: 'D', classroomIds: ['c1'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1')).rejects.toMatchObject({ code: 'TITLE_REQUIRED' });
+  });
+  it('offline: ders başka okuldan/geçersiz → SUBJECT_NOT_FOUND', async () => {
+    p.schoolSubject.findFirst.mockResolvedValue(null);
+    await expect(new CreateAssignmentUseCase().execute({ isOffline: true, title: 'T', offlineSubjectId: 'sX', offlineDescription: 'D', classroomIds: ['c1'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1')).rejects.toMatchObject({ code: 'SUBJECT_NOT_FOUND' });
+  });
+  it('offline başarı: examId null + isOffline true + ders/açıklama yazılır, sınav sorgusu YAPILMAZ', async () => {
+    p.schoolSubject.findFirst.mockResolvedValue({ id: 's1', name: 'Matematik' });
+    p.classroom.findMany.mockResolvedValue([{ id: 'c1' }]);
+    let createdData;
+    p.schoolAssignment.create.mockImplementation(async ({ data }) => { createdData = data; return { id: 'a1' }; });
+    const r = await new CreateAssignmentUseCase().execute({ isOffline: true, title: 'Kitap özeti', offlineSubjectId: 's1', offlineDescription: '3. bölüm', classroomIds: ['c1'], availableFrom: tomorrow, dueDate: nextWeek }, 'u1');
+    expect(r.created).toBe(1);
+    expect(createdData).toMatchObject({ examId: null, isOffline: true, offlineSubjectId: 's1', offlineDescription: '3. bölüm', title: 'Kitap özeti' });
+    expect(p.schoolExam.findFirst).not.toHaveBeenCalled(); // offline'da sınav havuzuna gidilmez
+  });
+});
+
+describe('MarkOfflineDoneUseCase', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    p.schoolUser.findFirst.mockResolvedValue(teacher);
+    p.schoolAssignment.update.mockResolvedValue({});
+    p.schoolUser.findMany.mockResolvedValue([]); // notifyOfflineDone öğrenci sorgusu
+    p.schoolNotification.createMany.mockResolvedValue({ count: 0 });
+  });
+
+  it('ödev yok → ASSIGNMENT_NOT_FOUND', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue(null);
+    await expect(new MarkOfflineDoneUseCase().execute('x', { done: true }, 'u1')).rejects.toMatchObject({ code: 'ASSIGNMENT_NOT_FOUND' });
+  });
+  it('sistem dışı olmayan ödev → NOT_OFFLINE', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', title: 'T', classroomId: 'c1', createdById: 'u1', isOffline: false, offlineDoneAt: null });
+    await expect(new MarkOfflineDoneUseCase().execute('a1', { done: true }, 'u1')).rejects.toMatchObject({ code: 'NOT_OFFLINE' });
+  });
+  it('sahibi olmayan öğretmen → FORBIDDEN', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', title: 'T', classroomId: 'c1', createdById: 'başkası', isOffline: true, offlineDoneAt: null });
+    await expect(new MarkOfflineDoneUseCase().execute('a1', { done: true }, 'u1')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+  it('zümre başkanı başkasının offline ödevini yapıldı işaretleyebilir', async () => {
+    p.schoolUser.findFirst.mockResolvedValue({ ...teacher, schoolRole: 'DEPT_HEAD' });
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', title: 'T', classroomId: 'c1', createdById: 'başkası', isOffline: true, offlineDoneAt: null });
+    const r = await new MarkOfflineDoneUseCase().execute('a1', { done: true }, 'uHead');
+    expect(r.id).toBe('a1');
+    expect(r.offlineDoneAt).toBeInstanceOf(Date);
+  });
+  it('yapıldıya İLK geçişte öğrencilere bildirim gider', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', title: 'T', classroomId: 'c1', createdById: 'u1', isOffline: true, offlineDoneAt: null });
+    p.schoolUser.findMany.mockResolvedValue([{ userId: 's1' }]);
+    await new MarkOfflineDoneUseCase().execute('a1', { done: true }, 'u1');
+    // notifyOfflineDone async best-effort — createMany tetiklenmiş olmalı
+    await new Promise((r) => setImmediate(r));
+    expect(p.schoolNotification.createMany).toHaveBeenCalled();
+  });
+  it('zaten yapıldıyken tekrar done:true → bildirim TEKRAR gitmez (gürültü önleme)', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', title: 'T', classroomId: 'c1', createdById: 'u1', isOffline: true, offlineDoneAt: new Date('2026-01-01') });
+    await new MarkOfflineDoneUseCase().execute('a1', { done: true }, 'u1');
+    await new Promise((r) => setImmediate(r));
+    expect(p.schoolNotification.createMany).not.toHaveBeenCalled();
+  });
+  it('done:false (geri alma) → offlineDoneAt null, bildirim yok', async () => {
+    p.schoolAssignment.findFirst.mockResolvedValue({ id: 'a1', title: 'T', classroomId: 'c1', createdById: 'u1', isOffline: true, offlineDoneAt: new Date() });
+    const r = await new MarkOfflineDoneUseCase().execute('a1', { done: false }, 'u1');
+    expect(r.offlineDoneAt).toBeNull();
+    await new Promise((r) => setImmediate(r));
+    expect(p.schoolNotification.createMany).not.toHaveBeenCalled();
   });
 });
 

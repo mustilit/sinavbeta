@@ -46,6 +46,22 @@ test.describe('a11y — E-Sınıf öğrenci sayfaları (WCAG 2.1 AA)', () => {
     reportViolations(results.violations);
     expect(results.violations).toEqual([]);
   });
+
+  test('SchoolNotifications — Bildirimler', async ({ page, makeAxeBuilder }) => {
+    await page.goto('/SchoolNotifications');
+    await page.waitForLoadState('networkidle');
+    const results = await makeAxeBuilder().analyze();
+    reportViolations(results.violations);
+    expect(results.violations).toEqual([]);
+  });
+
+  test('StudentAppointments — Randevu', async ({ page, makeAxeBuilder }) => {
+    await page.goto('/StudentAppointments');
+    await page.waitForLoadState('networkidle');
+    const results = await makeAxeBuilder().analyze();
+    reportViolations(results.violations);
+    expect(results.violations).toEqual([]);
+  });
 });
 
 test.describe('a11y — E-Sınıf öğretmen sayfaları (WCAG 2.1 AA)', () => {
@@ -63,6 +79,22 @@ test.describe('a11y — E-Sınıf öğretmen sayfaları (WCAG 2.1 AA)', () => {
 
   test('SchoolAssignments — Ödevler', async ({ page, makeAxeBuilder }) => {
     await page.goto('/SchoolAssignments');
+    await page.waitForLoadState('networkidle');
+    const results = await makeAxeBuilder().analyze();
+    reportViolations(results.violations);
+    expect(results.violations).toEqual([]);
+  });
+
+  test('SchoolAppointments — Randevular', async ({ page, makeAxeBuilder }) => {
+    await page.goto('/SchoolAppointments');
+    await page.waitForLoadState('networkidle');
+    const results = await makeAxeBuilder().analyze();
+    reportViolations(results.violations);
+    expect(results.violations).toEqual([]);
+  });
+
+  test('SchoolNotifications — Bildirimler (öğretmen)', async ({ page, makeAxeBuilder }) => {
+    await page.goto('/SchoolNotifications');
     await page.waitForLoadState('networkidle');
     const results = await makeAxeBuilder().analyze();
     reportViolations(results.violations);

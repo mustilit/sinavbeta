@@ -129,7 +129,12 @@
       "gradeLevels": "Cursos"
     },
     "collapseAria": "Cerrar menú lateral",
-    "expandAria": "Expandir menú lateral"
+    "expandAria": "Expandir menú lateral",
+    "esinif": {
+      "roleStudentWithClass": "{{classroom}} · Estudiante",
+      "roleTeacherWithSubject": "Profesor de {{subject}}",
+      "roleDeptHeadWithSubject": "Jefe de departamento de {{subject}}"
+    }
   },
   "pagination": {
     "previous": "Anterior",
